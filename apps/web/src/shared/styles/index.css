@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* Los utilitarios de Tailwind leen los tokens (inline = respeta cambios en runtime, p. ej. tema por libro). */
+@theme inline {
+  --color-bg: var(--token-bg);
+  --color-surface: var(--token-surface);
+  --color-surface-alt: var(--token-surface-alt);
+  --color-text: var(--token-text);
+  --color-muted: var(--token-muted);
+  --color-border: var(--token-border);
+  --color-primary: var(--token-primary);
+  --color-primary-contrast: var(--token-primary-contrast);
+  --color-accent: var(--token-accent);
+  --color-danger: var(--token-danger);
+  --color-success: var(--token-success);
+  --color-warning: var(--token-warning);
+  --radius-token: var(--token-radius);
+  --radius-token-lg: var(--token-radius-lg);
+  --font-sans: var(--token-font-sans);
+  --font-display: var(--token-font-display);
+}
+
+@layer base {
+  html {
+    color-scheme: light dark;
+  }
+  body {
+    margin: 0;
+    background: var(--token-bg);
+    color: var(--token-text);
+    font-family: var(--token-font-sans);
+    line-height: 1.55;
+    -webkit-text-size-adjust: 100%;
+  }
+  :focus-visible {
+    outline: 3px solid var(--token-primary);
+    outline-offset: 2px;
+  }
+}
