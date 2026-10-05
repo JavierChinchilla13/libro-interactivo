@@ -1,0 +1,43 @@
+/*
+ * Design tokens (tema neutro). Todo color, radio y tipografía del sitio sale de aquí.
+ * La identidad visual definitiva (fase 12) y el tema por libro solo cambian estas variables.
+ */
+:root {
+  --token-bg: #fafafa;
+  --token-surface: #ffffff;
+  --token-surface-alt: #f1f2f4;
+  --token-text: #1f2328;
+  --token-muted: #5b636d;
+  --token-border: #d8dce1;
+  --token-primary: #444b55;
+  --token-primary-contrast: #ffffff;
+  --token-accent: #7a828c;
+  --token-danger: #b42318;
+  --token-success: #067647;
+  --token-warning: #b54708;
+
+  --token-radius: 0.5rem;
+  --token-radius-lg: 0.875rem;
+  --token-font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --token-font-display: var(--token-font-sans);
+
+  --token-page-max: 72rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --token-bg: #16181b;
+    --token-surface: #1f2328;
+    --token-surface-alt: #2a2f36;
+    --token-text: #e8eaed;
+    --token-muted: #9aa3ad;
+    --token-border: #39404a;
+    --token-primary: #c9ced6;
+    --token-primary-contrast: #16181b;
+    --token-accent: #8d96a1;
+    --token-danger: #f97066;
+    --token-success: #47cd89;
+    --token-warning: #fdb022;
+  }
+}
