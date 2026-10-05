@@ -10,7 +10,8 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "seed:admin": "tsx --env-file-if-exists=.env scripts/seed-admin.ts"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
@@ -27,11 +28,13 @@
   },
   "dependencies": {
     "@libro/shared": "^0.0.0",
+    "@node-rs/argon2": "^2.2.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.0",
     "helmet": "^8.3.0",
+    "jose": "^6.2.12",
     "mongoose": "^9.11.0",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
