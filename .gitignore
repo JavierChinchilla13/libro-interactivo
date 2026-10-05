@@ -1,0 +1,29 @@
+# Dependencias y builds
+node_modules/
+dist/
+build/
+.vite/
+.turbo/
+*.tsbuildinfo
+coverage/
+
+# Secretos (solo se versiona .env.example)
+.env
+.env.*
+!.env.example
+
+# Pruebas
+playwright-report/
+test-results/
+.playwright/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / sistema
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
