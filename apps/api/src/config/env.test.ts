@@ -42,7 +42,7 @@ describe('parseEnv', () => {
   it('acepta una configuración de producción completa', () => {
     const env = parseEnv({
       NODE_ENV: 'production',
-      MONGODB_URI: 'mongodb+srv://usuario:clave@cluster.mongodb.net/libro',
+      MONGODB_URI: 'mongodb+srv://cluster-de-prueba.example.net/libro',
       CORS_ORIGIN: 'https://app.ejemplo.com',
       PORT: '10000',
     });

@@ -31,7 +31,7 @@ describe('manejo de errores', () => {
     const app = createTestApp({
       configure: (a) =>
         a.get('/prueba/boom', () => {
-          throw new Error('secreto: mongodb://usuario:clave@host');
+          throw new Error('detalle-interno-que-no-debe-salir');
         }),
     });
     const res = await request(app).get('/prueba/boom');
@@ -39,7 +39,7 @@ describe('manejo de errores', () => {
     expect(res.body).toEqual({
       error: { code: 'INTERNAL', message: 'Error interno del servidor' },
     });
-    expect(JSON.stringify(res.body)).not.toContain('secreto');
+    expect(JSON.stringify(res.body)).not.toContain('detalle-interno');
   });
 
   it('un JSON mal formado responde 400 VALIDATION', async () => {
