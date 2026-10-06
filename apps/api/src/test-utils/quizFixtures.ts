@@ -14,7 +14,9 @@ export {
   twoStageContent,
 } from '../seed/quizBuilders.js';
 
-export async function createBook(overrides: { slug?: string; status?: 'draft' | 'published' } = {}) {
+export async function createBook(
+  overrides: { slug?: string; status?: 'draft' | 'published' } = {},
+) {
   return Book.create({
     slug: overrides.slug ?? 'libro-1',
     title: '[PLACEHOLDER] Libro 1',

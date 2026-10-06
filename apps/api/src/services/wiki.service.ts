@@ -33,7 +33,10 @@ function toResponse(entry: EntryLean): WikiEntryResponse {
     ...(entry.bodyHtml ? { bodyHtml: entry.bodyHtml } : {}),
     ...(entry.image ? { image: entry.image as ImageRef } : {}),
     ...(entry.group ? { group: entry.group } : {}),
-    fields: (entry.fields ?? []).map((field) => ({ label: field.label ?? '', value: field.value ?? '' })),
+    fields: (entry.fields ?? []).map((field) => ({
+      label: field.label ?? '',
+      value: field.value ?? '',
+    })),
     ...(entry.parentId ? { parentId: entry.parentId.toString() } : {}),
     links: (entry.links ?? []).map((id) => id.toString()),
     ...(entry.unlockAfter ? { unlockAfter: entry.unlockAfter as UnlockRule } : {}),
@@ -72,12 +75,14 @@ export function createWikiService() {
       throw new AppError('NOT_FOUND', 'No encontramos ese libro');
     }
     if (input.kind === 'power') {
-      if (!input.parentId) throw new AppError('VALIDATION', 'Un poder debe pertenecer a un campo de poder');
+      if (!input.parentId)
+        throw new AppError('VALIDATION', 'Un poder debe pertenecer a un campo de poder');
     } else if (input.parentId) {
       throw new AppError('VALIDATION', 'Solo un poder puede pertenecer a un campo');
     }
     if (input.parentId) {
-      if (input.parentId === selfId) throw new AppError('VALIDATION', 'Una entrada no puede ser su propio campo');
+      if (input.parentId === selfId)
+        throw new AppError('VALIDATION', 'Una entrada no puede ser su propio campo');
       const parent = await WikiEntry.findById(input.parentId).select('kind').lean();
       if (parent?.kind !== 'power_field') {
         throw new AppError('VALIDATION', 'El campo del poder no existe o no es un campo de poder');
@@ -156,7 +161,8 @@ export function createWikiService() {
   async function replace(id: string, input: WikiEntryInput): Promise<WikiEntryResponse> {
     const current = await loadLean(id);
     if (!current) throw new AppError('NOT_FOUND', 'No encontramos esa entrada');
-    if (current.kind !== input.kind) throw new AppError('VALIDATION', 'No se puede cambiar el tipo de una entrada');
+    if (current.kind !== input.kind)
+      throw new AppError('VALIDATION', 'No se puede cambiar el tipo de una entrada');
     await assertIntegrity(input, id);
     const data = toDocument(input);
     const unset = Object.fromEntries(
@@ -166,7 +172,10 @@ export function createWikiService() {
     );
     const set = Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
     try {
-      await WikiEntry.updateOne({ _id: id }, { $set: set, ...(Object.keys(unset).length ? { $unset: unset } : {}) });
+      await WikiEntry.updateOne(
+        { _id: id },
+        { $set: set, ...(Object.keys(unset).length ? { $unset: unset } : {}) },
+      );
     } catch (error) {
       return conflict(error);
     }
@@ -176,17 +185,23 @@ export function createWikiService() {
   /** Numera 1..n las entradas en el orden recibido. Todas deben ser del mismo tipo (y libro). */
   async function reorder(request: WikiReorderRequest): Promise<WikiEntryResponse[]> {
     const ids = [...new Set(request.ids)];
-    if (ids.length !== request.ids.length) throw new AppError('VALIDATION', 'Hay entradas repetidas');
+    if (ids.length !== request.ids.length)
+      throw new AppError('VALIDATION', 'Hay entradas repetidas');
     const found = await WikiEntry.find({ _id: { $in: ids } })
       .select('kind bookId')
       .lean();
     const sameScope = (bookId: Types.ObjectId | null | undefined) =>
       (bookId?.toString() ?? undefined) === request.bookId;
-    if (found.length !== ids.length || found.some((e) => e.kind !== request.kind || !sameScope(e.bookId))) {
+    if (
+      found.length !== ids.length ||
+      found.some((e) => e.kind !== request.kind || !sameScope(e.bookId))
+    ) {
       throw new AppError('VALIDATION', 'Las entradas deben existir y ser del mismo tipo y libro');
     }
     await WikiEntry.bulkWrite(
-      ids.map((id, index) => ({ updateOne: { filter: { _id: id }, update: { $set: { order: index + 1 } } } })),
+      ids.map((id, index) => ({
+        updateOne: { filter: { _id: id }, update: { $set: { order: index + 1 } } },
+      })),
     );
     return list({ kind: request.kind, ...(request.bookId ? { bookId: request.bookId } : {}) });
   }

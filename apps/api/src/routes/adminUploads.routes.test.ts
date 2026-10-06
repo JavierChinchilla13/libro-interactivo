@@ -7,7 +7,11 @@ import { useTestDb } from '../test-utils/db.js';
 
 useTestDb();
 
-const CLOUD = { CLOUDINARY_CLOUD_NAME: 'demo', CLOUDINARY_API_KEY: '123456', CLOUDINARY_API_SECRET: 'secreto-de-prueba' };
+const CLOUD = {
+  CLOUDINARY_CLOUD_NAME: 'demo',
+  CLOUDINARY_API_KEY: '123456',
+  CLOUDINARY_API_SECRET: 'secreto-de-prueba',
+};
 const url = '/api/admin/uploads/image-signature';
 
 describe('POST /api/admin/uploads/image-signature', () => {
@@ -34,7 +38,9 @@ describe('POST /api/admin/uploads/image-signature', () => {
       timestamp,
     });
     const expected = createHash('sha1')
-      .update(`allowed_formats=jpg,jpeg,png,webp,gif&folder=libro/cover&timestamp=${timestamp}${CLOUD.CLOUDINARY_API_SECRET}`)
+      .update(
+        `allowed_formats=jpg,jpeg,png,webp,gif&folder=libro/cover&timestamp=${timestamp}${CLOUD.CLOUDINARY_API_SECRET}`,
+      )
       .digest('hex');
     expect(body.signature).toBe(expected);
     expect(body).toMatchObject({
@@ -47,7 +53,9 @@ describe('POST /api/admin/uploads/image-signature', () => {
 
   it('la carpeta depende del propósito y el video solo se admite para resultados de quiz', async () => {
     const { editor } = await staffWorld({ env: CLOUD });
-    const wiki = imageSignatureResponseSchema.parse((await editor.post(url).send({ purpose: 'wiki' }).expect(200)).body);
+    const wiki = imageSignatureResponseSchema.parse(
+      (await editor.post(url).send({ purpose: 'wiki' }).expect(200)).body,
+    );
     expect(wiki.params['folder']).toBe('libro/wiki');
 
     const video = imageSignatureResponseSchema.parse(

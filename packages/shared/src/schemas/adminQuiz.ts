@@ -1,13 +1,7 @@
 import { z } from 'zod';
 import { slugSchema } from './book.js';
 import { imageRefSchema, objectIdSchema } from './common.js';
-import {
-  factSchema,
-  mediaSchema,
-  quizIdSchema,
-  quizSettingsSchema,
-  revealSchema,
-} from './quiz.js';
+import { factSchema, mediaSchema, quizIdSchema, quizSettingsSchema, revealSchema } from './quiz.js';
 
 /**
  * Edición de quizzes (panel). El BORRADOR admite contenido incompleto (textos vacíos, preguntas sin

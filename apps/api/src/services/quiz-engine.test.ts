@@ -1,7 +1,12 @@
 import { quizContentSchema, type QuizContent } from '@libro/shared';
 import { describe, expect, it } from 'vitest';
 import { seededRandom } from '../test-utils/random.js';
-import { resultsFor, simpleContent, simpleStage, twoStageContent } from '../test-utils/quizFixtures.js';
+import {
+  resultsFor,
+  simpleContent,
+  simpleStage,
+  twoStageContent,
+} from '../test-utils/quizFixtures.js';
 import {
   computeDistribution,
   firstStage,
@@ -94,7 +99,9 @@ describe('tallyAnswers y pickWinner', () => {
   });
 
   it('sin empate no registra tiedKeys', () => {
-    expect(pickWinner([{ resultKey: 'r1', count: 3 }], seededRandom(1))).toEqual({ resultKey: 'r1' });
+    expect(pickWinner([{ resultKey: 'r1', count: 3 }], seededRandom(1))).toEqual({
+      resultKey: 'r1',
+    });
   });
 });
 
@@ -154,7 +161,11 @@ describe('payloads al lector', () => {
   it('el resultado trae la secuencia narrativa y los datos, y la distribución solo con showBreakdown', () => {
     const rich: QuizContent = {
       ...content,
-      settings: { allowRetake: true, showBreakdown: false, revealIntro: { lines: ['Decodificando…'] } },
+      settings: {
+        allowRetake: true,
+        showBreakdown: false,
+        revealIntro: { lines: ['Decodificando…'] },
+      },
       results: content.results.map((result) =>
         result.key === 'r1'
           ? {
@@ -207,7 +218,9 @@ describe('validateQuizContent', () => {
     dup.results.push({ ...dup.results[0]! });
     dup.stages.push({ ...dup.stages[0]!, order: 2 });
     const found = codes(validateQuizContent(dup).errors);
-    expect(found).toEqual(expect.arrayContaining(['DUPLICATE_RESULT', 'DUPLICATE_STAGE', 'DUPLICATE_QUESTION']));
+    expect(found).toEqual(
+      expect.arrayContaining(['DUPLICATE_RESULT', 'DUPLICATE_STAGE', 'DUPLICATE_QUESTION']),
+    );
   });
 
   it('una rama sin etapa que continúe, una condición inexistente y varias etapas iniciales son errores', () => {
@@ -234,7 +247,11 @@ describe('validateQuizContent', () => {
         simpleStage('b', ['p', 'q'], { producesFinal: false, condition: ['c', 'p'], order: 2 }),
         simpleStage('c', ['m', 'n'], { producesFinal: false, condition: ['b', 'p'], order: 3 }),
       ],
-      results: [...resultsFor('a', ['x', 'y']), ...resultsFor('b', ['p', 'q']), ...resultsFor('c', ['m', 'n'])],
+      results: [
+        ...resultsFor('a', ['x', 'y']),
+        ...resultsFor('b', ['p', 'q']),
+        ...resultsFor('c', ['m', 'n']),
+      ],
     };
     const found = codes(validateQuizContent(cycle).errors);
     expect(found).toContain('STAGE_CYCLE');
@@ -242,7 +259,10 @@ describe('validateQuizContent', () => {
 
     const ambiguous = twoStageContent();
     ambiguous.stages.push({
-      ...simpleStage('etapa-fuego-bis', ['x1', 'x2'], { condition: ['etapa-1', 'fuego'], order: 4 }),
+      ...simpleStage('etapa-fuego-bis', ['x1', 'x2'], {
+        condition: ['etapa-1', 'fuego'],
+        order: 4,
+      }),
     });
     ambiguous.results.push(...resultsFor('etapa-fuego-bis', ['x1', 'x2']));
     expect(codes(validateQuizContent(ambiguous).errors)).toContain('STAGE_AMBIGUOUS');

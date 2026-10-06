@@ -61,7 +61,8 @@ export function createQuizAdminService(deps: QuizAdminDeps) {
   function conflict(error: unknown): never {
     if (isDuplicateKey(error)) {
       const fields = duplicateKeyFields(error);
-      if (fields.includes('slug')) throw new AppError('CONFLICT', 'Ya existe un quiz con ese slug en este libro');
+      if (fields.includes('slug'))
+        throw new AppError('CONFLICT', 'Ya existe un quiz con ese slug en este libro');
       if (fields.includes('order')) {
         throw new AppError('CONFLICT', 'Ya hay otro quiz en esa posición de la secuencia');
       }
@@ -86,7 +87,8 @@ export function createQuizAdminService(deps: QuizAdminDeps) {
       .lean();
     if (latest) {
       const strict = quizContentSchema.safeParse(draftContentOf(quiz));
-      hasUnpublishedChanges = !strict.success || hashQuizContent(sanitizeQuizHtml(strict.data)) !== latest.contentHash;
+      hasUnpublishedChanges =
+        !strict.success || hashQuizContent(sanitizeQuizHtml(strict.data)) !== latest.contentHash;
     }
     return { ...toSummary(quiz), draft, hasUnpublishedChanges };
   }
@@ -117,9 +119,14 @@ export function createQuizAdminService(deps: QuizAdminDeps) {
   }
 
   /** Reemplaza el borrador completo (admite contenido incompleto; solo validar/publicar lo exigen). */
-  async function saveDraft(id: string, draft: QuizDraft, actor: Actor): Promise<QuizDetailResponse> {
+  async function saveDraft(
+    id: string,
+    draft: QuizDraft,
+    actor: Actor,
+  ): Promise<QuizDetailResponse> {
     const quiz = await mustFind(id);
-    if (quiz.status === 'archived') throw new AppError('CONFLICT', 'Un quiz archivado no se puede editar');
+    if (quiz.status === 'archived')
+      throw new AppError('CONFLICT', 'Un quiz archivado no se puede editar');
     assertQuizMediaAllowed(draft);
     const clean = sanitizeQuizHtml(draft);
     await Quiz.updateOne(
@@ -143,11 +150,17 @@ export function createQuizAdminService(deps: QuizAdminDeps) {
 
   async function updateMeta(id: string, patch: UpdateQuizMetaRequest): Promise<QuizDetailResponse> {
     const quiz = await mustFind(id);
-    if (quiz.status === 'archived') throw new AppError('CONFLICT', 'Un quiz archivado no se puede editar');
+    if (quiz.status === 'archived')
+      throw new AppError('CONFLICT', 'Un quiz archivado no se puede editar');
     try {
       await Quiz.updateOne(
         { _id: id },
-        { $set: { ...(patch.slug ? { slug: patch.slug } : {}), ...(patch.order ? { order: patch.order } : {}) } },
+        {
+          $set: {
+            ...(patch.slug ? { slug: patch.slug } : {}),
+            ...(patch.order ? { order: patch.order } : {}),
+          },
+        },
       );
     } catch (error) {
       return conflict(error);

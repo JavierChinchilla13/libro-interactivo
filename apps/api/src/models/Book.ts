@@ -7,7 +7,14 @@ import { Schema, model, type HydratedDocument, type InferSchemaType } from 'mong
  */
 const bookSchema = new Schema(
   {
-    slug: { type: String, required: true, unique: true, trim: true, lowercase: true, maxlength: 80 },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      maxlength: 80,
+    },
     title: { type: String, required: true, trim: true, maxlength: 160 },
     tagline: { type: String, trim: true, maxlength: 200 },
     synopsis: { type: String, default: '' },

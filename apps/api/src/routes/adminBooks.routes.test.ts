@@ -44,7 +44,12 @@ describe('POST /api/admin/books', () => {
           releaseDate: '2026-12-01',
           purchaseLinks: [
             { region: 'CR', kind: 'whatsapp', label: 'Envíos', url: 'https://wa.me/00000000' },
-            { region: 'CR', kind: 'store', label: 'Compras presenciales', notes: '[PLACEHOLDER] sedes' },
+            {
+              region: 'CR',
+              kind: 'store',
+              label: 'Compras presenciales',
+              notes: '[PLACEHOLDER] sedes',
+            },
             { region: 'INTL', kind: 'amazon', label: 'Amazon', url: 'https://www.amazon.com/dp/X' },
           ],
           theme: { primaryColor: '#444444', background: { type: 'color', color: '#f4f4f4' } },
@@ -52,7 +57,12 @@ describe('POST /api/admin/books', () => {
       )
       .expect(201);
     const book = bookResponseSchema.parse(res.body);
-    expect(book).toMatchObject({ slug: 'libro-1', status: 'published', releaseDate: '2026-12-01', minAge: 16 });
+    expect(book).toMatchObject({
+      slug: 'libro-1',
+      status: 'published',
+      releaseDate: '2026-12-01',
+      minAge: 16,
+    });
     expect(book.purchaseLinks).toHaveLength(3);
     expect(book.purchaseLinks[1]?.url).toBeUndefined(); // «compras presenciales» no lleva enlace
   });
@@ -66,7 +76,13 @@ describe('POST /api/admin/books', () => {
           synopsis: '<p>Hola</p><script>alert(1)</script><img src="x" onerror="alert(1)">',
           contentWarning: '<p onclick="alert(1)">Aviso</p>',
           wikiSections: [
-            { kind: 'term', title: 'Glosario', order: 1, enabled: true, introHtml: '<a href="javascript:alert(1)">x</a>' },
+            {
+              kind: 'term',
+              title: 'Glosario',
+              order: 1,
+              enabled: true,
+              introHtml: '<a href="javascript:alert(1)">x</a>',
+            },
           ],
         }),
       )
@@ -109,7 +125,11 @@ describe('POST /api/admin/books', () => {
     for (const body of [
       validBook({ cover: external }),
       validBook({ theme: { background: { type: 'image', image: external } } }),
-      validBook({ wikiSections: [{ kind: 'place', title: 'Lugares', order: 1, enabled: true, mapImage: external }] }),
+      validBook({
+        wikiSections: [
+          { kind: 'place', title: 'Lugares', order: 1, enabled: true, mapImage: external },
+        ],
+      }),
     ]) {
       const res = await editor.post('/api/admin/books').send(body);
       expect(res.status).toBe(400);
@@ -146,12 +166,22 @@ describe('POST /api/admin/books', () => {
 describe('GET/PUT /api/admin/books', () => {
   it('lista todos los estados ordenados, obtiene uno y 404 si no existe', async () => {
     const { editor } = await staffWorld();
-    await editor.post('/api/admin/books').send(validBook({ slug: 'dos', order: 2 })).expect(201);
-    await editor.post('/api/admin/books').send(validBook({ slug: 'uno', order: 1 })).expect(201);
-    const list = bookListResponseSchema.parse((await editor.get('/api/admin/books').expect(200)).body);
+    await editor
+      .post('/api/admin/books')
+      .send(validBook({ slug: 'dos', order: 2 }))
+      .expect(201);
+    await editor
+      .post('/api/admin/books')
+      .send(validBook({ slug: 'uno', order: 1 }))
+      .expect(201);
+    const list = bookListResponseSchema.parse(
+      (await editor.get('/api/admin/books').expect(200)).body,
+    );
     expect(list.books.map((b) => b.slug)).toEqual(['uno', 'dos']);
     const id = list.books[0]!.id;
-    expect(bookResponseSchema.parse((await editor.get(`/api/admin/books/${id}`).expect(200)).body).slug).toBe('uno');
+    expect(
+      bookResponseSchema.parse((await editor.get(`/api/admin/books/${id}`).expect(200)).body).slug,
+    ).toBe('uno');
     expect((await editor.get('/api/admin/books/670000000000000000000099')).status).toBe(404);
     expect((await editor.get('/api/admin/books/no-es-un-id')).status).toBe(400);
   });
@@ -159,7 +189,12 @@ describe('GET/PUT /api/admin/books', () => {
   it('reemplaza los datos, quita los campos opcionales omitidos y archiva con status', async () => {
     const { editor } = await staffWorld();
     const created = bookResponseSchema.parse(
-      (await editor.post('/api/admin/books').send(validBook({ tagline: 'lema', isbn: '123', minAge: 16 })).expect(201)).body,
+      (
+        await editor
+          .post('/api/admin/books')
+          .send(validBook({ tagline: 'lema', isbn: '123', minAge: 16 }))
+          .expect(201)
+      ).body,
     );
     const res = await editor
       .put(`/api/admin/books/${created.id}`)
@@ -175,11 +210,23 @@ describe('GET/PUT /api/admin/books', () => {
 
   it('PUT valida igual que POST y respeta el slug único', async () => {
     const { editor } = await staffWorld();
-    const a = bookResponseSchema.parse((await editor.post('/api/admin/books').send(validBook()).expect(201)).body);
-    await editor.post('/api/admin/books').send(validBook({ slug: 'libro-2', order: 2 })).expect(201);
-    expect((await editor.put(`/api/admin/books/${a.id}`).send(validBook({ status: 'published' }))).status).toBe(400);
-    expect((await editor.put(`/api/admin/books/${a.id}`).send(validBook({ slug: 'libro-2' }))).status).toBe(409);
-    expect((await editor.put('/api/admin/books/670000000000000000000099').send(validBook())).status).toBe(404);
+    const a = bookResponseSchema.parse(
+      (await editor.post('/api/admin/books').send(validBook()).expect(201)).body,
+    );
+    await editor
+      .post('/api/admin/books')
+      .send(validBook({ slug: 'libro-2', order: 2 }))
+      .expect(201);
+    expect(
+      (await editor.put(`/api/admin/books/${a.id}`).send(validBook({ status: 'published' })))
+        .status,
+    ).toBe(400);
+    expect(
+      (await editor.put(`/api/admin/books/${a.id}`).send(validBook({ slug: 'libro-2' }))).status,
+    ).toBe(409);
+    expect(
+      (await editor.put('/api/admin/books/670000000000000000000099').send(validBook())).status,
+    ).toBe(404);
   });
 
   it('el bloqueo de una pestaña solo puede apuntar a un quiz de este libro', async () => {
@@ -187,16 +234,35 @@ describe('GET/PUT /api/admin/books', () => {
     const mine = await createBook({ slug: 'mio' });
     const other = await createBook({ slug: 'otro' });
     await Book.updateOne({ _id: other._id }, { order: 2 });
-    const quizMine = await createQuiz({ bookId: mine._id, order: 1, content: simpleContent(), publishedBy: adminUser._id });
-    const quizOther = await createQuiz({ bookId: other._id, order: 1, content: simpleContent(), publishedBy: adminUser._id });
+    const quizMine = await createQuiz({
+      bookId: mine._id,
+      order: 1,
+      content: simpleContent(),
+      publishedBy: adminUser._id,
+    });
+    const quizOther = await createQuiz({
+      bookId: other._id,
+      order: 1,
+      content: simpleContent(),
+      publishedBy: adminUser._id,
+    });
     const section = (refId: string) => [
-      { kind: 'character' as const, title: 'Personajes', order: 1, enabled: true, lockedMessage: '[PLACEHOLDER]', unlockAfter: { kind: 'quiz' as const, refId } },
+      {
+        kind: 'character' as const,
+        title: 'Personajes',
+        order: 1,
+        enabled: true,
+        lockedMessage: '[PLACEHOLDER]',
+        unlockAfter: { kind: 'quiz' as const, refId },
+      },
     ];
     const url = `/api/admin/books/${mine._id.toString()}`;
     const body = (refId: string) => validBook({ slug: 'mio', wikiSections: section(refId) });
 
     expect((await editor.put(url).send(body(quizOther._id.toString()))).status).toBe(400);
     const ok = await editor.put(url).send(body(quizMine._id.toString())).expect(200);
-    expect(bookResponseSchema.parse(ok.body).wikiSections[0]?.unlockAfter?.refId).toBe(quizMine._id.toString());
+    expect(bookResponseSchema.parse(ok.body).wikiSections[0]?.unlockAfter?.refId).toBe(
+      quizMine._id.toString(),
+    );
   });
 });

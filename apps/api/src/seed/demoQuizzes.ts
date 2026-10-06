@@ -29,7 +29,10 @@ function onceQuiz(): QuizContent {
   });
   content.results = content.results.map((result, index) => ({
     ...result,
-    reveal: { lines: [`[PLACEHOLDER] Línea 1 del resultado ${index + 1}`, '[PLACEHOLDER] Línea 2'], effect: 'brillo' },
+    reveal: {
+      lines: [`[PLACEHOLDER] Línea 1 del resultado ${index + 1}`, '[PLACEHOLDER] Línea 2'],
+      effect: 'brillo',
+    },
     facts: [
       { label: '[PLACEHOLDER] Tu cápsula', value: `[PLACEHOLDER] Cápsula ${index + 1}` },
       { label: '[PLACEHOLDER] Detalle', value: '[PLACEHOLDER] Dato del resultado' },
@@ -52,10 +55,15 @@ function breakdownQuiz(): QuizContent {
 function branchingQuiz(): QuizContent {
   const fields = ['campo-1', 'campo-2', 'campo-3', 'campo-4', 'campo-5'];
   const powersPerField = [3, 3, 3, 3, 2];
-  const stages: StageDef[] = [simpleStage('etapa-1', fields, { questions: 5, producesFinal: false })];
+  const stages: StageDef[] = [
+    simpleStage('etapa-1', fields, { questions: 5, producesFinal: false }),
+  ];
   const results: ResultDef[] = resultsFor('etapa-1', fields);
   fields.forEach((field, index) => {
-    const powers = Array.from({ length: powersPerField[index] ?? 2 }, (_, p) => `${field}-poder-${p + 1}`);
+    const powers = Array.from(
+      { length: powersPerField[index] ?? 2 },
+      (_, p) => `${field}-poder-${p + 1}`,
+    );
     stages.push(
       simpleStage(`etapa-${field}`, powers, {
         questions: 1,
@@ -103,7 +111,12 @@ export async function seedDemoQuizzes(input: {
 }): Promise<SeedResult> {
   const book =
     (await Book.findOne({ slug: 'libro-1' })) ??
-    (await Book.create({ slug: 'libro-1', title: '[PLACEHOLDER] Libro 1', order: 1, status: 'published' }));
+    (await Book.create({
+      slug: 'libro-1',
+      title: '[PLACEHOLDER] Libro 1',
+      order: 1,
+      status: 'published',
+    }));
 
   const created: string[] = [];
   const existing: string[] = [];

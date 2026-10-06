@@ -34,6 +34,7 @@ export const mediaSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('video'), video: videoRefSchema }),
 ]);
 export type Media = z.infer<typeof mediaSchema>;
+export type MediaInput = z.input<typeof mediaSchema>;
 
 /** Secuencia narrativa: líneas que aparecen una a una y un efecto visual con nombre (lo dibuja el frontend). */
 export const revealSchema = z.object({
@@ -140,7 +141,9 @@ export const resultPayloadSchema = z.object({
   facts: z.array(factSchema).optional(),
   /** Solo si el quiz tiene `showBreakdown`: porcentaje de cada resultado alcanzado (suma 100). */
   distribution: z
-    .array(z.object({ key: quizIdSchema, title: z.string(), percent: z.number().int().min(0).max(100) }))
+    .array(
+      z.object({ key: quizIdSchema, title: z.string(), percent: z.number().int().min(0).max(100) }),
+    )
     .optional(),
 });
 export type ResultPayload = z.infer<typeof resultPayloadSchema>;
@@ -188,7 +191,10 @@ export const submitAnswersRequestSchema = z.object({
 export type SubmitAnswersRequest = z.infer<typeof submitAnswersRequestSchema>;
 
 export const attemptParamsSchema = z.object({ attemptId: objectIdSchema });
-export const attemptStageParamsSchema = z.object({ attemptId: objectIdSchema, stageId: quizIdSchema });
+export const attemptStageParamsSchema = z.object({
+  attemptId: objectIdSchema,
+  stageId: quizIdSchema,
+});
 export const quizParamsSchema = z.object({ quizId: objectIdSchema });
 
 // --- Resultados del lector ---

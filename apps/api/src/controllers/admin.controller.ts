@@ -47,7 +47,10 @@ export function createAdminBookController(books: BookService) {
 
 export function createAdminQuizEditorController(quizzes: QuizAdminService) {
   const list: RequestHandler = async (_req, res) => {
-    const { query } = getInput<unknown, { bookId: string; status?: 'draft' | 'published' | 'archived' }>(res);
+    const { query } = getInput<
+      unknown,
+      { bookId: string; status?: 'draft' | 'published' | 'archived' }
+    >(res);
     res.json({ quizzes: await quizzes.list(query.bookId, query.status) });
   };
   const get: RequestHandler = async (_req, res) => {

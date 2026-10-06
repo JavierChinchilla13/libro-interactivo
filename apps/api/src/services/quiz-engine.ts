@@ -69,9 +69,7 @@ export function nextStage(
   );
 }
 
-export type AnswersCheck =
-  | { ok: true; answers: ResolvedAnswer[] }
-  | { ok: false; message: string };
+export type AnswersCheck = { ok: true; answers: ResolvedAnswer[] } | { ok: false; message: string };
 
 /**
  * Comprueba que se respondió exactamente cada pregunta de la etapa, una vez, con una respuesta
@@ -101,7 +99,8 @@ export function resolveStageAnswers(stage: StageDef, submitted: SubmittedAnswer[
 /** Cuenta cuántas respuestas suman a cada resultado (solo los que tienen al menos una). */
 export function tallyAnswers(answers: readonly ResolvedAnswer[]): TallyEntry[] {
   const counts = new Map<string, number>();
-  for (const answer of answers) counts.set(answer.resultKey, (counts.get(answer.resultKey) ?? 0) + 1);
+  for (const answer of answers)
+    counts.set(answer.resultKey, (counts.get(answer.resultKey) ?? 0) + 1);
   return [...counts].map(([resultKey, count]) => ({ resultKey, count }));
 }
 
@@ -307,11 +306,19 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
     if (!hasParent) continue;
     const parent = byId.get(stage.conditionStageId as string);
     if (!parent || parent.id === stage.id) {
-      error('STAGE_CONDITION', `La etapa «${stage.id}» depende de una etapa que no existe o de sí misma`, path);
+      error(
+        'STAGE_CONDITION',
+        `La etapa «${stage.id}» depende de una etapa que no existe o de sí misma`,
+        path,
+      );
       continue;
     }
     if (parent.producesFinal) {
-      error('STAGE_AFTER_FINAL', `La etapa «${stage.id}» sigue a una etapa que ya da el resultado final`, path);
+      error(
+        'STAGE_AFTER_FINAL',
+        `La etapa «${stage.id}» sigue a una etapa que ya da el resultado final`,
+        path,
+      );
     }
     const parentKeys = new Set((resultsByStage.get(parent.id) ?? []).map((result) => result.key));
     if (!parentKeys.has(stage.conditionResultKey as string)) {
@@ -323,7 +330,11 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
     }
     const branch = `${parent.id}|${stage.conditionResultKey}`;
     if (branches.has(branch)) {
-      error('STAGE_AMBIGUOUS', `Dos etapas se activan con el mismo resultado de «${parent.id}»`, path);
+      error(
+        'STAGE_AMBIGUOUS',
+        `Dos etapas se activan con el mismo resultado de «${parent.id}»`,
+        path,
+      );
     }
     branches.add(branch);
     // Ciclo: subir por los padres no puede volver a la etapa.

@@ -33,7 +33,13 @@ async function setup() {
   const create = async (over: Record<string, unknown> = {}) => {
     const res = await world.editor
       .post('/api/admin/quizzes')
-      .send({ bookId: book._id.toString(), slug: 'quiz-1', order: 1, title: '[PLACEHOLDER] Quiz 1', ...over })
+      .send({
+        bookId: book._id.toString(),
+        slug: 'quiz-1',
+        order: 1,
+        title: '[PLACEHOLDER] Quiz 1',
+        ...over,
+      })
       .expect(201);
     return quizDetailResponseSchema.parse(res.body);
   };
@@ -47,9 +53,13 @@ describe('permisos de /api/admin/quizzes (edición)', () => {
     await request(app).get('/api/admin/quizzes').query(q).expect(401);
     expect((await reader.get('/api/admin/quizzes').query(q)).status).toBe(403);
     expect(
-      (await reader.post('/api/admin/quizzes').send({ ...q, slug: 'a', order: 1, title: 'A' })).status,
+      (await reader.post('/api/admin/quizzes').send({ ...q, slug: 'a', order: 1, title: 'A' }))
+        .status,
     ).toBe(403);
-    expect((await reader.put('/api/admin/quizzes/670000000000000000000001/draft').send(fullDraft())).status).toBe(403);
+    expect(
+      (await reader.put('/api/admin/quizzes/670000000000000000000001/draft').send(fullDraft()))
+        .status,
+    ).toBe(403);
     await editor.get('/api/admin/quizzes').query(q).expect(200);
     await admin.get('/api/admin/quizzes').query(q).expect(200);
     expect(await Quiz.countDocuments()).toBe(0);
@@ -60,11 +70,20 @@ describe('POST /api/admin/quizzes', () => {
   it('crea un quiz en borrador y la regla «¿se puede repetir?» se elige al crear (por defecto sí)', async () => {
     const { create } = await setup();
     const defaults = await create();
-    expect(defaults).toMatchObject({ status: 'draft', currentVersion: 0, allowRetake: true, showBreakdown: false });
+    expect(defaults).toMatchObject({
+      status: 'draft',
+      currentVersion: 0,
+      allowRetake: true,
+      showBreakdown: false,
+    });
     expect(defaults.draft.stages).toEqual([]);
     expect(defaults.hasUnpublishedChanges).toBe(true);
 
-    const once = await create({ slug: 'quiz-2', order: 2, settings: { allowRetake: false, showBreakdown: true } });
+    const once = await create({
+      slug: 'quiz-2',
+      order: 2,
+      settings: { allowRetake: false, showBreakdown: true },
+    });
     expect(once).toMatchObject({ allowRetake: false, showBreakdown: true });
   });
 
@@ -88,15 +107,22 @@ describe('POST /api/admin/quizzes', () => {
   it('un slug o una posición repetidos responden 409; archivar libera la posición', async () => {
     const { editor, create } = await setup();
     const first = await create();
-    const slugDup = await editor.post('/api/admin/quizzes').send({ bookId: first.bookId, slug: 'quiz-1', order: 2, title: 'B' });
+    const slugDup = await editor
+      .post('/api/admin/quizzes')
+      .send({ bookId: first.bookId, slug: 'quiz-1', order: 2, title: 'B' });
     expect(slugDup.status).toBe(409);
     expect(apiErrorSchema.parse(slugDup.body).error.message).toMatch(/slug/i);
-    const orderDup = await editor.post('/api/admin/quizzes').send({ bookId: first.bookId, slug: 'otro', order: 1, title: 'B' });
+    const orderDup = await editor
+      .post('/api/admin/quizzes')
+      .send({ bookId: first.bookId, slug: 'otro', order: 1, title: 'B' });
     expect(orderDup.status).toBe(409);
     expect(apiErrorSchema.parse(orderDup.body).error.message).toMatch(/posici/i);
 
     await editor.post(`/api/admin/quizzes/${first.id}/archive`).expect(200);
-    await editor.post('/api/admin/quizzes').send({ bookId: first.bookId, slug: 'otro', order: 1, title: 'B' }).expect(201);
+    await editor
+      .post('/api/admin/quizzes')
+      .send({ bookId: first.bookId, slug: 'otro', order: 1, title: 'B' })
+      .expect(201);
   });
 });
 
@@ -107,11 +133,20 @@ describe('GET /api/admin/quizzes', () => {
     const one = await create({ slug: 'uno', order: 1 });
     await editor.post(`/api/admin/quizzes/${one.id}/archive`).expect(200);
     const all = quizListResponseSchema.parse(
-      (await editor.get('/api/admin/quizzes').query({ bookId: book._id.toString() }).expect(200)).body,
+      (await editor.get('/api/admin/quizzes').query({ bookId: book._id.toString() }).expect(200))
+        .body,
     );
-    expect(all.quizzes.map((q) => [q.slug, q.status])).toEqual([['uno', 'archived'], ['dos', 'draft']]);
+    expect(all.quizzes.map((q) => [q.slug, q.status])).toEqual([
+      ['uno', 'archived'],
+      ['dos', 'draft'],
+    ]);
     const drafts = quizListResponseSchema.parse(
-      (await editor.get('/api/admin/quizzes').query({ bookId: book._id.toString(), status: 'draft' }).expect(200)).body,
+      (
+        await editor
+          .get('/api/admin/quizzes')
+          .query({ bookId: book._id.toString(), status: 'draft' })
+          .expect(200)
+      ).body,
     );
     expect(drafts.quizzes.map((q) => q.slug)).toEqual(['dos']);
     expect((await editor.get('/api/admin/quizzes')).status).toBe(400);
@@ -120,7 +155,9 @@ describe('GET /api/admin/quizzes', () => {
   it('el detalle trae el borrador completo y responde 404 si no existe', async () => {
     const { editor, create } = await setup();
     const quiz = await create();
-    const detail = quizDetailResponseSchema.parse((await editor.get(`/api/admin/quizzes/${quiz.id}`).expect(200)).body);
+    const detail = quizDetailResponseSchema.parse(
+      (await editor.get(`/api/admin/quizzes/${quiz.id}`).expect(200)).body,
+    );
     expect(detail.draft).toMatchObject({ title: '[PLACEHOLDER] Quiz 1', stages: [], results: [] });
     expect((await editor.get('/api/admin/quizzes/670000000000000000000099')).status).toBe(404);
   });
@@ -237,16 +274,25 @@ describe('PUT /api/admin/quizzes/:id/draft', () => {
     const { editor, create } = await setup();
     const quiz = await create();
     await editor.post(`/api/admin/quizzes/${quiz.id}/archive`).expect(200);
-    expect((await editor.put(`/api/admin/quizzes/${quiz.id}/draft`).send(fullDraft())).status).toBe(409);
-    expect((await editor.patch(`/api/admin/quizzes/${quiz.id}`).send({ order: 5 })).status).toBe(409);
-    expect((await editor.put('/api/admin/quizzes/670000000000000000000099/draft').send(fullDraft())).status).toBe(404);
+    expect((await editor.put(`/api/admin/quizzes/${quiz.id}/draft`).send(fullDraft())).status).toBe(
+      409,
+    );
+    expect((await editor.patch(`/api/admin/quizzes/${quiz.id}`).send({ order: 5 })).status).toBe(
+      409,
+    );
+    expect(
+      (await editor.put('/api/admin/quizzes/670000000000000000000099/draft').send(fullDraft()))
+        .status,
+    ).toBe(404);
   });
 
   it('cambiar «¿se puede repetir?» queda en el borrador y rige desde la siguiente publicación', async () => {
     const { editor, create } = await setup();
     const quiz = await create({ settings: { allowRetake: false, showBreakdown: false } });
     await editor.put(`/api/admin/quizzes/${quiz.id}/draft`).send(fullDraft()).expect(200); // fullDraft trae allowRetake=true
-    const detail = quizDetailResponseSchema.parse((await editor.get(`/api/admin/quizzes/${quiz.id}`).expect(200)).body);
+    const detail = quizDetailResponseSchema.parse(
+      (await editor.get(`/api/admin/quizzes/${quiz.id}`).expect(200)).body,
+    );
     expect(detail.allowRetake).toBe(true);
   });
 });
@@ -257,12 +303,19 @@ describe('PATCH /api/admin/quizzes/:id (slug y posición)', () => {
     const a = await create();
     const b = await create({ slug: 'quiz-2', order: 2 });
     const moved = quizDetailResponseSchema.parse(
-      (await editor.patch(`/api/admin/quizzes/${a.id}`).send({ slug: 'nuevo', order: 3 }).expect(200)).body,
+      (
+        await editor
+          .patch(`/api/admin/quizzes/${a.id}`)
+          .send({ slug: 'nuevo', order: 3 })
+          .expect(200)
+      ).body,
     );
     expect(moved).toMatchObject({ slug: 'nuevo', order: 3 });
     expect((await editor.patch(`/api/admin/quizzes/${a.id}`).send({})).status).toBe(400);
     expect((await editor.patch(`/api/admin/quizzes/${a.id}`).send({ order: 2 })).status).toBe(409);
-    expect((await editor.patch(`/api/admin/quizzes/${b.id}`).send({ slug: 'nuevo' })).status).toBe(409);
+    expect((await editor.patch(`/api/admin/quizzes/${b.id}`).send({ slug: 'nuevo' })).status).toBe(
+      409,
+    );
   });
 });
 
@@ -279,10 +332,18 @@ describe('flujo completo: crear → editar → validar → publicar → jugar', 
     );
     expect(valid).toMatchObject({ valid: true, errors: [] });
 
-    const published = publishQuizResponseSchema.parse((await editor.post(`${detailUrl}/publish`).expect(201)).body);
+    const published = publishQuizResponseSchema.parse(
+      (await editor.post(`${detailUrl}/publish`).expect(201)).body,
+    );
     expect(published.version).toBe(1);
-    const afterPublish = quizDetailResponseSchema.parse((await editor.get(detailUrl).expect(200)).body);
-    expect(afterPublish).toMatchObject({ status: 'published', currentVersion: 1, hasUnpublishedChanges: false });
+    const afterPublish = quizDetailResponseSchema.parse(
+      (await editor.get(detailUrl).expect(200)).body,
+    );
+    expect(afterPublish).toMatchObject({
+      status: 'published',
+      currentVersion: 1,
+      hasUnpublishedChanges: false,
+    });
 
     // Una lectora juega la versión 1.
     const readerAgent = await loginAgent(app);
@@ -292,24 +353,43 @@ describe('flujo completo: crear → editar → validar → publicar → jugar', 
     if (started.status !== 'in_progress') throw new Error('Debía iniciar');
     const done = await readerAgent
       .post(`/api/attempts/${started.attemptId}/stages/${started.stage.stageId}/answers`)
-      .send({ answers: started.stage.questions.map((q) => ({ questionId: q.id, answerId: q.answers[0]!.id })) })
+      .send({
+        answers: started.stage.questions.map((q) => ({
+          questionId: q.id,
+          answerId: q.answers[0]!.id,
+        })),
+      })
       .expect(200);
     expect(attemptResponseSchema.parse(done.body).status).toBe('completed');
 
     // Editar el borrador: aparece «cambios sin publicar» pero la versión 1 y el intento no cambian.
     const edited = fullDraft({ title: '[PLACEHOLDER] Título v2' });
     await editor.put(draftUrl).send(edited).expect(200);
-    expect(quizDetailResponseSchema.parse((await editor.get(detailUrl).expect(200)).body).hasUnpublishedChanges).toBe(true);
-    expect((await QuizVersion.findOne({ quizId: quiz.id, version: 1 }))?.title).toBe('[PLACEHOLDER] Quiz editado');
+    expect(
+      quizDetailResponseSchema.parse((await editor.get(detailUrl).expect(200)).body)
+        .hasUnpublishedChanges,
+    ).toBe(true);
+    expect((await QuizVersion.findOne({ quizId: quiz.id, version: 1 }))?.title).toBe(
+      '[PLACEHOLDER] Quiz editado',
+    );
 
-    expect(publishQuizResponseSchema.parse((await editor.post(`${detailUrl}/publish`).expect(201)).body).version).toBe(2);
-    const versions = quizVersionsResponseSchema.parse((await editor.get(`${detailUrl}/versions`).expect(200)).body);
-    expect(versions.versions.map((v) => [v.version, v.attempts])).toEqual([[2, 0], [1, 1]]);
+    expect(
+      publishQuizResponseSchema.parse((await editor.post(`${detailUrl}/publish`).expect(201)).body)
+        .version,
+    ).toBe(2);
+    const versions = quizVersionsResponseSchema.parse(
+      (await editor.get(`${detailUrl}/versions`).expect(200)).body,
+    );
+    expect(versions.versions.map((v) => [v.version, v.attempts])).toEqual([
+      [2, 0],
+      [1, 1],
+    ]);
     expect(versions.versions[0]?.publishedBy).toBe(editorUser._id.toString());
 
     // Listado: ya figura como publicado (versión 2).
     const list = quizListResponseSchema.parse(
-      (await editor.get('/api/admin/quizzes').query({ bookId: book._id.toString() }).expect(200)).body,
+      (await editor.get('/api/admin/quizzes').query({ bookId: book._id.toString() }).expect(200))
+        .body,
     );
     expect(list.quizzes[0]).toMatchObject({ status: 'published', currentVersion: 2 });
   });
@@ -321,7 +401,12 @@ describe('flujo completo: crear → editar → validar → publicar → jugar', 
     // Se simula un borrador escrito sin pasar por el editor (seed o una escritura directa).
     await Quiz.updateOne(
       { _id: quiz.id },
-      { $set: { instructionsHtml: '<p>Hola</p><script>alert(1)</script>', 'draft.results.0.description': '<img src=x onerror=alert(1)>' } },
+      {
+        $set: {
+          instructionsHtml: '<p>Hola</p><script>alert(1)</script>',
+          'draft.results.0.description': '<img src=x onerror=alert(1)>',
+        },
+      },
     );
     await editor.post(`/api/admin/quizzes/${quiz.id}/publish`).expect(201);
     const version = await QuizVersion.findOne({ quizId: quiz.id }).lean();

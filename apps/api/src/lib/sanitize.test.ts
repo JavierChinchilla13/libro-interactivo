@@ -17,22 +17,34 @@ describe('sanitizeRichHtml', () => {
     ['script', '<p>hola</p><script>alert(1)</script>'],
     ['script con mayúsculas mezcladas', '<ScRiPt>alert(1)</sCrIpT>'],
     ['onerror en img', '<img src="x" onerror="alert(1)">'],
-    ['onerror en img de Cloudinary', '<img src="https://res.cloudinary.com/x/a.png" onerror="alert(1)">'],
+    [
+      'onerror en img de Cloudinary',
+      '<img src="https://res.cloudinary.com/x/a.png" onerror="alert(1)">',
+    ],
     ['onclick', '<p onclick="alert(1)">clic</p>'],
     ['onmouseover en enlace', '<a href="https://a.com" onmouseover="alert(1)">x</a>'],
     ['javascript: en enlace', '<a href="javascript:alert(1)">x</a>'],
     ['javascript: con espacios y mayúsculas', '<a href="  JaVaScRiPt:alert(1)">x</a>'],
     ['javascript: con entidades', '<a href="&#106;avascript:alert(1)">x</a>'],
-    ['data: en enlace', '<a href="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">x</a>'],
+    [
+      'data: en enlace',
+      '<a href="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">x</a>',
+    ],
     ['iframe', '<iframe src="https://malo.com"></iframe>'],
     ['object/embed', '<object data="x"></object><embed src="x">'],
     ['svg con script', '<svg onload="alert(1)"><script>alert(1)</script></svg>'],
-    ['style', '<style>body{display:none}</style><p style="background:url(javascript:alert(1))">x</p>'],
+    [
+      'style',
+      '<style>body{display:none}</style><p style="background:url(javascript:alert(1))">x</p>',
+    ],
     ['form', '<form action="https://malo.com"><input name="a"></form>'],
     ['img con data:', '<img src="data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=">'],
     ['img de otro host', '<img src="https://malo.com/a.png">'],
     ['img http (sin TLS) de Cloudinary', '<img src="http://res.cloudinary.com/x/a.png">'],
-    ['base y meta', '<base href="https://malo.com"><meta http-equiv="refresh" content="0;url=https://malo.com">'],
+    [
+      'base y meta',
+      '<base href="https://malo.com"><meta http-equiv="refresh" content="0;url=https://malo.com">',
+    ],
     ['atributos con comillas rotas', '<p title="x" onfocus=alert(1) autofocus>x</p>'],
     ['etiqueta sin cerrar', '<p>hola<script>alert(1)'],
   ];
@@ -57,7 +69,9 @@ describe('sanitizeRichHtml', () => {
       '<p class="a" style="color:red"><a href="mailto:autora@ejemplo.com">escríbeme</a></p><img src="https://res.cloudinary.com/demo/image/upload/a.png" alt="Dibujo">',
     );
     expect(out).toContain('href="mailto:autora@ejemplo.com"');
-    expect(out).toContain('<img src="https://res.cloudinary.com/demo/image/upload/a.png" alt="Dibujo" />');
+    expect(out).toContain(
+      '<img src="https://res.cloudinary.com/demo/image/upload/a.png" alt="Dibujo" />',
+    );
     expect(out).not.toContain('class=');
     expect(out).not.toContain('style=');
   });
