@@ -13,14 +13,10 @@ const CONTENT = [
   { to: '/admin/libros', label: 'Libros' },
   { to: '/admin/quizzes', label: 'Quizzes' },
   { to: '/admin/wiki', label: 'Wiki' },
+  { to: '/admin/extras', label: 'Capítulos extra' },
 ] as const;
-const COMING_CONTENT = ['Actualizaciones', 'Fan arts', 'Reseñas', 'Capítulos extra'] as const;
-const COMING_ADMIN = [
-  'Códigos QR',
-  'Usuarios',
-  'Mensajes de contacto',
-  'Ajustes del sitio',
-] as const;
+const COMING_CONTENT = ['Actualizaciones', 'Fan arts', 'Reseñas'] as const;
+const COMING_ADMIN = ['Usuarios', 'Mensajes de contacto', 'Ajustes del sitio'] as const;
 
 function Soon({ label }: { label: string }) {
   return (
@@ -82,6 +78,9 @@ export function AdminLayout() {
               <p className="px-3 pt-4 text-xs font-semibold uppercase tracking-wide text-muted">
                 Solo administradores
               </p>
+              <NavLink to="/admin/qr" className={link}>
+                Códigos QR
+              </NavLink>
               {COMING_ADMIN.map((label) => (
                 <Soon key={label} label={label} />
               ))}
