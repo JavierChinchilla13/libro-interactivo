@@ -26,6 +26,49 @@ describe('parseEnv', () => {
     expect(() => parseEnv({ NODE_ENV: 'test', CLOUDINARY_CLOUD_NAME: 'demo' })).toThrow(EnvError);
   });
 
+  it('ACCESS_TOKEN_SECRET: corta o igual al JWT se rechaza y en desarrollo hay un valor por defecto', () => {
+    expect(parseEnv({ NODE_ENV: 'development' }).ACCESS_TOKEN_SECRET.length).toBeGreaterThanOrEqual(
+      32,
+    );
+    expect(() => parseEnv({ NODE_ENV: 'test', ACCESS_TOKEN_SECRET: 'corta' })).toThrow(
+      /ACCESS_TOKEN_SECRET/,
+    );
+    const same = 'x'.repeat(40);
+    expect(() =>
+      parseEnv({ NODE_ENV: 'test', JWT_ACCESS_SECRET: same, ACCESS_TOKEN_SECRET: same }),
+    ).toThrow(/distinta de JWT_ACCESS_SECRET/);
+  });
+
+  it('en producción el desbloqueo por QR va encendido por defecto; fuera, apagado; y se puede forzar', () => {
+    const prod = {
+      NODE_ENV: 'production',
+      MONGODB_URI: 'mongodb://127.0.0.1:27017/x',
+      CORS_ORIGIN: 'https://app.ejemplo.com',
+      JWT_ACCESS_SECRET: 'j'.repeat(40),
+      ACCESS_TOKEN_SECRET: 'q'.repeat(40),
+      APP_URL: 'https://app.ejemplo.com',
+      MAIL_PROVIDER: 'resend',
+      RESEND_API_KEY: 'clave-de-prueba',
+      MAIL_FROM: 'Libro <a@ejemplo.com>',
+    };
+    expect(parseEnv(prod).REQUIRE_QR_UNLOCK).toBe(true);
+    expect(parseEnv({ ...prod, REQUIRE_QR_UNLOCK: 'false' }).REQUIRE_QR_UNLOCK).toBe(false);
+    expect(parseEnv({ NODE_ENV: 'development' }).REQUIRE_QR_UNLOCK).toBe(false);
+  });
+
+  it('S3: las cuatro variables juntas o ninguna', () => {
+    const all = {
+      S3_ENDPOINT: 'https://cuenta.r2.cloudflarestorage.com',
+      S3_BUCKET: 'privado',
+      S3_ACCESS_KEY_ID: 'a',
+      S3_SECRET_ACCESS_KEY: 'b',
+    };
+    const env = parseEnv({ NODE_ENV: 'test', ...all });
+    expect([env.S3_REGION, env.S3_FORCE_PATH_STYLE]).toEqual(['auto', true]);
+    expect(parseEnv({ NODE_ENV: 'test' }).S3_BUCKET).toBeUndefined();
+    expect(() => parseEnv({ NODE_ENV: 'test', S3_BUCKET: 'privado' })).toThrow(EnvError);
+  });
+
   it('separa varios orígenes de CORS por coma', () => {
     const env = parseEnv({
       NODE_ENV: 'test',
@@ -43,6 +86,7 @@ describe('parseEnv', () => {
       expect(problems).toContain('MONGODB_URI');
       expect(problems).toContain('CORS_ORIGIN');
       expect(problems).toContain('JWT_ACCESS_SECRET');
+      expect(problems).toContain('ACCESS_TOKEN_SECRET');
       expect(problems).toContain('APP_URL');
       expect(problems).toContain('MAIL_PROVIDER');
     }
@@ -71,6 +115,7 @@ describe('parseEnv', () => {
       MONGODB_URI: 'mongodb+srv://cluster-de-prueba.example.net/libro',
       CORS_ORIGIN: 'https://app.ejemplo.com',
       JWT_ACCESS_SECRET: 'a'.repeat(40),
+      ACCESS_TOKEN_SECRET: 'q'.repeat(40),
       APP_URL: 'https://app.ejemplo.com/',
       MAIL_PROVIDER: 'resend',
       RESEND_API_KEY: 're_clave_de_prueba',
@@ -88,6 +133,7 @@ describe('parseEnv', () => {
       MONGODB_URI: 'mongodb://127.0.0.1:27017/x',
       CORS_ORIGIN: 'https://app.ejemplo.com',
       JWT_ACCESS_SECRET: 'p'.repeat(40),
+      ACCESS_TOKEN_SECRET: 'q'.repeat(40),
       APP_URL: 'https://app.ejemplo.com',
     };
 

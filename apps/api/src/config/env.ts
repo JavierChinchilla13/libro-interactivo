@@ -55,7 +55,23 @@ const envSchema = z.object({
    */
   REQUIRE_QR_UNLOCK: z
     .enum(['true', 'false'])
-    .default('false')
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === 'true')),
+  /**
+   * Secreto del HMAC de los QR (token = id + HMAC). Distinto de JWT_ACCESS_SECRET. **Respaldarlo fuera del repo**:
+   * si se pierde, todos los QR impresos dejan de funcionar; si se cambia, también.
+   */
+  ACCESS_TOKEN_SECRET: z.string().min(32, 'debe tener al menos 32 caracteres'),
+  /** Almacenamiento privado S3-compatible (Cloudflare R2, S3…) para los capítulos extra. Las cuatro juntas o ninguna. */
+  S3_ENDPOINT: z.url('debe ser una URL completa').optional(),
+  S3_BUCKET: z.string().min(1).optional(),
+  S3_ACCESS_KEY_ID: z.string().min(1).optional(),
+  S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  S3_REGION: z.string().min(1).default('auto'),
+  /** `true` (R2 y la mayoría): `endpoint/bucket/clave`; `false`: `bucket.endpoint/clave` (S3 de AWS). */
+  S3_FORCE_PATH_STYLE: z
+    .enum(['true', 'false'])
+    .default('true')
     .transform((value) => value === 'true'),
   /** Correo de la autora donde llegan los mensajes de contacto (hasta que se configure en el panel). */
   CONTACT_RECIPIENT_EMAIL: z.email('debe ser un correo válido').optional(),
@@ -84,6 +100,23 @@ const envSchemaChecked = envSchema.superRefine((env, ctx) => {
         'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET van juntas o ninguna',
     });
   }
+  if (env.ACCESS_TOKEN_SECRET === env.JWT_ACCESS_SECRET) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['ACCESS_TOKEN_SECRET'],
+      message:
+        'debe ser distinta de JWT_ACCESS_SECRET (son secretos con usos y respaldos diferentes)',
+    });
+  }
+  const s3 = [env.S3_ENDPOINT, env.S3_BUCKET, env.S3_ACCESS_KEY_ID, env.S3_SECRET_ACCESS_KEY];
+  if (s3.some((value) => value !== undefined) && s3.some((value) => value === undefined)) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['S3_ENDPOINT'],
+      message:
+        'S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID y S3_SECRET_ACCESS_KEY van juntas o ninguna',
+    });
+  }
   if (env.MAIL_PROVIDER === 'gmail') {
     need('GMAIL_USER', 'es obligatoria con MAIL_PROVIDER=gmail');
     need('GMAIL_APP_PASSWORD', 'es obligatoria con MAIL_PROVIDER=gmail');
@@ -94,7 +127,10 @@ const envSchemaChecked = envSchema.superRefine((env, ctx) => {
   }
 });
 
-export type Env = z.infer<typeof envSchemaChecked>;
+/** Entorno ya validado. `REQUIRE_QR_UNLOCK` siempre es booleano: por defecto, `true` solo en producción. */
+export type Env = Omit<z.infer<typeof envSchemaChecked>, 'REQUIRE_QR_UNLOCK'> & {
+  REQUIRE_QR_UNLOCK: boolean;
+};
 
 /** Valores que solo se asumen fuera de producción, para que `npm run dev` funcione sin configurar nada. */
 const DEV_DEFAULTS: Record<string, string> = {
@@ -104,6 +140,7 @@ const DEV_DEFAULTS: Record<string, string> = {
   JWT_ACCESS_SECRET: 'solo-para-desarrollo-no-usar-en-produccion-0123456789',
   APP_URL: 'http://localhost:5173',
   MAIL_PROVIDER: 'memory',
+  ACCESS_TOKEN_SECRET: 'solo-para-desarrollo-token-de-qr-no-usar-en-produccion-9876',
 };
 
 export class EnvError extends Error {
@@ -133,5 +170,9 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
       result.error.issues.map((issue) => `${issue.path.join('.') || 'env'}: ${issue.message}`),
     );
   }
-  return result.data;
+  return {
+    ...result.data,
+    // En desarrollo y pruebas el desbloqueo por QR va apagado salvo que se pida; en producción, siempre encendido.
+    REQUIRE_QR_UNLOCK: result.data.REQUIRE_QR_UNLOCK ?? result.data.NODE_ENV === 'production',
+  };
 }
