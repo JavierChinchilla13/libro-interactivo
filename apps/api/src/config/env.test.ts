@@ -9,6 +9,12 @@ describe('parseEnv', () => {
     expect(env.CORS_ORIGIN).toEqual(['http://localhost:5173']);
   });
 
+  it('REQUIRE_QR_UNLOCK está apagado por defecto, se enciende con "true" y rechaza otros valores', () => {
+    expect(parseEnv({ NODE_ENV: 'test' }).REQUIRE_QR_UNLOCK).toBe(false);
+    expect(parseEnv({ NODE_ENV: 'test', REQUIRE_QR_UNLOCK: 'true' }).REQUIRE_QR_UNLOCK).toBe(true);
+    expect(() => parseEnv({ NODE_ENV: 'test', REQUIRE_QR_UNLOCK: 'si' })).toThrow(EnvError);
+  });
+
   it('separa varios orígenes de CORS por coma', () => {
     const env = parseEnv({
       NODE_ENV: 'test',

@@ -5,3 +5,4 @@ export * from './schemas/auth.js';
 export * from './schemas/common.js';
 export * from './schemas/contact.js';
 export * from './schemas/health.js';
+export * from './schemas/quiz.js';

@@ -6,6 +6,7 @@ import { createBackgroundTasks } from '../lib/background.js';
 import type { Clock } from '../lib/clock.js';
 import { createLogger } from '../lib/logger.js';
 import { MemoryMailProvider, type MailProvider } from '../providers/mail/MailProvider.js';
+import type { RandomInt } from '../services/quiz-engine.js';
 
 /** Límites muy altos para que las pruebas no choquen entre sí (las de rate limit pasan los suyos). */
 const RELAXED_LIMITS: Limits = {
@@ -25,6 +26,8 @@ interface TestAppOptions {
   env?: Partial<Record<keyof Env, string>>;
   /** Proveedor de correo; por defecto uno en memoria (accesible desde `createTestHarness().mail`). */
   mail?: MailProvider;
+  /** Azar de quizzes (barajado y empates); por defecto `crypto`. Con semilla para pruebas estadísticas. */
+  random?: RandomInt;
   configure?: (app: Express, ctx: AppContext) => void;
 }
 
@@ -45,6 +48,7 @@ export function createTestHarness(options: TestAppOptions = {}) {
       mail: options.mail ?? memoryMail,
       tasks,
       ...(options.clock ? { clock: options.clock } : {}),
+      ...(options.random ? { random: options.random } : {}),
       limits: { ...RELAXED_LIMITS, ...options.limits },
     },
     options.configure,
