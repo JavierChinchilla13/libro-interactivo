@@ -12,7 +12,7 @@ const quizVersionSchema = new Schema(
     bookId: { type: Schema.Types.ObjectId, ref: 'Book', required: true, immutable },
     version: { type: Number, required: true, min: 1, immutable },
     title: { type: String, required: true, immutable },
-    instructionsHtml: { type: String, required: true, immutable },
+    instructionsHtml: { type: String, default: '', immutable },
     image: { type: Schema.Types.Mixed, immutable },
     settings: { type: Schema.Types.Mixed, required: true, immutable },
     stages: { type: Schema.Types.Mixed, required: true, immutable },

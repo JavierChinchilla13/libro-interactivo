@@ -45,6 +45,10 @@ const envSchema = z.object({
     .pipe(z.string().min(8))
     .optional(),
   RESEND_API_KEY: z.string().min(8).optional(),
+  /** Cloudinary (subida firmada de imágenes y videos desde el panel). Las tres juntas o ninguna. */
+  CLOUDINARY_CLOUD_NAME: z.string().min(1).optional(),
+  CLOUDINARY_API_KEY: z.string().min(1).optional(),
+  CLOUDINARY_API_SECRET: z.string().min(1).optional(),
   /**
    * Exige haber canjeado el QR de un quiz para abrirlo (fase 8). Mientras no exista el canje va en `false`
    * y solo rigen los prerrequisitos de progresión.
@@ -66,6 +70,14 @@ const envSchemaChecked = envSchema.superRefine((env, ctx) => {
       code: 'custom',
       path: ['MAIL_PROVIDER'],
       message: 'en producción debe ser gmail o resend (memory perdería todos los correos)',
+    });
+  }
+  const cloudinary = [env.CLOUDINARY_CLOUD_NAME, env.CLOUDINARY_API_KEY, env.CLOUDINARY_API_SECRET];
+  if (cloudinary.some((value) => value !== undefined) && cloudinary.some((value) => value === undefined)) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['CLOUDINARY_CLOUD_NAME'],
+      message: 'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET van juntas o ninguna',
     });
   }
   if (env.MAIL_PROVIDER === 'gmail') {
