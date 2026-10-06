@@ -58,7 +58,11 @@ describe('quizzes de ejemplo', () => {
       progressResponseSchema.parse(
         (await agent.get('/api/me/progress').query({ bookId: first.bookId }).expect(200)).body,
       );
-    expect((await progress()).experiences.map((e) => e.status)).toEqual(['available', 'locked', 'locked']);
+    expect((await progress()).experiences.map((e) => e.status)).toEqual([
+      'available',
+      'locked',
+      'locked',
+    ]);
 
     // Juega los tres: siempre la primera respuesta (el de dos etapas pasa por una rama y termina en un poder).
     for (const quiz of await Quiz.find().sort({ order: 1 })) {
@@ -72,7 +76,10 @@ describe('quizzes de ejemplo', () => {
             await agent
               .post(`/api/attempts/${response.attemptId}/stages/${stage.stageId}/answers`)
               .send({
-                answers: stage.questions.map((q) => ({ questionId: q.id, answerId: q.answers[0]!.id })),
+                answers: stage.questions.map((q) => ({
+                  questionId: q.id,
+                  answerId: q.answers[0]!.id,
+                })),
               })
               .expect(200)
           ).body,
@@ -80,6 +87,10 @@ describe('quizzes de ejemplo', () => {
       }
       expect(response.status).toBe('completed');
     }
-    expect((await progress()).experiences.map((e) => e.status)).toEqual(['completed', 'completed', 'completed']);
+    expect((await progress()).experiences.map((e) => e.status)).toEqual([
+      'completed',
+      'completed',
+      'completed',
+    ]);
   });
 });

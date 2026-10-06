@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { quizDraftSchema, createQuizRequestSchema, updateQuizMetaRequestSchema } from './adminQuiz.js';
+import {
+  quizDraftSchema,
+  createQuizRequestSchema,
+  updateQuizMetaRequestSchema,
+} from './adminQuiz.js';
 import { bookInputSchema, slugSchema } from './book.js';
 import { imageSignatureRequestSchema } from './upload.js';
 import { wikiEntryInputSchema, wikiListQuerySchema } from './wiki.js';
@@ -26,7 +30,12 @@ describe('bookInputSchema', () => {
   const base = { slug: 'libro-1', title: 'T', order: 1, status: 'draft' as const };
 
   it('completa los valores por defecto', () => {
-    expect(bookInputSchema.parse(base)).toMatchObject({ synopsis: '', genres: [], purchaseLinks: [], wikiSections: [] });
+    expect(bookInputSchema.parse(base)).toMatchObject({
+      synopsis: '',
+      genres: [],
+      purchaseLinks: [],
+      wikiSections: [],
+    });
   });
 
   it('un libro publicado o «próximamente» necesita portada; un borrador no', () => {
@@ -41,7 +50,10 @@ describe('bookInputSchema', () => {
     expect(bookInputSchema.safeParse({ ...base, theme: video }).success).toBe(false);
     const link = { region: 'CR', kind: 'store', label: 'Compras presenciales' };
     expect(bookInputSchema.safeParse({ ...base, purchaseLinks: [link] }).success).toBe(true);
-    expect(bookInputSchema.safeParse({ ...base, purchaseLinks: [{ ...link, url: 'no-es-url' }] }).success).toBe(false);
+    expect(
+      bookInputSchema.safeParse({ ...base, purchaseLinks: [{ ...link, url: 'no-es-url' }] })
+        .success,
+    ).toBe(false);
   });
 
   it('la fecha de lanzamiento es AAAA-MM-DD', () => {
@@ -53,11 +65,19 @@ describe('bookInputSchema', () => {
 describe('wikiEntryInputSchema', () => {
   it('completa orden, estado, bloqueo y listas por defecto', () => {
     const entry = wikiEntryInputSchema.parse({ kind: 'term', slug: 'a', name: 'A' });
-    expect(entry).toMatchObject({ lockedDisplay: 'show', order: 1, status: 'draft', fields: [], links: [] });
+    expect(entry).toMatchObject({
+      lockedDisplay: 'show',
+      order: 1,
+      status: 'draft',
+      fields: [],
+      links: [],
+    });
   });
 
   it('rechaza tipos desconocidos y la inicial inválida en el filtro', () => {
-    expect(wikiEntryInputSchema.safeParse({ kind: 'monstruo', slug: 'a', name: 'A' }).success).toBe(false);
+    expect(wikiEntryInputSchema.safeParse({ kind: 'monstruo', slug: 'a', name: 'A' }).success).toBe(
+      false,
+    );
     expect(wikiListQuerySchema.safeParse({ letter: 'a' }).success).toBe(false);
     expect(wikiListQuerySchema.safeParse({ letter: '#' }).success).toBe(true);
   });
@@ -85,8 +105,15 @@ describe('quizDraftSchema (borrador)', () => {
   });
 
   it('sigue exigiendo título e ids bien formados', () => {
-    expect(quizDraftSchema.safeParse({ title: '', settings: {}, stages: [], results: [] }).success).toBe(false);
-    const badId = { title: 'T', settings: {}, results: [], stages: [{ id: 'etapa 1', order: 1, producesFinal: true, questions: [] }] };
+    expect(
+      quizDraftSchema.safeParse({ title: '', settings: {}, stages: [], results: [] }).success,
+    ).toBe(false);
+    const badId = {
+      title: 'T',
+      settings: {},
+      results: [],
+      stages: [{ id: 'etapa 1', order: 1, producesFinal: true, questions: [] }],
+    };
     expect(quizDraftSchema.safeParse(badId).success).toBe(false);
   });
 });
@@ -94,7 +121,12 @@ describe('quizDraftSchema (borrador)', () => {
 describe('crear quiz y cambiar slug/posición', () => {
   const id = '670000000000000000000001';
   it('«¿se puede repetir?» vale sí por defecto al crear', () => {
-    const request = createQuizRequestSchema.parse({ bookId: id, slug: 'quiz-1', order: 1, title: 'Q' });
+    const request = createQuizRequestSchema.parse({
+      bookId: id,
+      slug: 'quiz-1',
+      order: 1,
+      title: 'Q',
+    });
     expect(request.settings).toEqual({ allowRetake: true, showBreakdown: false });
   });
 

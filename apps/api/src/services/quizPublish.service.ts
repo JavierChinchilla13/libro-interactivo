@@ -95,7 +95,10 @@ export function createQuizPublishService(deps: QuizPublishDeps) {
     }
 
     const contentHash = hashQuizContent(checked.content);
-    const last = await QuizVersion.findOne({ quizId }).sort({ version: -1 }).select('version contentHash').lean();
+    const last = await QuizVersion.findOne({ quizId })
+      .sort({ version: -1 })
+      .select('version contentHash')
+      .lean();
     if (last?.contentHash === contentHash && quiz.status === 'published') {
       throw new AppError('CONFLICT', 'No hay cambios desde la última versión publicada');
     }

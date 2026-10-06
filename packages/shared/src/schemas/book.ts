@@ -6,7 +6,10 @@ export const slugSchema = z
   .string()
   .min(1)
   .max(80)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Usa minúsculas, números y guiones (sin acentos ni espacios)');
+  .regex(
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    'Usa minúsculas, números y guiones (sin acentos ni espacios)',
+  );
 
 export const BOOK_STATUSES = ['draft', 'upcoming', 'published', 'archived'] as const;
 export const bookStatusSchema = z.enum(BOOK_STATUSES);
@@ -40,6 +43,7 @@ export const wikiSectionSchema = z.object({
   mapImage: imageRefSchema.optional(),
 });
 export type WikiSection = z.infer<typeof wikiSectionSchema>;
+export type WikiSectionInput = z.input<typeof wikiSectionSchema>;
 
 const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Usa un color como #1a2b3c');
 

@@ -89,8 +89,14 @@ export function createApiRouter(deps: RouteDeps): Router {
       deps.guards,
     ),
   );
-  router.use('/admin/books', createAdminBookRouter(createAdminBookController(deps.books), deps.guards));
-  router.use('/admin/wiki', createAdminWikiRouter(createAdminWikiController(deps.wiki), deps.guards));
+  router.use(
+    '/admin/books',
+    createAdminBookRouter(createAdminBookController(deps.books), deps.guards),
+  );
+  router.use(
+    '/admin/wiki',
+    createAdminWikiRouter(createAdminWikiController(deps.wiki), deps.guards),
+  );
   router.use(
     '/admin/uploads',
     createAdminUploadRouter(createAdminUploadController(deps.images, deps.clock), deps.guards),

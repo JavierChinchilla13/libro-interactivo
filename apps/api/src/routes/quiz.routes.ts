@@ -7,7 +7,10 @@ import {
 } from '@libro/shared';
 import { Router } from 'express';
 import type { createAdminQuizEditorController } from '../controllers/admin.controller.js';
-import type { createAdminQuizController, createQuizController } from '../controllers/quiz.controller.js';
+import type {
+  createAdminQuizController,
+  createQuizController,
+} from '../controllers/quiz.controller.js';
 import type { Guards } from '../middleware/auth.js';
 import type { RequireUnlocked } from '../middleware/unlocked.js';
 import { validate } from '../middleware/validate.js';

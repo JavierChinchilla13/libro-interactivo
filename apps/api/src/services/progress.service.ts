@@ -101,7 +101,10 @@ export function createProgressService(deps: ProgressDeps) {
             .select('quizId settings')
             .lean();
     const retake = new Map(
-      versions.map((v) => [v.quizId.toString(), (v.settings as { allowRetake?: boolean }).allowRetake !== false]),
+      versions.map((v) => [
+        v.quizId.toString(),
+        (v.settings as { allowRetake?: boolean }).allowRetake !== false,
+      ]),
     );
     const completed = new Set(
       (progress?.completed ?? []).filter((c) => c.kind === 'quiz').map((c) => c.refId.toString()),
@@ -122,7 +125,11 @@ export function createProgressService(deps: ProgressDeps) {
         id,
         title: quiz.title,
         order: quiz.order,
-        status: done ? ('completed' as const) : reachable ? ('available' as const) : ('locked' as const),
+        status: done
+          ? ('completed' as const)
+          : reachable
+            ? ('available' as const)
+            : ('locked' as const),
         inProgress: inProgress.has(id),
         allowRetake: retake.get(id) ?? true,
       };

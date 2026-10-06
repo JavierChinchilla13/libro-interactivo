@@ -73,11 +73,15 @@ const envSchemaChecked = envSchema.superRefine((env, ctx) => {
     });
   }
   const cloudinary = [env.CLOUDINARY_CLOUD_NAME, env.CLOUDINARY_API_KEY, env.CLOUDINARY_API_SECRET];
-  if (cloudinary.some((value) => value !== undefined) && cloudinary.some((value) => value === undefined)) {
+  if (
+    cloudinary.some((value) => value !== undefined) &&
+    cloudinary.some((value) => value === undefined)
+  ) {
     ctx.addIssue({
       code: 'custom',
       path: ['CLOUDINARY_CLOUD_NAME'],
-      message: 'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET van juntas o ninguna',
+      message:
+        'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET van juntas o ninguna',
     });
   }
   if (env.MAIL_PROVIDER === 'gmail') {

@@ -77,7 +77,9 @@ export function createBookService() {
       purchaseLinks: input.purchaseLinks,
       wikiSections: input.wikiSections.map((section) => ({
         ...section,
-        ...(section.introHtml === undefined ? {} : { introHtml: sanitizeRichHtml(section.introHtml) }),
+        ...(section.introHtml === undefined
+          ? {}
+          : { introHtml: sanitizeRichHtml(section.introHtml) }),
       })),
       theme: input.theme,
     };
@@ -113,7 +115,8 @@ export function createBookService() {
 
   /** Reemplaza todos los datos editables del libro (el formulario del panel envía el libro completo). */
   async function replace(id: string, input: BookInput): Promise<BookResponse> {
-    if (!(await Book.exists({ _id: id }))) throw new AppError('NOT_FOUND', 'No encontramos ese libro');
+    if (!(await Book.exists({ _id: id })))
+      throw new AppError('NOT_FOUND', 'No encontramos ese libro');
     const data = await prepare(input, id);
     const unset = Object.fromEntries(
       Object.entries(data)
@@ -122,7 +125,10 @@ export function createBookService() {
     );
     const set = Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
     try {
-      await Book.updateOne({ _id: id }, { $set: set, ...(Object.keys(unset).length ? { $unset: unset } : {}) });
+      await Book.updateOne(
+        { _id: id },
+        { $set: set, ...(Object.keys(unset).length ? { $unset: unset } : {}) },
+      );
     } catch (error) {
       return conflict(error);
     }

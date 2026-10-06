@@ -19,7 +19,10 @@ export function assertCloudinaryUrls(urls: readonly (string | undefined)[]): voi
       /* se rechaza abajo */
     }
     if (protocol !== 'https:' || host !== CLOUDINARY_HOST) {
-      throw new AppError('VALIDATION', 'Las imágenes y videos deben subirse con el panel (Cloudinary)');
+      throw new AppError(
+        'VALIDATION',
+        'Las imágenes y videos deben subirse con el panel (Cloudinary)',
+      );
     }
   }
 }

@@ -41,11 +41,15 @@ const options: sanitizeHtml.IOptions = {
   transformTags: {
     a: (tagName, attribs) => ({
       tagName,
-      attribs: { ...(attribs['href'] ? { href: attribs['href'] } : {}), rel: 'noopener noreferrer' },
+      attribs: {
+        ...(attribs['href'] ? { href: attribs['href'] } : {}),
+        rel: 'noopener noreferrer',
+      },
     }),
   },
   // Imágenes solo de Cloudinary: cualquier otra se descarta entera.
-  exclusiveFilter: (frame) => frame.tag === 'img' && !CLOUDINARY_IMAGE.test(frame.attribs['src'] ?? ''),
+  exclusiveFilter: (frame) =>
+    frame.tag === 'img' && !CLOUDINARY_IMAGE.test(frame.attribs['src'] ?? ''),
   // El contenido de estas etiquetas peligrosas se descarta (no se deja su texto).
   nonTextTags: ['script', 'style', 'textarea', 'option', 'noscript', 'iframe', 'object', 'embed'],
 };

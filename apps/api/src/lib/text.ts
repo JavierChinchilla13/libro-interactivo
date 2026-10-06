@@ -9,7 +9,10 @@ export function normalizeName(value: string): string {
 
 /** Inicial para el filtro por letra: `A`–`Z`, o `#` si no empieza por una letra (números, símbolos). */
 export function letterOf(name: string): string {
-  const first = normalizeName(name).replace(/^[^a-z0-9]+/, '').charAt(0).toUpperCase();
+  const first = normalizeName(name)
+    .replace(/^[^a-z0-9]+/, '')
+    .charAt(0)
+    .toUpperCase();
   return /^[A-Z]$/.test(first) ? first : '#';
 }
 

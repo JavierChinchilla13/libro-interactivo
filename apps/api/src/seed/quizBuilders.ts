@@ -10,7 +10,12 @@ export const DEFAULT_SETTINGS: QuizSettings = { allowRetake: true, showBreakdown
 export function simpleStage(
   id: string,
   resultKeys: string[],
-  options: { questions?: number; producesFinal?: boolean; condition?: [string, string]; order?: number } = {},
+  options: {
+    questions?: number;
+    producesFinal?: boolean;
+    condition?: [string, string];
+    order?: number;
+  } = {},
 ): StageDef {
   const count = options.questions ?? 3;
   return {
@@ -44,7 +49,12 @@ export function resultsFor(stageId: string, keys: string[]): ResultDef[] {
 
 /** Quiz de una sola etapa con resultados r1..rN. */
 export function simpleContent(
-  options: { results?: number; questions?: number; settings?: Partial<QuizSettings>; title?: string } = {},
+  options: {
+    results?: number;
+    questions?: number;
+    settings?: Partial<QuizSettings>;
+    title?: string;
+  } = {},
 ): QuizContent {
   const keys = Array.from({ length: options.results ?? 3 }, (_, i) => `r${i + 1}`);
   return {

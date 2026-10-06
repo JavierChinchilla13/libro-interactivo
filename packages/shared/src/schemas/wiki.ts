@@ -71,7 +71,10 @@ export const wikiListQuerySchema = z.object({
   /** Buscar por nombre (sin distinguir acentos ni mayúsculas). */
   q: z.string().min(1).max(80).optional(),
   /** Filtrar por inicial: `A`–`Z` o `#`. */
-  letter: z.string().regex(/^[A-Z#]$/).optional(),
+  letter: z
+    .string()
+    .regex(/^[A-Z#]$/)
+    .optional(),
 });
 export const wikiListResponseSchema = z.object({ entries: z.array(wikiEntryResponseSchema) });
 export const wikiParamsSchema = z.object({ entryId: objectIdSchema });
