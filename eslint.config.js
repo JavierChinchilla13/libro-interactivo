@@ -13,6 +13,7 @@ export default tseslint.config(
       '**/coverage/**',
       '**/.data/**',
       'docs/**',
+      'tools/**',
       'playwright-report/**',
       'test-results/**',
     ],
