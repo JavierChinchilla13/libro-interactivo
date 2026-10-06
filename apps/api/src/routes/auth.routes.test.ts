@@ -87,6 +87,7 @@ describe('POST /api/auth/register', () => {
         MONGODB_URI: 'mongodb://127.0.0.1:27017/x',
         CORS_ORIGIN: 'https://app.ejemplo.com',
         JWT_ACCESS_SECRET: 'p'.repeat(40),
+        ACCESS_TOKEN_SECRET: 'q'.repeat(40),
         APP_URL: 'https://app.ejemplo.com',
         MAIL_PROVIDER: 'resend',
         RESEND_API_KEY: 're_clave_de_prueba',

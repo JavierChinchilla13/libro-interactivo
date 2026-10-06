@@ -165,7 +165,10 @@ export function createProgressService(deps: ProgressDeps) {
         },
       );
 
-    if ((await updateCurrent()).matchedCount > 0) return;
+    if ((await updateCurrent()).matchedCount > 0) {
+      await completeBookIfDone(input.userId, input.bookId, input.at);
+      return;
+    }
     try {
       await UserProgress.updateOne(
         { userId: input.userId, bookId: input.bookId, completed: { $not: { $elemMatch: entry } } },
@@ -186,9 +189,97 @@ export function createProgressService(deps: ProgressDeps) {
       // El documento ya existía con la entrada (otra petición se adelantó): solo actualizar.
       await updateCurrent();
     }
+    await completeBookIfDone(input.userId, input.bookId, input.at);
   }
 
-  return { assertQuizAccess, getProgress, recordQuizCompletion };
+  /**
+   * ¿Debe el juego estar completado para cerrar el libro? Hasta la fase 10 no existe el juego, así que solo cuentan los
+   * quizzes. Cuando exista, esta función devolverá `true` si el libro tiene una historia publicada.
+   */
+  async function gameRequired(_bookId: string): Promise<boolean> {
+    return false;
+  }
+
+  /**
+   * Fija `bookCompletedAt` UNA sola vez (filtro atómico) cuando la persona completó todos los quizzes publicados del
+   * libro (y el juego, si lo hay). No se revierte si luego se agrega otro quiz: quien ya abrió los extras los conserva.
+   */
+  async function completeBookIfDone(userId: string, bookId: string, at: Date): Promise<boolean> {
+    if (await gameRequired(bookId)) return false;
+    const [published, progress] = await Promise.all([
+      Quiz.find({ bookId, status: 'published', currentVersion: { $gte: 1 } })
+        .select('_id')
+        .lean(),
+      UserProgress.findOne({ userId, bookId }).select('completed bookCompletedAt').lean(),
+    ]);
+    if (!progress || progress.bookCompletedAt || published.length === 0) return false;
+    const done = new Set(
+      progress.completed.filter((c) => c.kind === 'quiz').map((c) => c.refId.toString()),
+    );
+    if (!published.every((quiz) => done.has(quiz._id.toString()))) return false;
+    const result = await UserProgress.updateOne(
+      { userId, bookId, bookCompletedAt: { $exists: false } },
+      { $set: { bookCompletedAt: at } },
+    );
+    return result.modifiedCount > 0;
+  }
+
+  /** `true` si la persona ya completó el libro (todos los quizzes publicados y, si lo hay, el juego). */
+  async function isBookCompleted(userId: string, bookId: string): Promise<boolean> {
+    const progress = await UserProgress.findOne({ userId, bookId })
+      .select('bookCompletedAt')
+      .lean();
+    return Boolean(progress?.bookCompletedAt);
+  }
+
+  /** Guard de los extras: 403 `NOT_UNLOCKED` sin contenido si el libro aún no está completo. */
+  async function assertBookCompleted(userId: string, bookId: string): Promise<void> {
+    if (!(await isBookCompleted(userId, bookId))) {
+      throw new AppError('NOT_UNLOCKED', NOT_UNLOCKED_MESSAGE);
+    }
+  }
+
+  /**
+   * Registra el desbloqueo de una experiencia por QR (idempotente y atómico). Devuelve `true` si fue la primera vez.
+   */
+  async function unlock(input: {
+    userId: string;
+    bookId: string;
+    kind: 'quiz' | 'game';
+    refId: string;
+    accessTokenId: string;
+    at: Date;
+  }): Promise<boolean> {
+    const entry = { kind: input.kind, refId: new Types.ObjectId(input.refId) };
+    try {
+      const result = await UserProgress.updateOne(
+        { userId: input.userId, bookId: input.bookId, unlocked: { $not: { $elemMatch: entry } } },
+        {
+          $push: {
+            unlocked: {
+              ...entry,
+              accessTokenId: new Types.ObjectId(input.accessTokenId),
+              at: input.at,
+            },
+          },
+        },
+        { upsert: true },
+      );
+      return result.modifiedCount > 0 || result.upsertedCount > 0;
+    } catch (error) {
+      if (isDuplicateKey(error)) return false; // ya existía el documento con este desbloqueo
+      throw error;
+    }
+  }
+
+  return {
+    assertQuizAccess,
+    getProgress,
+    recordQuizCompletion,
+    unlock,
+    isBookCompleted,
+    assertBookCompleted,
+  };
 }
 
 export type ProgressService = ReturnType<typeof createProgressService>;
