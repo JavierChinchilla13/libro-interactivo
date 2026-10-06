@@ -1,6 +1,7 @@
 import type { ProgressResponse, Role } from '@libro/shared';
 import { Types } from 'mongoose';
 import { AppError } from '../lib/errors.js';
+import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { Book } from '../models/Book.js';
 import { Quiz } from '../models/Quiz.js';
 import { QuizAttempt } from '../models/QuizAttempt.js';
@@ -26,10 +27,6 @@ export interface ProgressDeps {
 }
 
 const NOT_UNLOCKED_MESSAGE = 'Aún no puedes acceder a este contenido';
-
-function isDuplicateKey(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 11000;
-}
 
 /**
  * Progresión y acceso: quizzes publicados del libro en orden, el juego

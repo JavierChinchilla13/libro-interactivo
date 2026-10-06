@@ -10,6 +10,7 @@ import {
 import type { QueryFilter, Types } from 'mongoose';
 import { addDays, type Clock } from '../lib/clock.js';
 import { AppError } from '../lib/errors.js';
+import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { Quiz } from '../models/Quiz.js';
 import { QuizAttempt, type QuizAttemptAttrs } from '../models/QuizAttempt.js';
 import { QuizVersion } from '../models/QuizVersion.js';
@@ -35,10 +36,6 @@ export interface QuizServiceDeps {
   progress: ProgressService;
   clock: Clock;
   random: RandomInt;
-}
-
-function isDuplicateKey(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 11000;
 }
 
 /** Reconstruye el contenido de un snapshot (y lo revalida: nunca se confía ciegamente en lo guardado). */
