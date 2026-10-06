@@ -1,38 +1,60 @@
 import type { Express } from 'express';
 import { createApp, type AppContext } from '../app.js';
 import { parseEnv, type Env } from '../config/env.js';
+import type { Limits } from '../config/limits.js';
+import { createBackgroundTasks } from '../lib/background.js';
 import type { Clock } from '../lib/clock.js';
 import { createLogger } from '../lib/logger.js';
-import type { AuthLimits } from '../routes/auth.routes.js';
+import { MemoryMailProvider, type MailProvider } from '../providers/mail/MailProvider.js';
 
-/** Límites muy altos para que las pruebas de auth no choquen entre sí (las de rate limit pasan los suyos). */
-const RELAXED_LIMITS: AuthLimits = {
+/** Límites muy altos para que las pruebas no choquen entre sí (las de rate limit pasan los suyos). */
+const RELAXED_LIMITS: Limits = {
   register: { windowMs: 60_000, limit: 10_000 },
   login: { windowMs: 60_000, limit: 10_000 },
   refresh: { windowMs: 60_000, limit: 10_000 },
+  changePassword: { windowMs: 60_000, limit: 10_000 },
+  forgotPassword: { windowMs: 60_000, limit: 10_000 },
+  resetPassword: { windowMs: 60_000, limit: 10_000 },
+  contact: { windowMs: 60_000, limit: 10_000 },
 };
 
 interface TestAppOptions {
   dbUp?: boolean;
   clock?: Clock;
-  limits?: Partial<AuthLimits>;
+  limits?: Partial<Limits>;
   env?: Partial<Record<keyof Env, string>>;
+  /** Proveedor de correo; por defecto uno en memoria (accesible desde `createTestHarness().mail`). */
+  mail?: MailProvider;
   configure?: (app: Express, ctx: AppContext) => void;
 }
 
-/** App de pruebas: entorno `test`, logger silencioso y estado de BD controlable. */
-export function createTestApp(options: TestAppOptions = {}) {
+/**
+ * App de pruebas con acceso a lo que normalmente es interno: el correo "enviado" y la espera de las
+ * tareas en segundo plano (`await flush()` antes de revisar `mail.sent`).
+ */
+export function createTestHarness(options: TestAppOptions = {}) {
   const env = parseEnv({ NODE_ENV: 'test', ...options.env });
-  return createApp(
+  const logger = createLogger({ NODE_ENV: 'test', LOG_LEVEL: 'silent' });
+  const memoryMail = new MemoryMailProvider();
+  const tasks = createBackgroundTasks(logger);
+  const app = createApp(
     {
       env,
-      logger: createLogger({ NODE_ENV: 'test', LOG_LEVEL: 'silent' }),
+      logger,
       isDbUp: () => options.dbUp ?? true,
+      mail: options.mail ?? memoryMail,
+      tasks,
       ...(options.clock ? { clock: options.clock } : {}),
       limits: { ...RELAXED_LIMITS, ...options.limits },
     },
     options.configure,
   );
+  return { app, mail: memoryMail, flush: () => tasks.idle() };
+}
+
+/** App de pruebas simple (cuando no hace falta revisar correos). */
+export function createTestApp(options: TestAppOptions = {}) {
+  return createTestHarness(options).app;
 }
 
 /** Reloj de pruebas que se puede adelantar. */

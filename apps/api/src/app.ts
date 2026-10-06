@@ -4,14 +4,20 @@ import express, { type Express } from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import type { Env } from './config/env.js';
+import { DEFAULT_LIMITS, type Limits } from './config/limits.js';
+import { createBackgroundTasks, type BackgroundTasks } from './lib/background.js';
 import { systemClock, type Clock } from './lib/clock.js';
 import type { Logger } from './lib/logger.js';
 import { createGuards, type Guards } from './middleware/auth.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error.js';
 import { createSameOriginGuard } from './middleware/sameOrigin.js';
-import { DEFAULT_AUTH_LIMITS, type AuthLimits } from './routes/auth.routes.js';
+import type { MailProvider } from './providers/mail/MailProvider.js';
+import { createMailProvider } from './providers/mail/createMailProvider.js';
 import { createApiRouter } from './routes/index.js';
+import { createAccountService } from './services/account.service.js';
 import { createAuthService, type AuthService } from './services/auth.service.js';
+import { createContactService } from './services/contact.service.js';
+import { createPasswordResetService } from './services/passwordReset.service.js';
 import { createTokenService } from './services/token.service.js';
 
 export interface AppDeps {
@@ -23,13 +29,25 @@ export interface AppDeps {
     | 'ACCESS_TOKEN_TTL_SECONDS'
     | 'REFRESH_TOKEN_TTL_DAYS'
     | 'COOKIE_DOMAIN'
+    | 'APP_URL'
+    | 'RESET_TOKEN_TTL_MINUTES'
+    | 'MAIL_PROVIDER'
+    | 'MAIL_FROM'
+    | 'GMAIL_USER'
+    | 'GMAIL_APP_PASSWORD'
+    | 'RESEND_API_KEY'
+    | 'CONTACT_RECIPIENT_EMAIL'
   >;
   logger: Logger;
   isDbUp: () => boolean;
   /** Reloj inyectable (pruebas de caducidad y bloqueos). Por defecto, la hora del sistema. */
   clock?: Clock;
-  /** Límites de intentos por IP; por defecto `DEFAULT_AUTH_LIMITS`. */
-  limits?: Partial<AuthLimits>;
+  /** Límites de intentos por IP; por defecto `DEFAULT_LIMITS`. */
+  limits?: Partial<Limits>;
+  /** Proveedor de correo; por defecto el que indique MAIL_PROVIDER. */
+  mail?: MailProvider;
+  /** Ejecutor de tareas en segundo plano (envío de correos); por defecto uno propio. */
+  tasks?: BackgroundTasks;
 }
 
 /** Piezas compartidas que los módulos de rutas reutilizan (guards de sesión y rol, servicio de auth). */
@@ -47,6 +65,9 @@ export function createApp(
   configure?: (app: Express, ctx: AppContext) => void,
 ): Express {
   const clock = deps.clock ?? systemClock;
+  const mail = deps.mail ?? createMailProvider(deps.env, deps.logger);
+  const tasks = deps.tasks ?? createBackgroundTasks(deps.logger);
+
   const auth = createAuthService({
     tokens: createTokenService({
       secret: deps.env.JWT_ACCESS_SECRET,
@@ -58,6 +79,23 @@ export function createApp(
     refreshTtlDays: deps.env.REFRESH_TOKEN_TTL_DAYS,
   });
   const guards = createGuards(auth);
+  const account = createAccountService({ auth, mail, tasks, clock });
+  const recovery = createPasswordResetService({
+    auth,
+    mail,
+    tasks,
+    clock,
+    appUrl: deps.env.APP_URL,
+    ttlMinutes: deps.env.RESET_TOKEN_TTL_MINUTES,
+  });
+  const contact = createContactService({
+    mail,
+    tasks,
+    clock,
+    logger: deps.logger,
+    fallbackRecipient: deps.env.CONTACT_RECIPIENT_EMAIL,
+    ipSecret: deps.env.JWT_ACCESS_SECRET,
+  });
 
   const app = express();
   app.disable('x-powered-by');
@@ -81,7 +119,11 @@ export function createApp(
       env: deps.env,
       isDbUp: deps.isDbUp,
       auth,
-      limits: { ...DEFAULT_AUTH_LIMITS, ...deps.limits },
+      account,
+      recovery,
+      contact,
+      guards,
+      limits: { ...DEFAULT_LIMITS, ...deps.limits },
     }),
   );
   configure?.(app, { guards, auth });
