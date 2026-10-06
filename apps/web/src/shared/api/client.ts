@@ -17,6 +17,21 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   body?: unknown;
   signal?: AbortSignal;
+  /** Uso interno: ya se reintentó tras renovar la sesión. */
+  retried?: boolean;
+}
+
+/** Una sola renovación a la vez: varias peticiones que reciben 401 juntas comparten el mismo intento. */
+let refreshing: Promise<boolean> | null = null;
+
+async function refreshSession(): Promise<boolean> {
+  refreshing ??= fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' })
+    .then((response) => response.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
 }
 
 /**
@@ -43,6 +58,11 @@ export async function apiRequest<T>(
   }
 
   const payload: unknown = await response.json().catch(() => null);
+
+  // El access token dura poco: ante un 401 se renueva la sesión (cookie de refresco) y se reintenta una vez.
+  if (response.status === 401 && !options.retried && !path.startsWith('/auth/')) {
+    if (await refreshSession()) return apiRequest(path, schema, { ...options, retried: true });
+  }
 
   if (!response.ok) {
     const parsed = apiErrorSchema.safeParse(payload);

@@ -55,7 +55,10 @@ const quizAttemptSchema = new Schema(
     distribution: {
       type: [
         new Schema(
-          { resultKey: { type: String, required: true }, percent: { type: Number, required: true } },
+          {
+            resultKey: { type: String, required: true },
+            percent: { type: Number, required: true },
+          },
           { _id: false },
         ),
       ],

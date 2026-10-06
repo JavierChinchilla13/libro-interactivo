@@ -10,6 +10,7 @@ import {
 import type { QueryFilter, Types } from 'mongoose';
 import { addDays, type Clock } from '../lib/clock.js';
 import { AppError } from '../lib/errors.js';
+import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { Quiz } from '../models/Quiz.js';
 import { QuizAttempt, type QuizAttemptAttrs } from '../models/QuizAttempt.js';
 import { QuizVersion } from '../models/QuizVersion.js';
@@ -35,10 +36,6 @@ export interface QuizServiceDeps {
   progress: ProgressService;
   clock: Clock;
   random: RandomInt;
-}
-
-function isDuplicateKey(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 11000;
 }
 
 /** Reconstruye el contenido de un snapshot (y lo revalida: nunca se confía ciegamente en lo guardado). */
@@ -134,8 +131,9 @@ export function createQuizService(deps: QuizServiceDeps) {
 
     const open = await QuizAttempt.findOne({ ...mine, status: 'in_progress' }).lean();
     if (open) {
-      const openContent =
-        open.quizVersionId.equals(version._id) ? content : (await loadVersionById(open.quizVersionId)).content;
+      const openContent = open.quizVersionId.equals(version._id)
+        ? content
+        : (await loadVersionById(open.quizVersionId)).content;
       return currentStagePayload(open, openContent);
     }
 
@@ -147,7 +145,10 @@ export function createQuizService(deps: QuizServiceDeps) {
 
     const first = firstStage(content);
     if (!first) throw new AppError('INTERNAL', 'El quiz no tiene etapa inicial');
-    const last = await QuizAttempt.findOne(mine).sort({ attemptNumber: -1 }).select('attemptNumber').lean();
+    const last = await QuizAttempt.findOne(mine)
+      .sort({ attemptNumber: -1 })
+      .select('attemptNumber')
+      .lean();
     const now = clock();
     const order = questionOrderFor(first, random);
     try {
@@ -264,7 +265,8 @@ export function createQuizService(deps: QuizServiceDeps) {
     }
 
     const next = nextStage(content, stage.id, winner.resultKey);
-    if (!next) throw new AppError('INTERNAL', 'El quiz no tiene cómo continuar desde este resultado');
+    if (!next)
+      throw new AppError('INTERNAL', 'El quiz no tiene cómo continuar desde este resultado');
     const nextEntry = { stageId: next.id, questionOrder: questionOrderFor(next, random) };
     const advanced = await QuizAttempt.findOneAndUpdate(
       stillOpen,
@@ -309,7 +311,8 @@ export function createQuizService(deps: QuizServiceDeps) {
 
     const results = [...latest.values()].flatMap((attempt) => {
       const content = contentOfVersion.get(attempt.quizVersionId.toString());
-      const result = content && attempt.finalResultKey ? findResult(content, attempt.finalResultKey) : undefined;
+      const result =
+        content && attempt.finalResultKey ? findResult(content, attempt.finalResultKey) : undefined;
       if (!content || !result || !attempt.completedAt) return [];
       const quizId = attempt.quizId.toString();
       return [
@@ -357,12 +360,18 @@ export function createQuizService(deps: QuizServiceDeps) {
       current: {
         attemptId: current._id.toString(),
         completedAt: current.completedAt.toISOString(),
-        result: toResultPayload(currentContent, current.finalResultKey, current.distribution ?? undefined),
+        result: toResultPayload(
+          currentContent,
+          current.finalResultKey,
+          current.distribution ?? undefined,
+        ),
       },
       history: attempts.flatMap((attempt) => {
         const content = contents.get(attempt.quizVersionId.toString());
         const result =
-          content && attempt.finalResultKey ? findResult(content, attempt.finalResultKey) : undefined;
+          content && attempt.finalResultKey
+            ? findResult(content, attempt.finalResultKey)
+            : undefined;
         if (!result || !attempt.completedAt) return [];
         return [
           {

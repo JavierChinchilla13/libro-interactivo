@@ -19,6 +19,8 @@ export const imageRefSchema = z.object({
   deliveryType: z.enum(['upload', 'authenticated']).default('upload'),
 });
 export type ImageRef = z.infer<typeof imageRefSchema>;
+/** Lo que se envía al API: `deliveryType` es opcional (por defecto `upload`). */
+export type ImageRefInput = z.input<typeof imageRefSchema>;
 
 /** Regla de desbloqueo anti-spoilers: se oculta hasta completar un quiz o el juego. */
 export const unlockRuleSchema = z.object({

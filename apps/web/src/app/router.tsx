@@ -1,11 +1,22 @@
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from 'react-router';
+import { AdminHomePage } from '../features/admin/AdminHomePage';
+import { BookFormPage } from '../features/admin/books/BookFormPage';
+import { BookListPage } from '../features/admin/books/BookListPage';
+import { QuizEditorPage } from '../features/admin/quizzes/QuizEditorPage';
+import { QuizListPage } from '../features/admin/quizzes/QuizListPage';
+import { QuizNewPage } from '../features/admin/quizzes/QuizNewPage';
+import { WikiFormPage } from '../features/admin/wiki/WikiFormPage';
+import { WikiListPage } from '../features/admin/wiki/WikiListPage';
+import { LoginPage } from '../features/auth/LoginPage';
 import { HealthPage } from '../features/health/HealthPage';
 import { HomePage } from '../features/home/HomePage';
+import { RequireAuth, RequireRole } from './guards';
+import { AdminLayout } from './layouts/AdminLayout';
 import { PublicLayout } from './layouts/PublicLayout';
 
 /**
- * Tabla de rutas. Zonas previstas: públicas, lector (`/panel`, RequireAuth)
- * y administración (`/admin`, RequireRole). Los guards se agregan en las fases 3 y 7.
+ * Tabla de rutas. Zonas: públicas, lector (`/panel`, RequireAuth; fase 9) y
+ * administración (`/admin`, RequireAuth + RequireRole). Los guards solo mejoran la experiencia: la seguridad es del API.
  */
 export const routes: RouteObject[] = [
   {
@@ -13,7 +24,35 @@ export const routes: RouteObject[] = [
     children: [
       { index: true, element: <HomePage /> },
       { path: 'estado', element: <HealthPage /> },
+      { path: 'ingresar', element: <LoginPage /> },
       { path: '*', element: <p className="text-muted">Página no encontrada.</p> },
+    ],
+  },
+  {
+    // Editoras y administradoras. Las secciones solo de ADMIN (QR, usuarios…) irán bajo otro `RequireRole`.
+    element: <RequireAuth />,
+    children: [
+      {
+        element: <RequireRole roles={['EDITOR', 'ADMIN']} />,
+        children: [
+          {
+            path: 'admin',
+            element: <AdminLayout />,
+            children: [
+              { index: true, element: <AdminHomePage /> },
+              { path: 'libros', element: <BookListPage /> },
+              { path: 'libros/nuevo', element: <BookFormPage /> },
+              { path: 'libros/:bookId', element: <BookFormPage /> },
+              { path: 'quizzes', element: <QuizListPage /> },
+              { path: 'quizzes/nuevo', element: <QuizNewPage /> },
+              { path: 'quizzes/:quizId', element: <QuizEditorPage /> },
+              { path: 'wiki', element: <WikiListPage /> },
+              { path: 'wiki/nueva', element: <WikiFormPage /> },
+              { path: 'wiki/:entryId', element: <WikiFormPage /> },
+            ],
+          },
+        ],
+      },
     ],
   },
 ];
