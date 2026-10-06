@@ -1,7 +1,7 @@
 import { rateLimit, type RateLimitRequestHandler } from 'express-rate-limit';
 import type { ApiError } from '@libro/shared';
 
-interface RateLimitOptions {
+export interface RateLimitOptions {
   windowMs: number;
   limit: number;
   message?: string;

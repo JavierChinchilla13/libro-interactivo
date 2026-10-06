@@ -30,3 +30,4 @@ Thumbs.db
 
 # Datos locales de desarrollo
 .data/
+.vitest/
