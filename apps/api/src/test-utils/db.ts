@@ -2,7 +2,10 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { afterAll, beforeAll, beforeEach } from 'vitest';
 import { connectDb, disconnectDb } from '../db/connect.js';
+import { ContactMessage } from '../models/ContactMessage.js';
+import { PasswordReset } from '../models/PasswordReset.js';
 import { RefreshToken } from '../models/RefreshToken.js';
+import { SiteSettings } from '../models/SiteSettings.js';
 import { User } from '../models/User.js';
 
 /**
@@ -15,7 +18,13 @@ export function useTestDb(): void {
   beforeAll(async () => {
     mongo = await MongoMemoryServer.create();
     await connectDb(mongo.getUri());
-    await Promise.all([User.init(), RefreshToken.init()]);
+    await Promise.all([
+      User.init(),
+      RefreshToken.init(),
+      PasswordReset.init(),
+      ContactMessage.init(),
+      SiteSettings.init(),
+    ]);
   });
 
   beforeEach(async () => {

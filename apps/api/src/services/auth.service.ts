@@ -237,6 +237,11 @@ export function createAuthService(options: AuthServiceOptions) {
       return { userId: user.id, role: user.role };
     },
 
+    /** Abre una sesión nueva (familia nueva de refresh) para un usuario ya verificado. */
+    async startSession(user: UserDoc, meta: RequestMeta): Promise<Session> {
+      return issueSession(user, meta, randomToken(16));
+    },
+
     async getUserById(userId: string): Promise<AuthUser | null> {
       if (!Types.ObjectId.isValid(userId)) return null;
       const user = await User.findById(userId);

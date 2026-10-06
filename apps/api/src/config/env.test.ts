@@ -26,6 +26,8 @@ describe('parseEnv', () => {
       expect(problems).toContain('MONGODB_URI');
       expect(problems).toContain('CORS_ORIGIN');
       expect(problems).toContain('JWT_ACCESS_SECRET');
+      expect(problems).toContain('APP_URL');
+      expect(problems).toContain('MAIL_PROVIDER');
     }
   });
 
@@ -52,9 +54,60 @@ describe('parseEnv', () => {
       MONGODB_URI: 'mongodb+srv://cluster-de-prueba.example.net/libro',
       CORS_ORIGIN: 'https://app.ejemplo.com',
       JWT_ACCESS_SECRET: 'a'.repeat(40),
+      APP_URL: 'https://app.ejemplo.com/',
+      MAIL_PROVIDER: 'resend',
+      RESEND_API_KEY: 're_clave_de_prueba',
+      MAIL_FROM: 'Libro Interactivo <avisos@ejemplo.com>',
       PORT: '10000',
     });
     expect(env.PORT).toBe(10000);
+    expect(env.APP_URL).toBe('https://app.ejemplo.com'); // sin barra final
     expect(env.NODE_ENV).toBe('production');
+  });
+
+  describe('correo', () => {
+    const prod = {
+      NODE_ENV: 'production',
+      MONGODB_URI: 'mongodb://127.0.0.1:27017/x',
+      CORS_ORIGIN: 'https://app.ejemplo.com',
+      JWT_ACCESS_SECRET: 'p'.repeat(40),
+      APP_URL: 'https://app.ejemplo.com',
+    };
+
+    it('en desarrollo el proveedor por defecto es memory', () => {
+      expect(parseEnv({ NODE_ENV: 'development' }).MAIL_PROVIDER).toBe('memory');
+    });
+
+    it('en producción no permite memory (perdería los correos)', () => {
+      expect(() => parseEnv({ ...prod, MAIL_PROVIDER: 'memory' })).toThrow(/MAIL_PROVIDER/);
+    });
+
+    it('gmail exige usuario y contraseña de aplicación y acepta la clave con espacios', () => {
+      expect(() => parseEnv({ ...prod, MAIL_PROVIDER: 'gmail' })).toThrow(/GMAIL_USER/);
+      const env = parseEnv({
+        ...prod,
+        MAIL_PROVIDER: 'gmail',
+        GMAIL_USER: 'avisos@gmail.com',
+        GMAIL_APP_PASSWORD: 'abcd efgh ijkl mnop',
+      });
+      expect(env.GMAIL_APP_PASSWORD).toBe('abcdefghijklmnop');
+    });
+
+    it('resend exige clave y remitente', () => {
+      expect(() => parseEnv({ ...prod, MAIL_PROVIDER: 'resend' })).toThrow(/RESEND_API_KEY/);
+      expect(() =>
+        parseEnv({ ...prod, MAIL_PROVIDER: 'resend', RESEND_API_KEY: 're_12345678' }),
+      ).toThrow(/MAIL_FROM/);
+    });
+
+    it('valida el correo de contacto y el tiempo de vida del enlace de recuperación', () => {
+      expect(() => parseEnv({ NODE_ENV: 'test', CONTACT_RECIPIENT_EMAIL: 'x' })).toThrow(
+        /CONTACT_RECIPIENT_EMAIL/,
+      );
+      expect(() => parseEnv({ NODE_ENV: 'test', RESET_TOKEN_TTL_MINUTES: '1' })).toThrow(
+        /RESET_TOKEN_TTL_MINUTES/,
+      );
+      expect(parseEnv({ NODE_ENV: 'test' }).RESET_TOKEN_TTL_MINUTES).toBe(30);
+    });
   });
 });
