@@ -11,13 +11,15 @@
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "seed:admin": "tsx --env-file-if-exists=.env scripts/seed-admin.ts"
+    "seed:admin": "tsx --env-file-if-exists=.env scripts/seed-admin.ts",
+    "mail:test": "tsx --env-file-if-exists=.env scripts/send-test-mail.ts"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.4",
+    "@types/nodemailer": "^8.0.2",
     "@types/supertest": "^7.2.1",
     "mongodb-memory-server": "^11.3.0",
     "pino-pretty": "^13.2.0",
@@ -36,6 +38,7 @@
     "helmet": "^8.3.0",
     "jose": "^6.2.12",
     "mongoose": "^9.11.0",
+    "nodemailer": "^10.0.15",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
     "zod": "^4.6.5"
