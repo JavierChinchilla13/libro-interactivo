@@ -10,6 +10,7 @@ import { systemClock, type Clock } from './lib/clock.js';
 import type { Logger } from './lib/logger.js';
 import { createGuards, type Guards } from './middleware/auth.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error.js';
+import { createRequireUnlocked } from './middleware/unlocked.js';
 import { createSameOriginGuard } from './middleware/sameOrigin.js';
 import type { MailProvider } from './providers/mail/MailProvider.js';
 import { createMailProvider } from './providers/mail/createMailProvider.js';
@@ -18,6 +19,10 @@ import { createAccountService } from './services/account.service.js';
 import { createAuthService, type AuthService } from './services/auth.service.js';
 import { createContactService } from './services/contact.service.js';
 import { createPasswordResetService } from './services/passwordReset.service.js';
+import { createProgressService } from './services/progress.service.js';
+import { cryptoRandomInt, type RandomInt } from './services/quiz-engine.js';
+import { createQuizService } from './services/quiz.service.js';
+import { createQuizPublishService } from './services/quizPublish.service.js';
 import { createTokenService } from './services/token.service.js';
 
 export interface AppDeps {
@@ -37,6 +42,7 @@ export interface AppDeps {
     | 'GMAIL_APP_PASSWORD'
     | 'RESEND_API_KEY'
     | 'CONTACT_RECIPIENT_EMAIL'
+    | 'REQUIRE_QR_UNLOCK'
   >;
   logger: Logger;
   isDbUp: () => boolean;
@@ -48,6 +54,8 @@ export interface AppDeps {
   mail?: MailProvider;
   /** Ejecutor de tareas en segundo plano (envío de correos); por defecto uno propio. */
   tasks?: BackgroundTasks;
+  /** Azar del barajado y de los empates de quizzes; por defecto `crypto`. Inyectable para pruebas con semilla. */
+  random?: RandomInt;
 }
 
 /** Piezas compartidas que los módulos de rutas reutilizan (guards de sesión y rol, servicio de auth). */
@@ -97,6 +105,11 @@ export function createApp(
     ipSecret: deps.env.JWT_ACCESS_SECRET,
   });
 
+  const progress = createProgressService({ requireQrUnlock: deps.env.REQUIRE_QR_UNLOCK });
+  const quizzes = createQuizService({ progress, clock, random: deps.random ?? cryptoRandomInt });
+  const quizPublisher = createQuizPublishService({ clock, quizzes });
+  const requireUnlocked = createRequireUnlocked(progress);
+
   const app = express();
   app.disable('x-powered-by');
   if (deps.env.NODE_ENV === 'production') app.set('trust proxy', 1); // Render está detrás de un proxy
@@ -122,6 +135,10 @@ export function createApp(
       account,
       recovery,
       contact,
+      quizzes,
+      progress,
+      quizPublisher,
+      requireUnlocked,
       guards,
       limits: { ...DEFAULT_LIMITS, ...deps.limits },
     }),
