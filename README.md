@@ -2,7 +2,7 @@
 
 Plataforma web que acompaña la saga de libros "Memorias": sitio público, cuentas de lectores, quizzes, juego final, capítulos extra, actualizaciones, personajes, glosario, fan arts, reseñas y panel de administración. Todo el contenido vive en la base de datos y está organizado por libro.
 
-**Estado:** Fase 2 (base técnica del monorepo). Aún no hay funcionalidades; la portada solo muestra el estado del servidor.
+**Estado:** el backend llega hasta la Fase 6 (cuentas, recuperación de contraseña, contacto, motor de quizzes con progresión y resultados). La web sigue siendo la portada provisoria: las pantallas se construyen en las fases siguientes.
 
 ## Stack
 React + TypeScript (Vite) · Node.js + Express (TypeScript) · MongoDB Atlas (Mongoose) · Cloudinary (imágenes) · almacenamiento S3-compatible (documentos privados) · Render. Monorepo con npm workspaces: `apps/web`, `apps/api`, `packages/shared`.
