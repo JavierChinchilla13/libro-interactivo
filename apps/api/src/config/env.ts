@@ -45,6 +45,14 @@ const envSchema = z.object({
     .pipe(z.string().min(8))
     .optional(),
   RESEND_API_KEY: z.string().min(8).optional(),
+  /**
+   * Exige haber canjeado el QR de un quiz para abrirlo (fase 8). Mientras no exista el canje va en `false`
+   * y solo rigen los prerrequisitos de progresión.
+   */
+  REQUIRE_QR_UNLOCK: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
   /** Correo de la autora donde llegan los mensajes de contacto (hasta que se configure en el panel). */
   CONTACT_RECIPIENT_EMAIL: z.email('debe ser un correo válido').optional(),
 });

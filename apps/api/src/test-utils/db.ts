@@ -2,11 +2,16 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { afterAll, beforeAll, beforeEach } from 'vitest';
 import { connectDb, disconnectDb } from '../db/connect.js';
+import { Book } from '../models/Book.js';
 import { ContactMessage } from '../models/ContactMessage.js';
 import { PasswordReset } from '../models/PasswordReset.js';
+import { Quiz } from '../models/Quiz.js';
+import { QuizAttempt } from '../models/QuizAttempt.js';
+import { QuizVersion } from '../models/QuizVersion.js';
 import { RefreshToken } from '../models/RefreshToken.js';
 import { SiteSettings } from '../models/SiteSettings.js';
 import { User } from '../models/User.js';
+import { UserProgress } from '../models/UserProgress.js';
 
 /**
  * Registra los hooks de Vitest para usar una MongoDB en memoria: arranca una por archivo de prueba,
@@ -24,6 +29,11 @@ export function useTestDb(): void {
       PasswordReset.init(),
       ContactMessage.init(),
       SiteSettings.init(),
+      Book.init(),
+      Quiz.init(),
+      QuizVersion.init(),
+      QuizAttempt.init(),
+      UserProgress.init(),
     ]);
   });
 
