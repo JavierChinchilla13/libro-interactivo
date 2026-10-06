@@ -66,11 +66,12 @@ describe('guards de /admin (solo mejoran la experiencia; la seguridad es del API
     expect(screen.getByText(/Editora/)).toBeInTheDocument();
   });
 
-  it('una administradora ve además las secciones solo para administradores (apagadas)', async () => {
+  it('una administradora ve además Códigos QR y las secciones solo para administradores que aún no existen (apagadas)', async () => {
     mockApi('ADMIN');
     renderAt('/admin');
     expect(await screen.findByText('Solo administradores')).toBeInTheDocument();
-    expect(screen.getByText('Códigos QR')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('link', { name: 'Códigos QR' })).toBeInTheDocument();
+    expect(screen.getByText('Usuarios')).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('un error de red al comprobar la sesión se avisa, no se manda al login', async () => {
@@ -82,6 +83,21 @@ describe('guards de /admin (solo mejoran la experiencia; la seguridad es del API
     );
     renderAt('/admin');
     expect(await screen.findByText('No pudimos comprobar tu sesión')).toBeInTheDocument();
+  });
+});
+
+describe('sección de códigos QR (solo administradoras)', () => {
+  it('una editora no ve el enlace y, si entra por la dirección, recibe «sin permiso»', async () => {
+    mockApi('EDITOR');
+    renderAt('/admin/qr');
+    expect(await screen.findByText('No tienes permiso para ver esta página')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Códigos QR' })).not.toBeInTheDocument();
+  });
+
+  it('una administradora entra a /admin/qr', async () => {
+    mockApi('ADMIN');
+    renderAt('/admin/qr');
+    expect(await screen.findByRole('heading', { name: 'Códigos QR' })).toBeInTheDocument();
   });
 });
 
