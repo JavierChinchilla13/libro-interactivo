@@ -9,6 +9,8 @@ export default defineConfig({
   testDir: './e2e',
   globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
+  // La primera carga en frío de Vite compila TipTap y el panel: se da más margen a las aserciones.
+  expect: { timeout: 10_000 },
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
   reporter: isCI ? [['github'], ['html', { open: 'never' }]] : 'list',
@@ -38,7 +40,8 @@ export default defineConfig({
     {
       command: 'npm run dev -w apps/api',
       url: 'http://localhost:3000/api/health',
-      env: { MONGODB_URI: E2E_DB_URI },
+      // En la E2E el desbloqueo por QR va encendido (como en producción).
+      env: { MONGODB_URI: E2E_DB_URI, REQUIRE_QR_UNLOCK: 'true' },
       reuseExistingServer: !isCI,
       timeout: 60_000,
     },
