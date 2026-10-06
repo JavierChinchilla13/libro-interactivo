@@ -12,10 +12,17 @@ import { createGuards, type Guards } from './middleware/auth.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error.js';
 import { createRequireUnlocked } from './middleware/unlocked.js';
 import { createImageProvider, type ImageProvider } from './providers/images/ImageProvider.js';
+import { S3StorageProvider, s3ConfigFromEnv } from './providers/storage/S3StorageProvider.js';
+import {
+  MemoryStorageProvider,
+  type StorageProvider,
+} from './providers/storage/StorageProvider.js';
 import { createSameOriginGuard } from './middleware/sameOrigin.js';
 import type { MailProvider } from './providers/mail/MailProvider.js';
 import { createMailProvider } from './providers/mail/createMailProvider.js';
 import { createApiRouter } from './routes/index.js';
+import { createAccessService } from './services/access.service.js';
+import { createExtraService } from './services/extra.service.js';
 import { createAccountService } from './services/account.service.js';
 import { createAuthService, type AuthService } from './services/auth.service.js';
 import { createContactService } from './services/contact.service.js';
@@ -28,6 +35,11 @@ import { createBookService } from './services/book.service.js';
 import { createQuizAdminService } from './services/quizAdmin.service.js';
 import { createWikiService } from './services/wiki.service.js';
 import { createTokenService } from './services/token.service.js';
+
+/** Oculta el token de un QR en una URL (para logs). */
+export function maskAccessToken(url: string | undefined): string | undefined {
+  return url?.replace(/(\/access\/resolve\/)[^/?#]+/, '$1[REDACTADO]');
+}
 
 export interface AppDeps {
   env: Pick<
@@ -47,6 +59,13 @@ export interface AppDeps {
     | 'RESEND_API_KEY'
     | 'CONTACT_RECIPIENT_EMAIL'
     | 'REQUIRE_QR_UNLOCK'
+    | 'ACCESS_TOKEN_SECRET'
+    | 'S3_ENDPOINT'
+    | 'S3_BUCKET'
+    | 'S3_ACCESS_KEY_ID'
+    | 'S3_SECRET_ACCESS_KEY'
+    | 'S3_REGION'
+    | 'S3_FORCE_PATH_STYLE'
     | 'CLOUDINARY_CLOUD_NAME'
     | 'CLOUDINARY_API_KEY'
     | 'CLOUDINARY_API_SECRET'
@@ -65,6 +84,8 @@ export interface AppDeps {
   random?: RandomInt;
   /** Proveedor de imágenes (firma de subida); por defecto Cloudinary si hay credenciales. */
   images?: ImageProvider;
+  /** Almacenamiento privado S3-compatible; por defecto el real si hay credenciales o uno en memoria. */
+  storage?: StorageProvider;
 }
 
 /** Piezas compartidas que los módulos de rutas reutilizan (guards de sesión y rol, servicio de auth). */
@@ -122,6 +143,16 @@ export function createApp(
   const books = createBookService();
   const wiki = createWikiService();
   const images = deps.images ?? createImageProvider(deps.env);
+  const s3 = s3ConfigFromEnv(deps.env);
+  const storage =
+    deps.storage ?? (s3 ? new S3StorageProvider({ ...s3, clock }) : new MemoryStorageProvider());
+  const access = createAccessService({
+    secret: deps.env.ACCESS_TOKEN_SECRET,
+    appUrl: deps.env.APP_URL,
+    clock,
+    progress,
+  });
+  const extras = createExtraService({ storage, progress, clock });
 
   const app = express();
   app.disable('x-powered-by');
@@ -131,6 +162,8 @@ export function createApp(
     pinoHttp({
       logger: deps.logger,
       autoLogging: { ignore: (req) => req.url === '/api/health' },
+      // El token del QR viaja en la URL de /access/resolve: nunca debe quedar en los logs.
+      serializers: { req: (req: { url?: string }) => ({ ...req, url: maskAccessToken(req.url) }) },
     }),
   );
   app.use(helmet());
@@ -155,6 +188,8 @@ export function createApp(
       books,
       wiki,
       images,
+      access,
+      extras,
       clock,
       requireUnlocked,
       guards,
