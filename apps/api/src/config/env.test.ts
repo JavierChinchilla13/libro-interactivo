@@ -25,6 +25,7 @@ describe('parseEnv', () => {
       const problems = (error as EnvError).problems.join('\n');
       expect(problems).toContain('MONGODB_URI');
       expect(problems).toContain('CORS_ORIGIN');
+      expect(problems).toContain('JWT_ACCESS_SECRET');
     }
   });
 
@@ -39,11 +40,18 @@ describe('parseEnv', () => {
     expect(() => parseEnv({ NODE_ENV: 'staging' })).toThrow(/NODE_ENV/);
   });
 
+  it('rechaza un JWT_ACCESS_SECRET corto', () => {
+    expect(() => parseEnv({ NODE_ENV: 'development', JWT_ACCESS_SECRET: 'corta' })).toThrow(
+      /JWT_ACCESS_SECRET/,
+    );
+  });
+
   it('acepta una configuración de producción completa', () => {
     const env = parseEnv({
       NODE_ENV: 'production',
       MONGODB_URI: 'mongodb+srv://cluster-de-prueba.example.net/libro',
       CORS_ORIGIN: 'https://app.ejemplo.com',
+      JWT_ACCESS_SECRET: 'a'.repeat(40),
       PORT: '10000',
     });
     expect(env.PORT).toBe(10000);
