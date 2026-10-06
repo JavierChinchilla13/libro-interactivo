@@ -15,6 +15,13 @@ describe('parseEnv', () => {
     expect(() => parseEnv({ NODE_ENV: 'test', REQUIRE_QR_UNLOCK: 'si' })).toThrow(EnvError);
   });
 
+  it('Cloudinary: las tres variables juntas o ninguna', () => {
+    expect(parseEnv({ NODE_ENV: 'test' }).CLOUDINARY_API_KEY).toBeUndefined();
+    const all = { CLOUDINARY_CLOUD_NAME: 'demo', CLOUDINARY_API_KEY: '123', CLOUDINARY_API_SECRET: 'abc' };
+    expect(parseEnv({ NODE_ENV: 'test', ...all }).CLOUDINARY_CLOUD_NAME).toBe('demo');
+    expect(() => parseEnv({ NODE_ENV: 'test', CLOUDINARY_CLOUD_NAME: 'demo' })).toThrow(EnvError);
+  });
+
   it('separa varios orígenes de CORS por coma', () => {
     const env = parseEnv({
       NODE_ENV: 'test',

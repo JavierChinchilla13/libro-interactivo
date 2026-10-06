@@ -9,6 +9,7 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   TOKEN_INVALID: 400,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  UNAVAILABLE: 503,
   RATE_LIMITED: 429,
   INTERNAL: 500,
 };
