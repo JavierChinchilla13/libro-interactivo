@@ -9,6 +9,8 @@ export interface Limits {
   forgotPassword: RateLimitOptions;
   resetPassword: RateLimitOptions;
   contact: RateLimitOptions;
+  accessResolve: RateLimitOptions;
+  accessRedeem: RateLimitOptions;
 }
 
 /** Generosos a propósito: en ferias y eventos muchas personas comparten una misma red. */
@@ -20,4 +22,6 @@ export const DEFAULT_LIMITS: Limits = {
   forgotPassword: { windowMs: 60 * 60_000, limit: 10 },
   resetPassword: { windowMs: 60 * 60_000, limit: 20 },
   contact: { windowMs: 60 * 60_000, limit: 5 },
+  accessResolve: { windowMs: 15 * 60_000, limit: 60 },
+  accessRedeem: { windowMs: 15 * 60_000, limit: 30 },
 };
