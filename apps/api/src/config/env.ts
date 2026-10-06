@@ -27,9 +27,50 @@ const envSchema = z.object({
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
   /** Dominio de las cookies de sesión (opcional; p. ej. .midominio.com si web y API están en subdominios). */
   COOKIE_DOMAIN: z.string().min(1).optional(),
+  /** URL pública del sitio web; se usa para armar los enlaces de los correos (p. ej. restablecer contraseña). */
+  APP_URL: z
+    .url('debe ser una URL completa, p. ej. https://app.midominio.com')
+    .transform((url) => url.replace(/\/+$/, '')),
+  /** Cuánto dura el enlace de recuperación de contraseña. */
+  RESET_TOKEN_TTL_MINUTES: z.coerce.number().int().min(5).max(1440).default(30),
+  /** Proveedor de correo: `memory` (solo desarrollo/pruebas), `gmail` (SMTP) o `resend` (API HTTP). */
+  MAIL_PROVIDER: z.enum(['memory', 'gmail', 'resend']),
+  /** Remitente, p. ej. `Libro Interactivo <avisos@midominio.com>`. Obligatorio con Resend; con Gmail es la propia cuenta. */
+  MAIL_FROM: z.string().min(3).optional(),
+  GMAIL_USER: z.email('debe ser un correo de Gmail').optional(),
+  /** Contraseña de aplicación de Google (16 caracteres; se aceptan con espacios). Nunca la contraseña normal. */
+  GMAIL_APP_PASSWORD: z
+    .string()
+    .transform((value) => value.replace(/\s+/g, ''))
+    .pipe(z.string().min(8))
+    .optional(),
+  RESEND_API_KEY: z.string().min(8).optional(),
+  /** Correo de la autora donde llegan los mensajes de contacto (hasta que se configure en el panel). */
+  CONTACT_RECIPIENT_EMAIL: z.email('debe ser un correo válido').optional(),
 });
 
-export type Env = z.infer<typeof envSchema>;
+const envSchemaChecked = envSchema.superRefine((env, ctx) => {
+  const need = (name: keyof typeof env, reason: string) => {
+    if (env[name] === undefined) ctx.addIssue({ code: 'custom', path: [name], message: reason });
+  };
+  if (env.NODE_ENV === 'production' && env.MAIL_PROVIDER === 'memory') {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['MAIL_PROVIDER'],
+      message: 'en producción debe ser gmail o resend (memory perdería todos los correos)',
+    });
+  }
+  if (env.MAIL_PROVIDER === 'gmail') {
+    need('GMAIL_USER', 'es obligatoria con MAIL_PROVIDER=gmail');
+    need('GMAIL_APP_PASSWORD', 'es obligatoria con MAIL_PROVIDER=gmail');
+  }
+  if (env.MAIL_PROVIDER === 'resend') {
+    need('RESEND_API_KEY', 'es obligatoria con MAIL_PROVIDER=resend');
+    need('MAIL_FROM', 'es obligatoria con MAIL_PROVIDER=resend (dominio verificado en Resend)');
+  }
+});
+
+export type Env = z.infer<typeof envSchemaChecked>;
 
 /** Valores que solo se asumen fuera de producción, para que `npm run dev` funcione sin configurar nada. */
 const DEV_DEFAULTS: Record<string, string> = {
@@ -37,6 +78,8 @@ const DEV_DEFAULTS: Record<string, string> = {
   CORS_ORIGIN: 'http://localhost:5173',
   // Solo para desarrollo y pruebas: en producción JWT_ACCESS_SECRET es obligatoria.
   JWT_ACCESS_SECRET: 'solo-para-desarrollo-no-usar-en-produccion-0123456789',
+  APP_URL: 'http://localhost:5173',
+  MAIL_PROVIDER: 'memory',
 };
 
 export class EnvError extends Error {
@@ -60,7 +103,7 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const provided = definedOnly(source);
   const isProduction = provided['NODE_ENV'] === 'production';
   const input = isProduction ? provided : { ...DEV_DEFAULTS, ...provided };
-  const result = envSchema.safeParse(input);
+  const result = envSchemaChecked.safeParse(input);
   if (!result.success) {
     throw new EnvError(
       result.error.issues.map((issue) => `${issue.path.join('.') || 'env'}: ${issue.message}`),
