@@ -6,3 +6,7 @@ export * from './schemas/common.js';
 export * from './schemas/contact.js';
 export * from './schemas/health.js';
 export * from './schemas/quiz.js';
+export * from './schemas/adminQuiz.js';
+export * from './schemas/book.js';
+export * from './schemas/upload.js';
+export * from './schemas/wiki.js';
