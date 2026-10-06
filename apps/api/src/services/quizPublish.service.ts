@@ -10,14 +10,35 @@ import { canonicalJson } from '../lib/canonicalJson.js';
 import type { Clock } from '../lib/clock.js';
 import { AppError } from '../lib/errors.js';
 import { sha256Hex } from '../lib/crypto.js';
+import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { Quiz } from '../models/Quiz.js';
 import { QuizVersion } from '../models/QuizVersion.js';
 import type { Actor } from './progress.service.js';
 import type { QuizService } from './quiz.service.js';
 import { validateQuizContent } from './quiz-engine.js';
+import { sanitizeQuizHtml } from './quizContent.js';
 
-function isDuplicateKey(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 11000;
+/** Hash (SHA-256) del contenido canónico: detecta publicar sin cambios y borradores distintos de lo publicado. */
+export function hashQuizContent(content: QuizContent): string {
+  return `sha256:${sha256Hex(canonicalJson(content))}`;
+}
+
+/** Contenido del borrador de un quiz tal como está guardado (aún sin validar). */
+export function draftContentOf(quiz: {
+  title: string;
+  instructionsHtml: string;
+  image?: unknown;
+  settings: unknown;
+  draft?: { stages?: unknown; results?: unknown } | null | undefined;
+}): unknown {
+  return {
+    title: quiz.title,
+    instructionsHtml: quiz.instructionsHtml,
+    ...(quiz.image ? { image: quiz.image } : {}),
+    settings: quiz.settings,
+    stages: quiz.draft?.stages ?? [],
+    results: quiz.draft?.results ?? [],
+  };
 }
 
 type Checked =
@@ -38,14 +59,7 @@ export function createQuizPublishService(deps: QuizPublishDeps) {
   async function check(quizId: string) {
     const quiz = await Quiz.findById(quizId).lean();
     if (!quiz) throw new AppError('NOT_FOUND', 'No encontramos ese quiz');
-    const parsed = quizContentSchema.safeParse({
-      title: quiz.title,
-      instructionsHtml: quiz.instructionsHtml,
-      ...(quiz.image ? { image: quiz.image } : {}),
-      settings: quiz.settings,
-      stages: quiz.draft?.stages ?? [],
-      results: quiz.draft?.results ?? [],
-    });
+    const parsed = quizContentSchema.safeParse(draftContentOf(quiz));
     if (!parsed.success) {
       const errors = parsed.error.issues.map((issue) => ({
         code: 'SCHEMA',
@@ -54,9 +68,11 @@ export function createQuizPublishService(deps: QuizPublishDeps) {
       }));
       return { quiz, checked: { ok: false, errors, warnings: [] } satisfies Checked };
     }
-    const { errors, warnings } = validateQuizContent(parsed.data);
+    // El HTML ya se sanea al guardar el borrador; se vuelve a sanear al publicar por si el borrador vino de otra vía (seed).
+    const content = sanitizeQuizHtml(parsed.data);
+    const { errors, warnings } = validateQuizContent(content);
     const checked: Checked =
-      errors.length > 0 ? { ok: false, errors, warnings } : { ok: true, content: parsed.data, warnings };
+      errors.length > 0 ? { ok: false, errors, warnings } : { ok: true, content, warnings };
     return { quiz, checked };
   }
 
@@ -78,7 +94,7 @@ export function createQuizPublishService(deps: QuizPublishDeps) {
       throw new AppError('VALIDATION', `El quiz tiene errores: ${first.join('; ')}${more}`);
     }
 
-    const contentHash = `sha256:${sha256Hex(canonicalJson(checked.content))}`;
+    const contentHash = hashQuizContent(checked.content);
     const last = await QuizVersion.findOne({ quizId }).sort({ version: -1 }).select('version contentHash').lean();
     if (last?.contentHash === contentHash && quiz.status === 'published') {
       throw new AppError('CONFLICT', 'No hay cambios desde la última versión publicada');

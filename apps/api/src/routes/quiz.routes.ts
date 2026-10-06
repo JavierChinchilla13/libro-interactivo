@@ -6,10 +6,12 @@ import {
   submitAnswersRequestSchema,
 } from '@libro/shared';
 import { Router } from 'express';
+import type { createAdminQuizEditorController } from '../controllers/admin.controller.js';
 import type { createAdminQuizController, createQuizController } from '../controllers/quiz.controller.js';
 import type { Guards } from '../middleware/auth.js';
 import type { RequireUnlocked } from '../middleware/unlocked.js';
 import { validate } from '../middleware/validate.js';
+import { mountQuizEditorRoutes } from './admin.routes.js';
 
 type QuizController = ReturnType<typeof createQuizController>;
 type AdminQuizController = ReturnType<typeof createAdminQuizController>;
@@ -50,13 +52,18 @@ export function createLearningRouter(controller: QuizController, guards: Guards)
   return router;
 }
 
-/** `/admin/quizzes`: validar, publicar y probar (EDITOR o ADMIN). El editor completo llega en la fase 7. */
-export function createAdminQuizRouter(controller: AdminQuizController, guards: Guards): Router {
+/** `/admin/quizzes`: editar el borrador, validar, publicar y probar (EDITOR o ADMIN). */
+export function createAdminQuizRouter(
+  controller: AdminQuizController,
+  editor: ReturnType<typeof createAdminQuizEditorController>,
+  guards: Guards,
+): Router {
   const router = Router();
   router.use(guards.requireAuth, guards.requireRole('EDITOR', 'ADMIN'));
   const params = validate({ params: quizParamsSchema });
   router.post('/:quizId/validate', params, controller.validateQuiz);
   router.post('/:quizId/publish', params, controller.publish);
   router.post('/:quizId/preview', params, controller.preview);
+  mountQuizEditorRoutes(router, editor);
   return router;
 }
