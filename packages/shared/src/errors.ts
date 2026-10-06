@@ -11,6 +11,7 @@ export const ERROR_CODES = [
   'TOKEN_INVALID',
   'RATE_LIMITED',
   'CONFLICT',
+  'UNAVAILABLE',
   'INTERNAL',
 ] as const;
 export const errorCodeSchema = z.enum(ERROR_CODES);

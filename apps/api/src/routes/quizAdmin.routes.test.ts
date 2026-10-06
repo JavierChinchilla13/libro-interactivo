@@ -13,7 +13,12 @@ import { UserProgress } from '../models/UserProgress.js';
 import { createTestHarness } from '../test-utils/app.js';
 import { createUser, loginAgent } from '../test-utils/auth.js';
 import { useTestDb } from '../test-utils/db.js';
-import { createBook, createQuiz, simpleContent, twoStageContent } from '../test-utils/quizFixtures.js';
+import {
+  createBook,
+  createQuiz,
+  simpleContent,
+  twoStageContent,
+} from '../test-utils/quizFixtures.js';
 
 useTestDb();
 
@@ -58,7 +63,9 @@ describe('permisos de /api/admin/quizzes', () => {
   it('valida el id (400) y responde 404 si el quiz no existe', async () => {
     const { admin } = await world();
     expect((await admin.post('/api/admin/quizzes/xx/validate')).status).toBe(400);
-    expect((await admin.post('/api/admin/quizzes/670000000000000000000099/publish')).status).toBe(404);
+    expect((await admin.post('/api/admin/quizzes/670000000000000000000099/publish')).status).toBe(
+      404,
+    );
   });
 });
 
@@ -67,7 +74,11 @@ describe('POST /api/admin/quizzes/:id/validate', () => {
     const { admin, book } = await world();
     const quiz = await createQuiz({ bookId: book._id, order: 1, content: twoStageContent() });
     const res = await admin.post(`/api/admin/quizzes/${quiz._id.toString()}/validate`).expect(200);
-    expect(quizValidationResponseSchema.parse(res.body)).toEqual({ valid: true, errors: [], warnings: [] });
+    expect(quizValidationResponseSchema.parse(res.body)).toEqual({
+      valid: true,
+      errors: [],
+      warnings: [],
+    });
   });
 
   it('informa de los errores de integridad con su código y su ubicación', async () => {
@@ -153,14 +164,18 @@ describe('POST /api/admin/quizzes/:id/publish', () => {
     const { admin, book } = await world();
     const quiz = await createQuiz({ bookId: book._id, order: 1, content: simpleContent() });
     await Quiz.updateOne({ _id: quiz._id }, { $set: { status: 'archived' } });
-    expect((await admin.post(`/api/admin/quizzes/${quiz._id.toString()}/publish`)).status).toBe(409);
+    expect((await admin.post(`/api/admin/quizzes/${quiz._id.toString()}/publish`)).status).toBe(
+      409,
+    );
   });
 
   it('dos publicaciones simultáneas crean una sola versión', async () => {
     const { admin, book } = await world();
     const quiz = await createQuiz({ bookId: book._id, order: 1, content: simpleContent() });
     const url = `/api/admin/quizzes/${quiz._id.toString()}/publish`;
-    const statuses = (await Promise.all([admin.post(url), admin.post(url)])).map((res) => res.status);
+    const statuses = (await Promise.all([admin.post(url), admin.post(url)])).map(
+      (res) => res.status,
+    );
     expect(statuses.filter((status) => status === 201)).toHaveLength(1);
     expect(await QuizVersion.countDocuments()).toBe(1);
   });
@@ -179,7 +194,9 @@ describe('POST /api/admin/quizzes/:id/preview', () => {
   it('exige haber publicado alguna vez (409)', async () => {
     const { admin, book } = await world();
     const quiz = await createQuiz({ bookId: book._id, order: 1, content: simpleContent() });
-    expect((await admin.post(`/api/admin/quizzes/${quiz._id.toString()}/preview`)).status).toBe(409);
+    expect((await admin.post(`/api/admin/quizzes/${quiz._id.toString()}/preview`)).status).toBe(
+      409,
+    );
   });
 
   it('crea un intento de prueba que no cuenta en progreso', async () => {
@@ -205,13 +222,13 @@ describe('quizVersions es inmutable', () => {
     await admin.post(`/api/admin/quizzes/${quiz._id.toString()}/publish`).expect(201);
     const version = await QuizVersion.findOne({ quizId: quiz._id }).orFail();
 
-    await expect(QuizVersion.updateOne({ _id: version._id }, { $set: { title: 'otro' } })).rejects.toThrow(
-      /inmutables/,
-    );
+    await expect(
+      QuizVersion.updateOne({ _id: version._id }, { $set: { title: 'otro' } }),
+    ).rejects.toThrow(/inmutables/);
     await expect(QuizVersion.deleteOne({ _id: version._id })).rejects.toThrow(/inmutables/);
-    await expect(QuizVersion.findOneAndUpdate({ _id: version._id }, { title: 'otro' })).rejects.toThrow(
-      /inmutables/,
-    );
+    await expect(
+      QuizVersion.findOneAndUpdate({ _id: version._id }, { title: 'otro' }),
+    ).rejects.toThrow(/inmutables/);
 
     // Tampoco con save() sobre un documento cargado.
     version.title = 'otro';

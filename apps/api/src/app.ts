@@ -11,6 +11,7 @@ import type { Logger } from './lib/logger.js';
 import { createGuards, type Guards } from './middleware/auth.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error.js';
 import { createRequireUnlocked } from './middleware/unlocked.js';
+import { createImageProvider, type ImageProvider } from './providers/images/ImageProvider.js';
 import { createSameOriginGuard } from './middleware/sameOrigin.js';
 import type { MailProvider } from './providers/mail/MailProvider.js';
 import { createMailProvider } from './providers/mail/createMailProvider.js';
@@ -23,6 +24,9 @@ import { createProgressService } from './services/progress.service.js';
 import { cryptoRandomInt, type RandomInt } from './services/quiz-engine.js';
 import { createQuizService } from './services/quiz.service.js';
 import { createQuizPublishService } from './services/quizPublish.service.js';
+import { createBookService } from './services/book.service.js';
+import { createQuizAdminService } from './services/quizAdmin.service.js';
+import { createWikiService } from './services/wiki.service.js';
 import { createTokenService } from './services/token.service.js';
 
 export interface AppDeps {
@@ -43,6 +47,9 @@ export interface AppDeps {
     | 'RESEND_API_KEY'
     | 'CONTACT_RECIPIENT_EMAIL'
     | 'REQUIRE_QR_UNLOCK'
+    | 'CLOUDINARY_CLOUD_NAME'
+    | 'CLOUDINARY_API_KEY'
+    | 'CLOUDINARY_API_SECRET'
   >;
   logger: Logger;
   isDbUp: () => boolean;
@@ -56,6 +63,8 @@ export interface AppDeps {
   tasks?: BackgroundTasks;
   /** Azar del barajado y de los empates de quizzes; por defecto `crypto`. Inyectable para pruebas con semilla. */
   random?: RandomInt;
+  /** Proveedor de imágenes (firma de subida); por defecto Cloudinary si hay credenciales. */
+  images?: ImageProvider;
 }
 
 /** Piezas compartidas que los módulos de rutas reutilizan (guards de sesión y rol, servicio de auth). */
@@ -109,6 +118,10 @@ export function createApp(
   const quizzes = createQuizService({ progress, clock, random: deps.random ?? cryptoRandomInt });
   const quizPublisher = createQuizPublishService({ clock, quizzes });
   const requireUnlocked = createRequireUnlocked(progress);
+  const quizAdmin = createQuizAdminService({ clock });
+  const books = createBookService();
+  const wiki = createWikiService();
+  const images = deps.images ?? createImageProvider(deps.env);
 
   const app = express();
   app.disable('x-powered-by');
@@ -138,6 +151,11 @@ export function createApp(
       quizzes,
       progress,
       quizPublisher,
+      quizAdmin,
+      books,
+      wiki,
+      images,
+      clock,
       requireUnlocked,
       guards,
       limits: { ...DEFAULT_LIMITS, ...deps.limits },

@@ -14,7 +14,7 @@ const quizSchema = new Schema(
     /** Posición en la secuencia de progresión (Quiz 1 → 2 → … → juego). */
     order: { type: Number, required: true, min: 1 },
     title: { type: String, required: true, trim: true, maxlength: 160 },
-    instructionsHtml: { type: String, required: true, default: '' },
+    instructionsHtml: { type: String, default: '' },
     image: { type: Schema.Types.Mixed },
     status: { type: String, enum: [...QUIZ_STATUSES], required: true, default: 'draft' },
     /** Última versión publicada (0 = nunca). */

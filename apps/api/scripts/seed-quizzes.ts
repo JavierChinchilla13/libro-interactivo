@@ -24,7 +24,9 @@ try {
   await connectDb(env.MONGODB_URI);
   const admin = await User.findOne({ role: 'ADMIN', status: 'active' }).sort({ createdAt: 1 });
   if (!admin) {
-    console.error('No hay ningún administrador. Crea uno primero con `npm run seed:admin -w apps/api`.');
+    console.error(
+      'No hay ningún administrador. Crea uno primero con `npm run seed:admin -w apps/api`.',
+    );
     process.exit(1);
   }
   const progress = createProgressService({ requireQrUnlock: false });

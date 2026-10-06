@@ -71,8 +71,10 @@ async function world(
   const admin = await createUser({ email: 'admin@ejemplo.com', role: 'ADMIN' });
   const user = await createUser();
   const book = await createBook();
-  const make = (order: number, content: QuizContent = simpleContent({ title: `[PLACEHOLDER] Quiz ${order}` })) =>
-    createQuiz({ bookId: book._id, order, content, publishedBy: admin._id });
+  const make = (
+    order: number,
+    content: QuizContent = simpleContent({ title: `[PLACEHOLDER] Quiz ${order}` }),
+  ) => createQuiz({ bookId: book._id, order, content, publishedBy: admin._id });
   return { ...harness, admin, user, book, make, agent: await loginAgent(harness.app) };
 }
 
@@ -87,7 +89,10 @@ describe('acceso a los quizzes', () => {
     const id = quiz._id.toString();
     await request(app).get(`/api/quizzes/${id}`).expect(401);
     await request(app).post(`/api/quizzes/${id}/attempts`).expect(401);
-    await request(app).post(`/api/attempts/${id}/stages/etapa-1/answers`).send({ answers: [] }).expect(401);
+    await request(app)
+      .post(`/api/attempts/${id}/stages/etapa-1/answers`)
+      .send({ answers: [] })
+      .expect(401);
     await request(app).get('/api/me/results').query({ bookId: id }).expect(401);
     await request(app).get(`/api/me/results/${id}`).expect(401);
     await request(app).get('/api/me/progress').query({ bookId: id }).expect(401);
@@ -125,7 +130,9 @@ describe('acceso a los quizzes', () => {
     expect(await QuizAttempt.countDocuments()).toBe(0);
 
     await playSimple(agent, first._id.toString());
-    const intro = quizIntroResponseSchema.parse((await agent.get(`/api/quizzes/${secondId}`).expect(200)).body);
+    const intro = quizIntroResponseSchema.parse(
+      (await agent.get(`/api/quizzes/${secondId}`).expect(200)).body,
+    );
     expect(intro.title).toBe('[PLACEHOLDER] Segundo secreto');
   });
 
@@ -177,7 +184,9 @@ describe('POST /api/quizzes/:id/attempts', () => {
     const url = `/api/quizzes/${quiz._id.toString()}/attempts`;
     const results = await Promise.all([agent.post(url), agent.post(url), agent.post(url)]);
     expect(results.every((res) => res.status === 200)).toBe(true);
-    expect(new Set(results.map((res) => (res.body as { attemptId: string }).attemptId)).size).toBe(1);
+    expect(new Set(results.map((res) => (res.body as { attemptId: string }).attemptId)).size).toBe(
+      1,
+    );
     expect(await QuizAttempt.countDocuments()).toBe(1);
   });
 
@@ -204,7 +213,12 @@ describe('responder y obtener el resultado', () => {
     expect(completed.result.distribution).toBeUndefined();
 
     const attempt = await QuizAttempt.findById(completed.attemptId).lean();
-    expect(attempt).toMatchObject({ status: 'completed', finalResultKey: 'r2', isTest: false, attemptNumber: 1 });
+    expect(attempt).toMatchObject({
+      status: 'completed',
+      finalResultKey: 'r2',
+      isTest: false,
+      attemptNumber: 1,
+    });
     expect(attempt?.stages[0]?.tally).toEqual([{ resultKey: 'r2', count: 3 }]);
 
     const progress = await UserProgress.findOne({ userId: user._id }).lean();
@@ -286,7 +300,10 @@ describe('responder y obtener el resultado', () => {
     const stage = stageOf(started);
     const url = `/api/attempts/${started.attemptId}/stages/${stage.stageId}/answers`;
     const statuses = (
-      await Promise.all([agent.post(url).send(answersAt(stage, 0)), agent.post(url).send(answersAt(stage, 2))])
+      await Promise.all([
+        agent.post(url).send(answersAt(stage, 0)),
+        agent.post(url).send(answersAt(stage, 2)),
+      ])
     ).map((res) => res.status);
     expect(statuses.sort()).toEqual([200, 409]);
     expect(await UserProgress.countDocuments()).toBe(1);
@@ -338,7 +355,9 @@ describe('reglas por quiz: reintentos y porcentajes', () => {
     const progress = await UserProgress.findOne({ userId: user._id }).lean();
     expect(progress?.completed).toHaveLength(1);
     expect(progress?.completed[0]?.currentResultKey).toBe('r3');
-    const intro = quizIntroResponseSchema.parse((await agent.get(`/api/quizzes/${id}`).expect(200)).body);
+    const intro = quizIntroResponseSchema.parse(
+      (await agent.get(`/api/quizzes/${id}`).expect(200)).body,
+    );
     expect(intro).toMatchObject({ status: 'completed', completedCount: 2, canStart: true });
   });
 
@@ -353,9 +372,13 @@ describe('reglas por quiz: reintentos y porcentajes', () => {
     expect(await codeOf(second)).toBe('CONFLICT');
     expect(await QuizAttempt.countDocuments({ quizId: id })).toBe(1);
 
-    const intro = quizIntroResponseSchema.parse((await agent.get(`/api/quizzes/${id}`).expect(200)).body);
+    const intro = quizIntroResponseSchema.parse(
+      (await agent.get(`/api/quizzes/${id}`).expect(200)).body,
+    );
     expect(intro).toMatchObject({ allowRetake: false, canStart: false, status: 'completed' });
-    const results = quizResultsResponseSchema.parse((await agent.get(`/api/me/results/${id}`).expect(200)).body);
+    const results = quizResultsResponseSchema.parse(
+      (await agent.get(`/api/me/results/${id}`).expect(200)).body,
+    );
     expect(results.current.result.key).toBe('r2');
   });
 
@@ -379,13 +402,19 @@ describe('reglas por quiz: reintentos y porcentajes', () => {
     await Quiz.updateOne({ _id: id }, { $set: { 'settings.allowRetake': true } });
     expect((await agent.post(`/api/quizzes/${id}/attempts`)).status).toBe(409);
 
-    await publishDirect(id, admin._id, { ...content, settings: { ...content.settings, allowRetake: true } });
+    await publishDirect(id, admin._id, {
+      ...content,
+      settings: { ...content.settings, allowRetake: true },
+    });
     expect((await agent.post(`/api/quizzes/${id}/attempts`)).status).toBe(200);
   });
 
   it('showBreakdown devuelve el porcentaje de cada resultado (suma 100); sin él, nunca', async () => {
     const { agent, make } = await world({ random: seededRandom(3) });
-    const withBreakdown = await make(1, simpleContent({ questions: 3, settings: { showBreakdown: true } }));
+    const withBreakdown = await make(
+      1,
+      simpleContent({ questions: 3, settings: { showBreakdown: true } }),
+    );
     const without = await make(2, simpleContent({ questions: 3 }));
 
     // 2 respuestas "a" + 1 "b" → r1 67 %, r2 33 %
@@ -395,7 +424,10 @@ describe('reglas por quiz: reintentos y porcentajes', () => {
     const res = await agent
       .post(`/api/attempts/${started.attemptId}/stages/${stage.stageId}/answers`)
       .send({
-        answers: stage.questions.map((q, i) => ({ questionId: q.id, answerId: q.answers[idx[i]!]!.id })),
+        answers: stage.questions.map((q, i) => ({
+          questionId: q.id,
+          answerId: q.answers[idx[i]!]!.id,
+        })),
       })
       .expect(200);
     const body = attemptResponseSchema.parse(res.body);
@@ -411,7 +443,9 @@ describe('reglas por quiz: reintentos y porcentajes', () => {
     expect(shown.reduce((sum, row) => sum + row.percent, 0)).toBe(100);
 
     const stored = await agent.get(`/api/me/results/${withBreakdown._id.toString()}`).expect(200);
-    expect(quizResultsResponseSchema.parse(stored.body).current.result.distribution).toHaveLength(2);
+    expect(quizResultsResponseSchema.parse(stored.body).current.result.distribution).toHaveLength(
+      2,
+    );
 
     const plain = await playSimple(agent, without._id.toString(), 0);
     expect(JSON.stringify(plain)).not.toContain('distribution');
@@ -456,10 +490,17 @@ describe('resultado narrativo', () => {
     const intro = await agent.get(`/api/quizzes/${id}`).expect(200);
     const started = await agent.post(`/api/quizzes/${id}/attempts`).expect(200);
     for (const res of [intro, started]) {
-      expect(JSON.stringify(res.body)).not.toMatch(/secret|Decodificando|video|glitch|brillo|facts|reveal/i);
+      expect(JSON.stringify(res.body)).not.toMatch(
+        /secret|Decodificando|video|glitch|brillo|facts|reveal/i,
+      );
     }
 
-    const done = await submit(agent, (started.body as { attemptId: string }).attemptId, stageOf(attemptResponseSchema.parse(started.body)), 0);
+    const done = await submit(
+      agent,
+      (started.body as { attemptId: string }).attemptId,
+      stageOf(attemptResponseSchema.parse(started.body)),
+      0,
+    );
     if (done.status !== 'completed') throw new Error('Debía completarse');
     expect(done.result.revealIntro?.lines).toEqual(['[PLACEHOLDER] Decodificando…']);
     expect(done.result.reveal?.effect).toBe('brillo');
@@ -496,7 +537,9 @@ describe('versiones inmutables', () => {
     if (second.status !== 'completed') throw new Error('Debía completarse');
     expect(second.result.title).toBe('[PLACEHOLDER] r1 cambiado');
 
-    const results = quizResultsResponseSchema.parse((await agent.get(`/api/me/results/${id}`).expect(200)).body);
+    const results = quizResultsResponseSchema.parse(
+      (await agent.get(`/api/me/results/${id}`).expect(200)).body,
+    );
     expect(results.history.map((h) => [h.version, h.resultTitle])).toEqual([
       [2, '[PLACEHOLDER] r1 cambiado'],
       [1, '[PLACEHOLDER] r1'],
@@ -518,7 +561,8 @@ describe('modo prueba (EDITOR y ADMIN)', () => {
     expect(await UserProgress.countDocuments({ userId: admin._id })).toBe(0);
 
     const list = resultsListResponseSchema.parse(
-      (await adminAgent.get('/api/me/results').query({ bookId: book._id.toString() }).expect(200)).body,
+      (await adminAgent.get('/api/me/results').query({ bookId: book._id.toString() }).expect(200))
+        .body,
     );
     expect(list.results).toEqual([]);
     await adminAgent.get(`/api/me/results/${second._id.toString()}`).expect(404);
@@ -549,19 +593,33 @@ describe('GET /api/me/progress', () => {
     await make(3);
     const query = { bookId: book._id.toString() };
     const read = async () =>
-      progressResponseSchema.parse((await agent.get('/api/me/progress').query(query).expect(200)).body);
+      progressResponseSchema.parse(
+        (await agent.get('/api/me/progress').query(query).expect(200)).body,
+      );
 
-    expect((await read()).experiences.map((e) => e.status)).toEqual(['available', 'locked', 'locked']);
+    expect((await read()).experiences.map((e) => e.status)).toEqual([
+      'available',
+      'locked',
+      'locked',
+    ]);
 
     await startAttempt(agent, q1._id.toString());
     expect((await read()).experiences[0]).toMatchObject({ status: 'available', inProgress: true });
 
     await playSimple(agent, q1._id.toString());
-    expect((await read()).experiences.map((e) => e.status)).toEqual(['completed', 'available', 'locked']);
+    expect((await read()).experiences.map((e) => e.status)).toEqual([
+      'completed',
+      'available',
+      'locked',
+    ]);
 
     await playSimple(agent, q2._id.toString());
     const progress = await read();
-    expect(progress.experiences.map((e) => e.status)).toEqual(['completed', 'completed', 'available']);
+    expect(progress.experiences.map((e) => e.status)).toEqual([
+      'completed',
+      'completed',
+      'available',
+    ]);
     expect(progress.bookCompleted).toBe(false);
     expect(JSON.stringify(progress)).not.toMatch(/resultKey|stages/);
   });
@@ -570,7 +628,9 @@ describe('GET /api/me/progress', () => {
     const { agent, book } = await world();
     expect((await agent.get('/api/me/progress')).status).toBe(400);
     await book.updateOne({ status: 'draft' });
-    expect((await agent.get('/api/me/progress').query({ bookId: book._id.toString() })).status).toBe(404);
+    expect(
+      (await agent.get('/api/me/progress').query({ bookId: book._id.toString() })).status,
+    ).toBe(404);
   });
 });
 
@@ -583,7 +643,10 @@ describe('GET /api/me/results', () => {
     await playSimple(agent, q2._id.toString(), 0);
     await playSimple(agent, q2._id.toString(), 1);
 
-    const res = await agent.get('/api/me/results').query({ bookId: book._id.toString() }).expect(200);
+    const res = await agent
+      .get('/api/me/results')
+      .query({ bookId: book._id.toString() })
+      .expect(200);
     const { results } = resultsListResponseSchema.parse(res.body);
     expect(results.map((r) => [r.order, r.resultTitle, r.attemptsCompleted])).toEqual([
       [1, '[PLACEHOLDER] r3', 1],
@@ -592,7 +655,10 @@ describe('GET /api/me/results', () => {
 
     await createUser({ email: 'otra@ejemplo.com' });
     const other = await loginAgent(app, 'otra@ejemplo.com');
-    const empty = await other.get('/api/me/results').query({ bookId: book._id.toString() }).expect(200);
+    const empty = await other
+      .get('/api/me/results')
+      .query({ bookId: book._id.toString() })
+      .expect(200);
     expect(resultsListResponseSchema.parse(empty.body).results).toEqual([]);
     await other.get(`/api/me/results/${q1._id.toString()}`).expect(404);
   });
@@ -615,7 +681,8 @@ describe('desbloqueo por QR (REQUIRE_QR_UNLOCK)', () => {
 
     const status = async () =>
       progressResponseSchema.parse(
-        (await agent.get('/api/me/progress').query({ bookId: book._id.toString() }).expect(200)).body,
+        (await agent.get('/api/me/progress').query({ bookId: book._id.toString() }).expect(200))
+          .body,
       ).experiences[0]?.status;
     expect(await status()).toBe('locked');
 
@@ -644,7 +711,7 @@ describe('contrato', () => {
       .send(answersAt(stageOf(parsed), 0));
     bodies.push(next.body);
     bodies.push((await agent.get('/api/me/progress').query({ bookId: book._id.toString() })).body);
-    for (const body of bodies) expect(JSON.stringify(body)).not.toMatch(/resultKey|conditionResultKey|producesFinal/);
+    for (const body of bodies)
+      expect(JSON.stringify(body)).not.toMatch(/resultKey|conditionResultKey|producesFinal/);
   });
 });
-

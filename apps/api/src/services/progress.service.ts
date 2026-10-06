@@ -1,6 +1,7 @@
 import type { ProgressResponse, Role } from '@libro/shared';
 import { Types } from 'mongoose';
 import { AppError } from '../lib/errors.js';
+import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { Book } from '../models/Book.js';
 import { Quiz } from '../models/Quiz.js';
 import { QuizAttempt } from '../models/QuizAttempt.js';
@@ -26,10 +27,6 @@ export interface ProgressDeps {
 }
 
 const NOT_UNLOCKED_MESSAGE = 'Aún no puedes acceder a este contenido';
-
-function isDuplicateKey(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 11000;
-}
 
 /**
  * Progresión y acceso: quizzes publicados del libro en orden, el juego
@@ -104,7 +101,10 @@ export function createProgressService(deps: ProgressDeps) {
             .select('quizId settings')
             .lean();
     const retake = new Map(
-      versions.map((v) => [v.quizId.toString(), (v.settings as { allowRetake?: boolean }).allowRetake !== false]),
+      versions.map((v) => [
+        v.quizId.toString(),
+        (v.settings as { allowRetake?: boolean }).allowRetake !== false,
+      ]),
     );
     const completed = new Set(
       (progress?.completed ?? []).filter((c) => c.kind === 'quiz').map((c) => c.refId.toString()),
@@ -125,7 +125,11 @@ export function createProgressService(deps: ProgressDeps) {
         id,
         title: quiz.title,
         order: quiz.order,
-        status: done ? ('completed' as const) : reachable ? ('available' as const) : ('locked' as const),
+        status: done
+          ? ('completed' as const)
+          : reachable
+            ? ('available' as const)
+            : ('locked' as const),
         inProgress: inProgress.has(id),
         allowRetake: retake.get(id) ?? true,
       };

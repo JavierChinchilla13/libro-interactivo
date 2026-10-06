@@ -11,6 +11,7 @@ import { QuizVersion } from '../models/QuizVersion.js';
 import { RefreshToken } from '../models/RefreshToken.js';
 import { SiteSettings } from '../models/SiteSettings.js';
 import { User } from '../models/User.js';
+import { WikiEntry } from '../models/WikiEntry.js';
 import { UserProgress } from '../models/UserProgress.js';
 
 /**
@@ -34,6 +35,7 @@ export function useTestDb(): void {
       QuizVersion.init(),
       QuizAttempt.init(),
       UserProgress.init(),
+      WikiEntry.init(),
     ]);
   });
 

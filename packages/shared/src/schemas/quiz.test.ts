@@ -51,7 +51,9 @@ describe('esquemas de quiz', () => {
       ],
     };
     expect(quizContentSchema.safeParse(base).success).toBe(true);
-    expect(quizContentSchema.safeParse({ ...base, results: base.results.slice(0, 1) }).success).toBe(false);
+    expect(
+      quizContentSchema.safeParse({ ...base, results: base.results.slice(0, 1) }).success,
+    ).toBe(false);
     const oneAnswer = structuredClone(base);
     oneAnswer.stages[0]!.questions[0]!.answers = answers.slice(0, 1);
     expect(quizContentSchema.safeParse(oneAnswer).success).toBe(false);
@@ -69,19 +71,26 @@ describe('esquemas de quiz', () => {
   it('la respuesta de un intento distingue etapa en curso de resultado', () => {
     const id = '670000000000000000000001';
     expect(
-      attemptResponseSchema.safeParse({ attemptId: id, status: 'in_progress', stage: { stageId: 'e1', questions: [] } })
-        .success,
+      attemptResponseSchema.safeParse({
+        attemptId: id,
+        status: 'in_progress',
+        stage: { stageId: 'e1', questions: [] },
+      }).success,
     ).toBe(true);
-    expect(attemptResponseSchema.safeParse({ attemptId: id, status: 'completed' }).success).toBe(false);
+    expect(attemptResponseSchema.safeParse({ attemptId: id, status: 'completed' }).success).toBe(
+      false,
+    );
   });
 
   it('exige al menos una respuesta y ids válidos al enviar una etapa', () => {
     expect(submitAnswersRequestSchema.safeParse({ answers: [] }).success).toBe(false);
     expect(
-      submitAnswersRequestSchema.safeParse({ answers: [{ questionId: 'p1', answerId: 'a' }] }).success,
+      submitAnswersRequestSchema.safeParse({ answers: [{ questionId: 'p1', answerId: 'a' }] })
+        .success,
     ).toBe(true);
     expect(
-      submitAnswersRequestSchema.safeParse({ answers: [{ questionId: 'p 1', answerId: 'a' }] }).success,
+      submitAnswersRequestSchema.safeParse({ answers: [{ questionId: 'p 1', answerId: 'a' }] })
+        .success,
     ).toBe(false);
   });
 });
