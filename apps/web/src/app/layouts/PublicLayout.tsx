@@ -23,6 +23,9 @@ export function PublicLayout() {
             <NavLink to="/" end className={linkClass}>
               Inicio
             </NavLink>
+            <NavLink to="/wiki" className={linkClass}>
+              Wiki
+            </NavLink>
             <NavLink to="/contacto" className={linkClass}>
               Contacto
             </NavLink>

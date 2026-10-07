@@ -20,6 +20,8 @@ import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { ContactPage } from '../features/contact/ContactPage';
 import { HealthPage } from '../features/health/HealthPage';
 import { HomePage } from '../features/home/HomePage';
+import { WikiEntryPage } from '../features/wiki/WikiEntryPage';
+import { WikiPage } from '../features/wiki/WikiPage';
 import { AccountPage } from '../features/reader/AccountPage';
 import { DashboardPage } from '../features/reader/DashboardPage';
 import { ExtraViewPage, ExtrasPage } from '../features/reader/ExtrasPage';
@@ -41,6 +43,9 @@ export const routes: RouteObject[] = [
       { index: true, element: <HomePage /> },
       { path: 'estado', element: <HealthPage /> },
       { path: 'contacto', element: <ContactPage /> },
+      { path: 'wiki', element: <WikiPage /> },
+      { path: 'wiki/entrada/:entryId', element: <WikiEntryPage /> },
+      { path: 'wiki/:section', element: <WikiPage /> },
       { path: 'ingresar', element: <LoginPage /> },
       { path: 'registro', element: <RegisterPage /> },
       { path: 'olvide-mi-contrasena', element: <ForgotPasswordPage /> },
