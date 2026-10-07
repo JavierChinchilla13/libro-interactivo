@@ -15,8 +15,15 @@ import {
   createReaderExtraController,
 } from '../controllers/access.controller.js';
 import { createQuizController, createAdminQuizController } from '../controllers/quiz.controller.js';
+import {
+  createAdminSiteController,
+  createPublicBookController,
+  createWelcomeController,
+} from '../controllers/site.controller.js';
 import type { Clock } from '../lib/clock.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
+import type { PublicBookService } from '../services/publicBook.service.js';
+import type { WelcomeService } from '../services/welcome.service.js';
 import type { AccessService } from '../services/access.service.js';
 import type { ExtraService } from '../services/extra.service.js';
 import type { BookService } from '../services/book.service.js';
@@ -47,6 +54,11 @@ import { createAuthRouter } from './auth.routes.js';
 import { createContactRouter } from './contact.routes.js';
 import { createHealthRouter } from './health.routes.js';
 import {
+  createAdminSiteRouter,
+  createPublicBookRouter,
+  createWelcomeRouter,
+} from './site.routes.js';
+import {
   createAdminQuizRouter,
   createAttemptRouter,
   createLearningRouter,
@@ -68,6 +80,8 @@ export interface RouteDeps {
   wiki: WikiService;
   images: ImageProvider;
   access: AccessService;
+  welcome: WelcomeService;
+  publicBooks: PublicBookService;
   extras: ExtraService;
   clock: Clock;
   requireUnlocked: RequireUnlocked;
@@ -94,6 +108,12 @@ export function createApiRouter(deps: RouteDeps): Router {
   );
   router.use('/me', createAccountRouter(accountController, deps.guards));
   router.use('/me', createLearningRouter(quizController, deps.guards));
+  router.use('/me', createWelcomeRouter(createWelcomeController(deps.welcome), deps.guards));
+  router.use('/books', createPublicBookRouter(createPublicBookController(deps.publicBooks)));
+  router.use(
+    '/admin/site-settings',
+    createAdminSiteRouter(createAdminSiteController(deps.welcome), deps.guards),
+  );
   router.use('/contact', createContactRouter(deps.contact, deps.limits));
   router.use('/quizzes', createQuizRouter(quizController, deps.guards, deps.requireUnlocked));
   router.use('/attempts', createAttemptRouter(quizController, deps.guards));

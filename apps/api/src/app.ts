@@ -22,6 +22,8 @@ import type { MailProvider } from './providers/mail/MailProvider.js';
 import { createMailProvider } from './providers/mail/createMailProvider.js';
 import { createApiRouter } from './routes/index.js';
 import { createAccessService } from './services/access.service.js';
+import { createPublicBookService } from './services/publicBook.service.js';
+import { createWelcomeService } from './services/welcome.service.js';
 import { createExtraService } from './services/extra.service.js';
 import { createAccountService } from './services/account.service.js';
 import { createAuthService, type AuthService } from './services/auth.service.js';
@@ -153,6 +155,8 @@ export function createApp(
     progress,
   });
   const extras = createExtraService({ storage, progress, clock });
+  const welcome = createWelcomeService({ clock });
+  const publicBooks = createPublicBookService();
 
   const app = express();
   app.disable('x-powered-by');
@@ -190,6 +194,8 @@ export function createApp(
       images,
       access,
       extras,
+      welcome,
+      publicBooks,
       clock,
       requireUnlocked,
       guards,
