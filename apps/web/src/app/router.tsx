@@ -1,7 +1,11 @@
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from 'react-router';
+import { RedeemPage } from '../features/access/RedeemPage';
+import { AccessPage } from '../features/admin/access/AccessPage';
 import { AdminHomePage } from '../features/admin/AdminHomePage';
 import { BookFormPage } from '../features/admin/books/BookFormPage';
 import { BookListPage } from '../features/admin/books/BookListPage';
+import { ExtraFormPage } from '../features/admin/extras/ExtraFormPage';
+import { ExtraListPage } from '../features/admin/extras/ExtraListPage';
 import { QuizEditorPage } from '../features/admin/quizzes/QuizEditorPage';
 import { QuizListPage } from '../features/admin/quizzes/QuizListPage';
 import { QuizNewPage } from '../features/admin/quizzes/QuizNewPage';
@@ -25,6 +29,7 @@ export const routes: RouteObject[] = [
       { index: true, element: <HomePage /> },
       { path: 'estado', element: <HealthPage /> },
       { path: 'ingresar', element: <LoginPage /> },
+      { path: 'u/:token', element: <RedeemPage /> },
       { path: '*', element: <p className="text-muted">Página no encontrada.</p> },
     ],
   },
@@ -49,6 +54,14 @@ export const routes: RouteObject[] = [
               { path: 'wiki', element: <WikiListPage /> },
               { path: 'wiki/nueva', element: <WikiFormPage /> },
               { path: 'wiki/:entryId', element: <WikiFormPage /> },
+              { path: 'extras', element: <ExtraListPage /> },
+              { path: 'extras/nuevo', element: <ExtraFormPage /> },
+              { path: 'extras/:extraId', element: <ExtraFormPage /> },
+              // Solo administradoras (los códigos de acceso no los gestionan las editoras).
+              {
+                element: <RequireRole roles={['ADMIN']} />,
+                children: [{ path: 'qr', element: <AccessPage /> }],
+              },
             ],
           },
         ],

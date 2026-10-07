@@ -2,8 +2,11 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { afterAll, beforeAll, beforeEach } from 'vitest';
 import { connectDb, disconnectDb } from '../db/connect.js';
+import { AccessToken } from '../models/AccessToken.js';
 import { Book } from '../models/Book.js';
 import { ContactMessage } from '../models/ContactMessage.js';
+import { Extra } from '../models/Extra.js';
+import { ExtraAccess } from '../models/ExtraAccess.js';
 import { PasswordReset } from '../models/PasswordReset.js';
 import { Quiz } from '../models/Quiz.js';
 import { QuizAttempt } from '../models/QuizAttempt.js';
@@ -36,6 +39,9 @@ export function useTestDb(): void {
       QuizAttempt.init(),
       UserProgress.init(),
       WikiEntry.init(),
+      AccessToken.init(),
+      Extra.init(),
+      ExtraAccess.init(),
     ]);
   });
 
