@@ -11,7 +11,7 @@ import { SafeHtml } from '../../../shared/ui/SafeHtml';
 import { Button } from '../../../shared/ui/controls';
 import { Alert, Card, Loading } from '../../../shared/ui/layout';
 import { quizzesApi } from '../api';
-import { thumbUrl } from '../components/MediaFields';
+import { thumbUrl } from '../../../shared/lib/cloudinary';
 import { errorMessage } from '../errors';
 
 /** Envía las respuestas de una etapa del intento de prueba (mismo endpoint que usa el lector). */

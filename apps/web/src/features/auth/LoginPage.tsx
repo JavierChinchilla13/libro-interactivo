@@ -1,10 +1,10 @@
 import { loginRequestSchema } from '@libro/shared';
 import { useState, type FormEvent } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { ApiClientError } from '../../shared/api/client';
 import { Button, TextField } from '../../shared/ui/controls';
 import { Alert, Card } from '../../shared/ui/layout';
-import { isStaff, useLogin, useSession } from './session';
+import { homeFor, useLogin, useSession } from './session';
 
 /**
  * Ingreso. Mensajes genéricos: nunca dice si el correo existe.
@@ -20,8 +20,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  if (session.data)
-    return <Navigate to={from ?? (isStaff(session.data) ? '/admin' : '/')} replace />;
+  if (session.data) return <Navigate to={from ?? homeFor(session.data)} replace />;
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -37,8 +36,7 @@ export function LoginPage() {
     }
     setErrors({});
     login.mutate(parsed.data, {
-      onSuccess: (data) =>
-        void navigate(from ?? (isStaff(data.user) ? '/admin' : '/'), { replace: true }),
+      onSuccess: (data) => void navigate(from ?? homeFor(data.user), { replace: true }),
     });
   }
 
@@ -79,6 +77,17 @@ export function LoginPage() {
           <Button type="submit" loading={login.isPending}>
             Ingresar
           </Button>
+          <div className="flex flex-col gap-1 text-sm">
+            <Link to="/olvide-mi-contrasena" className="underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+            <span className="text-muted">
+              ¿No tienes cuenta?{' '}
+              <Link to="/registro" state={location.state} className="underline">
+                Crea una
+              </Link>
+            </span>
+          </div>
         </form>
       </Card>
     </div>
