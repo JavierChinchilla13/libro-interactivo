@@ -18,11 +18,13 @@ import { createQuizController, createAdminQuizController } from '../controllers/
 import {
   createAdminSiteController,
   createPublicBookController,
+  createPublicSiteController,
   createWelcomeController,
 } from '../controllers/site.controller.js';
 import type { Clock } from '../lib/clock.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
 import type { PublicBookService } from '../services/publicBook.service.js';
+import type { SiteSettingsService } from '../services/siteSettings.service.js';
 import type { WelcomeService } from '../services/welcome.service.js';
 import type { AccessService } from '../services/access.service.js';
 import type { ExtraService } from '../services/extra.service.js';
@@ -56,6 +58,7 @@ import { createHealthRouter } from './health.routes.js';
 import {
   createAdminSiteRouter,
   createPublicBookRouter,
+  createPublicSiteRouter,
   createWelcomeRouter,
 } from './site.routes.js';
 import {
@@ -82,6 +85,7 @@ export interface RouteDeps {
   access: AccessService;
   welcome: WelcomeService;
   publicBooks: PublicBookService;
+  siteSettings: SiteSettingsService;
   extras: ExtraService;
   clock: Clock;
   requireUnlocked: RequireUnlocked;
@@ -109,10 +113,11 @@ export function createApiRouter(deps: RouteDeps): Router {
   router.use('/me', createAccountRouter(accountController, deps.guards));
   router.use('/me', createLearningRouter(quizController, deps.guards));
   router.use('/me', createWelcomeRouter(createWelcomeController(deps.welcome), deps.guards));
+  router.use('/site', createPublicSiteRouter(createPublicSiteController(deps.siteSettings)));
   router.use('/books', createPublicBookRouter(createPublicBookController(deps.publicBooks)));
   router.use(
     '/admin/site-settings',
-    createAdminSiteRouter(createAdminSiteController(deps.welcome), deps.guards),
+    createAdminSiteRouter(createAdminSiteController(deps.siteSettings), deps.guards),
   );
   router.use('/contact', createContactRouter(deps.contact, deps.limits));
   router.use('/quizzes', createQuizRouter(quizController, deps.guards, deps.requireUnlocked));

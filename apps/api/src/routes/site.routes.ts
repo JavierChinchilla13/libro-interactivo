@@ -3,6 +3,7 @@ import { Router } from 'express';
 import type {
   createAdminSiteController,
   createPublicBookController,
+  createPublicSiteController,
   createWelcomeController,
 } from '../controllers/site.controller.js';
 import type { Guards } from '../middleware/auth.js';
@@ -18,6 +19,15 @@ export function createPublicBookRouter(
   return router;
 }
 
+/** `/site`: ajustes públicos de la landing. */
+export function createPublicSiteRouter(
+  controller: ReturnType<typeof createPublicSiteController>,
+): Router {
+  const router = Router();
+  router.get('/', controller.get);
+  return router;
+}
+
 /** `/me/welcome` y `/me/welcome-seen`: el mensaje de bienvenida del lector (el servidor decide si toca mostrarlo). */
 export function createWelcomeRouter(
   controller: ReturnType<typeof createWelcomeController>,
@@ -30,7 +40,7 @@ export function createWelcomeRouter(
   return router;
 }
 
-/** `/admin/site-settings`: editoras y administradoras editan el mensaje de bienvenida. */
+/** `/admin/site-settings`: editoras y administradoras editan la bienvenida, la presentación, la autora, las redes y el texto de «bloqueado». */
 export function createAdminSiteRouter(
   controller: ReturnType<typeof createAdminSiteController>,
   guards: Guards,

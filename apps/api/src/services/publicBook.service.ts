@@ -1,6 +1,7 @@
 import type { PublicBookDetail, PublicBookSummary } from '@libro/shared';
 import { AppError } from '../lib/errors.js';
 import { Book } from '../models/Book.js';
+import { Quiz } from '../models/Quiz.js';
 import { toBookResponse } from './book.service.js';
 
 const VISIBLE: ('published' | 'upcoming')[] = ['published', 'upcoming'];
@@ -31,6 +32,10 @@ export function createPublicBookService() {
     const book = await Book.findOne({ slug, status: { $in: VISIBLE } }).lean();
     if (!book) throw new AppError('NOT_FOUND', 'No encontramos ese libro');
     const full = toBookResponse(book);
+    const quizzes = await Quiz.find({ bookId: book._id, status: 'published' })
+      .select('title order')
+      .sort({ order: 1 })
+      .lean();
     return {
       ...summaryOf(full),
       synopsis: full.synopsis,
@@ -40,6 +45,25 @@ export function createPublicBookService() {
       ...(full.isbn ? { isbn: full.isbn } : {}),
       purchaseLinks: full.purchaseLinks,
       ...(full.theme ? { theme: full.theme } : {}),
+      // Solo el rótulo de cada pestaña y si está bloqueada: el contenido y el quiz que la abre no salen de aquí.
+      wikiTabs: [...full.wikiSections]
+        .filter((section) => section.enabled)
+        .sort((a, b) => a.order - b.order)
+        .map((section) => ({
+          kind: section.kind,
+          title: section.title,
+          locked: section.unlockAfter !== undefined,
+          ...(section.unlockAfter && section.lockedMessage
+            ? { lockedMessage: section.lockedMessage }
+            : {}),
+        })),
+      // Solo el nombre y la posición de cada quiz publicado (nunca preguntas ni resultados).
+      experiences: quizzes.map((quiz) => ({
+        kind: 'quiz' as const,
+        id: String(quiz._id),
+        order: quiz.order,
+        title: quiz.title,
+      })),
     };
   }
 

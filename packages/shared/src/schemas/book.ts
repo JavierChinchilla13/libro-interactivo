@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { imageRefSchema, objectIdSchema, unlockRuleSchema } from './common.js';
+import { httpUrlSchema, imageRefSchema, objectIdSchema, unlockRuleSchema } from './common.js';
 
 /** Slug: minúsculas, números y guiones (sin acentos ni espacios). */
 export const slugSchema = z
@@ -20,7 +20,7 @@ export const purchaseLinkSchema = z.object({
   kind: z.enum(['whatsapp', 'store', 'amazon', 'other']),
   label: z.string().min(1).max(80),
   /** Opcional: «compras presenciales en cada sede» no lleva enlace. */
-  url: z.url().max(500).optional(),
+  url: httpUrlSchema.optional(),
   notes: z.string().max(300).optional(),
 });
 export type PurchaseLink = z.infer<typeof purchaseLinkSchema>;
