@@ -149,6 +149,9 @@ export function WikiPreview({
           </li>
         ))}
       </ul>
+      <Link to="/wiki" className={`${primaryLink} mt-4`}>
+        Entrar a la wiki
+      </Link>
     </Section>
   );
 }
