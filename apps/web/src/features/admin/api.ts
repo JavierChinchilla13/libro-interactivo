@@ -14,6 +14,7 @@ import {
   quizListResponseSchema,
   quizValidationResponseSchema,
   quizVersionsResponseSchema,
+  siteSettingsResponseSchema,
   wikiEntryResponseSchema,
   wikiListResponseSchema,
   type BookInputPayload,
@@ -22,6 +23,7 @@ import {
   type ExtraInputPayload,
   type ExtraUploadUrlRequest,
   type QuizDraftPayload,
+  type UpdateSiteSettingsRequest,
   type UPLOAD_PURPOSES,
   type WikiEntryInputPayload,
   type WikiKind,
@@ -88,6 +90,12 @@ export const wikiApi = {
     apiRequest('/admin/wiki/reorder', wikiListResponseSchema, { method: 'PATCH', body }),
 };
 
+export const siteApi = {
+  get: () => apiRequest('/admin/site-settings', siteSettingsResponseSchema),
+  update: (body: UpdateSiteSettingsRequest) =>
+    apiRequest('/admin/site-settings', siteSettingsResponseSchema, { method: 'PATCH', body }),
+};
+
 export const uploadsApi = {
   sign: (purpose: (typeof UPLOAD_PURPOSES)[number], resource: 'image' | 'video') =>
     apiRequest('/admin/uploads/image-signature', imageSignatureResponseSchema, {
@@ -136,6 +144,7 @@ export const keys = {
   access: (bookId: string) => ['admin', 'access', bookId] as const,
   extras: (bookId: string) => ['admin', 'extras', bookId] as const,
   extra: (id: string) => ['admin', 'extras', 'one', id] as const,
+  site: ['admin', 'site-settings'] as const,
   wiki: ['admin', 'wiki'] as const,
   wikiEntry: (id: string) => ['admin', 'wiki', 'entry', id] as const,
 };
