@@ -6,6 +6,7 @@ import { BookFormPage } from '../features/admin/books/BookFormPage';
 import { BookListPage } from '../features/admin/books/BookListPage';
 import { ExtraFormPage } from '../features/admin/extras/ExtraFormPage';
 import { ExtraListPage } from '../features/admin/extras/ExtraListPage';
+import { SiteContentPage } from '../features/admin/site/SiteContentPage';
 import { WelcomeSettingsPage } from '../features/admin/site/WelcomeSettingsPage';
 import { QuizEditorPage } from '../features/admin/quizzes/QuizEditorPage';
 import { QuizListPage } from '../features/admin/quizzes/QuizListPage';
@@ -16,6 +17,7 @@ import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
 import { LoginPage } from '../features/auth/LoginPage';
 import { RegisterPage } from '../features/auth/RegisterPage';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
+import { ContactPage } from '../features/contact/ContactPage';
 import { HealthPage } from '../features/health/HealthPage';
 import { HomePage } from '../features/home/HomePage';
 import { AccountPage } from '../features/reader/AccountPage';
@@ -38,6 +40,7 @@ export const routes: RouteObject[] = [
     children: [
       { index: true, element: <HomePage /> },
       { path: 'estado', element: <HealthPage /> },
+      { path: 'contacto', element: <ContactPage /> },
       { path: 'ingresar', element: <LoginPage /> },
       { path: 'registro', element: <RegisterPage /> },
       { path: 'olvide-mi-contrasena', element: <ForgotPasswordPage /> },
@@ -86,6 +89,7 @@ export const routes: RouteObject[] = [
               { path: 'wiki', element: <WikiListPage /> },
               { path: 'wiki/nueva', element: <WikiFormPage /> },
               { path: 'wiki/:entryId', element: <WikiFormPage /> },
+              { path: 'sitio', element: <SiteContentPage /> },
               { path: 'bienvenida', element: <WelcomeSettingsPage /> },
               { path: 'extras', element: <ExtraListPage /> },
               { path: 'extras/nuevo', element: <ExtraFormPage /> },

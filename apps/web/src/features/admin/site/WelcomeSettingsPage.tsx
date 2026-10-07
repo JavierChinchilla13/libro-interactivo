@@ -10,10 +10,16 @@ import { errorMessage, fieldErrors } from '../errors';
 
 /** Mensaje de bienvenida: el «pacto» con el lector, escrito por la autora. */
 export function WelcomeSettingsPage() {
-  const settings = useQuery({ queryKey: keys.site, queryFn: siteApi.get });
+  const settings = useQuery({
+    queryKey: keys.site,
+    queryFn: siteApi.get,
+    // El formulario toma el valor al abrirse: cada visita lo pide de nuevo y no queda copia vieja.
+    staleTime: 0,
+    gcTime: 0,
+  });
   if (settings.isError) return <Alert>{errorMessage(settings.error)}</Alert>;
   if (!settings.data) return <Loading />;
-  return <WelcomeForm key={settings.dataUpdatedAt} initial={settings.data.welcome} />;
+  return <WelcomeForm initial={settings.data.welcome} />;
 }
 
 function WelcomeForm({ initial }: { initial: WelcomeSettings }) {
@@ -23,9 +29,10 @@ function WelcomeForm({ initial }: { initial: WelcomeSettings }) {
   const [saved, setSaved] = useState(false);
   const save = useMutation({
     mutationFn: siteApi.update,
-    onSuccess: async () => {
+    onSuccess: async (response) => {
       setSaved(true);
-      await client.invalidateQueries({ queryKey: keys.site });
+      // Sin recargar: el formulario sigue siendo el mismo y conserva el aviso «Cambios guardados».
+      client.setQueryData(keys.site, response);
     },
   });
   const set = (patch: Partial<WelcomeSettings>) => {

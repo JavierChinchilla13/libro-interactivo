@@ -14,6 +14,7 @@ const CONTENT = [
   { to: '/admin/quizzes', label: 'Quizzes' },
   { to: '/admin/wiki', label: 'Wiki' },
   { to: '/admin/extras', label: 'Capítulos extra' },
+  { to: '/admin/sitio', label: 'Portada y autora' },
   { to: '/admin/bienvenida', label: 'Mensaje de bienvenida' },
 ] as const;
 const COMING_CONTENT = ['Actualizaciones', 'Fan arts', 'Reseñas'] as const;
