@@ -28,3 +28,9 @@ export const unlockRuleSchema = z.object({
   refId: objectIdSchema,
 });
 export type UnlockRule = z.infer<typeof unlockRuleSchema>;
+
+/** Enlace externo: solo `http(s)` (nunca `javascript:` ni `data:`), porque se muestra como `href`. */
+export const httpUrlSchema = z
+  .url()
+  .max(500)
+  .refine((value) => /^https?:\/\//i.test(value), 'El enlace debe empezar con http:// o https://');
