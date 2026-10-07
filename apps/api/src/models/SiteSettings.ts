@@ -13,6 +13,18 @@ const siteSettingsSchema = new Schema(
       storeMessages: { type: Boolean, required: true, default: true },
       retentionDays: { type: Number, required: true, default: 365, min: 1, max: 3650 },
     },
+    /** Mensaje de bienvenida del lector. */
+    welcome: {
+      enabled: { type: Boolean, required: true, default: false },
+      title: { type: String, trim: true, maxlength: 120 },
+      bodyHtml: { type: String, default: '' },
+      showMode: {
+        type: String,
+        enum: ['first_login', 'every_login'],
+        required: true,
+        default: 'every_login',
+      },
+    },
     updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true },
