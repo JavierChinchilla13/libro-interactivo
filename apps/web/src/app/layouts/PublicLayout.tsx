@@ -1,5 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link, NavLink, Outlet } from 'react-router';
 import { homeFor, useSession } from '../../features/auth/session';
+import { publicApi, publicKeys } from '../../features/home/api';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-token px-3 py-2 text-sm font-medium ${isActive ? 'bg-surface-alt text-text' : 'text-muted hover:text-text'}`;
@@ -8,6 +10,8 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 export function PublicLayout() {
   const session = useSession();
   const user = session.data;
+  const site = useQuery({ queryKey: publicKeys.site, queryFn: publicApi.site, retry: false });
+  const social = site.data?.social ?? [];
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="border-b border-border bg-surface">
@@ -19,8 +23,8 @@ export function PublicLayout() {
             <NavLink to="/" end className={linkClass}>
               Inicio
             </NavLink>
-            <NavLink to="/estado" className={linkClass}>
-              Estado
+            <NavLink to="/contacto" className={linkClass}>
+              Contacto
             </NavLink>
             {user ? (
               <NavLink to={homeFor(user)} className={linkClass}>
@@ -43,7 +47,33 @@ export function PublicLayout() {
         <Outlet />
       </main>
       <footer className="border-t border-border py-6 text-center text-sm text-muted">
-        Libro Interactivo · universo Memorias
+        <div className="mx-auto flex w-full max-w-[var(--token-page-max)] flex-col items-center gap-2 px-4">
+          {social.length > 0 ? (
+            <ul
+              aria-label="Redes sociales"
+              className="flex flex-wrap justify-center gap-x-4 gap-y-1"
+            >
+              {social.map((link) => (
+                <li key={link.url}>
+                  <a
+                    className="underline"
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <p>
+            Libro Interactivo · universo Memorias ·{' '}
+            <Link to="/estado" className="underline">
+              Estado del sitio
+            </Link>
+          </p>
+        </div>
       </footer>
     </div>
   );
