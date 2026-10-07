@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { Env } from '../config/env.js';
 import type { Limits } from '../config/limits.js';
+import { createPublicWikiController } from '../controllers/publicWiki.controller.js';
 import { createAccountController } from '../controllers/account.controller.js';
 import {
   createAdminBookController,
@@ -24,6 +25,7 @@ import {
 import type { Clock } from '../lib/clock.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
 import type { PublicBookService } from '../services/publicBook.service.js';
+import type { PublicWikiService } from '../services/publicWiki.service.js';
 import type { SiteSettingsService } from '../services/siteSettings.service.js';
 import type { WelcomeService } from '../services/welcome.service.js';
 import type { AccessService } from '../services/access.service.js';
@@ -55,6 +57,7 @@ import {
 import { createAuthRouter } from './auth.routes.js';
 import { createContactRouter } from './contact.routes.js';
 import { createHealthRouter } from './health.routes.js';
+import { createPublicWikiRouter } from './publicWiki.routes.js';
 import {
   createAdminSiteRouter,
   createPublicBookRouter,
@@ -85,6 +88,7 @@ export interface RouteDeps {
   access: AccessService;
   welcome: WelcomeService;
   publicBooks: PublicBookService;
+  publicWiki: PublicWikiService;
   siteSettings: SiteSettingsService;
   extras: ExtraService;
   clock: Clock;
@@ -114,6 +118,10 @@ export function createApiRouter(deps: RouteDeps): Router {
   router.use('/me', createLearningRouter(quizController, deps.guards));
   router.use('/me', createWelcomeRouter(createWelcomeController(deps.welcome), deps.guards));
   router.use('/site', createPublicSiteRouter(createPublicSiteController(deps.siteSettings)));
+  router.use(
+    '/wiki',
+    createPublicWikiRouter(createPublicWikiController(deps.publicWiki), deps.guards),
+  );
   router.use('/books', createPublicBookRouter(createPublicBookController(deps.publicBooks)));
   router.use(
     '/admin/site-settings',
