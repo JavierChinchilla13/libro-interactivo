@@ -77,7 +77,7 @@ test.describe('códigos QR y capítulos extra', () => {
   test('un código inválido muestra siempre el mensaje genérico (sin sesión)', async ({ page }) => {
     await page.goto('/u/codigo-inventado');
     await expect(page.getByText(/Este código no es válido/)).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Ingresar' })).toHaveCount(0);
+    await expect(page.getByRole('main').getByRole('link', { name: 'Ingresar' })).toHaveCount(0);
   });
 
   test('la administradora crea, descarga y revoca un código', async ({ page }) => {
