@@ -224,7 +224,8 @@ describe('responder y obtener el resultado', () => {
     const progress = await UserProgress.findOne({ userId: user._id }).lean();
     expect(progress?.completed).toHaveLength(1);
     expect(progress?.completed[0]).toMatchObject({ kind: 'quiz', currentResultKey: 'r2' });
-    expect(progress?.bookCompletedAt).toBeUndefined();
+    // Es el único quiz publicado del libro: al completarlo, el libro queda completo (abre los extras).
+    expect(progress?.bookCompletedAt).toBeInstanceOf(Date);
   });
 
   it('el empate se resuelve entre los empatados y queda registrado', async () => {

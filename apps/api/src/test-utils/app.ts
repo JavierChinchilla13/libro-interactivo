@@ -7,6 +7,10 @@ import type { Clock } from '../lib/clock.js';
 import { createLogger } from '../lib/logger.js';
 import { MemoryMailProvider, type MailProvider } from '../providers/mail/MailProvider.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
+import {
+  MemoryStorageProvider,
+  type StorageProvider,
+} from '../providers/storage/StorageProvider.js';
 import type { RandomInt } from '../services/quiz-engine.js';
 
 /** Límites muy altos para que las pruebas no choquen entre sí (las de rate limit pasan los suyos). */
@@ -18,6 +22,8 @@ const RELAXED_LIMITS: Limits = {
   forgotPassword: { windowMs: 60_000, limit: 10_000 },
   resetPassword: { windowMs: 60_000, limit: 10_000 },
   contact: { windowMs: 60_000, limit: 10_000 },
+  accessResolve: { windowMs: 60_000, limit: 10_000 },
+  accessRedeem: { windowMs: 60_000, limit: 10_000 },
 };
 
 interface TestAppOptions {
@@ -30,6 +36,8 @@ interface TestAppOptions {
   /** Azar de quizzes (barajado y empates); por defecto `crypto`. Con semilla para pruebas estadísticas. */
   random?: RandomInt;
   images?: ImageProvider;
+  /** Almacenamiento privado; por defecto uno en memoria (accesible desde `createTestHarness().storage`). */
+  storage?: StorageProvider;
   configure?: (app: Express, ctx: AppContext) => void;
 }
 
@@ -41,6 +49,7 @@ export function createTestHarness(options: TestAppOptions = {}) {
   const env = parseEnv({ NODE_ENV: 'test', ...options.env });
   const logger = createLogger({ NODE_ENV: 'test', LOG_LEVEL: 'silent' });
   const memoryMail = new MemoryMailProvider();
+  const memoryStorage = new MemoryStorageProvider();
   const tasks = createBackgroundTasks(logger);
   const app = createApp(
     {
@@ -52,11 +61,12 @@ export function createTestHarness(options: TestAppOptions = {}) {
       ...(options.clock ? { clock: options.clock } : {}),
       ...(options.random ? { random: options.random } : {}),
       ...(options.images ? { images: options.images } : {}),
+      storage: options.storage ?? memoryStorage,
       limits: { ...RELAXED_LIMITS, ...options.limits },
     },
     options.configure,
   );
-  return { app, mail: memoryMail, flush: () => tasks.idle() };
+  return { app, mail: memoryMail, storage: memoryStorage, flush: () => tasks.idle() };
 }
 
 /** App de pruebas simple (cuando no hace falta revisar correos). */
