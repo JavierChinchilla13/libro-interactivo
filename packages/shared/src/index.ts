@@ -13,3 +13,4 @@ export * from './schemas/wiki.js';
 export * from './schemas/access.js';
 export * from './schemas/extra.js';
 export * from './schemas/site.js';
+export * from './schemas/publicWiki.js';
