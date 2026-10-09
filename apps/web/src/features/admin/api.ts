@@ -1,4 +1,10 @@
 import {
+  adminMessageListResponseSchema,
+  adminMessageSchema,
+  adminStatsSchema,
+  adminUserDetailSchema,
+  adminUserListResponseSchema,
+  adminUserSchema,
   adminFanArtListResponseSchema,
   adminFanArtSchema,
   adminReviewListResponseSchema,
@@ -24,6 +30,8 @@ import {
   wikiEntryResponseSchema,
   wikiListResponseSchema,
   type BookInputPayload,
+  type CreateStaffUserRequest,
+  type UpdateUserRequest,
   type CreateAccessTokenRequest,
   type CreateQuizRequest,
   type ExtraInputPayload,
@@ -37,6 +45,7 @@ import {
   type WikiEntryInputPayload,
   type WikiKind,
 } from '@libro/shared';
+import { z } from 'zod';
 import { apiRequest } from '../../shared/api/client';
 
 /** Cliente tipado del panel: cada llamada valida la respuesta con el esquema compartido. */
@@ -173,6 +182,33 @@ export const extrasApi = {
   preview: (id: string) => apiRequest(`/admin/extras/${id}/preview`, extraPreviewResponseSchema),
 };
 
+export const usersApi = {
+  list: (filter: { q?: string; role?: string; status?: string; page?: string } = {}) =>
+    apiRequest(`/admin/users${query(filter)}`, adminUserListResponseSchema),
+  get: (id: string) => apiRequest(`/admin/users/${id}`, adminUserDetailSchema),
+  create: (body: CreateStaffUserRequest) =>
+    apiRequest('/admin/users', adminUserSchema, { method: 'POST', body }),
+  update: (id: string, body: UpdateUserRequest) =>
+    apiRequest(`/admin/users/${id}`, adminUserSchema, { method: 'PATCH', body }),
+  remove: (id: string) => apiRequest(`/admin/users/${id}`, z.null(), { method: 'DELETE' }),
+};
+
+export const messagesApi = {
+  list: (filter: { status?: string; page?: string } = {}) =>
+    apiRequest(`/admin/contact-messages${query(filter)}`, adminMessageListResponseSchema),
+  setHandled: (id: string, handled: boolean) =>
+    apiRequest(`/admin/contact-messages/${id}`, adminMessageSchema, {
+      method: 'PATCH',
+      body: { handled },
+    }),
+  remove: (id: string) =>
+    apiRequest(`/admin/contact-messages/${id}`, z.null(), { method: 'DELETE' }),
+};
+
+export const statsApi = {
+  get: () => apiRequest('/admin/stats', adminStatsSchema),
+};
+
 /** Claves de TanStack Query del panel (para invalidar tras guardar). */
 export const keys = {
   books: ['admin', 'books'] as const,
@@ -190,6 +226,10 @@ export const keys = {
   posts: ['admin', 'posts'] as const,
   post: (id: string) => ['admin', 'posts', 'one', id] as const,
   site: ['admin', 'site-settings'] as const,
+  users: ['admin', 'users'] as const,
+  user: (id: string) => ['admin', 'users', 'one', id] as const,
+  messages: ['admin', 'messages'] as const,
+  stats: ['admin', 'stats'] as const,
   wiki: ['admin', 'wiki'] as const,
   wikiEntry: (id: string) => ['admin', 'wiki', 'entry', id] as const,
 };

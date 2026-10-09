@@ -19,7 +19,7 @@ export function createWelcomeController(welcome: WelcomeService) {
 
 export function createAdminSiteController(settings: SiteSettingsService) {
   const get: RequestHandler = async (_req, res) => {
-    res.json(await settings.getSettings());
+    res.json(await settings.getSettings(getAuth(res).role));
   };
   const update: RequestHandler = async (_req, res) => {
     const { body } = getInput<UpdateSiteSettingsRequest>(res);
