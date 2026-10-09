@@ -10,6 +10,10 @@ import {
   createAdminReviewController,
   createPublicCommunityController,
 } from '../controllers/community.controller.js';
+import {
+  createAdminMetricsController,
+  createAdminUsersController,
+} from '../controllers/adminOps.controller.js';
 import { createPublicWikiController } from '../controllers/publicWiki.controller.js';
 import { createAccountController } from '../controllers/account.controller.js';
 import {
@@ -35,6 +39,8 @@ import type { Clock } from '../lib/clock.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
 import type { PublicBookService } from '../services/publicBook.service.js';
 import type { FanArtService, ReviewService } from '../services/community.service.js';
+import type { AdminMetricsService } from '../services/adminMetrics.service.js';
+import type { AdminUsersService } from '../services/adminUsers.service.js';
 import type { PostService } from '../services/post.service.js';
 import type { PublicWikiService } from '../services/publicWiki.service.js';
 import type { SiteSettingsService } from '../services/siteSettings.service.js';
@@ -74,6 +80,11 @@ import {
   createPublicFanArtRouter,
   createPublicReviewRouter,
 } from './community.routes.js';
+import {
+  createAdminMessagesRouter,
+  createAdminStatsRouter,
+  createAdminUsersRouter,
+} from './adminOps.routes.js';
 import { createAdminPostRouter, createPublicPostRouter } from './post.routes.js';
 import { createPublicWikiRouter } from './publicWiki.routes.js';
 import {
@@ -108,6 +119,8 @@ export interface RouteDeps {
   publicBooks: PublicBookService;
   publicWiki: PublicWikiService;
   posts: PostService;
+  adminUsers: AdminUsersService;
+  adminMetrics: AdminMetricsService;
   fanArts: FanArtService;
   reviews: ReviewService;
   siteSettings: SiteSettingsService;
@@ -135,7 +148,7 @@ export function createApiRouter(deps: RouteDeps): Router {
       limits: deps.limits,
     }),
   );
-  router.use('/me', createAccountRouter(accountController, deps.guards));
+  router.use('/me', createAccountRouter(accountController, deps.guards, deps.limits));
   router.use('/me', createLearningRouter(quizController, deps.guards));
   router.use('/me', createWelcomeRouter(createWelcomeController(deps.welcome), deps.guards));
   router.use('/site', createPublicSiteRouter(createPublicSiteController(deps.siteSettings)));
@@ -148,6 +161,13 @@ export function createApiRouter(deps: RouteDeps): Router {
     '/admin/posts',
     createAdminPostRouter(createAdminPostController(deps.posts), deps.guards),
   );
+  const metrics = createAdminMetricsController(deps.adminMetrics);
+  router.use(
+    '/admin/users',
+    createAdminUsersRouter(createAdminUsersController(deps.adminUsers), deps.guards),
+  );
+  router.use('/admin/contact-messages', createAdminMessagesRouter(metrics, deps.guards));
+  router.use('/admin/stats', createAdminStatsRouter(metrics, deps.guards));
   const community = createPublicCommunityController(deps.fanArts, deps.reviews);
   router.use('/fan-arts', createPublicFanArtRouter(community));
   router.use('/reviews', createPublicReviewRouter(community));
