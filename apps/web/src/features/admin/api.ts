@@ -1,4 +1,10 @@
 import {
+  adminFanArtListResponseSchema,
+  adminFanArtSchema,
+  adminReviewListResponseSchema,
+  adminReviewSchema,
+  adminPostListResponseSchema,
+  adminPostSchema,
   accessTokenListResponseSchema,
   accessTokenResponseSchema,
   attemptResponseSchema,
@@ -22,6 +28,9 @@ import {
   type CreateQuizRequest,
   type ExtraInputPayload,
   type ExtraUploadUrlRequest,
+  type FanArtInputPayload,
+  type ReviewInputPayload,
+  type PostInputPayload,
   type QuizDraftPayload,
   type UpdateSiteSettingsRequest,
   type UPLOAD_PURPOSES,
@@ -46,6 +55,36 @@ export const booksApi = {
     apiRequest('/admin/books', bookResponseSchema, { method: 'POST', body }),
   replace: (id: string, body: BookInputPayload) =>
     apiRequest(`/admin/books/${id}`, bookResponseSchema, { method: 'PUT', body }),
+};
+
+export const postsApi = {
+  list: (filter: { status?: string; category?: string; q?: string } = {}) =>
+    apiRequest(`/admin/posts${query(filter)}`, adminPostListResponseSchema),
+  get: (id: string) => apiRequest(`/admin/posts/${id}`, adminPostSchema),
+  create: (body: PostInputPayload) =>
+    apiRequest('/admin/posts', adminPostSchema, { method: 'POST', body }),
+  replace: (id: string, body: PostInputPayload) =>
+    apiRequest(`/admin/posts/${id}`, adminPostSchema, { method: 'PUT', body }),
+};
+
+export const fanArtsApi = {
+  list: (filter: { status?: string; bookId?: string } = {}) =>
+    apiRequest(`/admin/fan-arts${query(filter)}`, adminFanArtListResponseSchema),
+  get: (id: string) => apiRequest(`/admin/fan-arts/${id}`, adminFanArtSchema),
+  create: (body: FanArtInputPayload) =>
+    apiRequest('/admin/fan-arts', adminFanArtSchema, { method: 'POST', body }),
+  replace: (id: string, body: FanArtInputPayload) =>
+    apiRequest(`/admin/fan-arts/${id}`, adminFanArtSchema, { method: 'PUT', body }),
+};
+
+export const reviewsApi = {
+  list: (filter: { status?: string; bookId?: string } = {}) =>
+    apiRequest(`/admin/reviews${query(filter)}`, adminReviewListResponseSchema),
+  get: (id: string) => apiRequest(`/admin/reviews/${id}`, adminReviewSchema),
+  create: (body: ReviewInputPayload) =>
+    apiRequest('/admin/reviews', adminReviewSchema, { method: 'POST', body }),
+  replace: (id: string, body: ReviewInputPayload) =>
+    apiRequest(`/admin/reviews/${id}`, adminReviewSchema, { method: 'PUT', body }),
 };
 
 export const quizzesApi = {
@@ -144,6 +183,12 @@ export const keys = {
   access: (bookId: string) => ['admin', 'access', bookId] as const,
   extras: (bookId: string) => ['admin', 'extras', bookId] as const,
   extra: (id: string) => ['admin', 'extras', 'one', id] as const,
+  fanArts: ['admin', 'fan-arts'] as const,
+  fanArt: (id: string) => ['admin', 'fan-arts', 'one', id] as const,
+  reviews: ['admin', 'reviews'] as const,
+  review: (id: string) => ['admin', 'reviews', 'one', id] as const,
+  posts: ['admin', 'posts'] as const,
+  post: (id: string) => ['admin', 'posts', 'one', id] as const,
   site: ['admin', 'site-settings'] as const,
   wiki: ['admin', 'wiki'] as const,
   wikiEntry: (id: string) => ['admin', 'wiki', 'entry', id] as const,

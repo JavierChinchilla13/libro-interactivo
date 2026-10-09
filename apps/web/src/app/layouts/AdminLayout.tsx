@@ -13,11 +13,13 @@ const CONTENT = [
   { to: '/admin/libros', label: 'Libros' },
   { to: '/admin/quizzes', label: 'Quizzes' },
   { to: '/admin/wiki', label: 'Wiki' },
+  { to: '/admin/actualizaciones', label: 'Actualizaciones' },
+  { to: '/admin/fan-arts', label: 'Fan arts' },
+  { to: '/admin/resenas', label: 'Reseñas' },
   { to: '/admin/extras', label: 'Capítulos extra' },
   { to: '/admin/sitio', label: 'Portada y autora' },
   { to: '/admin/bienvenida', label: 'Mensaje de bienvenida' },
 ] as const;
-const COMING_CONTENT = ['Actualizaciones', 'Fan arts', 'Reseñas'] as const;
 const COMING_ADMIN = ['Usuarios', 'Mensajes de contacto', 'Ajustes del sitio'] as const;
 
 function Soon({ label }: { label: string }) {
@@ -71,9 +73,6 @@ export function AdminLayout() {
             <NavLink key={item.to} to={item.to} className={link}>
               {item.label}
             </NavLink>
-          ))}
-          {COMING_CONTENT.map((label) => (
-            <Soon key={label} label={label} />
           ))}
           {isAdmin ? (
             <>

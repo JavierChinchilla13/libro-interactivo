@@ -1,6 +1,8 @@
 import type { PublicBookSummary } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '../auth/session';
+import { communityApi, communityKeys } from '../community/api';
+import { postKeys, postsApi } from '../posts/api';
 import { booksApi, readerKeys } from '../reader/api';
 import { publicApi, publicKeys } from './api';
 import {
@@ -8,7 +10,9 @@ import {
   BookSection,
   BuySection,
   Experiences,
+  FeaturedPosts,
   Hero,
+  ReviewsSection,
   SagaSection,
   WikiPreview,
 } from './LandingSections';
@@ -33,6 +37,16 @@ export function HomePage() {
     enabled: featured !== undefined,
   });
 
+  const featuredPosts = useQuery({
+    queryKey: postKeys.featured,
+    queryFn: () => postsApi.list({ featured: true, pageSize: 3 }),
+  });
+
+  const reviews = useQuery({
+    queryKey: communityKeys.reviews,
+    queryFn: () => communityApi.reviews(6),
+  });
+
   const lockMessage = site.data?.lockMessage ?? 'Bloqueado: avanza en tu lectura';
   const book = detail.data;
 
@@ -48,8 +62,10 @@ export function HomePage() {
           signedIn={Boolean(session.data)}
         />
       ) : null}
+      <FeaturedPosts posts={featuredPosts.data?.posts ?? []} />
       <SagaSection books={books.data?.books ?? []} />
       <BuySection links={book?.purchaseLinks ?? []} />
+      <ReviewsSection reviews={reviews.data?.reviews ?? []} />
       <AuthorSection site={site.data} />
     </div>
   );

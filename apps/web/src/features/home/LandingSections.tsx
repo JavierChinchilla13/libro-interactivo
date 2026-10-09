@@ -1,4 +1,6 @@
 import type {
+  PostCard,
+  PublicReview,
   PublicBookDetail,
   PublicBookSummary,
   PublicSiteResponse,
@@ -10,6 +12,7 @@ import { thumbUrl } from '../../shared/lib/cloudinary';
 import { formatDate } from '../../shared/lib/dates';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Badge, Card } from '../../shared/ui/layout';
+import { PostCardItem } from '../posts/PostsPage';
 import { ContactForm } from './ContactForm';
 
 const buttonLink =
@@ -188,6 +191,53 @@ export function Experiences({
           Ver mi avance
         </Link>
       ) : null}
+    </Section>
+  );
+}
+
+/** Las últimas publicaciones destacadas por la autora (si no hay ninguna, la sección no aparece). */
+export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
+  if (posts.length === 0) return null;
+  return (
+    <Section id="actualizaciones" title="Actualizaciones">
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {posts.map((post) => (
+          <PostCardItem key={post.id} post={post} />
+        ))}
+      </ul>
+      <Link to="/actualizaciones" className={`${secondaryLink} mt-4`}>
+        Ver todas las actualizaciones
+      </Link>
+    </Section>
+  );
+}
+
+/** Reseñas que la autora eligió mostrar. Son texto plano: React lo escapa, nunca se interpreta como HTML. */
+export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }) {
+  if (reviews.length === 0) return null;
+  return (
+    <Section id="resenas" title="Reseñas de lectores">
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {reviews.map((review) => (
+          <li key={review.id}>
+            <Card as="div" className="flex h-full flex-col gap-3">
+              {review.rating ? (
+                <p role="img" aria-label={`${review.rating} de 5 estrellas`} className="text-lg">
+                  {'★'.repeat(review.rating)}
+                  <span className="text-muted">{'★'.repeat(5 - review.rating)}</span>
+                </p>
+              ) : null}
+              <blockquote className="flex-1 text-sm">“{review.text}”</blockquote>
+              <p className="text-sm font-medium">
+                — {review.authorName}
+                {review.source ? (
+                  <span className="font-normal text-muted"> · {review.source}</span>
+                ) : null}
+              </p>
+            </Card>
+          </li>
+        ))}
+      </ul>
     </Section>
   );
 }

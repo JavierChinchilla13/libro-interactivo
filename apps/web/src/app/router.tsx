@@ -8,6 +8,10 @@ import { ExtraFormPage } from '../features/admin/extras/ExtraFormPage';
 import { ExtraListPage } from '../features/admin/extras/ExtraListPage';
 import { SiteContentPage } from '../features/admin/site/SiteContentPage';
 import { WelcomeSettingsPage } from '../features/admin/site/WelcomeSettingsPage';
+import { FanArtFormPage, FanArtListPage } from '../features/admin/community/FanArtPages';
+import { ReviewFormPage, ReviewListPage } from '../features/admin/community/ReviewPages';
+import { PostFormPage } from '../features/admin/posts/PostFormPage';
+import { PostListPage } from '../features/admin/posts/PostListPage';
 import { QuizEditorPage } from '../features/admin/quizzes/QuizEditorPage';
 import { QuizListPage } from '../features/admin/quizzes/QuizListPage';
 import { QuizNewPage } from '../features/admin/quizzes/QuizNewPage';
@@ -20,6 +24,9 @@ import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { ContactPage } from '../features/contact/ContactPage';
 import { HealthPage } from '../features/health/HealthPage';
 import { HomePage } from '../features/home/HomePage';
+import { FanArtsPage } from '../features/community/FanArtsPage';
+import { PostPage } from '../features/posts/PostPage';
+import { PostsPage } from '../features/posts/PostsPage';
 import { WikiEntryPage } from '../features/wiki/WikiEntryPage';
 import { WikiPage } from '../features/wiki/WikiPage';
 import { AccountPage } from '../features/reader/AccountPage';
@@ -42,6 +49,9 @@ export const routes: RouteObject[] = [
     children: [
       { index: true, element: <HomePage /> },
       { path: 'estado', element: <HealthPage /> },
+      { path: 'actualizaciones', element: <PostsPage /> },
+      { path: 'actualizaciones/:slug', element: <PostPage /> },
+      { path: 'fan-arts', element: <FanArtsPage /> },
       { path: 'contacto', element: <ContactPage /> },
       { path: 'wiki', element: <WikiPage /> },
       { path: 'wiki/entrada/:entryId', element: <WikiEntryPage /> },
@@ -94,6 +104,15 @@ export const routes: RouteObject[] = [
               { path: 'wiki', element: <WikiListPage /> },
               { path: 'wiki/nueva', element: <WikiFormPage /> },
               { path: 'wiki/:entryId', element: <WikiFormPage /> },
+              { path: 'actualizaciones', element: <PostListPage /> },
+              { path: 'actualizaciones/nueva', element: <PostFormPage /> },
+              { path: 'actualizaciones/:postId', element: <PostFormPage /> },
+              { path: 'fan-arts', element: <FanArtListPage /> },
+              { path: 'fan-arts/nuevo', element: <FanArtFormPage /> },
+              { path: 'fan-arts/:fanArtId', element: <FanArtFormPage /> },
+              { path: 'resenas', element: <ReviewListPage /> },
+              { path: 'resenas/nueva', element: <ReviewFormPage /> },
+              { path: 'resenas/:reviewId', element: <ReviewFormPage /> },
               { path: 'sitio', element: <SiteContentPage /> },
               { path: 'bienvenida', element: <WelcomeSettingsPage /> },
               { path: 'extras', element: <ExtraListPage /> },
