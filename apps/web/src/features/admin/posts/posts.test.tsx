@@ -165,10 +165,6 @@ describe('nueva actualización', () => {
       'Evento sin datos',
     );
     await userEvent.click(screen.getByRole('button', { name: 'Publicar' }));
-    const summary = await screen
-      .findByRole('alert', { name: /Revisa estos campos/ })
-      .catch(() => null);
-    void summary;
     expect(await screen.findAllByText('Escribe el lugar')).not.toHaveLength(0);
     expect(screen.getAllByText('Elige la fecha y hora de inicio').length).toBeGreaterThan(0);
     expect(called('POST /api/admin/posts')).toHaveLength(0);

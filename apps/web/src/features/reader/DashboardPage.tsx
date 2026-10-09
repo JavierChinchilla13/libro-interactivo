@@ -17,8 +17,7 @@ export function lockedMessage(experience: Experience): string {
   return 'Sigue avanzando en tu lectura.';
 }
 
-const linkButton =
-  'inline-flex min-h-11 items-center justify-center rounded-token px-4 text-sm font-semibold';
+const linkButton = 'btn';
 
 function ExperienceCard({ experience }: { experience: Experience }) {
   return (
@@ -26,7 +25,7 @@ function ExperienceCard({ experience }: { experience: Experience }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs text-muted">Quiz {experience.order}</p>
-          <h3 className="font-semibold">{experience.title}</h3>
+          <h3 className="font-display text-lg font-semibold">{experience.title}</h3>
         </div>
         {experience.status === 'completed' ? <Badge tone="success">Completado</Badge> : null}
         {experience.status === 'available' ? <Badge tone="warning">Disponible</Badge> : null}
@@ -40,7 +39,7 @@ function ExperienceCard({ experience }: { experience: Experience }) {
       {experience.status === 'available' ? (
         <Link
           to={`/panel/quiz/${experience.id}`}
-          className={`${linkButton} self-start bg-primary text-primary-contrast`}
+          className={`${linkButton} self-start btn-primary`}
         >
           {experience.inProgress ? 'Continuar' : 'Empezar'}
           <span className="sr-only"> {experience.title}</span>
@@ -49,10 +48,7 @@ function ExperienceCard({ experience }: { experience: Experience }) {
 
       {experience.status === 'completed' ? (
         <div className="flex flex-wrap items-center gap-2">
-          <Link
-            to={`/panel/resultados/${experience.id}`}
-            className={`${linkButton} border border-border`}
-          >
+          <Link to={`/panel/resultados/${experience.id}`} className={`${linkButton} btn-secondary`}>
             Ver mi resultado<span className="sr-only"> de {experience.title}</span>
           </Link>
           {experience.allowRetake ? (
@@ -94,7 +90,9 @@ export function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-display text-2xl font-bold">Hola, {session.data?.name}</h1>
+        <h1 className="text-gradient font-display text-3xl font-bold sm:text-4xl">
+          Hola, {session.data?.name}
+        </h1>
         {book ? (
           <p className="text-muted">
             {books.length > 1 ? (
@@ -138,10 +136,10 @@ export function DashboardPage() {
               aria-valuemax={experiences.length}
               aria-valuenow={done}
               aria-label="Avance en el libro"
-              className="h-2 overflow-hidden rounded-full bg-surface-alt"
+              className="meter"
             >
               <div
-                className="h-full bg-primary"
+                className="meter-fill"
                 style={{ width: `${experiences.length ? (done / experiences.length) * 100 : 0}%` }}
               />
             </div>
@@ -166,16 +164,13 @@ export function DashboardPage() {
           )}
 
           <Card className="flex flex-col gap-2">
-            <h2 className="font-semibold">Capítulos extra</h2>
+            <h2 className="font-display text-lg font-semibold">Capítulos extra</h2>
             {progress.data.bookCompleted ? (
               <>
                 <p className="text-sm">
                   ¡Completaste todo el libro! Ya puedes abrir los capítulos extra.
                 </p>
-                <Link
-                  to="/panel/extras"
-                  className={`${linkButton} self-start bg-primary text-primary-contrast`}
-                >
+                <Link to="/panel/extras" className={`${linkButton} self-start btn-primary`}>
                   Ver los extras
                 </Link>
               </>
@@ -184,18 +179,17 @@ export function DashboardPage() {
                 <p className="text-sm text-muted">
                   Se desbloquean al completar todos los quizzes y el juego de este libro.
                 </p>
-                <Badge>Bloqueados</Badge>
+                <span>
+                  <Badge>Bloqueados</Badge>
+                </span>
               </>
             )}
           </Card>
 
           <Card className="flex flex-col gap-2">
-            <h2 className="font-semibold">Mis resultados</h2>
+            <h2 className="font-display text-lg font-semibold">Mis resultados</h2>
             <p className="text-sm text-muted">Todo lo que has descubierto.</p>
-            <Link
-              to="/panel/resultados"
-              className={`${linkButton} self-start border border-border`}
-            >
+            <Link to="/panel/resultados" className={`${linkButton} btn-secondary self-start`}>
               Ver mis resultados
             </Link>
           </Card>

@@ -145,7 +145,9 @@ export function QuizPage() {
               Quiz {position + 1} de {experiences.length}
             </p>
           ) : null}
-          <h1 className="font-display text-3xl font-bold">{quiz.title}</h1>
+          <h1 className="text-gradient font-display text-3xl font-bold sm:text-4xl">
+            {quiz.title}
+          </h1>
         </div>
         {quiz.instructionsHtml ? <SafeHtml html={quiz.instructionsHtml} /> : null}
         <p className="text-sm text-muted">
@@ -211,10 +213,10 @@ export function QuizPage() {
           aria-valuemin={1}
           aria-valuemax={stage.questions.length}
           aria-valuenow={index + 1}
-          className="h-2 overflow-hidden rounded-full bg-surface-alt"
+          className="meter"
         >
           <div
-            className="h-full bg-primary"
+            className="meter-fill"
             style={{ width: `${((index + 1) / stage.questions.length) * 100}%` }}
           />
         </div>
@@ -222,7 +224,9 @@ export function QuizPage() {
           <p className="font-display text-xl font-semibold">{stage.title}</p>
         ) : null}
         <fieldset className="flex flex-col gap-3">
-          <legend className="mb-2 text-lg font-semibold">{question.text}</legend>
+          <legend className="mb-4 font-display text-2xl font-semibold leading-snug sm:text-3xl">
+            {question.text}
+          </legend>
           {question.image ? (
             <img
               src={thumbUrl(question.image.url, 800)}
@@ -231,18 +235,12 @@ export function QuizPage() {
             />
           ) : null}
           {question.answers.map((answer) => (
-            <label
-              key={answer.id}
-              className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-token border px-4 py-3 ${
-                chosen === answer.id ? 'border-primary bg-surface-alt' : 'border-border'
-              }`}
-            >
+            <label key={answer.id} className="option">
               <input
                 type="radio"
                 name={question.id}
                 checked={chosen === answer.id}
                 onChange={() => patch({ answers: { ...answers, [question.id]: answer.id } })}
-                className="size-5 accent-[var(--token-primary)]"
               />
               {answer.text}
             </label>
@@ -285,10 +283,7 @@ export function QuizPage() {
     <div className="mx-auto flex max-w-xl flex-col gap-6">
       <ResultView result={view.result} />
       <div className="flex flex-wrap gap-3">
-        <Link
-          to="/panel"
-          className="inline-flex min-h-11 items-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-        >
+        <Link to="/panel" className="btn btn-primary">
           Volver a mi panel
         </Link>
         {quiz.allowRetake ? (

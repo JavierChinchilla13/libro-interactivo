@@ -17,12 +17,18 @@
   --token-border: #4278b0;
   /* Cian del portal: acciones, enlaces activos y foco. El texto sobre él es el marino del fondo. */
   --token-primary: #3fd8ff;
+  /* Segundo extremo del degradado de los botones (cian → azul claro). */
+  --token-primary-end: #5aa9ff;
   --token-primary-contrast: #04152b;
   /* Lavanda de las flores: detalles secundarios. */
   --token-accent: #a89bff;
   --token-danger: #ff8791;
   --token-success: #5fe3ae;
   --token-warning: #ffcb66;
+
+  /* Vidrio translúcido de las tarjetas y línea fina de separación. */
+  --token-glass: rgb(11 33 66 / 0.62);
+  --token-line: rgb(120 190 255 / 0.2);
 
   /* Resplandor suave (tarjetas) y fuerte (acciones principales): el brillo cian de la imagen. */
   --token-glow-soft: 0 0 0 1px rgb(63 216 255 / 0.08), 0 8px 28px rgb(2 12 30 / 0.55);

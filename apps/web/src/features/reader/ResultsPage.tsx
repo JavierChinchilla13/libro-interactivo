@@ -119,10 +119,7 @@ export function ResultDetailPage() {
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        <Link
-          to="/panel"
-          className="inline-flex min-h-11 items-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-        >
+        <Link to="/panel" className="btn btn-primary">
           Volver a mi panel
         </Link>
         {allowRetake ? (

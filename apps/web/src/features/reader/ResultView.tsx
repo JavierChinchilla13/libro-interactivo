@@ -11,15 +11,17 @@ export function ResultView({ result }: { result: ResultPayload }) {
   return (
     <article className="flex flex-col gap-5" aria-label="Tu resultado">
       <div>
-        <p className="text-sm text-muted">Tu resultado</p>
-        <h2 className="font-display text-3xl font-bold">{result.title}</h2>
+        <p className="eyebrow">Tu resultado</p>
+        <h2 className="text-gradient mt-1 font-display text-4xl font-bold leading-tight sm:text-5xl">
+          {result.title}
+        </h2>
       </div>
 
       {media?.kind === 'image' ? (
         <img
           src={thumbUrl(media.image.url, 900)}
           alt={media.image.alt}
-          className="max-h-96 w-auto max-w-full self-start rounded-token-lg border border-border"
+          className="glow-frame max-h-96 w-auto max-w-full self-start rounded-token-lg"
         />
       ) : null}
       {media?.kind === 'video' ? (
@@ -41,7 +43,7 @@ export function ResultView({ result }: { result: ResultPayload }) {
       {result.facts && result.facts.length > 0 ? (
         <dl className="grid gap-3 sm:grid-cols-2">
           {result.facts.map((fact, index) => (
-            <div key={index} className="rounded-token bg-surface-alt p-3">
+            <div key={index} className="glass rounded-token-lg p-4">
               <dt className="text-xs text-muted">{fact.label}</dt>
               <dd className="font-medium">{fact.value}</dd>
             </div>
@@ -61,11 +63,8 @@ export function ResultView({ result }: { result: ResultPayload }) {
                     <span>{row.title}</span>
                     <strong>{row.percent}%</strong>
                   </div>
-                  <div
-                    className="h-2 overflow-hidden rounded-full bg-surface-alt"
-                    aria-hidden="true"
-                  >
-                    <div className="h-full bg-primary" style={{ width: `${row.percent}%` }} />
+                  <div className="meter" aria-hidden="true">
+                    <div className="meter-fill" style={{ width: `${row.percent}%` }} />
                   </div>
                 </li>
               ))}

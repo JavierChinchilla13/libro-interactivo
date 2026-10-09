@@ -36,10 +36,7 @@ export function FanArtListPage() {
         title="Fan arts"
         subtitle="Dibujos de lectores. Solo se muestran los publicados con el permiso del artista confirmado."
         actions={
-          <Link
-            to="/admin/fan-arts/nuevo"
-            className="inline-flex min-h-11 items-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-          >
+          <Link to="/admin/fan-arts/nuevo" className="btn btn-primary">
             + Nuevo fan art
           </Link>
         }

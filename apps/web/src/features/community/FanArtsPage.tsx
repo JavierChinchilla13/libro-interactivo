@@ -39,11 +39,7 @@ export function FanArtsPage() {
               type="button"
               aria-pressed={bookId === book?.id}
               onClick={() => setBookId(book?.id)}
-              className={`min-h-11 rounded-full border px-4 text-sm ${
-                bookId === book?.id
-                  ? 'border-primary bg-surface-alt font-semibold'
-                  : 'border-border'
-              }`}
+              className="chip"
             >
               {book?.title ?? 'Todos'}
             </button>
