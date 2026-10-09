@@ -30,6 +30,10 @@ export function createErrorHandler(logger: Logger): ErrorRequestHandler {
     } else if (error instanceof ZodError) {
       status = 400;
       body = { error: { code: 'VALIDATION', message: 'Datos no válidos' } };
+    } else if (error instanceof URIError) {
+      // Dirección con porcentajes mal formados (p. ej. `/api/books/%E0%A4%A`): es culpa de quien pide, no del servidor.
+      status = 400;
+      body = { error: { code: 'VALIDATION', message: 'La dirección no es válida' } };
     } else if (isBodyParseError(error)) {
       status = 400;
       body = { error: { code: 'VALIDATION', message: 'El cuerpo de la petición no es válido' } };

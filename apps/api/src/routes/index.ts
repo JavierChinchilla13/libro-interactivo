@@ -157,6 +157,9 @@ export function createApiRouter(deps: RouteDeps): Router {
     createPublicWikiRouter(createPublicWikiController(deps.publicWiki), deps.guards),
   );
   router.use('/posts', createPublicPostRouter(createPublicPostController(deps.posts)));
+  // Piso de seguridad de TODO `/admin`: sin sesión no se entra, y una lectora recibe 403, aunque a un router nuevo se le
+  // olvide su propio guard. Los routers de solo administradoras exigen además `ADMIN` por su cuenta.
+  router.use('/admin', deps.guards.requireAuth, deps.guards.requireRole('EDITOR', 'ADMIN'));
   router.use(
     '/admin/posts',
     createAdminPostRouter(createAdminPostController(deps.posts), deps.guards),
