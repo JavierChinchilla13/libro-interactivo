@@ -1,6 +1,15 @@
 import { Router } from 'express';
 import type { Env } from '../config/env.js';
 import type { Limits } from '../config/limits.js';
+import {
+  createAdminPostController,
+  createPublicPostController,
+} from '../controllers/post.controller.js';
+import {
+  createAdminFanArtController,
+  createAdminReviewController,
+  createPublicCommunityController,
+} from '../controllers/community.controller.js';
 import { createPublicWikiController } from '../controllers/publicWiki.controller.js';
 import { createAccountController } from '../controllers/account.controller.js';
 import {
@@ -25,6 +34,8 @@ import {
 import type { Clock } from '../lib/clock.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
 import type { PublicBookService } from '../services/publicBook.service.js';
+import type { FanArtService, ReviewService } from '../services/community.service.js';
+import type { PostService } from '../services/post.service.js';
 import type { PublicWikiService } from '../services/publicWiki.service.js';
 import type { SiteSettingsService } from '../services/siteSettings.service.js';
 import type { WelcomeService } from '../services/welcome.service.js';
@@ -57,6 +68,13 @@ import {
 import { createAuthRouter } from './auth.routes.js';
 import { createContactRouter } from './contact.routes.js';
 import { createHealthRouter } from './health.routes.js';
+import {
+  createAdminFanArtRouter,
+  createAdminReviewRouter,
+  createPublicFanArtRouter,
+  createPublicReviewRouter,
+} from './community.routes.js';
+import { createAdminPostRouter, createPublicPostRouter } from './post.routes.js';
 import { createPublicWikiRouter } from './publicWiki.routes.js';
 import {
   createAdminSiteRouter,
@@ -89,6 +107,9 @@ export interface RouteDeps {
   welcome: WelcomeService;
   publicBooks: PublicBookService;
   publicWiki: PublicWikiService;
+  posts: PostService;
+  fanArts: FanArtService;
+  reviews: ReviewService;
   siteSettings: SiteSettingsService;
   extras: ExtraService;
   clock: Clock;
@@ -121,6 +142,22 @@ export function createApiRouter(deps: RouteDeps): Router {
   router.use(
     '/wiki',
     createPublicWikiRouter(createPublicWikiController(deps.publicWiki), deps.guards),
+  );
+  router.use('/posts', createPublicPostRouter(createPublicPostController(deps.posts)));
+  router.use(
+    '/admin/posts',
+    createAdminPostRouter(createAdminPostController(deps.posts), deps.guards),
+  );
+  const community = createPublicCommunityController(deps.fanArts, deps.reviews);
+  router.use('/fan-arts', createPublicFanArtRouter(community));
+  router.use('/reviews', createPublicReviewRouter(community));
+  router.use(
+    '/admin/fan-arts',
+    createAdminFanArtRouter(createAdminFanArtController(deps.fanArts), deps.guards),
+  );
+  router.use(
+    '/admin/reviews',
+    createAdminReviewRouter(createAdminReviewController(deps.reviews), deps.guards),
   );
   router.use('/books', createPublicBookRouter(createPublicBookController(deps.publicBooks)));
   router.use(
