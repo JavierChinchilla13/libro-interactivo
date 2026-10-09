@@ -18,7 +18,7 @@ export default defineConfig({
   globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
   // La primera carga en frío de Vite compila TipTap y el panel: se da más margen a las aserciones.
-  expect: { timeout: 10_000 },
+  expect: { timeout: 20_000 },
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
   reporter: isCI ? [['github'], ['html', { open: 'never' }]] : 'list',
