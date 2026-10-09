@@ -25,6 +25,10 @@ jobs:
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
+      - name: Cobertura del API (falla si baja del piso)
+        run: npm run test:coverage -w apps/api
+      - name: Auditoría de dependencias (alta o crítica)
+        run: npm audit --audit-level=high
       - run: npm run build
 
   e2e:
