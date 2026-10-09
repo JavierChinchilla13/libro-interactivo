@@ -97,18 +97,10 @@ export function RedeemPage() {
               aquí y se desbloqueará solo.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link
-                to="/ingresar"
-                state={{ from: `/u/${token}` }}
-                className="inline-flex min-h-11 items-center justify-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-              >
+              <Link to="/ingresar" state={{ from: `/u/${token}` }} className="btn btn-primary">
                 Ingresar
               </Link>
-              <Link
-                to="/registro"
-                state={{ from: `/u/${token}` }}
-                className="inline-flex min-h-11 items-center justify-center rounded-token border border-border px-4 text-sm font-semibold"
-              >
+              <Link to="/registro" state={{ from: `/u/${token}` }} className="btn btn-secondary">
                 Crear cuenta
               </Link>
             </div>
@@ -129,10 +121,7 @@ export function RedeemPage() {
             title={redeem.data.alreadyUnlocked ? 'Ya lo tenías desbloqueado' : '¡Desbloqueado!'}
           >
             <p className="mt-1">«{redeem.data.title}» está disponible en tu cuenta.</p>
-            <Link
-              to="/panel"
-              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-            >
+            <Link to="/panel" className="btn btn-primary mt-3">
               Ir a mi panel
             </Link>
           </Alert>

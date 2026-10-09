@@ -23,10 +23,7 @@ export function ReviewListPage() {
         title="Reseñas"
         subtitle="Comentarios de lectores. Solo se muestran en la página principal las que estén publicadas."
         actions={
-          <Link
-            to="/admin/resenas/nueva"
-            className="inline-flex min-h-11 items-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-          >
+          <Link to="/admin/resenas/nueva" className="btn btn-primary">
             + Nueva reseña
           </Link>
         }

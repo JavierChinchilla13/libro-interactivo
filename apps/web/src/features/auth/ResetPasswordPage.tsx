@@ -47,10 +47,7 @@ export function ResetPasswordPage() {
           <Alert tone="success" title="¡Listo!">
             Tu contraseña se actualizó. Ya puedes iniciar sesión.
           </Alert>
-          <Link
-            to="/ingresar"
-            className="inline-flex min-h-11 items-center justify-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-          >
+          <Link to="/ingresar" className="btn btn-primary">
             Ir a ingresar
           </Link>
         </div>

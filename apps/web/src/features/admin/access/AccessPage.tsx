@@ -139,18 +139,10 @@ export function AccessPage() {
                     </div>
                     {token.status === 'active' ? (
                       <div className="flex flex-wrap gap-2">
-                        <a
-                          href={accessApi.pdfUrl(token.id)}
-                          download
-                          className="inline-flex min-h-11 items-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-                        >
+                        <a href={accessApi.pdfUrl(token.id)} download className="btn btn-primary">
                           Descargar PDF<span className="sr-only"> de {token.label}</span>
                         </a>
-                        <a
-                          href={accessApi.svgUrl(token.id)}
-                          download
-                          className="inline-flex min-h-11 items-center rounded-token border border-border px-4 text-sm font-semibold"
-                        >
+                        <a href={accessApi.svgUrl(token.id)} download className="btn btn-secondary">
                           SVG<span className="sr-only"> de {token.label}</span>
                         </a>
                         <Button

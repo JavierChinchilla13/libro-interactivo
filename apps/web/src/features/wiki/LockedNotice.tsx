@@ -3,8 +3,7 @@ import { Card } from '../../shared/ui/layout';
 import { useSession } from '../auth/session';
 import { DEFAULT_LOCK_TEXT } from './sections';
 
-const linkButton =
-  'inline-flex min-h-11 items-center justify-center rounded-token px-4 text-sm font-semibold';
+const linkButton = 'btn';
 
 /**
  * Lo que se ve en lugar de un contenido bloqueado: el mensaje de la autora y a dónde ir. Nunca lleva datos de lo
@@ -18,11 +17,11 @@ export function LockedNotice({ title, message }: { title: string; message?: stri
       <h2 className="font-display text-xl font-bold">{title}</h2>
       <p className="text-muted">{message ?? DEFAULT_LOCK_TEXT}</p>
       {session.data ? (
-        <Link to="/panel" className={`${linkButton} bg-primary text-primary-contrast`}>
+        <Link to="/panel" className={`${linkButton} btn-primary`}>
           Ir a mi panel
         </Link>
       ) : (
-        <Link to="/ingresar" className={`${linkButton} bg-primary text-primary-contrast`}>
+        <Link to="/ingresar" className={`${linkButton} btn-primary`}>
           Ingresar
         </Link>
       )}

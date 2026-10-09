@@ -71,10 +71,7 @@ export function ExtrasPage() {
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     {extra.opened ? <Badge tone="success">Visto</Badge> : null}
-                    <Link
-                      to={`/panel/extras/${extra.id}`}
-                      className="inline-flex min-h-11 items-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-                    >
+                    <Link to={`/panel/extras/${extra.id}`} className="btn btn-primary">
                       Abrir<span className="sr-only"> {extra.title}</span>
                     </Link>
                   </div>
@@ -170,7 +167,7 @@ export function ExtraViewPage() {
             href={data.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center self-start rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
+            className="btn btn-primary self-start"
           >
             Abrir en otra pestaña
           </a>

@@ -35,10 +35,7 @@ export function PostListPage() {
         title="Actualizaciones"
         subtitle="Ferias, eventos y novedades. Cada publicación elige una plantilla."
         actions={
-          <Link
-            to="/admin/actualizaciones/nueva"
-            className="inline-flex min-h-11 items-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-          >
+          <Link to="/admin/actualizaciones/nueva" className="btn btn-primary">
             + Nueva actualización
           </Link>
         }

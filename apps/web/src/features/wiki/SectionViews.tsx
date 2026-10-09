@@ -195,9 +195,7 @@ export function PlacesView({ bookId, section }: { bookId: string; section: Publi
               type="button"
               aria-pressed={group === option}
               onClick={() => setGroup(option)}
-              className={`min-h-11 rounded-full border px-4 text-sm ${
-                group === option ? 'border-primary bg-surface-alt font-semibold' : 'border-border'
-              }`}
+              className="chip"
             >
               {option ?? 'Todos'}
             </button>
@@ -253,9 +251,7 @@ export function GlossaryView({ bookId, section }: { bookId: string; section: Pub
             disabled={!available.has(option)}
             aria-pressed={letter === option}
             onClick={() => setLetter(letter === option ? null : option)}
-            className={`size-11 rounded-token border text-sm disabled:opacity-40 ${
-              letter === option ? 'border-primary bg-surface-alt font-semibold' : 'border-border'
-            }`}
+            className="chip !size-11 !px-0 disabled:opacity-40"
           >
             {option}
           </button>

@@ -33,7 +33,7 @@ export function QuizListPage() {
         actions={
           <Link
             to={`/admin/quizzes/nuevo${bookId ? `?libro=${bookId}` : ''}`}
-            className="inline-flex min-h-11 items-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
+            className="btn btn-primary"
           >
             + Nuevo quiz
           </Link>

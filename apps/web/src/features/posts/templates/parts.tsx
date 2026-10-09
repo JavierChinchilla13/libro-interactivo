@@ -24,7 +24,7 @@ export function PostHeader({
 }) {
   const Title = preview ? 'h2' : 'h1';
   return (
-    <header className="flex flex-col gap-2">
+    <header className="flex flex-col items-start gap-3">
       <Badge tone={post.category === 'evento' ? 'warning' : 'neutral'}>
         {POST_CATEGORY_LABELS[post.category]}
       </Badge>
@@ -39,7 +39,6 @@ export function PostFrame({ children }: { children: ReactNode }) {
   return <article className="mx-auto flex max-w-2xl flex-col gap-5">{children}</article>;
 }
 
-export const buttonLink =
-  'inline-flex min-h-11 items-center justify-center rounded-token px-4 text-sm font-semibold';
-export const primaryLink = `${buttonLink} bg-primary text-primary-contrast`;
-export const secondaryLink = `${buttonLink} border border-border bg-surface text-text`;
+export const buttonLink = 'btn';
+export const primaryLink = `${buttonLink} btn-primary`;
+export const secondaryLink = `${buttonLink} btn-secondary`;

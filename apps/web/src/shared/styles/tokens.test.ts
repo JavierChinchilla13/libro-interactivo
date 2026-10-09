@@ -48,6 +48,7 @@ describe('contraste de la paleta (WCAG AA)', () => {
   it('el texto de los botones sobre el cian y sobre el color de peligro tiene al menos 4.5:1', () => {
     expect(contrast(token('primary-contrast'), token('primary'))).toBeGreaterThanOrEqual(4.5);
     expect(contrast(token('primary-contrast'), token('danger'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token('primary-contrast'), token('primary-end'))).toBeGreaterThanOrEqual(4.5);
   });
 
   it('los bordes de campos y controles tienen al menos 3:1 sobre la tarjeta y el fondo', () => {

@@ -22,7 +22,7 @@ export function PostCardItem({ post }: { post: PostCard }) {
     <li>
       <Link
         to={`/actualizaciones/${post.slug}`}
-        className="flex h-full flex-col overflow-hidden rounded-token-lg border border-border bg-surface hover:bg-surface-alt"
+        className="glass card-link group flex h-full flex-col overflow-hidden rounded-token-lg"
       >
         {post.thumbnail ? (
           <img
@@ -31,16 +31,21 @@ export function PostCardItem({ post }: { post: PostCard }) {
             width={post.thumbnail.width}
             height={post.thumbnail.height}
             loading="lazy"
-            className="aspect-video w-full object-cover"
+            className="aspect-video w-full bg-surface-alt object-cover transition duration-500 group-hover:scale-[1.03]"
           />
-        ) : null}
+        ) : (
+          <div
+            aria-hidden="true"
+            className="aspect-video w-full bg-linear-to-br from-surface-alt via-surface to-bg"
+          />
+        )}
         <span className="flex flex-1 flex-col gap-2 p-4">
           <span>
             <Badge tone={post.category === 'evento' ? 'warning' : 'neutral'}>
               {POST_CATEGORY_LABELS[post.category]}
             </Badge>
           </span>
-          <span className="font-display text-lg font-semibold">{post.title}</span>
+          <span className="font-display text-lg font-semibold leading-snug">{post.title}</span>
           <span className="text-xs text-muted">{formatShortDate(post.publishedAt)}</span>
           {post.excerpt ? <span className="text-sm text-muted">{post.excerpt}</span> : null}
         </span>
@@ -77,9 +82,7 @@ export function PostsPage() {
             type="button"
             aria-pressed={filter === active}
             onClick={() => setParams(filter.slug ? { tipo: filter.slug } : {})}
-            className={`min-h-11 rounded-full border px-4 text-sm ${
-              filter === active ? 'border-primary bg-surface-alt font-semibold' : 'border-border'
-            }`}
+            className="chip"
           >
             {filter.label}
           </button>
