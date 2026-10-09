@@ -11,7 +11,7 @@ const link = ({ isActive }: { isActive: boolean }) =>
       : 'text-muted hover:bg-surface-alt/70 hover:text-text'
   }`;
 
-/** Secciones que ya existen y las que llegan en fases siguientes (se muestran apagadas, sin enlace). */
+/** Secciones del menú: contenido (editoras y administradoras) y las solo de administradoras. */
 const CONTENT = [
   { to: '/admin/libros', label: 'Libros' },
   { to: '/admin/quizzes', label: 'Quizzes' },
@@ -23,19 +23,14 @@ const CONTENT = [
   { to: '/admin/sitio', label: 'Portada y autora' },
   { to: '/admin/bienvenida', label: 'Mensaje de bienvenida' },
 ] as const;
-const COMING_ADMIN = ['Usuarios', 'Mensajes de contacto', 'Ajustes del sitio'] as const;
-
-function Soon({ label }: { label: string }) {
-  return (
-    <span
-      aria-disabled="true"
-      className="flex min-h-11 items-center justify-between px-3 text-sm text-muted opacity-60"
-    >
-      {label}
-      <span className="text-xs">pronto</span>
-    </span>
-  );
-}
+/** Solo administradoras. */
+const ADMIN_ONLY = [
+  { to: '/admin/qr', label: 'Códigos QR' },
+  { to: '/admin/usuarios', label: 'Usuarios' },
+  { to: '/admin/mensajes', label: 'Mensajes de contacto' },
+  { to: '/admin/estadisticas', label: 'Estadísticas' },
+  { to: '/admin/ajustes', label: 'Ajustes del sitio' },
+] as const;
 
 /** Marco del panel de administración: menú lateral en escritorio, desplegable en móvil. */
 export function AdminLayout() {
@@ -80,11 +75,10 @@ export function AdminLayout() {
               <p className="px-3 pt-4 text-xs font-semibold uppercase tracking-wide text-muted">
                 Solo administradores
               </p>
-              <NavLink to="/admin/qr" className={link}>
-                Códigos QR
-              </NavLink>
-              {COMING_ADMIN.map((label) => (
-                <Soon key={label} label={label} />
+              {ADMIN_ONLY.map((item) => (
+                <NavLink key={item.to} to={item.to} className={link}>
+                  {item.label}
+                </NavLink>
               ))}
             </>
           ) : null}

@@ -212,6 +212,29 @@ export const routes: RouteObject[] = [
                     path: 'qr',
                     ...page(() => import('../features/admin/access/AccessPage'), 'AccessPage'),
                   },
+                  {
+                    path: 'usuarios',
+                    ...page(() => import('../features/admin/ops/UserPages'), 'UserListPage'),
+                  },
+                  {
+                    path: 'usuarios/:userId',
+                    ...page(() => import('../features/admin/ops/UserPages'), 'UserDetailPage'),
+                  },
+                  {
+                    path: 'mensajes',
+                    ...page(() => import('../features/admin/ops/MessagesPage'), 'MessagesPage'),
+                  },
+                  {
+                    path: 'estadisticas',
+                    ...page(() => import('../features/admin/ops/StatsPage'), 'StatsPage'),
+                  },
+                  {
+                    path: 'ajustes',
+                    ...page(
+                      () => import('../features/admin/ops/ContactSettingsPage'),
+                      'ContactSettingsPage',
+                    ),
+                  },
                 ],
               },
             ],

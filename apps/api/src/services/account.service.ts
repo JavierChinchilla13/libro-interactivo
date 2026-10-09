@@ -11,6 +11,7 @@ import { User, type UserDoc } from '../models/User.js';
 import type { MailProvider } from '../providers/mail/MailProvider.js';
 import { passwordChangedEmail } from './email.templates.js';
 import { hashPassword, verifyPassword } from './password.service.js';
+import { eraseUserData } from './userErasure.service.js';
 import { toAuthUser, type AuthService, type RequestMeta, type Session } from './auth.service.js';
 
 const NOT_LOGGED_IN = 'Tu sesión no es válida o caducó. Inicia sesión de nuevo.';
@@ -35,6 +36,24 @@ export function createAccountService({ auth, mail, tasks, clock }: AccountServic
   }
 
   return {
+    /**
+     * Elimina la propia cuenta (solo lectores): pide la contraseña y borra los datos personales; los intentos
+     * completados quedan anonimizados. Una cuenta de administración la desactiva otra administradora.
+     */
+    async deleteAccount(userId: string, password: string): Promise<void> {
+      const user = await activeUser(userId);
+      if (user.role !== 'USER') {
+        throw new AppError(
+          'FORBIDDEN',
+          'Una cuenta de administración no se elimina por aquí: pídele a otra administradora que la desactive.',
+        );
+      }
+      if (!(await verifyPassword(user.passwordHash, password))) {
+        throw new AppError('VALIDATION', 'La contraseña no es correcta.');
+      }
+      await eraseUserData(user._id);
+    },
+
     async getProfile(userId: string): Promise<AuthUser> {
       return toAuthUser(await activeUser(userId));
     },

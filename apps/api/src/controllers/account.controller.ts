@@ -1,7 +1,12 @@
-import type { ChangePasswordRequest, MessageResponse, UpdateProfileRequest } from '@libro/shared';
+import type {
+  ChangePasswordRequest,
+  DeleteAccountRequest,
+  MessageResponse,
+  UpdateProfileRequest,
+} from '@libro/shared';
 import type { Request, RequestHandler } from 'express';
 import type { Env } from '../config/env.js';
-import { setSessionCookies } from '../lib/cookies.js';
+import { clearSessionCookies, setSessionCookies } from '../lib/cookies.js';
 import { getAuth } from '../middleware/auth.js';
 import { getInput } from '../middleware/validate.js';
 import type { AccountService } from '../services/account.service.js';
@@ -31,5 +36,12 @@ export function createAccountController(account: AccountService, env: CookieEnv)
     res.json(response);
   };
 
-  return { getMe, updateMe, changePassword };
+  const deleteMe: RequestHandler = async (_req, res) => {
+    const { body } = getInput<DeleteAccountRequest>(res);
+    await account.deleteAccount(getAuth(res).userId, body.password);
+    clearSessionCookies(res, env);
+    res.status(204).end();
+  };
+
+  return { getMe, updateMe, changePassword, deleteMe };
 }

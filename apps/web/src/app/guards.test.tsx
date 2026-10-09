@@ -66,12 +66,16 @@ describe('guards de /admin (solo mejoran la experiencia; la seguridad es del API
     expect(screen.getByText(/Editora/)).toBeInTheDocument();
   });
 
-  it('una administradora ve además Códigos QR y las secciones solo para administradores que aún no existen (apagadas)', async () => {
+  it('una administradora ve además Códigos QR, Usuarios, Mensajes, Estadísticas y Ajustes', async () => {
     mockApi('ADMIN');
     renderAt('/admin');
     expect(await screen.findByText('Solo administradores')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Códigos QR' })).toBeInTheDocument();
-    expect(screen.getByText('Usuarios')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('link', { name: 'Usuarios' })).toHaveAttribute(
+      'href',
+      '/admin/usuarios',
+    );
+    expect(screen.queryByText('pronto')).toBeNull();
   });
 
   it('un error de red al comprobar la sesión se avisa, no se manda al login', async () => {
