@@ -57,3 +57,23 @@ const options: sanitizeHtml.IOptions = {
 export function sanitizeRichHtml(html: string): string {
   return sanitizeHtml(html, options).trim();
 }
+
+/**
+ * Primer párrafo de un HTML en texto plano, recortado: sirve de resumen en las tarjetas. No devuelve HTML (se
+ * escapa lo que quede) y las entidades vuelven a ser caracteres normales.
+ */
+export function firstParagraphText(html: string, maxLength = 200): string {
+  const withBreaks = html.replace(/<\/(p|li|h2|h3|h4|blockquote)>|<br\s*\/?>/gi, '\n');
+  const plain = sanitizeHtml(withBreaks, { allowedTags: [], allowedAttributes: {} })
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+  const first =
+    plain
+      .split('\n')
+      .map((line) => line.replace(/\s+/g, ' ').trim())
+      .find((line) => line !== '') ?? '';
+  return first.length > maxLength ? `${first.slice(0, maxLength - 1).trimEnd()}…` : first;
+}
