@@ -11,9 +11,12 @@
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "seed:quizzes": "tsx --env-file-if-exists=.env scripts/seed-quizzes.ts",
     "seed:admin": "tsx --env-file-if-exists=.env scripts/seed-admin.ts",
-    "mail:test": "tsx --env-file-if-exists=.env scripts/send-test-mail.ts"
+    "mail:test": "tsx --env-file-if-exists=.env scripts/send-test-mail.ts",
+    "repair:progress": "tsx --env-file-if-exists=.env scripts/repair-progress.ts",
+    "load:smoke": "tsx scripts/load-smoke.ts"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
@@ -24,6 +27,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/sanitize-html": "^2.16.2",
     "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^5.0.3",
     "jsqr": "^1.4.0",
     "mongodb-memory-server": "^11.3.0",
     "pino-pretty": "^13.2.0",
