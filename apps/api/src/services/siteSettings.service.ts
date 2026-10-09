@@ -1,7 +1,9 @@
 import {
   imageRefSchema,
   type AuthorSettings,
+  type ContactSettings as ContactSettingsResponse,
   type PublicSiteResponse,
+  type Role,
   type SiteSettingsResponse,
   type SocialLink,
   type UniverseSettings,
@@ -89,14 +91,23 @@ function toSocial(settings: Loaded): SocialLink[] {
  * «bloqueado». Todo el HTML se sanea al guardar. Lo público sale por `getPublic` (sin bienvenida ni correo privado).
  */
 export function createSiteSettingsService() {
-  async function getSettings(): Promise<SiteSettingsResponse> {
+  /** El bloque de contacto (correo privado) solo se entrega a administradoras. */
+  async function getSettings(role?: Role): Promise<SiteSettingsResponse> {
     const settings = await loadSettings();
+    const contact: ContactSettingsResponse = {
+      ...(settings?.contact?.recipientEmail
+        ? { recipientEmail: settings.contact.recipientEmail }
+        : {}),
+      storeMessages: settings?.contact?.storeMessages ?? true,
+      retentionDays: settings?.contact?.retentionDays ?? 365,
+    };
     return {
       welcome: toWelcome(settings),
       universe: toUniverse(settings),
       author: toAuthor(settings),
       social: toSocial(settings),
       lock: settings?.lock?.message ? { message: settings.lock.message } : {},
+      ...(role === 'ADMIN' ? { contact } : {}),
     };
   }
 
@@ -112,7 +123,10 @@ export function createSiteSettingsService() {
       else unset[path] = 1;
     };
 
-    const { welcome, universe, author, social, lock } = request;
+    const { welcome, universe, author, social, lock, contact } = request;
+    if (contact && actor.role !== 'ADMIN') {
+      throw new AppError('FORBIDDEN', 'Solo una administradora puede cambiar el contacto');
+    }
 
     if (welcome) {
       const bodyHtml = sanitizeRichHtml(welcome.bodyHtml);
@@ -138,13 +152,18 @@ export function createSiteSettingsService() {
     }
     if (social) set['social'] = social;
     if (lock) optional('lock.message', lock.message);
+    if (contact) {
+      optional('contact.recipientEmail', contact.recipientEmail);
+      set['contact.storeMessages'] = contact.storeMessages;
+      set['contact.retentionDays'] = contact.retentionDays;
+    }
 
     await SiteSettings.updateOne(
       { key: 'site' },
       { $set: set, ...(Object.keys(unset).length > 0 ? { $unset: unset } : {}) },
       { upsert: true },
     );
-    return getSettings();
+    return getSettings(actor.role);
   }
 
   /** Lo que ve cualquier visitante. Nada de la bienvenida ni del correo donde llegan los mensajes. */

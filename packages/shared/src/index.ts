@@ -16,3 +16,4 @@ export * from './schemas/site.js';
 export * from './schemas/publicWiki.js';
 export * from './schemas/post.js';
 export * from './schemas/community.js';
+export * from './schemas/adminOps.js';

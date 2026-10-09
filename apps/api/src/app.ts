@@ -23,6 +23,8 @@ import { createMailProvider } from './providers/mail/createMailProvider.js';
 import { createApiRouter } from './routes/index.js';
 import { createAccessService } from './services/access.service.js';
 import { createPublicBookService } from './services/publicBook.service.js';
+import { createAdminMetricsService } from './services/adminMetrics.service.js';
+import { createAdminUsersService } from './services/adminUsers.service.js';
 import { createFanArtService, createReviewService } from './services/community.service.js';
 import { createPostService } from './services/post.service.js';
 import { createPublicWikiService } from './services/publicWiki.service.js';
@@ -163,6 +165,8 @@ export function createApp(
   const publicBooks = createPublicBookService();
   const publicWiki = createPublicWikiService();
   const posts = createPostService({ clock });
+  const adminUsers = createAdminUsersService({ auth, passwordReset: recovery });
+  const adminMetrics = createAdminMetricsService({ clock });
   const fanArts = createFanArtService();
   const reviews = createReviewService();
   const siteSettings = createSiteSettingsService();
@@ -208,6 +212,8 @@ export function createApp(
       publicWiki,
       posts,
       fanArts,
+      adminUsers,
+      adminMetrics,
       reviews,
       siteSettings,
       clock,

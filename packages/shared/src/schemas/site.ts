@@ -51,12 +51,25 @@ export const socialLinksSchema = z.array(socialLinkSchema).max(8);
 export const lockSettingsSchema = z.object({ message: z.string().trim().max(200).optional() });
 export type LockSettings = z.infer<typeof lockSettingsSchema>;
 
+/**
+ * Contacto (solo administradoras): correo privado donde llegan los mensajes, si se guardan en el panel y cuántos días.
+ * `recipientEmail` vacío = se usa el configurado por el desarrollador (`CONTACT_RECIPIENT_EMAIL`).
+ */
+export const contactSettingsSchema = z.object({
+  recipientEmail: z.email().max(254).optional(),
+  storeMessages: z.boolean(),
+  retentionDays: z.number().int().min(1).max(3650),
+});
+export type ContactSettings = z.infer<typeof contactSettingsSchema>;
+
 export const siteSettingsResponseSchema = z.object({
   welcome: welcomeSettingsSchema,
   universe: universeSettingsSchema,
   author: authorSettingsSchema,
   social: socialLinksSchema,
   lock: lockSettingsSchema,
+  /** Solo la ven las administradoras. */
+  contact: contactSettingsSchema.optional(),
 });
 export type SiteSettingsResponse = z.infer<typeof siteSettingsResponseSchema>;
 
@@ -68,6 +81,8 @@ export const updateSiteSettingsRequestSchema = z
     author: authorSettingsSchema.optional(),
     social: socialLinksSchema.optional(),
     lock: lockSettingsSchema.optional(),
+    /** Solo administradoras (si la manda una editora, `403`). */
+    contact: contactSettingsSchema.optional(),
   })
   .refine((body) => Object.values(body).some((section) => section !== undefined), {
     message: 'No hay nada que guardar',
