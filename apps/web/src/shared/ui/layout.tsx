@@ -3,16 +3,16 @@ import type { ReactNode } from 'react';
 type Tone = 'neutral' | 'success' | 'warning' | 'danger';
 
 const tones: Record<Tone, string> = {
-  neutral: 'bg-surface-alt text-text',
-  success: 'bg-success/15 text-success',
-  warning: 'bg-warning/20 text-text',
-  danger: 'bg-danger/15 text-danger',
+  neutral: 'bg-surface-alt text-text ring-1 ring-line',
+  success: 'bg-success/15 text-success ring-1 ring-success/30',
+  warning: 'bg-warning/15 text-warning ring-1 ring-warning/30',
+  danger: 'bg-danger/15 text-danger ring-1 ring-danger/30',
 };
 
 export function Badge({ tone = 'neutral', children }: { tone?: Tone; children: ReactNode }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tones[tone]}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tones[tone]}`}
     >
       {children}
     </span>
@@ -28,11 +28,7 @@ export function Card({
   className?: string;
   as?: 'section' | 'div' | 'article';
 }) {
-  return (
-    <Tag className={`rounded-token-lg border border-border bg-surface p-4 sm:p-5 ${className}`}>
-      {children}
-    </Tag>
-  );
+  return <Tag className={`glass rounded-token-lg p-4 sm:p-5 ${className}`}>{children}</Tag>;
 }
 
 export function PageHeader({
@@ -45,9 +41,9 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+    <div className="fade-up mb-7 flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h1 className="font-display text-2xl font-bold">{title}</h1>
+        <h1 className="section-title">{title}</h1>
         {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
@@ -69,7 +65,7 @@ export function Alert({
   return (
     <div
       role={tone === 'danger' ? 'alert' : 'status'}
-      className={`rounded-token border-l-4 ${border} bg-surface-alt p-3 text-sm`}
+      className={`rounded-token-lg border border-l-4 border-line ${border} bg-surface-alt/80 p-3.5 text-sm backdrop-blur`}
     >
       {title ? <p className="font-semibold">{title}</p> : null}
       {children}
@@ -79,7 +75,7 @@ export function Alert({
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="rounded-token-lg border border-dashed border-border p-8 text-center">
+    <div className="rounded-token-lg border border-dashed border-border bg-surface/40 p-8 text-center">
       <p className="font-medium">{title}</p>
       {children ? <div className="mt-2 text-sm text-muted">{children}</div> : null}
     </div>

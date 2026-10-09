@@ -115,21 +115,32 @@ export function createProgressService(deps: ProgressDeps) {
     const inProgress = new Set(open.map((attempt) => attempt.quizId.toString()));
 
     let previousDone = true;
+    let waitingFor: string | undefined; // el primer quiz del orden que aún no se completó
     const experiences = quizzes.map((quiz) => {
       const id = quiz._id.toString();
       const done = completed.has(id);
       const reachable = previousDone && (!deps.requireQrUnlock || unlocked.has(id));
+      const status = done
+        ? ('completed' as const)
+        : reachable
+          ? ('available' as const)
+          : ('locked' as const);
+      // Por orden: falta completar uno anterior (se nombra). Si el orden está al día, lo que falta es el QR del libro.
+      const lockedBy =
+        status === 'locked'
+          ? !previousDone && waitingFor !== undefined
+            ? { reason: 'order' as const, waitingFor }
+            : { reason: 'qr' as const }
+          : undefined;
+      if (!done && waitingFor === undefined) waitingFor = quiz.title;
       previousDone = previousDone && done;
       return {
         kind: 'quiz' as const,
         id,
         title: quiz.title,
         order: quiz.order,
-        status: done
-          ? ('completed' as const)
-          : reachable
-            ? ('available' as const)
-            : ('locked' as const),
+        status,
+        ...(lockedBy ? { lockedBy } : {}),
         inProgress: inProgress.has(id),
         allowRetake: retake.get(id) ?? true,
       };

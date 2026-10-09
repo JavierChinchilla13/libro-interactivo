@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders, createQueryClient } from '../../app/providers';
@@ -74,7 +74,9 @@ describe('entrada por QR (/u/:token)', () => {
     const fetchMock = mockApi({ session: false });
     renderAt('/u/abc.def');
     expect(await screen.findByText('[PLACEHOLDER] Quiz 2')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Ingresar' })).toHaveAttribute('href', '/ingresar');
+    const page = within(screen.getByRole('main'));
+    expect(page.getByRole('link', { name: 'Ingresar' })).toHaveAttribute('href', '/ingresar');
+    expect(page.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute('href', '/registro');
     expect(fetchMock.mock.calls.some(([url]) => url === '/api/access/redeem')).toBe(false);
     await waitFor(() => expect(sessionStorage.getItem(PENDING_TOKEN_KEY)).toBe('abc.def'));
   });
@@ -83,7 +85,9 @@ describe('entrada por QR (/u/:token)', () => {
     const fetchMock = mockApi({ session: true, resolve: invalid });
     renderAt('/u/basura');
     expect(await screen.findByText(/Este código no es válido/)).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Ingresar' })).not.toBeInTheDocument();
+    expect(
+      within(screen.getByRole('main')).queryByRole('link', { name: 'Ingresar' }),
+    ).not.toBeInTheDocument();
     expect(fetchMock.mock.calls.some(([url]) => url === '/api/access/redeem')).toBe(false);
     expect(sessionStorage.getItem(PENDING_TOKEN_KEY)).toBeNull();
   });

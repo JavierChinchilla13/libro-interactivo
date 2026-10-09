@@ -1,6 +1,16 @@
 import { Router } from 'express';
 import type { Env } from '../config/env.js';
 import type { Limits } from '../config/limits.js';
+import {
+  createAdminPostController,
+  createPublicPostController,
+} from '../controllers/post.controller.js';
+import {
+  createAdminFanArtController,
+  createAdminReviewController,
+  createPublicCommunityController,
+} from '../controllers/community.controller.js';
+import { createPublicWikiController } from '../controllers/publicWiki.controller.js';
 import { createAccountController } from '../controllers/account.controller.js';
 import {
   createAdminBookController,
@@ -15,8 +25,20 @@ import {
   createReaderExtraController,
 } from '../controllers/access.controller.js';
 import { createQuizController, createAdminQuizController } from '../controllers/quiz.controller.js';
+import {
+  createAdminSiteController,
+  createPublicBookController,
+  createPublicSiteController,
+  createWelcomeController,
+} from '../controllers/site.controller.js';
 import type { Clock } from '../lib/clock.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
+import type { PublicBookService } from '../services/publicBook.service.js';
+import type { FanArtService, ReviewService } from '../services/community.service.js';
+import type { PostService } from '../services/post.service.js';
+import type { PublicWikiService } from '../services/publicWiki.service.js';
+import type { SiteSettingsService } from '../services/siteSettings.service.js';
+import type { WelcomeService } from '../services/welcome.service.js';
 import type { AccessService } from '../services/access.service.js';
 import type { ExtraService } from '../services/extra.service.js';
 import type { BookService } from '../services/book.service.js';
@@ -47,6 +69,20 @@ import { createAuthRouter } from './auth.routes.js';
 import { createContactRouter } from './contact.routes.js';
 import { createHealthRouter } from './health.routes.js';
 import {
+  createAdminFanArtRouter,
+  createAdminReviewRouter,
+  createPublicFanArtRouter,
+  createPublicReviewRouter,
+} from './community.routes.js';
+import { createAdminPostRouter, createPublicPostRouter } from './post.routes.js';
+import { createPublicWikiRouter } from './publicWiki.routes.js';
+import {
+  createAdminSiteRouter,
+  createPublicBookRouter,
+  createPublicSiteRouter,
+  createWelcomeRouter,
+} from './site.routes.js';
+import {
   createAdminQuizRouter,
   createAttemptRouter,
   createLearningRouter,
@@ -68,6 +104,13 @@ export interface RouteDeps {
   wiki: WikiService;
   images: ImageProvider;
   access: AccessService;
+  welcome: WelcomeService;
+  publicBooks: PublicBookService;
+  publicWiki: PublicWikiService;
+  posts: PostService;
+  fanArts: FanArtService;
+  reviews: ReviewService;
+  siteSettings: SiteSettingsService;
   extras: ExtraService;
   clock: Clock;
   requireUnlocked: RequireUnlocked;
@@ -94,6 +137,33 @@ export function createApiRouter(deps: RouteDeps): Router {
   );
   router.use('/me', createAccountRouter(accountController, deps.guards));
   router.use('/me', createLearningRouter(quizController, deps.guards));
+  router.use('/me', createWelcomeRouter(createWelcomeController(deps.welcome), deps.guards));
+  router.use('/site', createPublicSiteRouter(createPublicSiteController(deps.siteSettings)));
+  router.use(
+    '/wiki',
+    createPublicWikiRouter(createPublicWikiController(deps.publicWiki), deps.guards),
+  );
+  router.use('/posts', createPublicPostRouter(createPublicPostController(deps.posts)));
+  router.use(
+    '/admin/posts',
+    createAdminPostRouter(createAdminPostController(deps.posts), deps.guards),
+  );
+  const community = createPublicCommunityController(deps.fanArts, deps.reviews);
+  router.use('/fan-arts', createPublicFanArtRouter(community));
+  router.use('/reviews', createPublicReviewRouter(community));
+  router.use(
+    '/admin/fan-arts',
+    createAdminFanArtRouter(createAdminFanArtController(deps.fanArts), deps.guards),
+  );
+  router.use(
+    '/admin/reviews',
+    createAdminReviewRouter(createAdminReviewController(deps.reviews), deps.guards),
+  );
+  router.use('/books', createPublicBookRouter(createPublicBookController(deps.publicBooks)));
+  router.use(
+    '/admin/site-settings',
+    createAdminSiteRouter(createAdminSiteController(deps.siteSettings), deps.guards),
+  );
   router.use('/contact', createContactRouter(deps.contact, deps.limits));
   router.use('/quizzes', createQuizRouter(quizController, deps.guards, deps.requireUnlocked));
   router.use('/attempts', createAttemptRouter(quizController, deps.guards));

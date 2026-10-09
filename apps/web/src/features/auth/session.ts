@@ -1,4 +1,9 @@
-import { authResponseSchema, type AuthUser, type LoginRequest } from '@libro/shared';
+import {
+  authResponseSchema,
+  type AuthUser,
+  type LoginRequest,
+  type RegisterRequest,
+} from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { ApiClientError, apiRequest } from '../../shared/api/client';
@@ -34,6 +39,15 @@ export function useLogin() {
   });
 }
 
+export function useRegister() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: RegisterRequest) =>
+      apiRequest('/auth/register', authResponseSchema, { method: 'POST', body: input }),
+    onSuccess: (data) => client.setQueryData(SESSION_KEY, data.user),
+  });
+}
+
 export function useLogout() {
   const client = useQueryClient();
   return useMutation({
@@ -43,6 +57,11 @@ export function useLogout() {
       client.removeQueries({ predicate: (query) => query.queryKey[0] !== 'session' });
     },
   });
+}
+
+/** A dónde va una persona al entrar: editoras y administradoras a su panel de administración; lectoras al suyo. */
+export function homeFor(user: AuthUser | null | undefined): string {
+  return isStaff(user) ? '/admin' : '/panel';
 }
 
 /** Editoras y administradoras entran al panel. */

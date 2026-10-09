@@ -116,17 +116,11 @@ export function WikiListPage() {
         actions={
           <>
             {tabId === 'powers' ? (
-              <Link
-                to="/admin/wiki/nueva?tipo=power"
-                className="inline-flex min-h-11 items-center rounded-token border border-border px-4 text-sm font-semibold"
-              >
+              <Link to="/admin/wiki/nueva?tipo=power" className="btn btn-secondary">
                 + Nuevo poder
               </Link>
             ) : null}
-            <Link
-              to={`/admin/wiki/nueva?tipo=${newKind}`}
-              className="inline-flex min-h-11 items-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-            >
+            <Link to={`/admin/wiki/nueva?tipo=${newKind}`} className="btn btn-primary">
               + {tabId === 'powers' ? 'Nuevo campo' : 'Nueva entrada'}
             </Link>
           </>

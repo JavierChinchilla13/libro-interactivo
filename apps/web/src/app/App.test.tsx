@@ -25,16 +25,14 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('portada', () => {
+describe('estado del servicio', () => {
   it('muestra el título y consulta /api/health', async () => {
     const fetchMock = mockFetch(
       new Response(JSON.stringify({ status: 'ok', db: 'up', uptimeSeconds: 12 }), { status: 200 }),
     );
-    renderApp('/');
+    renderApp('/estado');
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Libro Interactivo' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Estado del sistema' })).toBeInTheDocument();
     expect(await screen.findByText('Todo funciona correctamente.')).toBeInTheDocument();
     expect(screen.getByTestId('server-status')).toHaveTextContent('en línea');
     expect(screen.getByTestId('db-status')).toHaveTextContent('conectada');
@@ -46,7 +44,7 @@ describe('portada', () => {
 
   it('avisa cuando el servidor no responde', async () => {
     mockFetch(new Error('red caída'));
-    renderApp('/');
+    renderApp('/estado');
     expect(await screen.findByText('Hay un problema con el servicio.')).toBeInTheDocument();
     expect(screen.getByTestId('server-status')).toHaveTextContent('sin conexión');
   });
@@ -55,7 +53,7 @@ describe('portada', () => {
     mockFetch(
       new Response(JSON.stringify({ status: 'ok', db: 'down', uptimeSeconds: 1 }), { status: 200 }),
     );
-    renderApp('/');
+    renderApp('/estado');
     expect(await screen.findByText('Hay un problema con el servicio.')).toBeInTheDocument();
     expect(screen.getByTestId('db-status')).toHaveTextContent('sin conexión');
   });

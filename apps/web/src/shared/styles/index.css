@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/cinzel/wght.css';
 @import './tokens.css';
 
 /* Los utilitarios de Tailwind leen los tokens (inline = respeta cambios en runtime, p. ej. tema por libro). */
@@ -9,7 +10,9 @@
   --color-text: var(--token-text);
   --color-muted: var(--token-muted);
   --color-border: var(--token-border);
+  --color-line: var(--token-line);
   --color-primary: var(--token-primary);
+  --color-primary-end: var(--token-primary-end);
   --color-primary-contrast: var(--token-primary-contrast);
   --color-accent: var(--token-accent);
   --color-danger: var(--token-danger);
@@ -17,24 +20,364 @@
   --color-warning: var(--token-warning);
   --radius-token: var(--token-radius);
   --radius-token-lg: var(--token-radius-lg);
+  --shadow-glow: var(--token-glow);
+  --shadow-glow-soft: var(--token-glow-soft);
   --font-sans: var(--token-font-sans);
   --font-display: var(--token-font-display);
 }
 
+/* ---------------------------------------------------------------------------------------------------------------
+ * Animaciones. Todas se apagan si la persona pidió reducir el movimiento.
+ * ------------------------------------------------------------------------------------------------------------- */
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes portal-pulse {
+  0%,
+  100% {
+    opacity: 0.88;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.18);
+  }
+}
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.reveal-line {
+  animation: reveal-in 700ms ease both;
+}
+/* Entrada suave del contenido de cada página. */
+.fade-up {
+  animation: fade-up 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-line,
+  .fade-up,
+  .portal,
+  .portal::before,
+  .portal-float {
+    animation: none !important;
+  }
+  .btn,
+  .card-link {
+    transition: none !important;
+  }
+}
+
 @layer base {
   html {
-    color-scheme: light dark;
+    color-scheme: dark;
+    background: var(--token-bg);
+    scroll-behavior: smooth;
   }
   body {
     margin: 0;
-    background: var(--token-bg);
+    /*
+     * Fondo de la identidad: la niebla azul de arriba, un toque lavanda a la derecha y una cuadrícula casi
+     * invisible (el pasillo de laboratorio de la imagen) sobre el marino.
+     */
+    background:
+      radial-gradient(
+        ellipse 85% 560px at 50% -60px,
+        color-mix(in srgb, var(--token-bg-glow) 75%, transparent),
+        transparent
+      ),
+      radial-gradient(ellipse 45% 460px at 100% 8%, rgb(168 155 255 / 0.11), transparent),
+      linear-gradient(rgb(63 216 255 / 0.035) 1px, transparent 1px) 0 0 / 56px 56px,
+      linear-gradient(90deg, rgb(63 216 255 / 0.035) 1px, transparent 1px) 0 0 / 56px 56px,
+      var(--token-bg);
+    background-repeat: no-repeat, no-repeat, repeat, repeat, no-repeat;
+    min-height: 100dvh;
     color: var(--token-text);
     font-family: var(--token-font-sans);
-    line-height: 1.55;
+    line-height: 1.6;
     -webkit-text-size-adjust: 100%;
   }
   :focus-visible {
     outline: 3px solid var(--token-primary);
     outline-offset: 2px;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: 0.02em;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--token-primary) 40%, transparent);
+  }
+}
+
+@layer components {
+  /* Botones: forma de píldora, degradado cian → azul y resplandor al pasar el cursor o enfocar. */
+  .btn {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    padding: 0 1.35rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    transition:
+      transform 160ms ease,
+      box-shadow 200ms ease,
+      background-color 200ms ease,
+      border-color 200ms ease;
+  }
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+  .btn:active {
+    transform: none;
+  }
+  .btn-primary {
+    background-image: linear-gradient(120deg, var(--token-primary), var(--token-primary-end));
+    color: var(--token-primary-contrast);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
+  }
+  .btn-primary:hover,
+  .btn-primary:focus-visible {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.35),
+      var(--token-glow);
+  }
+  .btn-secondary {
+    border: 1px solid var(--token-border);
+    background: var(--token-glass);
+    color: var(--token-text);
+    backdrop-filter: blur(6px);
+  }
+  .btn-secondary:hover {
+    border-color: var(--token-primary);
+    background: color-mix(in srgb, var(--token-primary) 10%, var(--token-glass));
+  }
+
+  /* Filtros y letras: píldoras que se «encienden» al elegirlas (aria-pressed). */
+  .chip {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid var(--token-border);
+    background: var(--token-glass);
+    padding: 0 1.1rem;
+    font-size: 0.875rem;
+    transition:
+      border-color 200ms ease,
+      background-color 200ms ease,
+      box-shadow 200ms ease;
+  }
+  .chip:hover:not(:disabled) {
+    border-color: var(--token-primary);
+  }
+  .chip[aria-pressed='true'] {
+    border-color: var(--token-primary);
+    background: color-mix(in srgb, var(--token-primary) 16%, transparent);
+    color: var(--token-primary);
+    font-weight: 600;
+    box-shadow: 0 0 14px rgb(63 216 255 / 0.2);
+  }
+
+  /* Barras de avance: pista con borde fino y relleno cian con resplandor. */
+  .meter {
+    height: 0.65rem;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--token-surface-alt) 80%, transparent);
+    box-shadow: inset 0 0 0 1px var(--token-line);
+  }
+  .meter-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--token-primary), var(--token-primary-end));
+    box-shadow: 0 0 12px rgb(63 216 255 / 0.6);
+    transition: width 500ms ease;
+  }
+  /* Respuesta de un quiz: tarjeta grande que se ilumina al elegirla. */
+  .option {
+    display: flex;
+    min-height: 3.5rem;
+    cursor: pointer;
+    align-items: center;
+    gap: 0.9rem;
+    border-radius: var(--token-radius-lg);
+    border: 1px solid var(--token-line);
+    background: var(--token-glass);
+    padding: 0.8rem 1.1rem;
+    transition:
+      border-color 200ms ease,
+      background-color 200ms ease,
+      box-shadow 200ms ease,
+      transform 160ms ease;
+  }
+  .option:hover {
+    border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
+    transform: translateX(2px);
+  }
+  .option:has(input:checked) {
+    border-color: var(--token-primary);
+    background: color-mix(in srgb, var(--token-primary) 12%, var(--token-glass));
+    box-shadow:
+      var(--token-glow-soft),
+      0 0 22px rgb(63 216 255 / 0.22);
+  }
+  /* Botón de opción propio: aro del color del borde que se llena de luz cian al elegirlo. */
+  .option input {
+    appearance: none;
+    width: 1.35rem;
+    height: 1.35rem;
+    flex-shrink: 0;
+    border: 2px solid var(--token-border);
+    border-radius: 9999px;
+    background: transparent;
+    transition:
+      border-color 200ms ease,
+      box-shadow 200ms ease;
+  }
+  .option input:checked {
+    border-color: var(--token-primary);
+    background: radial-gradient(circle, var(--token-primary) 0 42%, transparent 46%);
+    box-shadow: 0 0 10px rgb(63 216 255 / 0.55);
+  }
+
+  /* Tarjeta de vidrio: fondo translúcido, borde fino y un brillo en el borde superior. */
+  .glass {
+    background:
+      linear-gradient(180deg, rgb(63 216 255 / 0.07), transparent 38%), var(--token-glass);
+    border: 1px solid var(--token-line);
+    box-shadow: var(--token-glow-soft);
+    backdrop-filter: blur(10px);
+  }
+  /* Tarjeta que es un enlace: se eleva y brilla al pasar el cursor. */
+  .card-link {
+    transition:
+      transform 200ms ease,
+      border-color 200ms ease,
+      box-shadow 200ms ease;
+  }
+  .card-link:hover,
+  .card-link:focus-visible {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
+    box-shadow:
+      var(--token-glow-soft),
+      0 0 24px rgb(63 216 255 / 0.18);
+  }
+
+  /* Títulos de sección: gran serifa con un filete cian debajo. */
+  .section-title {
+    font-family: var(--token-font-display);
+    font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem);
+    font-weight: 700;
+    line-height: 1.15;
+  }
+  .section-title::after {
+    content: '';
+    display: block;
+    width: 3.5rem;
+    height: 3px;
+    margin-top: 0.7rem;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, var(--token-primary), transparent);
+    box-shadow: 0 0 14px rgb(63 216 255 / 0.6);
+  }
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--token-primary);
+  }
+  /* Texto con degradado (del blanco al cian). */
+  .text-gradient {
+    background: linear-gradient(120deg, #ffffff 10%, var(--token-primary) 95%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* Marco con resplandor: portadas e ilustraciones destacadas. */
+  .glow-frame {
+    border: 1px solid color-mix(in srgb, var(--token-primary) 55%, transparent);
+    box-shadow:
+      0 0 0 4px rgb(63 216 255 / 0.07),
+      0 0 38px rgb(63 216 255 / 0.28);
+    background: var(--token-surface-alt);
+  }
+
+  /* El portal de luz del héroe (evoca la puerta de la imagen): marco de piedra y luz cian al centro. */
+  .portal {
+    position: relative;
+    aspect-ratio: 3 / 5;
+    width: min(100%, 17rem);
+    border-radius: 1.1rem 1.1rem 0.6rem 0.6rem;
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent 30%),
+      linear-gradient(180deg, #0f2a52, #081a36);
+    border: 1px solid var(--token-line);
+    box-shadow:
+      0 0 90px rgb(63 216 255 / 0.22),
+      inset 0 0 50px rgb(63 216 255 / 0.12);
+  }
+  .portal::before {
+    content: '';
+    position: absolute;
+    inset: 9% 17% 6%;
+    border-radius: 0.7rem 0.7rem 0.3rem 0.3rem;
+    background: radial-gradient(
+      ellipse at 50% 38%,
+      #f4fdff 0%,
+      var(--token-primary) 34%,
+      #1b6fd1 78%,
+      #0a3a78 100%
+    );
+    box-shadow:
+      0 0 60px 8px rgb(63 216 255 / 0.55),
+      inset 0 0 30px rgb(255 255 255 / 0.4);
+    animation: portal-pulse 5s ease-in-out infinite;
+  }
+  .portal::after {
+    content: '';
+    position: absolute;
+    inset: 5% 11% 3%;
+    border-radius: 0.9rem 0.9rem 0.4rem 0.4rem;
+    border: 2px solid rgb(120 190 255 / 0.28);
+    pointer-events: none;
+  }
+  .portal-float {
+    animation: float-slow 7s ease-in-out infinite;
   }
 }

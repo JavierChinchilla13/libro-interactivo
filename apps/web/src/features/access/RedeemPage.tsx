@@ -96,13 +96,14 @@ export function RedeemPage() {
               Para guardar este desbloqueo en tu cuenta, ingresa primero. Cuando termines volverás
               aquí y se desbloqueará solo.
             </p>
-            <Link
-              to="/ingresar"
-              state={{ from: `/u/${token}` }}
-              className="inline-flex min-h-11 items-center justify-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-            >
-              Ingresar
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/ingresar" state={{ from: `/u/${token}` }} className="btn btn-primary">
+                Ingresar
+              </Link>
+              <Link to="/registro" state={{ from: `/u/${token}` }} className="btn btn-secondary">
+                Crear cuenta
+              </Link>
+            </div>
           </>
         ) : null}
 
@@ -119,10 +120,10 @@ export function RedeemPage() {
             tone="success"
             title={redeem.data.alreadyUnlocked ? 'Ya lo tenías desbloqueado' : '¡Desbloqueado!'}
           >
-            <p className="mt-1">
-              «{redeem.data.title}» está disponible en tu cuenta. Las pantallas del lector se están
-              construyendo: pronto podrás jugarlo desde tu panel.
-            </p>
+            <p className="mt-1">«{redeem.data.title}» está disponible en tu cuenta.</p>
+            <Link to="/panel" className="btn btn-primary mt-3">
+              Ir a mi panel
+            </Link>
           </Alert>
         ) : null}
       </Card>

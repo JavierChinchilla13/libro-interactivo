@@ -12,3 +12,7 @@ export * from './schemas/upload.js';
 export * from './schemas/wiki.js';
 export * from './schemas/access.js';
 export * from './schemas/extra.js';
+export * from './schemas/site.js';
+export * from './schemas/publicWiki.js';
+export * from './schemas/post.js';
+export * from './schemas/community.js';
