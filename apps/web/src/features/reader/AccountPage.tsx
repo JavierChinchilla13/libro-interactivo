@@ -132,6 +132,67 @@ function PasswordForm() {
   );
 }
 
+function DeleteAccount() {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const remove = useMutation({
+    mutationFn: accountApi.deleteAccount,
+    onSuccess: () => {
+      // Recarga completa en el inicio: la cuenta ya no existe y no debe quedar nada de ella en memoria. (Navegar con el
+      // router no sirve: cualquier consulta que falle con 401 antes de terminar mandaría a «Ingresar» por el guard.)
+      window.location.replace('/');
+    },
+  });
+  const wrong = remove.error instanceof ApiClientError && remove.error.status === 400;
+
+  return (
+    <Card>
+      <h2 className="font-semibold">Eliminar mi cuenta</h2>
+      <p className="mt-1 text-sm text-muted">
+        Se borran tu cuenta y tu progreso para siempre. Tus resultados de quizzes quedan solo como
+        estadística anónima, sin tu nombre ni tu correo. No se puede deshacer.
+      </p>
+      {open ? (
+        <form
+          noValidate
+          className="mt-4 flex flex-col gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (password) remove.mutate(password);
+          }}
+        >
+          <PasswordField
+            label="Tu contraseña, para confirmar"
+            autoComplete="current-password"
+            value={password}
+            onChange={setPassword}
+            error={wrong ? 'La contraseña no es correcta.' : undefined}
+          />
+          {remove.isError && !wrong ? <Alert>{errorMessage(remove.error)}</Alert> : null}
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" variant="danger" loading={remove.isPending} disabled={!password}>
+              Eliminar mi cuenta para siempre
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setOpen(false);
+                setPassword('');
+              }}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <Button variant="secondary" className="mt-4" onClick={() => setOpen(true)}>
+          Eliminar mi cuenta…
+        </Button>
+      )}
+    </Card>
+  );
+}
+
 /** Mi cuenta: nombre editable, correo fijo, cambiar contraseña y salir. */
 export function AccountPage() {
   const logout = useLogout();
@@ -141,6 +202,7 @@ export function AccountPage() {
       <h1 className="font-display text-2xl font-bold">Mi cuenta</h1>
       <NameForm />
       <PasswordForm />
+      <DeleteAccount />
       <Button
         variant="secondary"
         className="self-start"
