@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/cinzel/wght.css';
 @import './tokens.css';
 
 /* Los utilitarios de Tailwind leen los tokens (inline = respeta cambios en runtime, p. ej. tema por libro). */
@@ -17,6 +18,8 @@
   --color-warning: var(--token-warning);
   --radius-token: var(--token-radius);
   --radius-token-lg: var(--token-radius-lg);
+  --shadow-glow: var(--token-glow);
+  --shadow-glow-soft: var(--token-glow-soft);
   --font-sans: var(--token-font-sans);
   --font-display: var(--token-font-display);
 }
@@ -43,11 +46,21 @@
 
 @layer base {
   html {
-    color-scheme: light dark;
+    color-scheme: dark;
+    background: var(--token-bg);
   }
   body {
     margin: 0;
-    background: var(--token-bg);
+    /* La niebla azul de la identidad: un resplandor arriba que se funde con el marino del fondo. */
+    background:
+      radial-gradient(
+        ellipse 90% 520px at 50% 0,
+        color-mix(in srgb, var(--token-bg-glow) 70%, transparent),
+        transparent
+      ),
+      var(--token-bg);
+    background-repeat: no-repeat;
+    min-height: 100dvh;
     color: var(--token-text);
     font-family: var(--token-font-sans);
     line-height: 1.55;
@@ -56,5 +69,13 @@
   :focus-visible {
     outline: 3px solid var(--token-primary);
     outline-offset: 2px;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: 0.02em;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--token-primary) 40%, transparent);
   }
 }

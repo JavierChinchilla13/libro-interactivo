@@ -15,7 +15,8 @@ const field =
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 
 const variants: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-primary-contrast hover:opacity-90',
+  primary:
+    'bg-primary text-primary-contrast hover:opacity-90 hover:shadow-glow focus-visible:shadow-glow',
   secondary: 'border border-border bg-surface text-text hover:bg-surface-alt',
   danger: 'bg-danger text-primary-contrast hover:opacity-90',
   ghost: 'text-text hover:bg-surface-alt',

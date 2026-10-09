@@ -1,43 +1,39 @@
 /*
- * Design tokens (tema neutro). Todo color, radio y tipografía del sitio sale de aquí.
- * La identidad visual definitiva (fase 12) y el tema por libro solo cambian estas variables.
+ * Design tokens. Todo color, radio y tipografía del sitio sale de aquí.
+ *
+ * Identidad visual confirmada por la autora (fase 12): azules profundos con el resplandor cian de «la puerta»
+ * (portal de luz en un pasillo de laboratorio), acentos lavanda como las flores de la imagen y títulos en serifa
+ * clásica (Cinzel). Es un tema oscuro único: define la identidad, no sigue el modo del sistema.
+ * El tema por libro solo sobrescribe estas variables (`--token-primary`, `--token-bg`…).
  */
 :root {
-  --token-bg: #fafafa;
-  --token-surface: #ffffff;
-  --token-surface-alt: #f1f2f4;
-  --token-text: #1f2328;
-  --token-muted: #5b636d;
-  --token-border: #d8dce1;
-  --token-primary: #444b55;
-  --token-primary-contrast: #ffffff;
-  --token-accent: #7a828c;
-  --token-danger: #b42318;
-  --token-success: #067647;
-  --token-warning: #b54708;
+  /* Fondo: azul marino profundo. La niebla azul-verdosa de la imagen se pinta como degradado sobre él. */
+  --token-bg: #06142b;
+  --token-bg-glow: #0d4a7f;
+  --token-surface: #0b2142;
+  --token-surface-alt: #123057;
+  --token-text: #e8f5ff;
+  --token-muted: #9cc2e2;
+  --token-border: #4278b0;
+  /* Cian del portal: acciones, enlaces activos y foco. El texto sobre él es el marino del fondo. */
+  --token-primary: #3fd8ff;
+  --token-primary-contrast: #04152b;
+  /* Lavanda de las flores: detalles secundarios. */
+  --token-accent: #a89bff;
+  --token-danger: #ff8791;
+  --token-success: #5fe3ae;
+  --token-warning: #ffcb66;
+
+  /* Resplandor suave (tarjetas) y fuerte (acciones principales): el brillo cian de la imagen. */
+  --token-glow-soft: 0 0 0 1px rgb(63 216 255 / 0.08), 0 8px 28px rgb(2 12 30 / 0.55);
+  --token-glow: 0 0 18px rgb(63 216 255 / 0.45);
 
   --token-radius: 0.5rem;
   --token-radius-lg: 0.875rem;
   --token-font-sans:
     system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --token-font-display: var(--token-font-sans);
+  /* Títulos: Cinzel (serifa clásica de la imagen); si no carga, una serifa del sistema. */
+  --token-font-display: 'Cinzel Variable', 'Cinzel', Georgia, 'Times New Roman', serif;
 
   --token-page-max: 72rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --token-bg: #16181b;
-    --token-surface: #1f2328;
-    --token-surface-alt: #2a2f36;
-    --token-text: #e8eaed;
-    --token-muted: #9aa3ad;
-    --token-border: #39404a;
-    --token-primary: #c9ced6;
-    --token-primary-contrast: #16181b;
-    --token-accent: #8d96a1;
-    --token-danger: #f97066;
-    --token-success: #47cd89;
-    --token-warning: #fdb022;
-  }
 }
