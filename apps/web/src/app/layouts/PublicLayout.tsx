@@ -26,6 +26,12 @@ export function PublicLayout() {
             <NavLink to="/wiki" className={linkClass}>
               Wiki
             </NavLink>
+            <NavLink to="/actualizaciones" className={linkClass}>
+              Actualizaciones
+            </NavLink>
+            <NavLink to="/fan-arts" className={linkClass}>
+              Fan arts
+            </NavLink>
             <NavLink to="/contacto" className={linkClass}>
               Contacto
             </NavLink>
