@@ -19,6 +19,8 @@ const userSchema = new Schema(
     lockedUntil: { type: Date },
     passwordChangedAt: { type: Date },
     lastLoginAt: { type: Date },
+    /** Última vez que vio el mensaje de bienvenida (ver `siteSettings.welcome`). */
+    welcomeSeenAt: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true },

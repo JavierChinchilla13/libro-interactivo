@@ -25,10 +25,7 @@ export function BookListPage() {
         title="Libros"
         subtitle="Cada libro es un contenedor: sus quizzes, wiki y capítulos extra se crean dentro de él."
         actions={
-          <Link
-            to="/admin/libros/nuevo"
-            className="inline-flex min-h-11 items-center rounded-token bg-primary px-4 text-sm font-semibold text-primary-contrast"
-          >
+          <Link to="/admin/libros/nuevo" className="btn btn-primary">
             + Nuevo libro
           </Link>
         }

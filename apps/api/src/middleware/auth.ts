@@ -17,7 +17,17 @@ function readCookie(req: Request, name: string): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+/** Contexto del usuario si hay sesión válida; `undefined` para un visitante (rutas con `optionalAuth`). */
+export function getOptionalAuth(res: Response): AuthContext | undefined {
+  return res.locals['auth'] as AuthContext | undefined;
+}
+
 export interface Guards {
+  /**
+   * Para rutas públicas que cambian según quién pregunta (p. ej. la wiki): si hay sesión válida la deja en el
+   * contexto; si no hay, o es inválida, sigue como visitante sin dar error.
+   */
+  optionalAuth: RequestHandler;
   /** Exige sesión válida (access token vigente, usuario activo y versión de tokens al día). */
   requireAuth: RequestHandler;
   /**
@@ -37,6 +47,15 @@ export function createGuards(auth: AuthService): Guards {
     next();
   };
 
+  const optionalAuth: RequestHandler = async (req, res, next) => {
+    const token = readCookie(req, ACCESS_COOKIE);
+    if (token) {
+      const ctx = await auth.authenticate(token);
+      if (ctx) res.locals['auth'] = ctx;
+    }
+    next();
+  };
+
   const requireRole =
     (...roles: Role[]): RequestHandler =>
     (_req, res, next) => {
@@ -47,5 +66,5 @@ export function createGuards(auth: AuthService): Guards {
       next();
     };
 
-  return { requireAuth, requireRole };
+  return { requireAuth, optionalAuth, requireRole };
 }

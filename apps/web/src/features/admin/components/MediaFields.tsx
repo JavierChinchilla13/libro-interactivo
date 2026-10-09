@@ -1,16 +1,12 @@
 import type { ImageRefInput, MediaInput, UPLOAD_PURPOSES, VideoRef } from '@libro/shared';
 import { useRef, useState } from 'react';
+import { thumbUrl } from '../../../shared/lib/cloudinary';
 import { Button, TextField } from '../../../shared/ui/controls';
 import { Alert } from '../../../shared/ui/layout';
 import { errorMessage } from '../errors';
 import { uploadImage, uploadVideo } from '../uploads';
 
 type Purpose = (typeof UPLOAD_PURPOSES)[number];
-
-/** Vista reducida de una imagen de Cloudinary (transformaciones en la URL: formato y calidad automáticos). */
-export function thumbUrl(url: string, width = 320): string {
-  return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
-}
 
 /**
  * Subir/cambiar/quitar una imagen. Sube directo a Cloudinary con firma del servidor y guarda el `ImageRef`.

@@ -81,6 +81,8 @@ test.describe('panel de administración', () => {
     // --- Quiz ---
     await page.getByRole('link', { name: 'Quizzes', exact: true }).click();
     await page.getByRole('link', { name: '+ Nuevo quiz' }).click();
+    // La pantalla se descarga al entrar (código dividido): hay que esperarla antes de tocar sus campos.
+    await expect(page.getByRole('heading', { name: 'Nuevo quiz' })).toBeVisible();
     await page.getByLabel('Libro').selectOption({ label: bookTitle });
     await page.getByRole('textbox', { name: /^Título/ }).fill('Quiz E2E');
     await page.getByRole('button', { name: 'Crear quiz' }).click();

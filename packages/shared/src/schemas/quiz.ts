@@ -250,6 +250,13 @@ export const progressResponseSchema = z.object({
       title: z.string(),
       order: z.number().int(),
       status: experienceStatusSchema,
+      /** Por qué está bloqueado: falta completar el anterior (con su nombre) o aún no se escaneó su QR. */
+      lockedBy: z
+        .discriminatedUnion('reason', [
+          z.object({ reason: z.literal('order'), waitingFor: z.string() }),
+          z.object({ reason: z.literal('qr') }),
+        ])
+        .optional(),
       inProgress: z.boolean(),
       allowRetake: z.boolean(),
     }),
