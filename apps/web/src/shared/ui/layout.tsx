@@ -29,7 +29,9 @@ export function Card({
   as?: 'section' | 'div' | 'article';
 }) {
   return (
-    <Tag className={`rounded-token-lg border border-border bg-surface p-4 sm:p-5 ${className}`}>
+    <Tag
+      className={`rounded-token-lg border border-border bg-surface p-4 shadow-glow-soft sm:p-5 ${className}`}
+    >
       {children}
     </Tag>
   );
