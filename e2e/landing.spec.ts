@@ -106,6 +106,7 @@ test.describe('landing pública', () => {
   test('la autora edita la portada en el panel y el visitante la ve', async ({
     page,
     browser,
+    baseURL,
     isMobile,
   }) => {
     test.skip(isMobile, 'Flujo de administración de escritorio.');
@@ -132,7 +133,7 @@ test.describe('landing pública', () => {
 
     const visitor = await browser.newContext();
     const view = await visitor.newPage();
-    await view.goto('http://localhost:5173/');
+    await view.goto(`${baseURL}/`);
     await expect(view.getByRole('heading', { level: 1, name: headline })).toBeVisible();
     await expect(
       view

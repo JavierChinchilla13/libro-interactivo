@@ -5,6 +5,14 @@ const isCI = Boolean(process.env['CI']);
 /** Base de datos propia de las pruebas E2E (nunca la de desarrollo). */
 export const E2E_DB_URI = 'mongodb://127.0.0.1:27017/libro-e2e';
 
+/**
+ * Puertos propios de las E2E: no chocan con `npm run dev` (3000 / 5173) y nunca se reutiliza por error el API de
+ * desarrollo, que apunta a otra base de datos y tiene su propio límite de intentos de ingreso.
+ */
+const API_PORT = 3100;
+const WEB_PORT = 5273;
+export const E2E_BASE_URL = `http://localhost:${WEB_PORT}`;
+
 export default defineConfig({
   testDir: './e2e',
   globalSetup: './e2e/global-setup.ts',
@@ -15,7 +23,7 @@ export default defineConfig({
   retries: isCI ? 1 : 0,
   reporter: isCI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: E2E_BASE_URL,
     trace: 'on-first-retry',
   },
   projects: [
@@ -39,15 +47,22 @@ export default defineConfig({
     },
     {
       command: 'npm run dev -w apps/api',
-      url: 'http://localhost:3000/api/health',
+      url: `http://localhost:${API_PORT}/api/health`,
       // En la E2E el desbloqueo por QR va encendido (como en producción).
-      env: { MONGODB_URI: E2E_DB_URI, REQUIRE_QR_UNLOCK: 'true' },
+      env: {
+        PORT: String(API_PORT),
+        MONGODB_URI: E2E_DB_URI,
+        REQUIRE_QR_UNLOCK: 'true',
+        CORS_ORIGIN: E2E_BASE_URL,
+        APP_URL: E2E_BASE_URL,
+      },
       reuseExistingServer: !isCI,
       timeout: 60_000,
     },
     {
-      command: 'npm run dev -w apps/web',
-      url: 'http://localhost:5173',
+      command: `npm run dev -w apps/web -- --port ${WEB_PORT} --strictPort`,
+      url: E2E_BASE_URL,
+      env: { VITE_API_PROXY_TARGET: `http://localhost:${API_PORT}` },
       reuseExistingServer: !isCI,
       timeout: 60_000,
     },
