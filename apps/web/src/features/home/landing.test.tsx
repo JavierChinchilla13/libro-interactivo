@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { apiError, json, mockApi, renderAt } from '../../test/mockApi';
+import { READER, apiError, json, mockApi, renderAt } from '../../test/mockApi';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -116,18 +116,126 @@ describe('landing: sin contenido cargado', () => {
     expect(screen.getByText('[PLACEHOLDER] Nombre de la autora')).toBeInTheDocument();
   });
 
-  it('sigue mostrándose aunque el API de ajustes falle', async () => {
-    mockApi(
+  it('si falla el API de ajustes muestra el nombre del universo (no un borrador) y permite reintentar', async () => {
+    let calls = 0;
+    const { called } = mockApi(
       {
-        'GET /api/site': () => apiError('INTERNAL', 'Error', 500),
+        'GET /api/site': () => {
+          calls += 1;
+          return calls === 1 ? apiError('INTERNAL', 'Error', 500) : json(site);
+        },
         'GET /api/books': () => json({ books: [] }),
       },
       NO_SESSION,
     );
     renderAt('/');
+    // Primero espera el aviso: así el título ya no es el de «cargando».
+    expect(await screen.findByText('No pudimos cargar todo el contenido')).toBeInTheDocument();
     expect(
-      await screen.findByRole('heading', { level: 1, name: /Frase principal del sitio/ }),
+      screen.getByRole('heading', { level: 1, name: 'Universo Memorias' }),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/Frase principal del sitio/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '[PLACEHOLDER] Frase del universo' }),
+    ).toBeInTheDocument();
+    expect(called('GET /api/site')).toHaveLength(2);
+  });
+});
+
+describe('landing: el héroe lleva al libro en la mano', () => {
+  it('sin sesión la acción principal es crear la cuenta y se explica el QR', async () => {
+    mockApi(full, NO_SESSION);
+    renderAt('/');
+    const hero = await screen.findByRole('region', { name: /Frase del universo/ });
+    expect(
+      within(hero).getByRole('link', { name: 'Tengo el libro: crear mi cuenta' }),
+    ).toHaveAttribute('href', '/registro');
+    expect(within(hero).getByRole('link', { name: 'Ya tengo cuenta' })).toHaveAttribute(
+      'href',
+      '/ingresar',
+    );
+    expect(within(hero).getByText(/Escanea el código QR de tu ejemplar/)).toBeInTheDocument();
+    expect(await within(hero).findByRole('link', { name: 'Conoce el libro' })).toHaveAttribute(
+      'href',
+      '#libro',
+    );
+    expect(within(hero).getByRole('link', { name: 'Cómo comprar el libro' })).toHaveAttribute(
+      'href',
+      '#comprar',
+    );
+  });
+
+  it('con sesión la acción principal es continuar la lectura y no ofrece crear cuenta', async () => {
+    mockApi(full);
+    renderAt('/');
+    const hero = await screen.findByRole('region', { name: /Frase del universo/ });
+    expect(within(hero).getByRole('link', { name: 'Continuar mi lectura' })).toHaveAttribute(
+      'href',
+      '/panel',
+    );
+    expect(
+      within(hero).queryByRole('link', { name: 'Tengo el libro: crear mi cuenta' }),
+    ).not.toBeInTheDocument();
+    expect(within(hero).queryByText(/Escanea el código QR/)).not.toBeInTheDocument();
+  });
+
+  it('mientras se comprueba la sesión no ofrece crear cuenta a quien ya la tiene', async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    mockApi({
+      ...full,
+      'GET /api/me': async () => {
+        await gate;
+        return json({ user: READER });
+      },
+    });
+    renderAt('/');
+    const hero = await screen.findByRole('region', { name: /Frase del universo/ });
+    expect(
+      within(hero).queryByRole('link', { name: 'Tengo el libro: crear mi cuenta' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(hero).queryByRole('link', { name: 'Continuar mi lectura' }),
+    ).not.toBeInTheDocument();
+    release();
+    expect(
+      await within(hero).findByRole('link', { name: 'Continuar mi lectura' }),
+    ).toBeInTheDocument();
+    expect(
+      within(hero).queryByRole('link', { name: 'Tengo el libro: crear mi cuenta' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('el héroe aparece sin esperar a los libros y las secciones entran después', async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    mockApi(
+      {
+        ...full,
+        'GET /api/books': async () => {
+          await gate;
+          return json(books);
+        },
+      },
+      NO_SESSION,
+    );
+    renderAt('/');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '[PLACEHOLDER] Frase del universo' }),
+    ).toBeInTheDocument();
+    // Mientras tanto: relleno de las secciones, ninguna sección ni su contenido.
+    expect(screen.getByRole('status', { name: 'Cargando el contenido' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Wiki del universo' })).not.toBeInTheDocument();
+    release();
+    expect(
+      await screen.findByRole('heading', { name: '[PLACEHOLDER] Libro 1' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: 'Cargando el contenido' })).not.toBeInTheDocument();
   });
 });
 
