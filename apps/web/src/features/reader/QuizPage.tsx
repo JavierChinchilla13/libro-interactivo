@@ -1,7 +1,7 @@
 import type { ResultPayload, StagePayload } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
 import { ApiClientError } from '../../shared/api/client';
 import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
@@ -9,6 +9,7 @@ import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Button } from '../../shared/ui/controls';
 import { Alert, Card, Loading } from '../../shared/ui/layout';
 import { readerApi, readerKeys } from './api';
+import { lockedMessage } from './DashboardPage';
 import { ResultView } from './ResultView';
 import { RevealSequence } from './RevealSequence';
 
@@ -23,6 +24,68 @@ type View =
     }
   | { phase: 'reveal'; result: ResultPayload }
   | { phase: 'result'; result: ResultPayload };
+
+/** El título del documento acompaña cada fase (lo anuncian los lectores de pantalla al cambiar). */
+function useDocumentTitle(title: string) {
+  useEffect(() => {
+    const previous = document.title;
+    document.title = title;
+    return () => {
+      document.title = previous;
+    };
+  }, [title]);
+}
+
+/**
+ * Titular que recibe el foco al aparecer: al cambiar de fase el foco no se pierde en `body` y el lector de pantalla
+ * anuncia dónde está. `srOnly` lo deja solo para lectores cuando la fase ya tiene su propio titular visible.
+ */
+function PhaseHeading({
+  children,
+  className = '',
+  srOnly = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  srOnly?: boolean;
+}) {
+  const ref = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    ref.current?.focus();
+  }, []);
+  return (
+    <h1
+      ref={ref}
+      tabIndex={-1}
+      className={`${srOnly ? 'sr-only' : ''} focus:outline-none ${className}`}
+    >
+      {children}
+    </h1>
+  );
+}
+
+/** Volver al panel desde el quiz: un botón de 44 px, con aviso si hay respuestas que se perderían. */
+function LeaveButton({ unsaved }: { unsaved: boolean }) {
+  const navigate = useNavigate();
+  return (
+    <Button
+      variant="ghost"
+      className="self-start !px-3"
+      onClick={() => {
+        if (
+          !unsaved ||
+          window.confirm(
+            'Si sales ahora, las respuestas de esta pregunta no se guardan. ¿Volver al panel?',
+          )
+        ) {
+          void navigate('/panel');
+        }
+      }}
+    >
+      ‹ Volver al panel
+    </Button>
+  );
+}
 
 /** Quiz de punta a punta: introducción → preguntas → secuencia de revelado → resultado. */
 export function QuizPage() {
@@ -42,6 +105,17 @@ export function QuizPage() {
     queryFn: () => readerApi.progress(bookId),
     enabled: bookId !== '',
   });
+
+  const quizTitle = intro.data?.title ?? 'Quiz';
+  const titleByPhase =
+    view.phase === 'stage'
+      ? `Pregunta ${view.index + 1} de ${view.stage.questions.length} · ${quizTitle}`
+      : view.phase === 'reveal'
+        ? 'Preparando tu resultado'
+        : view.phase === 'result'
+          ? `Tu resultado · ${view.result.title}`
+          : quizTitle;
+  useDocumentTitle(`${titleByPhase} · Libro Interactivo`);
 
   /** Lo que cambia al terminar un intento: el avance, los resultados y la introducción de este quiz. */
   const refreshAfterCompleting = useCallback(async () => {
@@ -127,11 +201,7 @@ export function QuizPage() {
     const startError = start.error instanceof ApiClientError ? start.error : null;
     return (
       <div className="mx-auto flex max-w-xl flex-col gap-5">
-        <p className="text-sm">
-          <Link to="/panel" className="underline">
-            ← Salir
-          </Link>
-        </p>
+        <LeaveButton unsaved={false} />
         {quiz.image ? (
           <img
             src={thumbUrl(quiz.image.url, 900)}
@@ -145,9 +215,9 @@ export function QuizPage() {
               Quiz {position + 1} de {experiences.length}
             </p>
           ) : null}
-          <h1 className="text-gradient font-display text-3xl font-bold sm:text-4xl">
+          <PhaseHeading className="text-gradient font-display text-3xl font-bold sm:text-4xl">
             {quiz.title}
-          </h1>
+          </PhaseHeading>
         </div>
         {quiz.instructionsHtml ? <SafeHtml html={quiz.instructionsHtml} /> : null}
         <p className="text-sm text-muted">
@@ -198,21 +268,24 @@ export function QuizPage() {
       setView({ ...view, ...next });
 
     return (
-      <div className="mx-auto flex max-w-xl flex-col gap-5">
+      <div className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-xl flex-col gap-5">
         <div className="flex items-center justify-between text-sm">
-          <Link to="/panel" className="underline">
-            Salir
-          </Link>
-          <span>
+          <LeaveButton unsaved={Object.keys(answers).length > 0} />
+          <span aria-hidden="true">
             Pregunta {index + 1} de {stage.questions.length}
           </span>
         </div>
+        {/* Cada pregunta anuncia su posición y recibe el foco: el lector de pantalla no se queda en la anterior. */}
+        <PhaseHeading key={question.id} srOnly>
+          {`${quiz.title}: pregunta ${index + 1} de ${stage.questions.length}`}
+        </PhaseHeading>
         <div
           role="progressbar"
           aria-label="Avance del quiz"
           aria-valuemin={1}
           aria-valuemax={stage.questions.length}
           aria-valuenow={index + 1}
+          aria-valuetext={`Pregunta ${index + 1} de ${stage.questions.length}`}
           className="meter"
         >
           <div
@@ -247,9 +320,11 @@ export function QuizPage() {
           ))}
         </fieldset>
         {submit.isError ? <Alert>{errorMessage(submit.error)}</Alert> : null}
-        <div className="flex justify-between gap-3">
+        {/* Las acciones quedan abajo, al alcance del pulgar, y ocupan el ancho. */}
+        <div className="sticky bottom-0 z-10 -mx-4 mt-auto flex gap-3 border-t border-line bg-bg/90 px-4 py-3 backdrop-blur-xl">
           <Button
             variant="secondary"
+            className="!min-h-12"
             disabled={index === 0}
             onClick={() => patch({ index: index - 1 })}
           >
@@ -257,6 +332,7 @@ export function QuizPage() {
           </Button>
           {last ? (
             <Button
+              className="!min-h-12 flex-1"
               disabled={chosen === undefined}
               loading={submit.isPending}
               onClick={() => submit.mutate({ attemptId, stageId: stage.stageId, answers })}
@@ -264,7 +340,11 @@ export function QuizPage() {
               Terminar
             </Button>
           ) : (
-            <Button disabled={chosen === undefined} onClick={() => patch({ index: index + 1 })}>
+            <Button
+              className="!min-h-12 flex-1"
+              disabled={chosen === undefined}
+              onClick={() => patch({ index: index + 1 })}
+            >
               Siguiente ›
             </Button>
           )}
@@ -276,27 +356,65 @@ export function QuizPage() {
   if (view.phase === 'reveal') {
     const lines = [...(view.result.revealIntro?.lines ?? []), ...(view.result.reveal?.lines ?? [])];
     const effect = view.result.reveal?.effect ?? view.result.revealIntro?.effect;
-    return <RevealSequence lines={lines} effect={effect} onDone={finishReveal} />;
+    return (
+      <>
+        <PhaseHeading srOnly>Tus resultados se están preparando</PhaseHeading>
+        <RevealSequence lines={lines} effect={effect} onDone={finishReveal} />
+      </>
+    );
   }
+
+  // Resultado: el CTA principal es el siguiente paso real de la progresión.
+  const next = position >= 0 ? experiences[position + 1] : undefined;
+  const nextOpen = next?.status === 'available' ? next : undefined;
+  const primary = nextOpen
+    ? { to: `/panel/quiz/${nextOpen.id}`, label: `Siguiente: Quiz ${nextOpen.order}` }
+    : !next && progress.data?.bookCompleted
+      ? { to: '/panel/extras', label: 'Ver los extras' }
+      : { to: '/panel', label: 'Volver a mi panel' };
+  const secondaryPanel = primary.to !== '/panel';
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
-      <ResultView result={view.result} />
-      <div className="flex flex-wrap gap-3">
-        <Link to="/panel" className="btn btn-primary">
-          Volver a mi panel
+      <ResultView result={view.result} asPage />
+      <div className="flex flex-col gap-3">
+        <Link
+          to={primary.to}
+          className="btn btn-primary !min-h-12 w-full !text-base sm:w-auto sm:self-start"
+        >
+          {primary.label}
         </Link>
-        {quiz.allowRetake ? (
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setView({ phase: 'intro' });
-              void intro.refetch();
-            }}
-          >
-            ¿Quieres jugar otra vez?
-          </Button>
+        {next && next.status === 'locked' ? (
+          <p className="text-sm text-muted">Tu siguiente paso: {lockedMessage(next)}</p>
         ) : null}
+        <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm">
+          <Link
+            to={`/panel/resultados/${quiz.id}`}
+            className="inline-flex min-h-11 items-center rounded-lg px-2 underline underline-offset-4"
+          >
+            Mis resultados
+          </Link>
+          {secondaryPanel ? (
+            <Link
+              to="/panel"
+              className="inline-flex min-h-11 items-center rounded-lg px-2 underline underline-offset-4"
+            >
+              Volver a mi panel
+            </Link>
+          ) : null}
+          {quiz.allowRetake ? (
+            <Button
+              variant="ghost"
+              className="!px-2 !text-sm underline underline-offset-4"
+              onClick={() => {
+                setView({ phase: 'intro' });
+                void intro.refetch();
+              }}
+            >
+              ¿Quieres jugar otra vez?
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   );

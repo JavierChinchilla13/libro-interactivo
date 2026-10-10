@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router';
+import { Link, NavLink, Outlet, useMatch, useNavigate } from 'react-router';
 import { homeFor, isStaff, useLogout, useSession } from '../../features/auth/session';
 import { WelcomeModal } from '../../features/reader/WelcomeModal';
 import { Button } from '../../shared/ui/controls';
@@ -33,37 +33,43 @@ export function PanelLayout() {
   const logout = useLogout();
   const navigate = useNavigate();
   const user = session.data;
+  // En el quiz solo queda la marca: sin «Salir» ni pestañas que cierren la sesión o abandonen sin querer.
+  const immersive = useMatch('/panel/quiz/:quizId') !== null;
 
   return (
-    <div className="flex min-h-dvh flex-col pb-16 sm:pb-0">
+    <div className={`flex min-h-dvh flex-col ${immersive ? '' : 'pb-16 sm:pb-0'}`}>
       <header className="sticky top-0 z-40 border-b border-line bg-bg/75 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-4 px-4 py-2.5">
           <Brand to="/panel" />
-          <nav aria-label="Panel" className="hidden gap-1 sm:flex">
-            {ITEMS.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.end} className={top}>
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-          <div className="flex items-center gap-2">
-            {isStaff(user) ? (
-              <Link to={homeFor(user)} className="text-sm underline">
-                Administración
-              </Link>
-            ) : null}
-            <Button
-              variant="secondary"
-              loading={logout.isPending}
-              onClick={() =>
-                logout.mutate(undefined, {
-                  onSettled: () => void navigate('/ingresar', { replace: true }),
-                })
-              }
-            >
-              Salir
-            </Button>
-          </div>
+          {immersive ? null : (
+            <>
+              <nav aria-label="Panel" className="hidden gap-1 sm:flex">
+                {ITEMS.map((item) => (
+                  <NavLink key={item.to} to={item.to} end={item.end} className={top}>
+                    {item.label}
+                  </NavLink>
+                ))}
+              </nav>
+              <div className="flex items-center gap-2">
+                {isStaff(user) ? (
+                  <Link to={homeFor(user)} className="text-sm underline">
+                    Administración
+                  </Link>
+                ) : null}
+                <Button
+                  variant="secondary"
+                  loading={logout.isPending}
+                  onClick={() =>
+                    logout.mutate(undefined, {
+                      onSettled: () => void navigate('/ingresar', { replace: true }),
+                    })
+                  }
+                >
+                  Salir
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </header>
       <main className="mx-auto w-full max-w-[var(--token-page-max)] flex-1 px-4 py-6 sm:py-10">
@@ -71,16 +77,18 @@ export function PanelLayout() {
           <Outlet />
         </div>
       </main>
-      <nav
-        aria-label="Panel (móvil)"
-        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-bg/85 backdrop-blur-xl sm:hidden"
-      >
-        {ITEMS.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.end} className={bottom}>
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
+      {immersive ? null : (
+        <nav
+          aria-label="Panel (móvil)"
+          className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-bg/85 backdrop-blur-xl sm:hidden"
+        >
+          {ITEMS.map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.end} className={bottom}>
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+      )}
       <WelcomeModal />
     </div>
   );

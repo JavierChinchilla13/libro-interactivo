@@ -48,49 +48,180 @@ function Section({
   );
 }
 
-/** Frase principal y presentación del universo (editables por la autora en «Portada y autora»), con el portal de luz. */
+export type HeroStatus = 'loading' | 'error' | 'ready';
+
+/** Barra de relleno mientras llega un texto (no ocupa lectura para lectores de pantalla). */
+function Bar({ className }: { className: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`rounded-full bg-surface-alt/70 motion-safe:animate-pulse ${className}`}
+    />
+  );
+}
+
+/**
+ * Frase principal y presentación del universo (editables por la autora en «Portada y autora»).
+ * Los botones no dependen de ningún dato: el héroe se pinta de inmediato y solo los textos esperan.
+ * La acción principal es entrar con el libro en la mano (crear cuenta o continuar la lectura).
+ */
 export function Hero({
   site,
   hasBook,
+  signedIn,
+  sessionReady,
+  status,
 }: {
   site: PublicSiteResponse | undefined;
   hasBook: boolean;
+  signedIn: boolean;
+  sessionReady: boolean;
+  status: HeroStatus;
 }) {
+  const headline =
+    status === 'error'
+      ? 'Universo Memorias'
+      : (site?.universe.headline ?? '[PLACEHOLDER] Frase principal del sitio');
+  const cta = `${buttonLink} !min-h-12 !px-7 !text-base w-full sm:w-auto`;
+  const textLink =
+    'inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-muted underline underline-offset-4 transition hover:text-text';
   return (
     <section
       aria-labelledby="hero-title"
-      className="relative grid items-center gap-10 py-4 md:grid-cols-[1.3fr_1fr] md:gap-8 md:py-14"
+      aria-busy={status === 'loading' || undefined}
+      className="relative py-4 md:py-14"
     >
-      <div className="flex flex-col gap-6">
+      <div className="flex max-w-3xl flex-col gap-6">
         <p className="eyebrow">Universo Memorias</p>
-        <h1
-          id="hero-title"
-          className="text-gradient font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl"
-        >
-          {site?.universe.headline ?? '[PLACEHOLDER] Frase principal del sitio'}
-        </h1>
-        <div className="max-w-prose text-lg text-muted">
-          {site?.universe.introHtml ? (
-            <SafeHtml html={site.universe.introHtml} />
+        {status === 'loading' ? (
+          <>
+            <h1 id="hero-title" className="sr-only">
+              Universo Memorias
+            </h1>
+            <div className="flex flex-col gap-3">
+              <Bar className="h-10 w-11/12 sm:h-12 lg:h-14" />
+              <Bar className="h-10 w-2/3 sm:h-12 lg:h-14" />
+            </div>
+            <div className="flex max-w-prose flex-col gap-2.5">
+              <Bar className="h-4 w-full" />
+              <Bar className="h-4 w-10/12" />
+              <Bar className="h-4 w-7/12" />
+            </div>
+          </>
+        ) : (
+          <>
+            <h1
+              id="hero-title"
+              className="text-gradient font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl"
+            >
+              {headline}
+            </h1>
+            <div className="max-w-prose text-lg text-muted">
+              {site?.universe.introHtml ? (
+                <SafeHtml html={site.universe.introHtml} />
+              ) : status === 'ready' ? (
+                <p>[PLACEHOLDER] ¿Qué es el universo Memorias?</p>
+              ) : null}
+            </div>
+          </>
+        )}
+        {!signedIn && sessionReady ? (
+          <p className="max-w-prose text-base text-text">
+            Escanea el código QR de tu ejemplar y abre tu primer quiz.
+          </p>
+        ) : null}
+        <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap sm:items-center">
+          {!sessionReady ? (
+            <>
+              <Bar className="h-12 w-full sm:w-72" />
+              <Bar className="h-12 w-full sm:w-44" />
+            </>
+          ) : signedIn ? (
+            <Link to="/panel" className={`${primaryLink} ${cta}`}>
+              Continuar mi lectura
+            </Link>
           ) : (
-            <p>[PLACEHOLDER] ¿Qué es el universo Memorias?</p>
+            <>
+              <Link to="/registro" className={`${primaryLink} ${cta}`}>
+                Tengo el libro: crear mi cuenta
+              </Link>
+              <Link to="/ingresar" className={`${secondaryLink} ${cta}`}>
+                Ya tengo cuenta
+              </Link>
+            </>
           )}
         </div>
-        <div className="flex flex-wrap gap-3 pt-1">
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
           {hasBook ? (
-            <a href="#libro" className={`${primaryLink} !min-h-12 !px-7 !text-base`}>
+            <a href="#libro" className={textLink}>
               Conoce el libro
             </a>
           ) : null}
-          <a href="#comprar" className={`${secondaryLink} !min-h-12 !px-7 !text-base`}>
-            Cómo comprar
+          <a href="#comprar" className={textLink}>
+            Cómo comprar el libro
           </a>
         </div>
       </div>
-      <div aria-hidden="true" className="portal-float mx-auto w-36 md:ml-auto md:mr-6 md:w-64">
-        <div className="portal" />
+    </section>
+  );
+}
+
+/**
+ * Cierre de la página: la acción principal se repite, para que la última impresión sea la invitación a empezar y
+ * no el formulario de contacto.
+ */
+export function ClosingBand({
+  signedIn,
+  sessionReady,
+}: {
+  signedIn: boolean;
+  sessionReady: boolean;
+}) {
+  return (
+    <section aria-labelledby="cierre-title" className="glass rounded-token-lg px-6 py-10 sm:px-10">
+      <div className="grid items-center gap-8">
+        <div className="flex flex-col items-start gap-4">
+          <h2 id="cierre-title" className="section-title">
+            Empieza con tu libro
+          </h2>
+          <p className="max-w-prose text-muted">
+            {signedIn
+              ? 'Tu avance te espera en el panel.'
+              : 'Tu ejemplar trae un código QR: escanéalo y empieza por el primer quiz.'}
+          </p>
+          {sessionReady ? (
+            signedIn ? (
+              <Link to="/panel" className={`${primaryLink} !min-h-12 !px-7 !text-base`}>
+                Ir a mi panel
+              </Link>
+            ) : (
+              <Link to="/registro" className={`${primaryLink} !min-h-12 !px-7 !text-base`}>
+                Crear mi cuenta
+              </Link>
+            )
+          ) : null}
+        </div>
       </div>
     </section>
+  );
+}
+
+/** Relleno de altura fija mientras llegan las secciones: la página no salta cuando aparecen. */
+export function SectionsSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="Cargando el contenido"
+      className="flex min-h-[70dvh] flex-col gap-6"
+    >
+      {[0, 1, 2].map((index) => (
+        <div
+          key={index}
+          aria-hidden="true"
+          className="glass h-44 rounded-token-lg motion-safe:animate-pulse"
+        />
+      ))}
+    </div>
   );
 }
 
@@ -142,6 +273,32 @@ export function BookSection({ book }: { book: PublicBookDetail }) {
  * Vista previa de la wiki. Una pestaña con regla se ve «bloqueada» con el mensaje de la autora y **nada más**:
  * el contenido real lo entrega el servidor solo a quien ya avanzó.
  */
+/** Cinzel luce en títulos cortos; una frase larga se lee mejor en la letra del sistema (Regla de la Serifa Escasa). */
+export const SHORT_TITLE_MAX = 28;
+export const cardTitleClass = (title: string) =>
+  title.length > SHORT_TITLE_MAX
+    ? 'font-sans text-base font-semibold'
+    : 'font-display text-lg font-semibold';
+
+/** Candado dibujado (cerrado o abierto): un solo trazo, hereda el color del texto. */
+function LockIcon({ open = false }: { open?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="size-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d={open ? 'M8 11V8a4 4 0 0 1 7.5-2' : 'M8 11V8a4 4 0 0 1 8 0v3'} />
+    </svg>
+  );
+}
+
 export function WikiPreview({
   tabs,
   lockMessage,
@@ -150,6 +307,8 @@ export function WikiPreview({
   lockMessage: string;
 }) {
   if (tabs.length === 0) return null;
+  // El texto general de bloqueo se dice una sola vez; cada pestaña solo repite el suyo si la autora le puso uno propio.
+  const needsGeneral = tabs.some((tab) => tab.locked && !tab.lockedMessage);
   return (
     <Section id="wiki" eyebrow="Explora" title="Wiki del universo">
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -157,9 +316,9 @@ export function WikiPreview({
           <li key={tab.kind}>
             <Card className="flex h-full flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
-                <p className="font-display text-lg font-semibold">{tab.title}</p>
-                <span aria-hidden="true" className="text-lg">
-                  {tab.locked ? '🔒' : '✦'}
+                <p className={cardTitleClass(tab.title)}>{tab.title}</p>
+                <span aria-hidden="true" className={tab.locked ? 'text-muted' : 'text-primary'}>
+                  <LockIcon open={!tab.locked} />
                 </span>
               </div>
               {tab.locked ? (
@@ -167,7 +326,9 @@ export function WikiPreview({
                   <span>
                     <Badge tone="warning">Bloqueado</Badge>
                   </span>
-                  <p className="text-sm text-muted">{tab.lockedMessage ?? lockMessage}</p>
+                  {tab.lockedMessage ? (
+                    <p className="text-sm text-muted">{tab.lockedMessage}</p>
+                  ) : null}
                 </>
               ) : (
                 <p className="text-sm text-muted">Abierto para todos</p>
@@ -176,6 +337,7 @@ export function WikiPreview({
           </li>
         ))}
       </ul>
+      {needsGeneral ? <p className="mt-4 text-sm text-muted">{lockMessage}</p> : null}
       <Link to="/wiki" className={`${primaryLink} mt-6`}>
         Entrar a la wiki
       </Link>
@@ -183,7 +345,10 @@ export function WikiPreview({
   );
 }
 
-/** Solo el nombre de cada experiencia. Todas se ven cerradas a un visitante; con sesión, el avance está en el panel. */
+/**
+ * Solo el nombre de cada experiencia. A un visitante se le dice qué falta para abrir cada una: la primera se abre con
+ * el QR del libro y las demás al completar la anterior; el texto de bloqueo de la autora se dice una sola vez.
+ */
 export function Experiences({
   experiences,
   lockMessage,
@@ -194,27 +359,36 @@ export function Experiences({
   signedIn: boolean;
 }) {
   if (experiences.length === 0) return null;
+  const first = Math.min(...experiences.map((experience) => experience.order));
   return (
     <Section id="experiencias" eyebrow="Juega" title="Vive una experiencia inmersiva">
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {experiences.map((experience) => (
-          <li key={experience.id}>
-            <Card className="relative h-full overflow-hidden">
-              <span
-                aria-hidden="true"
-                className="absolute -right-1 -top-3 font-display text-7xl font-bold text-primary/10"
+      <ul className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-4">
+        {experiences.map((experience) => {
+          const opensFirst = !signedIn && experience.order === first;
+          return (
+            <li key={experience.id}>
+              <Card
+                className={`flex h-full flex-col gap-1 ${opensFirst ? '!border-primary/60 shadow-glow' : ''}`}
               >
-                {String(experience.order).padStart(2, '0')}
-              </span>
-              <p className="relative text-sm text-muted">Quiz {experience.order}</p>
-              <p className="relative font-display text-lg font-semibold">{experience.title}</p>
-              {signedIn ? null : <p className="relative mt-3 text-sm text-muted">{lockMessage}</p>}
-            </Card>
-          </li>
-        ))}
+                <p className="text-sm text-muted">Quiz {experience.order}</p>
+                <p className={cardTitleClass(experience.title)}>{experience.title}</p>
+                {signedIn ? null : (
+                  <p
+                    className={`mt-2 flex items-center gap-2 text-sm ${opensFirst ? 'text-primary' : 'text-muted'}`}
+                  >
+                    <LockIcon open={opensFirst} />
+                    {opensFirst
+                      ? 'Se abre con el QR de tu libro'
+                      : `Antes, completa el Quiz ${experience.order - 1}`}
+                  </p>
+                )}
+              </Card>
+            </li>
+          );
+        })}
       </ul>
       <p className="mt-4 text-sm text-muted">
-        Cada experiencia se abre a medida que avanzas en tu lectura.
+        {signedIn ? 'Cada experiencia se abre a medida que avanzas en tu lectura.' : lockMessage}
       </p>
       {signedIn ? (
         <Link to="/panel" className={`${primaryLink} mt-4`}>
@@ -338,7 +512,8 @@ export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }
 
 /** Secuencia de publicación: las portadas de la saga; los libros que vienen se marcan «Próximamente». */
 export function SagaSection({ books }: { books: PublicBookSummary[] }) {
-  if (books.length === 0) return null;
+  // Un solo libro no es una secuencia: ya tiene su propia sección.
+  if (books.length < 2) return null;
   return (
     <Section id="saga" eyebrow="La saga" title="Secuencia de publicación">
       <ul

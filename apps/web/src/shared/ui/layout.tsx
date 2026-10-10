@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 
-type Tone = 'neutral' | 'success' | 'warning' | 'danger';
+type Tone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
 
 const tones: Record<Tone, string> = {
   neutral: 'bg-surface-alt text-text ring-1 ring-line',
+  primary: 'bg-primary/15 text-primary ring-1 ring-primary/30',
   success: 'bg-success/15 text-success ring-1 ring-success/30',
   warning: 'bg-warning/15 text-warning ring-1 ring-warning/30',
   danger: 'bg-danger/15 text-danger ring-1 ring-danger/30',
