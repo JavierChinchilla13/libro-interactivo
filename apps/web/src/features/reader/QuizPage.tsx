@@ -291,11 +291,9 @@ export function QuizPage() {
             style={{ width: `${((index + 1) / stage.questions.length) * 100}%` }}
           />
         </div>
-        {stage.title && index === 0 ? (
-          <p className="font-display text-xl font-semibold">{stage.title}</p>
-        ) : null}
+        {stage.title && index === 0 ? <p className="text-xl font-semibold">{stage.title}</p> : null}
         <fieldset className="flex flex-col gap-3">
-          <legend className="mb-4 font-display text-2xl font-semibold leading-snug sm:text-3xl">
+          <legend className="mb-4 text-2xl font-semibold leading-snug sm:text-3xl">
             {question.text}
           </legend>
           {question.image ? (

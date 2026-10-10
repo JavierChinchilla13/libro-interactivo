@@ -8,6 +8,7 @@ import { wikiApi, wikiKeys } from './api';
 import { LockedNotice } from './LockedNotice';
 import { SECTION_SLUGS, sectionFromSlug } from './sections';
 import { CharactersView, GlossaryView, PlacesView, PowersView } from './SectionViews';
+import { LockIcon } from '../../shared/ui/icons';
 
 /**
  * Wiki del universo: personajes, poderes, lugares y glosario en una sola página con pestañas.
@@ -49,7 +50,15 @@ export function WikiPage() {
             active={active.kind}
             tabs={list.map((s) => ({
               id: s.kind,
-              label: s.locked ? `🔒 ${s.title}` : s.title,
+              label: s.locked ? (
+                <>
+                  {s.title}
+                  <LockIcon className="size-4" />
+                  <span className="sr-only"> (bloqueado)</span>
+                </>
+              ) : (
+                s.title
+              ),
             }))}
             onChange={(kind) => void navigate(`/wiki/${SECTION_SLUGS[kind]}`)}
           />

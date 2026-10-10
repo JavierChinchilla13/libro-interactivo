@@ -66,8 +66,10 @@
     0 0 24px -6px color-mix(in srgb, var(--token-primary) 35%, transparent);
 
   /* ---- Tipografía ---- */
+  /* Texto: Geist (variable, autohospedada); si no carga, la letra del sistema. */
   --token-font-sans:
-    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    'Geist Variable', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
   /* Títulos: Cinzel (serifa clásica); si no carga, una serifa del sistema. */
   --token-font-display: 'Cinzel Variable', 'Cinzel', Georgia, 'Times New Roman', serif;
   /* Escala fluida (móvil → escritorio). Un solo tamaño de h1 para todo el sitio. */

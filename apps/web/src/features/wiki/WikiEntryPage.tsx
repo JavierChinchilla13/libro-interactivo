@@ -9,6 +9,7 @@ import { useSession } from '../auth/session';
 import { wikiApi, wikiKeys } from './api';
 import { LockedNotice } from './LockedNotice';
 import { SECTION_SLUGS, sectionOfEntry } from './sections';
+import { LockIcon } from '../../shared/ui/icons';
 
 function BackLink({ to, label }: { to: string; label: string }) {
   return (
@@ -86,8 +87,9 @@ export function WikiEntryPage() {
           <ul className="flex flex-col gap-2">
             {related.map((item) =>
               item.locked ? (
-                <li key={item.id} className="text-sm text-muted">
-                  🔒 Bloqueado
+                <li key={item.id} className="flex items-center gap-1.5 text-sm text-muted">
+                  <LockIcon className="size-4" />
+                  Bloqueado
                 </li>
               ) : (
                 <li key={item.id}>

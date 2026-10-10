@@ -31,7 +31,7 @@ export function ResultsTab({
             aria-labelledby={`results-${stage.id}`}
             className="flex flex-col gap-4"
           >
-            <h2 id={`results-${stage.id}`} className="font-display text-lg font-semibold">
+            <h2 id={`results-${stage.id}`} className="text-lg font-semibold">
               Resultados de «{stage.title?.trim() || stage.id}»
             </h2>
             {results.map((result) => (

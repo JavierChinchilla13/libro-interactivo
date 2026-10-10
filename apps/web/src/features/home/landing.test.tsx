@@ -326,7 +326,7 @@ describe('landing: con contenido', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('un título largo de experiencia usa la letra del sistema y uno corto, la serifa', async () => {
+  it('los títulos de experiencia van en la letra de texto, sea cual sea su largo', async () => {
     const longTitle = '[PLACEHOLDER] Quiz uno: se juega una sola vez y sin repetir';
     mockApi(
       {
@@ -344,9 +344,8 @@ describe('landing: con contenido', () => {
     );
     renderAt('/');
     const section = await screen.findByRole('region', { name: /experiencia inmersiva/ });
-    expect(within(section).getByText(longTitle).className).toContain('font-sans');
     expect(within(section).getByText(longTitle).className).not.toContain('font-display');
-    expect(within(section).getByText('Quiz dos').className).toContain('font-display');
+    expect(within(section).getByText('Quiz dos').className).not.toContain('font-display');
   });
 
   it('con un solo libro no hay secuencia de publicación', async () => {

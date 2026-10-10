@@ -18,7 +18,10 @@ export function AdminHomePage() {
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <p className="text-sm text-muted">Libros publicados</p>
-          <p className="font-display text-3xl font-bold" data-testid="stat-published-books">
+          <p
+            className="font-display text-3xl font-bold tabular-nums"
+            data-testid="stat-published-books"
+          >
             {published ?? '—'}
           </p>
           <p className="text-xs text-muted">de {total ?? '—'} en total</p>

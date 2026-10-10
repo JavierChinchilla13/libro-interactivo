@@ -93,7 +93,7 @@ export function Loading({ label = 'Cargando…' }: { label?: string }) {
 
 export interface TabItem<T extends string> {
   id: T;
-  label: string;
+  label: ReactNode;
   badge?: ReactNode;
 }
 

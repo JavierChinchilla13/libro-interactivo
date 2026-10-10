@@ -45,7 +45,7 @@ export function PostCardItem({ post }: { post: PostCard }) {
               {POST_CATEGORY_LABELS[post.category]}
             </Badge>
           </span>
-          <span className="font-display text-lg font-semibold leading-snug">{post.title}</span>
+          <span className="text-lg font-semibold leading-snug">{post.title}</span>
           <span className="text-xs text-muted">{formatShortDate(post.publishedAt)}</span>
           {post.excerpt ? <span className="text-sm text-muted">{post.excerpt}</span> : null}
         </span>

@@ -12,6 +12,7 @@ import { useSession } from '../auth/session';
 import { wikiApi, wikiKeys } from './api';
 import { LockedCard, LockedNotice } from './LockedNotice';
 import type { SectionKind } from './sections';
+import { LockIcon } from '../../shared/ui/icons';
 
 type Open<T extends { locked: boolean }> = Extract<T, { locked: false }>;
 
@@ -136,8 +137,9 @@ export function PowersView({ bookId, section }: { bookId: string; section: Publi
                   <ul className="mt-2 grid gap-2">
                     {field.powers.map((power) =>
                       power.locked ? (
-                        <li key={power.id} className="text-sm text-muted">
-                          🔒 Bloqueado
+                        <li key={power.id} className="flex items-center gap-1.5 text-sm text-muted">
+                          <LockIcon className="size-4" />
+                          Bloqueado
                         </li>
                       ) : (
                         <li key={power.id}>

@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/cinzel/wght.css';
+@import '@fontsource-variable/geist/wght.css';
 @import './tokens.css';
 
 /* Los utilitarios de Tailwind leen los tokens (inline = respeta cambios en runtime, p. ej. tema por libro). */
@@ -120,7 +121,10 @@
   .option,
   .option input,
   .meter-fill {
-    transition: none !important;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--token-primary);
+    transition: width var(--token-dur-slow) var(--token-ease-out);
   }
   .option:hover {
     transform: none;
@@ -162,7 +166,6 @@
   h1,
   h2,
   h3 {
-    letter-spacing: 0.02em;
     text-wrap: balance;
   }
   p {
@@ -245,7 +248,6 @@
     background: color-mix(in srgb, var(--token-primary) 16%, transparent);
     color: var(--token-primary);
     font-weight: 600;
-    box-shadow: 0 0 14px color-mix(in srgb, var(--token-primary) 20%, transparent);
   }
 
   /* Barras de avance: pista con borde fino y relleno cian con resplandor. */
@@ -316,20 +318,16 @@
     border: 1px solid var(--token-line);
     box-shadow: var(--token-elev-1);
   }
-  /* Tarjeta que es un enlace: se eleva y brilla al pasar el cursor. */
+  /* Tarjeta que es un enlace: cambia de tono y de filete al pasar el cursor o enfocar (sin elevarse ni brillar). */
   .card-link {
-    transition:
-      transform 200ms ease,
-      border-color 200ms ease,
-      box-shadow 200ms ease;
+    transition-property: background-color, border-color;
+    transition-duration: var(--token-dur-fast);
+    transition-timing-function: var(--token-ease-out);
   }
   .card-link:hover,
   .card-link:focus-visible {
-    transform: translateY(-3px);
+    background: var(--token-surface-alt);
     border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
-    box-shadow:
-      var(--token-glow-soft),
-      0 0 24px color-mix(in srgb, var(--token-primary) 18%, transparent);
   }
 
   /* Titulares: serifa Cinzel en color sólido. Display = héroe; page-title = h1 de toda página; section-title = h2. */
@@ -361,12 +359,10 @@
     text-transform: uppercase;
     color: var(--token-primary);
   }
-  /* Marco con resplandor: portadas e ilustraciones destacadas. */
-  .glow-frame {
-    border: 1px solid color-mix(in srgb, var(--token-primary) 55%, transparent);
-    box-shadow:
-      0 0 0 4px color-mix(in srgb, var(--token-primary) 7%, transparent),
-      0 0 38px color-mix(in srgb, var(--token-primary) 28%, transparent);
+  /* Marco de imágenes (portadas, avatar, resultado): un contorno de 1 px, sin resplandor. */
+  .img-frame {
+    outline: 1px solid oklch(1 0 0 / 0.1);
+    outline-offset: -1px;
     background: var(--token-surface-alt);
   }
 }
