@@ -11,7 +11,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
       ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
       : 'text-muted hover:bg-surface-alt/70 hover:text-text'
   }`;
-const ctaClass = () => 'btn btn-primary !min-h-11 !px-4';
+const ctaClass = () => 'btn btn-primary btn-compact';
 
 const FOOTER_LINKS = [
   { to: '/wiki', label: 'Wiki' },
@@ -34,7 +34,7 @@ export function PublicLayout() {
           <Brand />
           <button
             type="button"
-            className="btn btn-secondary !min-h-11 !px-4 md:hidden"
+            className="btn btn-secondary btn-compact md:hidden"
             aria-expanded={open}
             aria-controls="menu-principal"
             onClick={() => setOpen((value) => !value)}

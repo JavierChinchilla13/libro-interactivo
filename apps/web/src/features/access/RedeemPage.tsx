@@ -127,16 +127,13 @@ export function RedeemPage() {
             <p>«{redeem.data.title}» está disponible en tu cuenta.</p>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               {redeem.data.kind === 'quiz' ? (
-                <Link
-                  to={`/panel/quiz/${redeem.data.refId}`}
-                  className="btn btn-primary !min-h-12 !text-base"
-                >
+                <Link to={`/panel/quiz/${redeem.data.refId}`} className="btn btn-primary btn-lg">
                   Empezar «{redeem.data.title}»
                 </Link>
               ) : null}
               <Link
                 to="/panel"
-                className={`btn !min-h-12 !text-base ${redeem.data.kind === 'quiz' ? 'btn-secondary' : 'btn-primary'}`}
+                className={`btn btn-lg ${redeem.data.kind === 'quiz' ? 'btn-secondary' : 'btn-primary'}`}
               >
                 Ir a mi panel
               </Link>

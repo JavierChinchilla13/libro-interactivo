@@ -63,7 +63,7 @@ export function RevealSequence({
       </div>
       <div className="relative flex min-h-12 items-center">
         {ready ? (
-          <Button ref={open} className="!min-h-12 !px-7 !text-base" onClick={onDone}>
+          <Button ref={open} size="lg" onClick={onDone}>
             Ver mi resultado
           </Button>
         ) : lines.length > 1 ? (
