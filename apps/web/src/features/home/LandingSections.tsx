@@ -48,42 +48,117 @@ function Section({
   );
 }
 
-/** Frase principal y presentación del universo (editables por la autora en «Portada y autora»), con el portal de luz. */
+export type HeroStatus = 'loading' | 'error' | 'ready';
+
+/** Barra de relleno mientras llega un texto (no ocupa lectura para lectores de pantalla). */
+function Bar({ className }: { className: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`rounded-full bg-surface-alt/70 motion-safe:animate-pulse ${className}`}
+    />
+  );
+}
+
+/**
+ * Frase principal y presentación del universo (editables por la autora en «Portada y autora»), con el portal de luz.
+ * El portal y los botones no dependen de ningún dato: el héroe se pinta de inmediato y solo los textos esperan.
+ * La acción principal es entrar con el libro en la mano (crear cuenta o continuar la lectura).
+ */
 export function Hero({
   site,
   hasBook,
+  signedIn,
+  sessionReady,
+  status,
 }: {
   site: PublicSiteResponse | undefined;
   hasBook: boolean;
+  signedIn: boolean;
+  sessionReady: boolean;
+  status: HeroStatus;
 }) {
+  const headline =
+    status === 'error'
+      ? 'Universo Memorias'
+      : (site?.universe.headline ?? '[PLACEHOLDER] Frase principal del sitio');
+  const cta = `${buttonLink} !min-h-12 !px-7 !text-base w-full sm:w-auto`;
+  const textLink =
+    'inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-muted underline underline-offset-4 transition hover:text-text';
   return (
     <section
       aria-labelledby="hero-title"
+      aria-busy={status === 'loading' || undefined}
       className="relative grid items-center gap-10 py-4 md:grid-cols-[1.3fr_1fr] md:gap-8 md:py-14"
     >
       <div className="flex flex-col gap-6">
         <p className="eyebrow">Universo Memorias</p>
-        <h1
-          id="hero-title"
-          className="text-gradient font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl"
-        >
-          {site?.universe.headline ?? '[PLACEHOLDER] Frase principal del sitio'}
-        </h1>
-        <div className="max-w-prose text-lg text-muted">
-          {site?.universe.introHtml ? (
-            <SafeHtml html={site.universe.introHtml} />
+        {status === 'loading' ? (
+          <>
+            <h1 id="hero-title" className="sr-only">
+              Universo Memorias
+            </h1>
+            <div className="flex flex-col gap-3">
+              <Bar className="h-10 w-11/12 sm:h-12 lg:h-14" />
+              <Bar className="h-10 w-2/3 sm:h-12 lg:h-14" />
+            </div>
+            <div className="flex max-w-prose flex-col gap-2.5">
+              <Bar className="h-4 w-full" />
+              <Bar className="h-4 w-10/12" />
+              <Bar className="h-4 w-7/12" />
+            </div>
+          </>
+        ) : (
+          <>
+            <h1
+              id="hero-title"
+              className="text-gradient font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl"
+            >
+              {headline}
+            </h1>
+            <div className="max-w-prose text-lg text-muted">
+              {site?.universe.introHtml ? (
+                <SafeHtml html={site.universe.introHtml} />
+              ) : status === 'ready' ? (
+                <p>[PLACEHOLDER] ¿Qué es el universo Memorias?</p>
+              ) : null}
+            </div>
+          </>
+        )}
+        {!signedIn && sessionReady ? (
+          <p className="max-w-prose text-base text-text">
+            Escanea el código QR de tu ejemplar y abre tu primer quiz.
+          </p>
+        ) : null}
+        <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap sm:items-center">
+          {!sessionReady ? (
+            <>
+              <Bar className="h-12 w-full sm:w-72" />
+              <Bar className="h-12 w-full sm:w-44" />
+            </>
+          ) : signedIn ? (
+            <Link to="/panel" className={`${primaryLink} ${cta}`}>
+              Continuar mi lectura
+            </Link>
           ) : (
-            <p>[PLACEHOLDER] ¿Qué es el universo Memorias?</p>
+            <>
+              <Link to="/registro" className={`${primaryLink} ${cta}`}>
+                Tengo el libro: crear mi cuenta
+              </Link>
+              <Link to="/ingresar" className={`${secondaryLink} ${cta}`}>
+                Ya tengo cuenta
+              </Link>
+            </>
           )}
         </div>
-        <div className="flex flex-wrap gap-3 pt-1">
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
           {hasBook ? (
-            <a href="#libro" className={`${primaryLink} !min-h-12 !px-7 !text-base`}>
+            <a href="#libro" className={textLink}>
               Conoce el libro
             </a>
           ) : null}
-          <a href="#comprar" className={`${secondaryLink} !min-h-12 !px-7 !text-base`}>
-            Cómo comprar
+          <a href="#comprar" className={textLink}>
+            Cómo comprar el libro
           </a>
         </div>
       </div>
@@ -91,6 +166,25 @@ export function Hero({
         <div className="portal" />
       </div>
     </section>
+  );
+}
+
+/** Relleno de altura fija mientras llegan las secciones: la página no salta cuando aparecen. */
+export function SectionsSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="Cargando el contenido"
+      className="flex min-h-[70dvh] flex-col gap-6"
+    >
+      {[0, 1, 2].map((index) => (
+        <div
+          key={index}
+          aria-hidden="true"
+          className="glass h-44 rounded-token-lg motion-safe:animate-pulse"
+        />
+      ))}
+    </div>
   );
 }
 
