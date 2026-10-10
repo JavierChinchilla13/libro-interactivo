@@ -15,6 +15,7 @@ import { Badge, Card } from '../../shared/ui/layout';
 import { PostCardItem } from '../posts/PostsPage';
 import { ContactForm } from './ContactForm';
 import { LockIcon } from '../../shared/ui/icons';
+import { Thread } from '../../shared/ui/Thread';
 
 const buttonLink = 'btn';
 const primaryLink = `${buttonLink} btn-primary`;
@@ -83,7 +84,7 @@ export function Hero({
     <section
       aria-labelledby="hero-title"
       aria-busy={status === 'loading' || undefined}
-      className="relative py-4 md:py-14"
+      className="relative grid items-center gap-10 py-4 md:min-h-[min(80dvh,46rem)] md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:gap-12 md:py-14"
     >
       <div className="flex max-w-3xl flex-col gap-6">
         {status === 'loading' ? (
@@ -151,7 +152,13 @@ export function Hero({
             Cómo comprar el libro
           </a>
         </div>
+        <Thread orientation="horizontal" animated className="mt-2 w-full max-w-md md:hidden" />
       </div>
+      <Thread
+        orientation="vertical"
+        animated
+        className="hidden w-full max-w-sm justify-self-end md:block"
+      />
     </section>
   );
 }

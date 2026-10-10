@@ -84,6 +84,72 @@
     transform: none;
   }
 }
+/* El hilo: se dibuja, aparecen sus puntos y el primero se enciende. Solo con `.thread-animated`. */
+@keyframes thread-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes thread-lit-draw {
+  from {
+    stroke-dashoffset: var(--thread-lit, 0);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes thread-node {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes thread-ignite {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes thread-bloom {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+.thread-animated .thread-base {
+  stroke-dasharray: 1;
+  animation: thread-draw var(--token-dur-scene) var(--token-ease-in-out) both;
+}
+.thread-animated .thread-lit {
+  animation: thread-lit-draw 700ms var(--token-ease-out) 500ms both;
+}
+.thread-animated .thread-node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thread-node var(--token-dur-slow) var(--token-ease-out) both;
+}
+.thread-animated .thread-ignite {
+  animation: thread-ignite var(--token-dur-slow) var(--token-ease-out) 700ms both;
+}
+.thread-animated .thread-bloom {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: thread-bloom 1100ms var(--token-ease-out) 700ms both;
+}
 .reveal-line {
   animation: reveal-in 700ms ease both;
 }
@@ -112,7 +178,12 @@
   }
   .reveal-line,
   .reveal-glow,
-  .fade-up {
+  .fade-up,
+  .thread-animated .thread-base,
+  .thread-animated .thread-lit,
+  .thread-animated .thread-node,
+  .thread-animated .thread-ignite,
+  .thread-animated .thread-bloom {
     animation: none !important;
   }
   .btn,
