@@ -65,7 +65,7 @@ describe('wiki: pestañas', () => {
       within(tabs)
         .getAllByRole('tab')
         .map((t) => t.textContent),
-    ).toEqual(['🔒 Personajes', '🔒 Poderes', 'Lugares', 'Glosario']);
+    ).toEqual(['Personajes (bloqueado)', 'Poderes (bloqueado)', 'Lugares', 'Glosario']);
     // La primera pestaña es la bloqueada: mensaje de la autora y un solo camino, sin pedir contenido.
     expect(await screen.findByText('[PLACEHOLDER] Tras el Quiz 2')).toBeInTheDocument();
     expect(
@@ -101,7 +101,7 @@ describe('wiki: pestañas', () => {
       NO_SESSION,
     );
     renderAt('/wiki/lugares');
-    expect(await screen.findByText('🔒 Bloqueado')).toBeInTheDocument();
+    expect(await screen.findByText('Bloqueado')).toBeInTheDocument();
     expect(
       within(screen.getByRole('main')).getByRole('link', { name: 'Ingresar' }),
     ).toBeInTheDocument();
@@ -227,8 +227,8 @@ describe('wiki: poderes y personajes', () => {
       'href',
       `/wiki/entrada/${'11'.padStart(24, '0')}`,
     );
-    expect(screen.getByText('🔒 Bloqueado')).toBeInTheDocument();
-    expect(screen.getAllByText('Bloqueado').length).toBeGreaterThan(0);
+    // El poder bloqueado y el campo bloqueado: dos «Bloqueado», ninguno con nombre.
+    expect(screen.getAllByText('Bloqueado')).toHaveLength(2);
   });
 
   it('los personajes abiertos muestran sus tarjetas', async () => {
@@ -287,7 +287,7 @@ describe('wiki: ficha de una entrada', () => {
       'href',
       `/wiki/entrada/${'7'.padStart(24, '0')}`,
     );
-    expect(screen.getByText('🔒 Bloqueado')).toBeInTheDocument();
+    expect(screen.getByText('Bloqueado')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Volver a la wiki/ })).toHaveAttribute(
       'href',
       '/wiki/lugares',

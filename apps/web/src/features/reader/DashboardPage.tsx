@@ -6,6 +6,7 @@ import { errorMessage } from '../../shared/api/messages';
 import { useSession } from '../auth/session';
 import { readerApi, readerKeys } from './api';
 import { useSelectedBook } from './useBook';
+import { LockIcon } from '../../shared/ui/icons';
 
 type Experience = ProgressResponse['experiences'][number];
 
@@ -25,7 +26,7 @@ function ExperienceCard({ experience }: { experience: Experience }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs text-muted">Quiz {experience.order}</p>
-          <h3 className="font-display text-lg font-semibold">{experience.title}</h3>
+          <h3 className="text-lg font-semibold">{experience.title}</h3>
         </div>
         {experience.status === 'completed' ? <Badge tone="success">Completado</Badge> : null}
         {experience.status === 'available' ? <Badge tone="primary">Disponible</Badge> : null}
@@ -33,7 +34,10 @@ function ExperienceCard({ experience }: { experience: Experience }) {
       </div>
 
       {experience.status === 'locked' ? (
-        <p className="text-sm text-muted">🔒 {lockedMessage(experience)}</p>
+        <p className="flex items-start gap-2 text-sm text-muted">
+          <LockIcon className="mt-0.5 size-4" />
+          {lockedMessage(experience)}
+        </p>
       ) : null}
 
       {experience.status === 'available' ? (
@@ -162,7 +166,7 @@ export function DashboardPage() {
           )}
 
           <Card className="flex flex-col gap-2">
-            <h2 className="font-display text-lg font-semibold">Capítulos extra</h2>
+            <h2 className="text-lg font-semibold">Capítulos extra</h2>
             {progress.data.bookCompleted ? (
               <>
                 <p className="text-sm">
@@ -185,7 +189,7 @@ export function DashboardPage() {
           </Card>
 
           <Card className="flex flex-col gap-2">
-            <h2 className="font-display text-lg font-semibold">Mis resultados</h2>
+            <h2 className="text-lg font-semibold">Mis resultados</h2>
             <p className="text-sm text-muted">Todo lo que has descubierto.</p>
             <Link to="/panel/resultados" className={`${linkButton} btn-secondary self-start`}>
               Ver mis resultados

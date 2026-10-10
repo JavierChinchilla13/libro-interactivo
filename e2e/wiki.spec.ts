@@ -83,7 +83,7 @@ test.describe('wiki pública (celular y escritorio)', () => {
 
     // 1) Visitante: la pestaña de personajes está bloqueada y no entrega NADA, ni por la API directa.
     await page.goto('/wiki');
-    await expect(page.getByRole('tab', { name: /🔒 Personajes/ })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /Personajes \(bloqueado\)/ })).toBeVisible();
     await expect(page.getByText('Se habilita al completar el primer quiz')).toBeVisible();
     await expect(page.getByText('Ana Reservada')).toHaveCount(0);
     const direct = await page.request.get(`/api/wiki/entries?bookId=${bookId}&kind=character`);

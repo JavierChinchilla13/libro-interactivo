@@ -14,6 +14,7 @@ import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Badge, Card } from '../../shared/ui/layout';
 import { PostCardItem } from '../posts/PostsPage';
 import { ContactForm } from './ContactForm';
+import { LockIcon } from '../../shared/ui/icons';
 
 const buttonLink = 'btn';
 const primaryLink = `${buttonLink} btn-primary`;
@@ -22,23 +23,16 @@ const secondaryLink = `${buttonLink} btn-secondary`;
 function Section({
   id,
   title,
-  eyebrow,
   intro,
   children,
 }: {
   id: string;
   title: string;
-  eyebrow?: string;
   intro?: string;
   children: ReactNode;
 }) {
   return (
     <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-24">
-      {eyebrow ? (
-        <p aria-hidden="true" className="eyebrow mb-2">
-          {eyebrow}
-        </p>
-      ) : null}
       <h2 id={`${id}-title`} className="section-title">
         {title}
       </h2>
@@ -92,7 +86,6 @@ export function Hero({
       className="relative py-4 md:py-14"
     >
       <div className="flex max-w-3xl flex-col gap-6">
-        <p className="eyebrow">Universo Memorias</p>
         {status === 'loading' ? (
           <>
             <h1 id="hero-title" className="sr-only">
@@ -228,7 +221,7 @@ export function SectionsSkeleton() {
 /** Ficha del libro destacado: portada con marco de luz, géneros, sinopsis, advertencia de contenido, edad e ISBN. */
 export function BookSection({ book }: { book: PublicBookDetail }) {
   return (
-    <Section id="libro" eyebrow="El libro" title={book.title} intro={book.tagline}>
+    <Section id="libro" title={book.title} intro={book.tagline}>
       <div className="grid gap-8 sm:grid-cols-[minmax(0,15rem)_1fr]">
         {book.cover ? (
           <img
@@ -236,7 +229,7 @@ export function BookSection({ book }: { book: PublicBookDetail }) {
             alt={book.cover.alt}
             width={book.cover.width}
             height={book.cover.height}
-            className="glow-frame h-auto w-full max-w-60 rounded-token-lg"
+            className="img-frame h-auto w-full max-w-60 rounded-token-lg"
           />
         ) : null}
         <div className="flex flex-col gap-5">
@@ -273,32 +266,6 @@ export function BookSection({ book }: { book: PublicBookDetail }) {
  * Vista previa de la wiki. Una pestaña con regla se ve «bloqueada» con el mensaje de la autora y **nada más**:
  * el contenido real lo entrega el servidor solo a quien ya avanzó.
  */
-/** Cinzel luce en títulos cortos; una frase larga se lee mejor en la letra del sistema (Regla de la Serifa Escasa). */
-export const SHORT_TITLE_MAX = 28;
-export const cardTitleClass = (title: string) =>
-  title.length > SHORT_TITLE_MAX
-    ? 'font-sans text-base font-semibold'
-    : 'font-display text-lg font-semibold';
-
-/** Candado dibujado (cerrado o abierto): un solo trazo, hereda el color del texto. */
-function LockIcon({ open = false }: { open?: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className="size-5 shrink-0"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="5" y="11" width="14" height="9" rx="2" />
-      <path d={open ? 'M8 11V8a4 4 0 0 1 7.5-2' : 'M8 11V8a4 4 0 0 1 8 0v3'} />
-    </svg>
-  );
-}
-
 export function WikiPreview({
   tabs,
   lockMessage,
@@ -310,13 +277,13 @@ export function WikiPreview({
   // El texto general de bloqueo se dice una sola vez; cada pestaña solo repite el suyo si la autora le puso uno propio.
   const needsGeneral = tabs.some((tab) => tab.locked && !tab.lockedMessage);
   return (
-    <Section id="wiki" eyebrow="Explora" title="Wiki del universo">
+    <Section id="wiki" title="Wiki del universo">
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {tabs.map((tab) => (
           <li key={tab.kind}>
             <Card className="flex h-full flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
-                <p className={cardTitleClass(tab.title)}>{tab.title}</p>
+                <p className="text-lg font-semibold">{tab.title}</p>
                 <span aria-hidden="true" className={tab.locked ? 'text-muted' : 'text-primary'}>
                   <LockIcon open={!tab.locked} />
                 </span>
@@ -361,7 +328,7 @@ export function Experiences({
   if (experiences.length === 0) return null;
   const first = Math.min(...experiences.map((experience) => experience.order));
   return (
-    <Section id="experiencias" eyebrow="Juega" title="Vive una experiencia inmersiva">
+    <Section id="experiencias" title="Vive una experiencia inmersiva">
       <ul className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-4">
         {experiences.map((experience) => {
           const opensFirst = !signedIn && experience.order === first;
@@ -371,7 +338,7 @@ export function Experiences({
                 className={`flex h-full flex-col gap-1 ${opensFirst ? '!border-primary/60 shadow-glow' : ''}`}
               >
                 <p className="text-sm text-muted">Quiz {experience.order}</p>
-                <p className={cardTitleClass(experience.title)}>{experience.title}</p>
+                <p className="text-lg font-semibold">{experience.title}</p>
                 {signedIn ? null : (
                   <p
                     className={`mt-2 flex items-center gap-2 text-sm ${opensFirst ? 'text-primary' : 'text-muted'}`}
@@ -403,7 +370,7 @@ export function Experiences({
 export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
   if (posts.length === 0) return null;
   return (
-    <Section id="actualizaciones" eyebrow="Novedades" title="Actualizaciones">
+    <Section id="actualizaciones" title="Actualizaciones">
       <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map((post) => (
           <PostCardItem key={post.id} post={post} />
@@ -420,30 +387,17 @@ export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
 export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }) {
   if (reviews.length === 0) return null;
   return (
-    <Section id="resenas" eyebrow="Lo que dicen" title="Reseñas de lectores">
+    <Section id="resenas" title="Reseñas de lectores">
       <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {reviews.map((review) => (
           <li key={review.id}>
-            <Card as="div" className="relative flex h-full flex-col gap-3 overflow-hidden">
-              <span
-                aria-hidden="true"
-                className="absolute -top-4 right-3 font-display text-8xl leading-none text-primary/15"
-              >
-                “
-              </span>
+            <Card as="div" className="flex h-full flex-col gap-3">
               {review.rating ? (
-                <p
-                  role="img"
-                  aria-label={`${review.rating} de 5 estrellas`}
-                  className="text-lg text-warning"
-                >
-                  {'★'.repeat(review.rating)}
-                  <span className="text-muted/50">{'★'.repeat(5 - review.rating)}</span>
+                <p className="text-sm font-medium tabular-nums text-muted">
+                  Valoración: {review.rating} de 5
                 </p>
               ) : null}
-              <blockquote className="relative flex-1 text-[0.95rem] leading-relaxed">
-                “{review.text}”
-              </blockquote>
+              <blockquote className="flex-1 leading-relaxed">“{review.text}”</blockquote>
               <p className="text-sm font-medium">
                 — {review.authorName}
                 {review.source ? (
@@ -462,7 +416,7 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
 export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }) {
   const author = site?.author;
   return (
-    <Section id="autora" eyebrow="La autora" title="Conoce a la autora">
+    <Section id="autora" title="Conoce a la autora">
       <div className="grid gap-10 lg:grid-cols-2">
         <div className="flex flex-col gap-5">
           <div className="flex items-center gap-4">
@@ -472,10 +426,10 @@ export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }
                 alt={author.photo.alt}
                 width={120}
                 height={120}
-                className="glow-frame size-28 rounded-full object-cover"
+                className="img-frame size-28 rounded-full object-cover"
               />
             ) : null}
-            <p className="font-display text-xl font-semibold">
+            <p className="text-xl font-semibold">
               {author?.name ?? '[PLACEHOLDER] Nombre de la autora'}
             </p>
           </div>
@@ -502,7 +456,7 @@ export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }
           </ul>
         </div>
         <Card as="div">
-          <h3 className="mb-4 font-display text-xl font-semibold">Escríbeme</h3>
+          <h3 className="mb-4 text-xl font-semibold">Escríbeme</h3>
           <ContactForm />
         </Card>
       </div>
@@ -515,7 +469,7 @@ export function SagaSection({ books }: { books: PublicBookSummary[] }) {
   // Un solo libro no es una secuencia: ya tiene su propia sección.
   if (books.length < 2) return null;
   return (
-    <Section id="saga" eyebrow="La saga" title="Secuencia de publicación">
+    <Section id="saga" title="Secuencia de publicación">
       <ul
         aria-label="Libros de la saga"
         className="-mx-4 flex snap-x gap-5 overflow-x-auto px-4 pb-4"
@@ -530,10 +484,10 @@ export function SagaSection({ books }: { books: PublicBookSummary[] }) {
                 width={book.cover.width}
                 height={book.cover.height}
                 loading="lazy"
-                className="glow-frame aspect-[2/3] h-auto w-full rounded-token object-cover"
+                className="img-frame aspect-[2/3] h-auto w-full rounded-token object-cover"
               />
             ) : null}
-            <p className="mt-3 font-display font-semibold">{book.title}</p>
+            <p className="mt-3 font-semibold">{book.title}</p>
             {book.status === 'upcoming' ? (
               <>
                 <Badge tone="warning">Próximamente</Badge>
@@ -581,14 +535,14 @@ export function BuySection({ links }: { links: PurchaseLink[] }) {
     .map((group) => ({ ...group, items: links.filter((link) => link.region === group.region) }))
     .filter((group) => group.items.length > 0);
   return (
-    <Section id="comprar" eyebrow="Consíguelo" title="Cómo comprar el libro">
+    <Section id="comprar" title="Cómo comprar el libro">
       {groups.length === 0 ? (
         <p className="text-muted">[PLACEHOLDER] Pronto publicaremos dónde conseguir el libro.</p>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2">
           {groups.map((group) => (
             <Card key={group.region}>
-              <h3 className="mb-4 font-display text-xl font-semibold">{group.title}</h3>
+              <h3 className="mb-4 text-xl font-semibold">{group.title}</h3>
               <ul className="flex flex-col gap-4">
                 {group.items.map((link, index) => (
                   <PurchaseItem key={`${link.label}-${index}`} link={link} />

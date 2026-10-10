@@ -215,9 +215,7 @@ function AnnouncementPost({ post, preview }: ViewProps) {
           />
         ) : null}
         <p className="text-sm font-medium text-muted">Nuevo contenido disponible</p>
-        <p className="font-display text-xl font-semibold">
-          {isExtra ? 'Capítulo extra' : 'Libro nuevo'}
-        </p>
+        <p className="text-xl font-semibold">{isExtra ? 'Capítulo extra' : 'Libro nuevo'}</p>
         {isExtra ? (
           <p className="text-sm text-muted">Se desbloquea al completar todo el libro.</p>
         ) : null}

@@ -97,7 +97,7 @@ export function PublicLayout() {
             </p>
           </div>
           <nav aria-label="Pie de página" className="flex flex-col gap-1.5">
-            <p className="eyebrow mb-1">Explora</p>
+            <p className="mb-1 text-sm font-semibold">Explora</p>
             {FOOTER_LINKS.map((item) => (
               <Link
                 key={item.to}
@@ -111,7 +111,7 @@ export function PublicLayout() {
           <div className="flex flex-col gap-1.5">
             {social.length > 0 ? (
               <>
-                <p className="eyebrow mb-1">Síguenos</p>
+                <p className="mb-1 text-sm font-semibold">Síguenos</p>
                 <ul aria-label="Redes sociales" className="flex flex-col gap-1.5">
                   {social.map((link) => (
                     <li key={link.url}>

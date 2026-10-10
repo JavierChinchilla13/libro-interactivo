@@ -40,7 +40,7 @@ export function ResultView({
           src={thumbUrl(media.image.url, 900)}
           alt={media.image.alt}
           style={step(1)}
-          className="glow-frame fade-up max-h-96 w-auto max-w-full self-start rounded-token-lg"
+          className="img-frame fade-up max-h-96 w-auto max-w-full self-start rounded-token-lg"
         />
       ) : null}
       {media?.kind === 'video' ? (
