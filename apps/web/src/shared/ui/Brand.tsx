@@ -17,7 +17,7 @@ export function Brand({ to = '/', label = 'Libro Interactivo' }: { to?: string; 
   return (
     <Link
       to={to}
-      className="flex items-center gap-2.5 font-display text-lg font-bold tracking-wide text-text"
+      className="flex min-h-11 items-center gap-2.5 font-display text-lg font-bold tracking-wide text-text"
     >
       <PortalIcon />
       <span>{label}</span>

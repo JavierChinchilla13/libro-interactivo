@@ -236,6 +236,25 @@ export function BookSection({ book }: { book: PublicBookDetail }) {
  * Vista previa de la wiki. Una pestaña con regla se ve «bloqueada» con el mensaje de la autora y **nada más**:
  * el contenido real lo entrega el servidor solo a quien ya avanzó.
  */
+/** Candado dibujado (cerrado o abierto): un solo trazo, hereda el color del texto. */
+function LockIcon({ open = false }: { open?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="size-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d={open ? 'M8 11V8a4 4 0 0 1 7.5-2' : 'M8 11V8a4 4 0 0 1 8 0v3'} />
+    </svg>
+  );
+}
+
 export function WikiPreview({
   tabs,
   lockMessage,
@@ -244,6 +263,8 @@ export function WikiPreview({
   lockMessage: string;
 }) {
   if (tabs.length === 0) return null;
+  // El texto general de bloqueo se dice una sola vez; cada pestaña solo repite el suyo si la autora le puso uno propio.
+  const needsGeneral = tabs.some((tab) => tab.locked && !tab.lockedMessage);
   return (
     <Section id="wiki" eyebrow="Explora" title="Wiki del universo">
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -252,8 +273,8 @@ export function WikiPreview({
             <Card className="flex h-full flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
                 <p className="font-display text-lg font-semibold">{tab.title}</p>
-                <span aria-hidden="true" className="text-lg">
-                  {tab.locked ? '🔒' : '✦'}
+                <span aria-hidden="true" className={tab.locked ? 'text-muted' : 'text-primary'}>
+                  <LockIcon open={!tab.locked} />
                 </span>
               </div>
               {tab.locked ? (
@@ -261,7 +282,9 @@ export function WikiPreview({
                   <span>
                     <Badge tone="warning">Bloqueado</Badge>
                   </span>
-                  <p className="text-sm text-muted">{tab.lockedMessage ?? lockMessage}</p>
+                  {tab.lockedMessage ? (
+                    <p className="text-sm text-muted">{tab.lockedMessage}</p>
+                  ) : null}
                 </>
               ) : (
                 <p className="text-sm text-muted">Abierto para todos</p>
@@ -270,6 +293,7 @@ export function WikiPreview({
           </li>
         ))}
       </ul>
+      {needsGeneral ? <p className="mt-4 text-sm text-muted">{lockMessage}</p> : null}
       <Link to="/wiki" className={`${primaryLink} mt-6`}>
         Entrar a la wiki
       </Link>
@@ -277,7 +301,10 @@ export function WikiPreview({
   );
 }
 
-/** Solo el nombre de cada experiencia. Todas se ven cerradas a un visitante; con sesión, el avance está en el panel. */
+/**
+ * Solo el nombre de cada experiencia. A un visitante se le dice qué falta para abrir cada una: la primera se abre con
+ * el QR del libro y las demás al completar la anterior; el texto de bloqueo de la autora se dice una sola vez.
+ */
 export function Experiences({
   experiences,
   lockMessage,
@@ -288,27 +315,36 @@ export function Experiences({
   signedIn: boolean;
 }) {
   if (experiences.length === 0) return null;
+  const first = Math.min(...experiences.map((experience) => experience.order));
   return (
     <Section id="experiencias" eyebrow="Juega" title="Vive una experiencia inmersiva">
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {experiences.map((experience) => (
-          <li key={experience.id}>
-            <Card className="relative h-full overflow-hidden">
-              <span
-                aria-hidden="true"
-                className="absolute -right-1 -top-3 font-display text-7xl font-bold text-primary/10"
+      <ul className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-4">
+        {experiences.map((experience) => {
+          const opensFirst = !signedIn && experience.order === first;
+          return (
+            <li key={experience.id}>
+              <Card
+                className={`flex h-full flex-col gap-1 ${opensFirst ? '!border-primary/60 shadow-glow' : ''}`}
               >
-                {String(experience.order).padStart(2, '0')}
-              </span>
-              <p className="relative text-sm text-muted">Quiz {experience.order}</p>
-              <p className="relative font-display text-lg font-semibold">{experience.title}</p>
-              {signedIn ? null : <p className="relative mt-3 text-sm text-muted">{lockMessage}</p>}
-            </Card>
-          </li>
-        ))}
+                <p className="text-sm text-muted">Quiz {experience.order}</p>
+                <p className="font-display text-lg font-semibold">{experience.title}</p>
+                {signedIn ? null : (
+                  <p
+                    className={`mt-2 flex items-center gap-2 text-sm ${opensFirst ? 'text-primary' : 'text-muted'}`}
+                  >
+                    <LockIcon open={opensFirst} />
+                    {opensFirst
+                      ? 'Se abre con el QR de tu libro'
+                      : `Antes, completa el Quiz ${experience.order - 1}`}
+                  </p>
+                )}
+              </Card>
+            </li>
+          );
+        })}
       </ul>
       <p className="mt-4 text-sm text-muted">
-        Cada experiencia se abre a medida que avanzas en tu lectura.
+        {signedIn ? 'Cada experiencia se abre a medida que avanzas en tu lectura.' : lockMessage}
       </p>
       {signedIn ? (
         <Link to="/panel" className={`${primaryLink} mt-4`}>
@@ -432,7 +468,8 @@ export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }
 
 /** Secuencia de publicación: las portadas de la saga; los libros que vienen se marcan «Próximamente». */
 export function SagaSection({ books }: { books: PublicBookSummary[] }) {
-  if (books.length === 0) return null;
+  // Un solo libro no es una secuencia: ya tiene su propia sección.
+  if (books.length < 2) return null;
   return (
     <Section id="saga" eyebrow="La saga" title="Secuencia de publicación">
       <ul

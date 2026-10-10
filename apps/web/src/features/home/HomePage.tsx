@@ -61,12 +61,14 @@ export function HomePage() {
 
   const lockMessage = site.data?.lockMessage ?? 'Bloqueado: avanza en tu lectura';
   const book = detail.data;
+  // La ficha del libro solo aparece si tiene algo que contar además del título.
+  const showBook = book !== undefined && Boolean(book.cover || book.synopsis || book.tagline);
 
   return (
     <div className="flex flex-col gap-14">
       <Hero
         site={site.data}
-        hasBook={book !== undefined && !sectionsLoading}
+        hasBook={showBook && !sectionsLoading}
         signedIn={Boolean(session.data)}
         sessionReady={!session.isPending}
         status={heroStatus}
@@ -87,7 +89,7 @@ export function HomePage() {
         <SectionsSkeleton />
       ) : (
         <>
-          {book ? <BookSection book={book} /> : null}
+          {book && showBook ? <BookSection book={book} /> : null}
           {book ? <WikiPreview tabs={book.wikiTabs} lockMessage={lockMessage} /> : null}
           {book ? (
             <Experiences
