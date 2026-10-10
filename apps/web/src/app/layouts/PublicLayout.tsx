@@ -6,12 +6,12 @@ import { publicApi, publicKeys } from '../../features/home/api';
 import { Brand } from '../../shared/ui/Brand';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `rounded-full px-3.5 py-2 text-sm font-medium transition ${
+  `inline-flex min-h-11 items-center rounded-full px-3.5 text-sm font-medium transition ${
     isActive
       ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
       : 'text-muted hover:bg-surface-alt/70 hover:text-text'
   }`;
-const ctaClass = () => 'btn btn-primary !min-h-10 !px-4';
+const ctaClass = () => 'btn btn-primary !min-h-11 !px-4';
 
 const FOOTER_LINKS = [
   { to: '/wiki', label: 'Wiki' },
@@ -34,7 +34,7 @@ export function PublicLayout() {
           <Brand />
           <button
             type="button"
-            className="btn btn-secondary !min-h-10 !px-4 md:hidden"
+            className="btn btn-secondary !min-h-11 !px-4 md:hidden"
             aria-expanded={open}
             aria-controls="menu-principal"
             onClick={() => setOpen((value) => !value)}
@@ -45,7 +45,7 @@ export function PublicLayout() {
             id="menu-principal"
             aria-label="Principal"
             onClick={() => setOpen(false)}
-            className={`${open ? 'flex' : 'hidden'} absolute inset-x-0 top-full flex-col gap-1 border-b border-line bg-bg/95 p-3 backdrop-blur-xl md:static md:flex md:flex-row md:items-center md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none`}
+            className={`${open ? 'flex' : 'hidden'} absolute inset-x-0 top-full flex-col gap-1 border-b border-line bg-bg p-3 md:static md:flex md:flex-row md:items-center md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none`}
           >
             <NavLink to="/" end className={linkClass}>
               Inicio
@@ -99,7 +99,11 @@ export function PublicLayout() {
           <nav aria-label="Pie de página" className="flex flex-col gap-1.5">
             <p className="eyebrow mb-1">Explora</p>
             {FOOTER_LINKS.map((item) => (
-              <Link key={item.to} to={item.to} className="hover:text-text">
+              <Link
+                key={item.to}
+                to={item.to}
+                className="inline-flex min-h-11 items-center hover:text-text"
+              >
                 {item.label}
               </Link>
             ))}
@@ -112,7 +116,7 @@ export function PublicLayout() {
                   {social.map((link) => (
                     <li key={link.url}>
                       <a
-                        className="hover:text-text"
+                        className="inline-flex min-h-11 items-center hover:text-text"
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -124,8 +128,11 @@ export function PublicLayout() {
                 </ul>
               </>
             ) : null}
-            <p className="mt-3">
-              <Link to="/estado" className="underline hover:text-text">
+            <p className="mt-1">
+              <Link
+                to="/estado"
+                className="inline-flex min-h-11 items-center underline hover:text-text"
+              >
                 Estado del sitio
               </Link>
             </p>

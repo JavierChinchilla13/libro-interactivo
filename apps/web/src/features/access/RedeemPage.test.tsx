@@ -64,6 +64,14 @@ describe('entrada por QR (/u/:token)', () => {
     expect(sessionStorage.getItem(PENDING_TOKEN_KEY)).toBeNull();
   });
 
+  it('tras desbloquear un quiz ofrece empezarlo de una vez y, aparte, ir al panel', async () => {
+    mockApi({ session: true });
+    renderAt('/u/abc.def');
+    const start = await screen.findByRole('link', { name: /Empezar «\[PLACEHOLDER\] Quiz 2»/ });
+    expect(start).toHaveAttribute('href', '/panel/quiz/670000000000000000000020');
+    expect(screen.getByRole('link', { name: 'Ir a mi panel' })).toHaveAttribute('href', '/panel');
+  });
+
   it('canjear de nuevo se explica como «ya lo tenías» (es inofensivo)', async () => {
     mockApi({ session: true, redeem: () => json({ ...redeemed, alreadyUnlocked: true }) });
     renderAt('/u/abc.def');
