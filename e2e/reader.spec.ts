@@ -186,7 +186,7 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await page.getByRole('radio', { name: 'Me quedo' }).check();
     await page.getByRole('button', { name: 'Terminar' }).click();
 
-    // El revelado no avanza solo: la lectora abre la puerta con «Ver mi resultado» (aparece tras la última línea).
+    // El revelado no avanza solo: la lectora abre su resultado con «Ver mi resultado» (aparece tras la última línea).
     await expect(page.getByText('Decodificando tus respuestas…')).toBeVisible();
     await page.getByRole('button', { name: 'Ver mi resultado' }).click();
     await expect(page.getByRole('heading', { name: 'Eres de los que se quedan' })).toBeVisible();

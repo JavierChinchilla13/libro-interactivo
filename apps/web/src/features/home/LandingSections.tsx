@@ -61,8 +61,8 @@ function Bar({ className }: { className: string }) {
 }
 
 /**
- * Frase principal y presentación del universo (editables por la autora en «Portada y autora»), con el portal de luz.
- * El portal y los botones no dependen de ningún dato: el héroe se pinta de inmediato y solo los textos esperan.
+ * Frase principal y presentación del universo (editables por la autora en «Portada y autora»).
+ * Los botones no dependen de ningún dato: el héroe se pinta de inmediato y solo los textos esperan.
  * La acción principal es entrar con el libro en la mano (crear cuenta o continuar la lectura).
  */
 export function Hero({
@@ -89,9 +89,9 @@ export function Hero({
     <section
       aria-labelledby="hero-title"
       aria-busy={status === 'loading' || undefined}
-      className="relative grid items-center gap-10 py-4 md:grid-cols-[1.3fr_1fr] md:gap-8 md:py-14"
+      className="relative py-4 md:py-14"
     >
-      <div className="flex flex-col gap-6">
+      <div className="flex max-w-3xl flex-col gap-6">
         <p className="eyebrow">Universo Memorias</p>
         {status === 'loading' ? (
           <>
@@ -162,16 +162,13 @@ export function Hero({
           </a>
         </div>
       </div>
-      <div aria-hidden="true" className="portal-float mx-auto w-36 md:ml-auto md:mr-6 md:w-64">
-        <div className="portal" />
-      </div>
     </section>
   );
 }
 
 /**
- * Cierre de la página: la puerta del inicio vuelve a aparecer en reposo y la acción principal se repite, para que la
- * última impresión sea la invitación a entrar y no el formulario de contacto.
+ * Cierre de la página: la acción principal se repite, para que la última impresión sea la invitación a empezar y
+ * no el formulario de contacto.
  */
 export function ClosingBand({
   signedIn,
@@ -182,13 +179,10 @@ export function ClosingBand({
 }) {
   return (
     <section aria-labelledby="cierre-title" className="glass rounded-token-lg px-6 py-10 sm:px-10">
-      <div className="grid items-center gap-8 sm:grid-cols-[auto_1fr]">
-        <div aria-hidden="true" className="mx-auto w-20 sm:w-24">
-          <div className="portal" />
-        </div>
+      <div className="grid items-center gap-8">
         <div className="flex flex-col items-start gap-4">
           <h2 id="cierre-title" className="section-title">
-            La puerta se abre con tu libro
+            Empieza con tu libro
           </h2>
           <p className="max-w-prose text-muted">
             {signedIn
