@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BOOK_ID, apiError, json, mockApi, renderAt } from '../../test/mockApi';
-import { RevealSequence } from './RevealSequence';
+import { RevealSequence, STEP_MS } from './RevealSequence';
 import { ResultView } from './ResultView';
 
 const QUIZ = '670000000000000000000020';
@@ -268,7 +268,7 @@ describe('quiz: revelado y resultado', () => {
     expect(
       screen.queryByRole('heading', { name: '[PLACEHOLDER] Resultado A' }),
     ).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Saltar ›' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Saltar' }));
 
     expect(
       await screen.findByRole('heading', { name: '[PLACEHOLDER] Resultado A' }),
@@ -305,19 +305,27 @@ describe('quiz: revelado y resultado', () => {
 });
 
 describe('secuencia de revelado', () => {
-  it('muestra las líneas de una en una y termina sola tras la última', () => {
+  it('muestra las líneas de una en una y NO avanza sola: tras la última ofrece «Ver mi resultado»', () => {
     vi.useFakeTimers();
     const onDone = vi.fn();
     render(<RevealSequence lines={['Uno', 'Dos', 'Tres']} effect="brillo" onDone={onDone} />);
     expect(screen.getByText('Uno')).toBeInTheDocument();
     expect(screen.queryByText('Dos')).not.toBeInTheDocument();
-    act(() => void vi.advanceTimersByTime(1500));
+    expect(screen.queryByRole('button', { name: 'Ver mi resultado' })).not.toBeInTheDocument();
+    act(() => void vi.advanceTimersByTime(STEP_MS));
     expect(screen.getByText('Dos')).toBeInTheDocument();
     expect(screen.queryByText('Tres')).not.toBeInTheDocument();
-    act(() => void vi.advanceTimersByTime(1500));
+    act(() => void vi.advanceTimersByTime(STEP_MS));
     expect(screen.getByText('Tres')).toBeInTheDocument();
+    // La última línea también tiene su momento antes de ofrecer el resultado.
+    expect(screen.queryByRole('button', { name: 'Ver mi resultado' })).not.toBeInTheDocument();
+    act(() => void vi.advanceTimersByTime(STEP_MS));
+    const open = screen.getByRole('button', { name: 'Ver mi resultado' });
+    expect(open).toHaveFocus();
+    // Pase el tiempo que pase, la secuencia no entrega el resultado sola.
+    act(() => void vi.advanceTimersByTime(60_000));
     expect(onDone).not.toHaveBeenCalled();
-    act(() => void vi.advanceTimersByTime(1200));
+    open.click();
     expect(onDone).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText('Tus resultados se están preparando')).toHaveAttribute(
       'data-effect',
@@ -325,11 +333,19 @@ describe('secuencia de revelado', () => {
     );
   });
 
-  it('«Saltar» termina de inmediato', async () => {
+  it('«Saltar» (solo con varias líneas) abre el resultado de inmediato', async () => {
     const onDone = vi.fn();
     render(<RevealSequence lines={['Uno', 'Dos']} onDone={onDone} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Saltar ›' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Saltar' }));
     expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('con una sola línea no hay «Saltar»: solo espera su momento y ofrece el resultado', () => {
+    vi.useFakeTimers();
+    render(<RevealSequence lines={['Única']} onDone={() => undefined} />);
+    expect(screen.queryByRole('button', { name: 'Saltar' })).not.toBeInTheDocument();
+    act(() => void vi.advanceTimersByTime(STEP_MS));
+    expect(screen.getByRole('button', { name: 'Ver mi resultado' })).toBeInTheDocument();
   });
 
   it('con «reducir movimiento» muestra todo junto, no avanza sola y pide continuar', async () => {
@@ -434,5 +450,219 @@ describe('vista del resultado', () => {
     expect(container.querySelector('script')).toBeNull();
     expect(container.innerHTML).not.toMatch(/onerror/);
     expect(screen.getByText('Hola')).toBeInTheDocument();
+  });
+});
+
+describe('quiz: foco, título y chrome del momento', () => {
+  const quizMocks = (over: Record<string, unknown> = {}) => ({
+    [`GET /api/quizzes/${QUIZ}`]: intro(),
+    [`POST /api/quizzes/${QUIZ}/attempts`]: inProgress(
+      stage([q('p1', 'Pregunta uno'), q('p2', 'Pregunta dos')]),
+    ),
+    [`GET /api/me/progress?bookId=${BOOK_ID}`]: progress,
+    ...over,
+  });
+
+  it('en el quiz solo queda la marca: sin «Salir», sin pestañas y con una vía para volver al panel', async () => {
+    mockApi(quizMocks());
+    renderAt(`/panel/quiz/${QUIZ}`);
+    expect(await screen.findByRole('button', { name: /Volver al panel/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Salir' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Panel' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Panel (móvil)' })).not.toBeInTheDocument();
+  });
+
+  it('el panel sí conserva su navegación y su «Salir»', async () => {
+    mockApi({ [`GET /api/me/progress?bookId=${BOOK_ID}`]: progress });
+    renderAt('/panel');
+    expect(await screen.findByRole('button', { name: 'Salir' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Panel (móvil)' })).toBeInTheDocument();
+  });
+
+  it('cada fase mueve el foco a su titular y el título del documento la acompaña', async () => {
+    mockApi(quizMocks());
+    renderAt(`/panel/quiz/${QUIZ}`);
+    const title = await screen.findByRole('heading', { level: 1, name: '[PLACEHOLDER] Quiz 2' });
+    expect(title).toHaveFocus();
+    expect(document.title).toContain('[PLACEHOLDER] Quiz 2');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Comenzar' }));
+    const first = await screen.findByRole('heading', {
+      level: 1,
+      name: /pregunta 1 de 2/,
+    });
+    expect(first).toHaveFocus();
+    expect(document.title).toContain('Pregunta 1 de 2');
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Pregunta uno - A' }));
+    await userEvent.click(screen.getByRole('button', { name: /Siguiente/ }));
+    const second = await screen.findByRole('heading', { level: 1, name: /pregunta 2 de 2/ });
+    expect(second).toHaveFocus();
+    expect(document.title).toContain('Pregunta 2 de 2');
+  });
+
+  it('salir con respuestas sin enviar pide confirmación y, si se cancela, no sale', async () => {
+    mockApi(quizMocks());
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false);
+    renderAt(`/panel/quiz/${QUIZ}`);
+    await userEvent.click(await screen.findByRole('button', { name: 'Comenzar' }));
+    await userEvent.click(await screen.findByRole('radio', { name: 'Pregunta uno - A' }));
+    await userEvent.click(screen.getByRole('button', { name: /Volver al panel/ }));
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('radio', { name: 'Pregunta uno - A' })).toBeChecked();
+    confirm.mockRestore();
+  });
+
+  it('el resultado es el titular de la página, recibe el foco y su CTA es el siguiente quiz si está abierto', async () => {
+    const withNext = () =>
+      json({
+        bookId: BOOK_ID,
+        bookCompleted: false,
+        experiences: [
+          {
+            kind: 'quiz',
+            id: QUIZ,
+            title: 'Q2',
+            order: 2,
+            status: 'available',
+            inProgress: false,
+            allowRetake: true,
+          },
+          {
+            kind: 'quiz',
+            id: '3'.repeat(24),
+            title: 'Q3',
+            order: 3,
+            status: 'available',
+            inProgress: false,
+            allowRetake: true,
+          },
+        ],
+      });
+    mockApi(
+      quizMocks({
+        [`GET /api/me/progress?bookId=${BOOK_ID}`]: withNext,
+        [`POST /api/quizzes/${QUIZ}/attempts`]: inProgress(stage([q('p1', 'Pregunta uno')])),
+        [`POST /api/attempts/${ATTEMPT}/stages/etapa-1/answers`]: completed({
+          key: 'r1',
+          title: '[PLACEHOLDER] Resultado A',
+        }),
+      }),
+    );
+    renderAt(`/panel/quiz/${QUIZ}`);
+    await userEvent.click(await screen.findByRole('button', { name: 'Comenzar' }));
+    await userEvent.click(await screen.findByRole('radio', { name: 'Pregunta uno - A' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Terminar' }));
+    const heading = await screen.findByRole('heading', {
+      level: 1,
+      name: '[PLACEHOLDER] Resultado A',
+    });
+    expect(heading).toHaveFocus();
+    expect(document.title).toContain('Tu resultado');
+    const next = screen.getByRole('link', { name: 'Siguiente: Quiz 3' });
+    expect(next).toHaveAttribute('href', `/panel/quiz/${'3'.repeat(24)}`);
+    expect(screen.getByRole('link', { name: 'Mis resultados' })).toHaveAttribute(
+      'href',
+      `/panel/resultados/${QUIZ}`,
+    );
+  });
+
+  it('con el siguiente bloqueado dice qué falta; con el libro completo ofrece los extras', async () => {
+    const result = (over: object) => () =>
+      json({
+        bookId: BOOK_ID,
+        bookCompleted: false,
+        experiences: [
+          {
+            kind: 'quiz',
+            id: QUIZ,
+            title: 'Q2',
+            order: 2,
+            status: 'completed',
+            inProgress: false,
+            allowRetake: true,
+          },
+          ...((over as { next?: object[] }).next ?? []),
+        ],
+        ...(over as { top?: object }).top,
+      });
+    const play = async (progressHandler: () => Response) => {
+      mockApi(
+        quizMocks({
+          [`GET /api/me/progress?bookId=${BOOK_ID}`]: progressHandler,
+          [`POST /api/quizzes/${QUIZ}/attempts`]: inProgress(stage([q('p1', 'Pregunta uno')])),
+          [`POST /api/attempts/${ATTEMPT}/stages/etapa-1/answers`]: completed({
+            key: 'r1',
+            title: '[PLACEHOLDER] Resultado A',
+          }),
+        }),
+      );
+      renderAt(`/panel/quiz/${QUIZ}`);
+      await userEvent.click(await screen.findByRole('button', { name: 'Comenzar' }));
+      await userEvent.click(await screen.findByRole('radio', { name: 'Pregunta uno - A' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Terminar' }));
+      await screen.findByRole('heading', { level: 1, name: '[PLACEHOLDER] Resultado A' });
+    };
+
+    await play(
+      result({
+        next: [
+          {
+            kind: 'quiz',
+            id: '3'.repeat(24),
+            title: 'Q3',
+            order: 3,
+            status: 'locked',
+            lockedBy: { reason: 'qr' },
+            inProgress: false,
+            allowRetake: true,
+          },
+        ],
+      }),
+    );
+    expect(screen.getByRole('link', { name: 'Volver a mi panel' })).toHaveAttribute(
+      'href',
+      '/panel',
+    );
+    expect(
+      screen.getByText(/Tu siguiente paso: Sigue avanzando en tu lectura/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Siguiente: Quiz/ })).not.toBeInTheDocument();
+  });
+
+  it('al completar el último quiz con el libro terminado, el CTA son los extras', async () => {
+    mockApi(
+      quizMocks({
+        [`GET /api/me/progress?bookId=${BOOK_ID}`]: () =>
+          json({
+            bookId: BOOK_ID,
+            bookCompleted: true,
+            experiences: [
+              {
+                kind: 'quiz',
+                id: QUIZ,
+                title: 'Q2',
+                order: 2,
+                status: 'completed',
+                inProgress: false,
+                allowRetake: true,
+              },
+            ],
+          }),
+        [`POST /api/quizzes/${QUIZ}/attempts`]: inProgress(stage([q('p1', 'Pregunta uno')])),
+        [`POST /api/attempts/${ATTEMPT}/stages/etapa-1/answers`]: completed({
+          key: 'r1',
+          title: '[PLACEHOLDER] Resultado A',
+        }),
+      }),
+    );
+    renderAt(`/panel/quiz/${QUIZ}`);
+    await userEvent.click(await screen.findByRole('button', { name: 'Comenzar' }));
+    await userEvent.click(await screen.findByRole('radio', { name: 'Pregunta uno - A' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Terminar' }));
+    expect(await screen.findByRole('link', { name: 'Ver los extras' })).toHaveAttribute(
+      'href',
+      '/panel/extras',
+    );
   });
 });

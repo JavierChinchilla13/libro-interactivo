@@ -3,6 +3,7 @@ import {
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type ReactNode,
+  type Ref,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
@@ -29,7 +30,11 @@ export function Button({
   children,
   type = 'button',
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; loading?: boolean }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: ButtonVariant;
+  loading?: boolean;
+  ref?: Ref<HTMLButtonElement>;
+}) {
   return (
     <button
       type={type}
