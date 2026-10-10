@@ -302,10 +302,10 @@ describe('landing: con contenido', () => {
     );
   });
 
-  it('cierra con la puerta y la acción principal, y cambia con la sesión', async () => {
+  it('cierra con la acción principal y cambia con la sesión', async () => {
     mockApi(full, NO_SESSION);
     const visitor = renderAt('/');
-    const closing = await screen.findByRole('region', { name: 'La puerta se abre con tu libro' });
+    const closing = await screen.findByRole('region', { name: 'Empieza con tu libro' });
     expect(within(closing).getByRole('link', { name: 'Crear mi cuenta' })).toHaveAttribute(
       'href',
       '/registro',
@@ -315,7 +315,7 @@ describe('landing: con contenido', () => {
 
     mockApi(full);
     renderAt('/');
-    const signedIn = await screen.findByRole('region', { name: 'La puerta se abre con tu libro' });
+    const signedIn = await screen.findByRole('region', { name: 'Empieza con tu libro' });
     expect(await within(signedIn).findByRole('link', { name: 'Ir a mi panel' })).toHaveAttribute(
       'href',
       '/panel',

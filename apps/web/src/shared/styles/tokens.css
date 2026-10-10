@@ -1,8 +1,8 @@
 /*
  * Design tokens. Todo color, radio y tipografía del sitio sale de aquí.
  *
- * Identidad visual confirmada por la autora (fase 12): azules profundos con el resplandor cian de «la puerta»
- * (portal de luz en un pasillo de laboratorio), acentos lavanda como las flores de la imagen y títulos en serifa
+ * Paleta confirmada por la autora (fase 12): azules profundos con un cian luminoso como acción, acentos lavanda
+ * y títulos en serifa
  * clásica (Cinzel). Es un tema oscuro único: define la identidad, no sigue el modo del sistema.
  * El tema por libro solo sobrescribe estas variables (`--token-primary`, `--token-bg`…).
  */
@@ -15,12 +15,12 @@
   --token-text: #e8f5ff;
   --token-muted: #9cc2e2;
   --token-border: #4278b0;
-  /* Cian del portal: acciones, enlaces activos y foco. El texto sobre él es el marino del fondo. */
+  /* Cian: acciones, enlaces activos y foco. El texto sobre él es el marino del fondo. */
   --token-primary: #3fd8ff;
   /* Segundo extremo del degradado de los botones (cian → azul claro). */
   --token-primary-end: #5aa9ff;
   --token-primary-contrast: #04152b;
-  /* Lavanda de las flores: detalles secundarios. */
+  /* Lavanda: detalles secundarios. */
   --token-accent: #a89bff;
   --token-danger: #ff8791;
   --token-success: #5fe3ae;

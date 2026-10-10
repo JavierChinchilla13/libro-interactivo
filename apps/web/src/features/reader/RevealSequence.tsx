@@ -13,7 +13,7 @@ export const STEP_MS = 1800;
 
 /**
  * Secuencia previa al resultado («Tus resultados se están decodificando…»): las líneas van apareciendo una a una sobre
- * un resplandor que crece desde el centro y, al final, **la persona abre la puerta** con «Ver mi resultado». Nada
+ * un resplandor que crece desde el centro y, al final, **la persona abre el resultado** con «Ver mi resultado». Nada
  * avanza solo hacia el resultado: así no se pierde el momento ni se adelanta a un lector de pantalla. «Saltar» es un
  * enlace tenue mientras aparecen las líneas. Con «reducir movimiento» se muestra todo junto. El nombre del efecto lo
  * define la autora y viaja como `data-effect`.
@@ -31,7 +31,7 @@ export function RevealSequence({
   const [shown, setShown] = useState(reduced ? lines.length : Math.min(1, lines.length));
   const [ready, setReady] = useState(reduced || lines.length === 0);
 
-  // Cuando la puerta está lista (y no antes) el foco pasa al botón. Con «reducir movimiento» todo aparece junto y el
+  // Cuando el resultado está listo (y no antes) el foco pasa al botón. Con «reducir movimiento» todo aparece junto y el
   // foco se queda en el titular, para que se lean las líneas antes de llegar al botón.
   const open = useRef<HTMLButtonElement>(null);
   useEffect(() => {
