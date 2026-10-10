@@ -1,17 +1,20 @@
 /*
- * Design tokens. Todo color, radio y tipografía del sitio sale de aquí.
+ * Design tokens. Todo color, radio, sombra y tiempo del sitio sale de aquí.
  *
  * Paleta confirmada por la autora (fase 12): azules profundos con un cian luminoso como acción, acentos lavanda
- * y títulos en serifa
- * clásica (Cinzel). Es un tema oscuro único: define la identidad, no sigue el modo del sistema.
- * El tema por libro solo sobrescribe estas variables (`--token-primary`, `--token-bg`…).
+ * y títulos en serifa clásica (Cinzel). Es un tema oscuro único: define la identidad, no sigue el modo del sistema.
+ *
+ * El tema por libro solo sobrescribe estas variables (`--token-primary`, `--token-bg`…) y debe hacerlo en `:root`
+ * (`document.documentElement`): las sombras y resplandores de abajo se derivan del color en `:root`.
  */
 :root {
-  /* Fondo: azul marino profundo. La niebla azul-verdosa de la imagen se pinta como degradado sobre él. */
+  /* Fondo: azul marino profundo. La niebla azul-verdosa se pinta como degradado sobre él. */
   --token-bg: #06142b;
   --token-bg-glow: #0d4a7f;
   --token-surface: #0b2142;
   --token-surface-alt: #123057;
+  /* Hundido: bandas más oscuras que el fondo para dar ritmo a la página sin recurrir a tarjetas. */
+  --token-sunken: #040f22;
   --token-text: #e8f5ff;
   --token-muted: #9cc2e2;
   --token-border: #4278b0;
@@ -20,26 +23,82 @@
   /* Segundo extremo del degradado de los botones (cian → azul claro). */
   --token-primary-end: #5aa9ff;
   --token-primary-contrast: #04152b;
-  /* Lavanda: detalles secundarios. */
+  /* Lavanda: detalles secundarios (niebla de fondo y resultado del quiz). */
   --token-accent: #a89bff;
   --token-danger: #ff8791;
   --token-success: #5fe3ae;
   --token-warning: #ffcb66;
+  /* Estados de la luz: «encendido» (disponible, elegido) y «apagado» (bloqueado). El apagado nunca va solo en color. */
+  --token-lit: var(--token-primary);
+  --token-unlit: #4278b0;
 
   /* Vidrio translúcido de las tarjetas y línea fina de separación. */
-  --token-glass: rgb(11 33 66 / 0.62);
+  --token-glass: color-mix(in srgb, var(--token-surface) 62%, transparent);
   --token-line: rgb(120 190 255 / 0.2);
 
-  /* Resplandor suave (tarjetas) y fuerte (acciones principales): el brillo cian de la imagen. */
-  --token-glow-soft: 0 0 0 1px rgb(63 216 255 / 0.08), 0 8px 28px rgb(2 12 30 / 0.55);
-  --token-glow: 0 0 18px rgb(63 216 255 / 0.45);
+  /* Resplandor suave (tarjetas) y fuerte (acciones principales), derivados del cian. */
+  --token-glow-soft:
+    0 0 0 1px color-mix(in srgb, var(--token-primary) 8%, transparent),
+    0 8px 28px rgb(2 12 30 / 0.55);
+  --token-glow: 0 0 18px color-mix(in srgb, var(--token-primary) 45%, transparent);
+  --token-glow-danger: 0 0 18px color-mix(in srgb, var(--token-danger) 45%, transparent);
+  /* Aro de foco de los campos de formulario. */
+  --token-focus-ring: 0 0 0 3px color-mix(in srgb, var(--token-primary) 22%, transparent);
 
+  /* ---- Radios. `--token-radius` y `--token-radius-lg` ya existían; la escala nueva los completa. ---- */
   --token-radius: 0.5rem;
   --token-radius-lg: 0.875rem;
+  --token-radius-xs: 0.375rem;
+  --token-radius-sm: 0.625rem;
+  --token-radius-md: 1rem;
+  --token-radius-xl: 1.5rem;
+  --token-radius-pill: 9999px;
+
+  /* ---- Elevación (sustituye al vidrio): sombras tintadas de azul, no negras. ---- */
+  --token-elev-1:
+    inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(2 8 20 / 0.35),
+    0 12px 24px -14px rgb(2 8 20 / 0.55);
+  --token-elev-2:
+    inset 0 1px 0 rgb(255 255 255 / 0.05), 0 2px 4px rgb(2 8 20 / 0.4),
+    0 24px 48px -16px rgb(2 8 20 / 0.7);
+  /* Luz: solo en lo que está encendido, elegido, enfocado o revelándose. */
+  --token-lit-ring:
+    0 0 0 1px color-mix(in srgb, var(--token-primary) 45%, transparent),
+    0 0 24px -6px color-mix(in srgb, var(--token-primary) 35%, transparent);
+
+  /* ---- Tipografía ---- */
   --token-font-sans:
     system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  /* Títulos: Cinzel (serifa clásica de la imagen); si no carga, una serifa del sistema. */
+  /* Títulos: Cinzel (serifa clásica); si no carga, una serifa del sistema. */
   --token-font-display: 'Cinzel Variable', 'Cinzel', Georgia, 'Times New Roman', serif;
+  /* Escala fluida (móvil → escritorio). Un solo tamaño de h1 para todo el sitio. */
+  --token-text-display: clamp(2.5rem, 1.2rem + 5.2vw, 5rem);
+  --token-text-h1: clamp(1.875rem, 1.3rem + 2.4vw, 2.75rem);
+  --token-text-h2: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+  --token-text-h3: 1.25rem;
+  --token-leading-display: 1.05;
+  --token-leading-heading: 1.15;
+
+  /* ---- Espaciado: escala de 4 px y tres pasos de ritmo entre secciones (bajan solos en móvil). ---- */
+  --token-space-1: 0.25rem;
+  --token-space-2: 0.5rem;
+  --token-space-3: 0.75rem;
+  --token-space-4: 1rem;
+  --token-space-6: 1.5rem;
+  --token-space-8: 2rem;
+  --token-space-12: 3rem;
+  --token-section-tight: clamp(2rem, 1.2rem + 2.4vw, 3rem);
+  --token-section-regular: clamp(3rem, 1.8rem + 3.6vw, 5rem);
+  --token-section-loose: clamp(4rem, 2.4rem + 5.2vw, 8rem);
+
+  /* ---- Movimiento ---- */
+  --token-dur-instant: 90ms;
+  --token-dur-fast: 150ms;
+  --token-dur-base: 240ms;
+  --token-dur-slow: 480ms;
+  --token-dur-scene: 900ms;
+  --token-ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --token-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
   --token-page-max: 72rem;
 }

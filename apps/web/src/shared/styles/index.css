@@ -20,10 +20,34 @@
   --color-warning: var(--token-warning);
   --radius-token: var(--token-radius);
   --radius-token-lg: var(--token-radius-lg);
+  --radius-token-xs: var(--token-radius-xs);
+  --radius-token-sm: var(--token-radius-sm);
+  --radius-token-md: var(--token-radius-md);
+  --radius-token-xl: var(--token-radius-xl);
   --shadow-glow: var(--token-glow);
   --shadow-glow-soft: var(--token-glow-soft);
+  --shadow-glow-danger: var(--token-glow-danger);
+  --shadow-focus: var(--token-focus-ring);
+  --shadow-elev-1: var(--token-elev-1);
+  --shadow-elev-2: var(--token-elev-2);
+  --shadow-lit: var(--token-lit-ring);
   --font-sans: var(--token-font-sans);
   --font-display: var(--token-font-display);
+  --color-sunken: var(--token-sunken);
+  --color-lit: var(--token-lit);
+  --color-unlit: var(--token-unlit);
+  --text-display: var(--token-text-display);
+  --text-display--line-height: var(--token-leading-display);
+  --text-h1: var(--token-text-h1);
+  --text-h1--line-height: var(--token-leading-heading);
+  --text-h2: var(--token-text-h2);
+  --text-h2--line-height: var(--token-leading-heading);
+  --text-h3: var(--token-text-h3);
+  --spacing-section-tight: var(--token-section-tight);
+  --spacing-section-regular: var(--token-section-regular);
+  --spacing-section-loose: var(--token-section-loose);
+  --ease-token-out: var(--token-ease-out);
+  --ease-token-in-out: var(--token-ease-in-out);
 }
 
 /* ---------------------------------------------------------------------------------------------------------------
@@ -70,7 +94,11 @@
   width: min(90vw, 34rem);
   aspect-ratio: 1;
   border-radius: 9999px;
-  background: radial-gradient(circle, rgb(63 216 255 / 0.26), transparent 62%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--token-primary) 26%, transparent),
+    transparent 62%
+  );
   pointer-events: none;
   animation: glow-grow 1800ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
@@ -115,7 +143,11 @@
         color-mix(in srgb, var(--token-bg-glow) 75%, transparent),
         transparent
       ),
-      radial-gradient(ellipse 45% 460px at 100% 8%, rgb(168 155 255 / 0.11), transparent),
+      radial-gradient(
+        ellipse 45% 460px at 100% 8%,
+        color-mix(in srgb, var(--token-accent) 11%, transparent),
+        transparent
+      ),
       var(--token-bg);
     background-repeat: no-repeat;
     min-height: 100dvh;
@@ -214,7 +246,7 @@
     background: color-mix(in srgb, var(--token-primary) 16%, transparent);
     color: var(--token-primary);
     font-weight: 600;
-    box-shadow: 0 0 14px rgb(63 216 255 / 0.2);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--token-primary) 20%, transparent);
   }
 
   /* Barras de avance: pista con borde fino y relleno cian con resplandor. */
@@ -229,7 +261,7 @@
     height: 100%;
     border-radius: inherit;
     background: linear-gradient(90deg, var(--token-primary), var(--token-primary-end));
-    box-shadow: 0 0 12px rgb(63 216 255 / 0.6);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--token-primary) 60%, transparent);
     transition: width 500ms ease;
   }
   /* Respuesta de un quiz: tarjeta grande que se ilumina al elegirla. */
@@ -258,7 +290,7 @@
     background: color-mix(in srgb, var(--token-primary) 12%, var(--token-glass));
     box-shadow:
       var(--token-glow-soft),
-      0 0 22px rgb(63 216 255 / 0.22);
+      0 0 22px color-mix(in srgb, var(--token-primary) 22%, transparent);
   }
   /* Botón de opción propio: aro del color del borde que se llena de luz cian al elegirlo. */
   .option input {
@@ -276,13 +308,18 @@
   .option input:checked {
     border-color: var(--token-primary);
     background: radial-gradient(circle, var(--token-primary) 0 42%, transparent 46%);
-    box-shadow: 0 0 10px rgb(63 216 255 / 0.55);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--token-primary) 55%, transparent);
   }
 
   /* Tarjeta de vidrio: fondo translúcido, borde fino y un brillo en el borde superior. */
   .glass {
     background:
-      linear-gradient(180deg, rgb(63 216 255 / 0.07), transparent 38%), var(--token-glass);
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--token-primary) 7%, transparent),
+        transparent 38%
+      ),
+      var(--token-glass);
     border: 1px solid var(--token-line);
     box-shadow: var(--token-glow-soft);
     backdrop-filter: blur(10px);
@@ -300,7 +337,7 @@
     border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
     box-shadow:
       var(--token-glow-soft),
-      0 0 24px rgb(63 216 255 / 0.18);
+      0 0 24px color-mix(in srgb, var(--token-primary) 18%, transparent);
   }
 
   /* Títulos de sección: gran serifa con un filete cian debajo. */
@@ -318,7 +355,7 @@
     margin-top: 0.7rem;
     border-radius: 9999px;
     background: linear-gradient(90deg, var(--token-primary), transparent);
-    box-shadow: 0 0 14px rgb(63 216 255 / 0.6);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--token-primary) 60%, transparent);
   }
   .eyebrow {
     font-size: 0.75rem;
@@ -329,7 +366,7 @@
   }
   /* Texto con degradado (del blanco al cian). */
   .text-gradient {
-    background: linear-gradient(120deg, #ffffff 10%, var(--token-primary) 95%);
+    background: linear-gradient(120deg, var(--token-text) 10%, var(--token-primary) 95%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -338,8 +375,8 @@
   .glow-frame {
     border: 1px solid color-mix(in srgb, var(--token-primary) 55%, transparent);
     box-shadow:
-      0 0 0 4px rgb(63 216 255 / 0.07),
-      0 0 38px rgb(63 216 255 / 0.28);
+      0 0 0 4px color-mix(in srgb, var(--token-primary) 7%, transparent),
+      0 0 38px color-mix(in srgb, var(--token-primary) 28%, transparent);
     background: var(--token-surface-alt);
   }
 }
