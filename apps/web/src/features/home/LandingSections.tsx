@@ -82,7 +82,7 @@ export function Hero({
     status === 'error'
       ? 'Universo Memorias'
       : (site?.universe.headline ?? '[PLACEHOLDER] Frase principal del sitio');
-  const cta = `${buttonLink} !min-h-12 !px-7 !text-base w-full sm:w-auto`;
+  const cta = `${buttonLink} btn-lg w-full sm:w-auto`;
   const textLink =
     'inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-muted underline underline-offset-4 transition hover:text-text';
   return (
@@ -191,11 +191,11 @@ export function ClosingBand({
           </p>
           {sessionReady ? (
             signedIn ? (
-              <Link to="/panel" className={`${primaryLink} !min-h-12 !px-7 !text-base`}>
+              <Link to="/panel" className={`${primaryLink} btn-lg`}>
                 Ir a mi panel
               </Link>
             ) : (
-              <Link to="/registro" className={`${primaryLink} !min-h-12 !px-7 !text-base`}>
+              <Link to="/registro" className={`${primaryLink} btn-lg`}>
                 Crear mi cuenta
               </Link>
             )

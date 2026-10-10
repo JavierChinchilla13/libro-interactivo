@@ -26,7 +26,6 @@
   --radius-token-xl: var(--token-radius-xl);
   --shadow-glow: var(--token-glow);
   --shadow-glow-soft: var(--token-glow-soft);
-  --shadow-glow-danger: var(--token-glow-danger);
   --shadow-focus: var(--token-focus-ring);
   --shadow-elev-1: var(--token-elev-1);
   --shadow-elev-2: var(--token-elev-2);
@@ -175,48 +174,49 @@
 }
 
 @layer components {
-  /* Botones: forma de píldora, degradado cian → azul y resplandor al pasar el cursor o enfocar. */
+  /* Botones: píldora de 44 px. El primario es cian plano; la luz solo aparece al enfocar (anillo de foco global). */
   .btn {
     display: inline-flex;
     min-height: 2.75rem;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 9999px;
+    border-radius: var(--token-radius-pill);
     padding: 0 1.35rem;
     font-size: 0.875rem;
     font-weight: 600;
     line-height: 1;
     text-decoration: none;
-    transition:
-      transform 160ms ease,
-      box-shadow 200ms ease,
-      background-color 200ms ease,
-      border-color 200ms ease;
+    transition-property: transform, background-color, border-color, color;
+    transition-duration: var(--token-dur-fast);
+    transition-timing-function: var(--token-ease-out);
   }
-  .btn:hover {
-    transform: translateY(-1px);
+  .btn:active:not(:disabled) {
+    transform: scale(0.96);
   }
-  .btn:active {
-    transform: none;
+  /* Acción principal de una vista (CTA): 48 px y letra de cuerpo. */
+  .btn-lg {
+    min-height: 3rem;
+    padding-inline: 1.75rem;
+    font-size: 1rem;
+  }
+  .btn-compact {
+    padding-inline: 1rem;
   }
   .btn-primary {
-    background-image: linear-gradient(120deg, var(--token-primary), var(--token-primary-end));
+    background-color: var(--token-primary);
     color: var(--token-primary-contrast);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25);
   }
-  .btn-primary:hover,
-  .btn-primary:focus-visible {
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.35),
-      var(--token-glow);
+  .btn-primary:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--token-primary) 85%, white);
   }
   .btn-secondary {
     border: 1px solid var(--token-border);
     background: var(--token-glass);
     color: var(--token-text);
   }
-  .btn-secondary:hover {
+  .btn-secondary:hover:not(:disabled) {
     border-color: var(--token-primary);
     background: color-mix(in srgb, var(--token-primary) 10%, var(--token-glass));
   }

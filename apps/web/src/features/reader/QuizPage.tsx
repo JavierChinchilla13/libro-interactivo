@@ -70,7 +70,7 @@ function LeaveButton({ unsaved }: { unsaved: boolean }) {
   return (
     <Button
       variant="ghost"
-      className="self-start !px-3"
+      className="self-start px-3"
       onClick={() => {
         if (
           !unsaved ||
@@ -322,7 +322,7 @@ export function QuizPage() {
         <div className="sticky bottom-0 z-10 -mx-4 mt-auto flex gap-3 border-t border-line bg-bg px-4 py-3">
           <Button
             variant="secondary"
-            className="!min-h-12"
+            size="lg"
             disabled={index === 0}
             onClick={() => patch({ index: index - 1 })}
           >
@@ -330,7 +330,8 @@ export function QuizPage() {
           </Button>
           {last ? (
             <Button
-              className="!min-h-12 flex-1"
+              size="lg"
+              className="flex-1"
               disabled={chosen === undefined}
               loading={submit.isPending}
               onClick={() => submit.mutate({ attemptId, stageId: stage.stageId, answers })}
@@ -339,7 +340,8 @@ export function QuizPage() {
             </Button>
           ) : (
             <Button
-              className="!min-h-12 flex-1"
+              size="lg"
+              className="flex-1"
               disabled={chosen === undefined}
               onClick={() => patch({ index: index + 1 })}
             >
@@ -376,10 +378,7 @@ export function QuizPage() {
     <div className="mx-auto flex max-w-xl flex-col gap-6">
       <ResultView result={view.result} asPage />
       <div className="flex flex-col gap-3">
-        <Link
-          to={primary.to}
-          className="btn btn-primary !min-h-12 w-full !text-base sm:w-auto sm:self-start"
-        >
+        <Link to={primary.to} className="btn btn-primary btn-lg w-full sm:w-auto sm:self-start">
           {primary.label}
         </Link>
         {next && next.status === 'locked' ? (
@@ -403,7 +402,7 @@ export function QuizPage() {
           {quiz.allowRetake ? (
             <Button
               variant="ghost"
-              className="!px-2 !text-sm underline underline-offset-4"
+              className="px-2 text-sm underline underline-offset-4"
               onClick={() => {
                 setView({ phase: 'intro' });
                 void intro.refetch();

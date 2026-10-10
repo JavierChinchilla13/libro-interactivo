@@ -251,7 +251,7 @@ export function GlossaryView({ bookId, section }: { bookId: string; section: Pub
             disabled={!available.has(option)}
             aria-pressed={letter === option}
             onClick={() => setLetter(letter === option ? null : option)}
-            className="chip !size-11 !px-0 disabled:opacity-40"
+            className="chip size-11 px-0 disabled:opacity-40"
           >
             {option}
           </button>

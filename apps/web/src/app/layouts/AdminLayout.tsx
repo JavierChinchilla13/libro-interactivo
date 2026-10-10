@@ -48,7 +48,7 @@ export function AdminLayout() {
           <Brand to="/admin" label="Panel" />
           <button
             type="button"
-            className="btn btn-secondary !min-h-10 lg:hidden"
+            className="btn btn-secondary lg:hidden"
             aria-expanded={open}
             aria-controls="admin-menu"
             onClick={() => setOpen((value) => !value)}
