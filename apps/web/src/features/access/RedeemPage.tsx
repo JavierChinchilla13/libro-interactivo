@@ -116,15 +116,32 @@ export function RedeemPage() {
           </Alert>
         ) : null}
         {redeem.isSuccess ? (
-          <Alert
-            tone="success"
-            title={redeem.data.alreadyUnlocked ? 'Ya lo tenías desbloqueado' : '¡Desbloqueado!'}
+          // Lo desbloqueado se señala con la luz cian (no con el verde de un formulario) y lleva directo a empezar.
+          <div
+            role="status"
+            className="flex flex-col gap-3 rounded-token-lg border border-primary/50 bg-primary/10 p-4 text-sm"
           >
-            <p className="mt-1">«{redeem.data.title}» está disponible en tu cuenta.</p>
-            <Link to="/panel" className="btn btn-primary mt-3">
-              Ir a mi panel
-            </Link>
-          </Alert>
+            <p className="text-base font-semibold">
+              {redeem.data.alreadyUnlocked ? 'Ya lo tenías desbloqueado' : '¡Desbloqueado!'}
+            </p>
+            <p>«{redeem.data.title}» está disponible en tu cuenta.</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              {redeem.data.kind === 'quiz' ? (
+                <Link
+                  to={`/panel/quiz/${redeem.data.refId}`}
+                  className="btn btn-primary !min-h-12 !text-base"
+                >
+                  Empezar «{redeem.data.title}»
+                </Link>
+              ) : null}
+              <Link
+                to="/panel"
+                className={`btn !min-h-12 !text-base ${redeem.data.kind === 'quiz' ? 'btn-secondary' : 'btn-primary'}`}
+              >
+                Ir a mi panel
+              </Link>
+            </div>
+          </div>
         ) : null}
       </Card>
     </div>

@@ -28,7 +28,7 @@ function ExperienceCard({ experience }: { experience: Experience }) {
           <h3 className="font-display text-lg font-semibold">{experience.title}</h3>
         </div>
         {experience.status === 'completed' ? <Badge tone="success">Completado</Badge> : null}
-        {experience.status === 'available' ? <Badge tone="warning">Disponible</Badge> : null}
+        {experience.status === 'available' ? <Badge tone="primary">Disponible</Badge> : null}
         {experience.status === 'locked' ? <Badge>Bloqueado</Badge> : null}
       </div>
 
