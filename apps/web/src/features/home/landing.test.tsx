@@ -302,6 +302,53 @@ describe('landing: con contenido', () => {
     );
   });
 
+  it('cierra con la puerta y la acción principal, y cambia con la sesión', async () => {
+    mockApi(full, NO_SESSION);
+    const visitor = renderAt('/');
+    const closing = await screen.findByRole('region', { name: 'La puerta se abre con tu libro' });
+    expect(within(closing).getByRole('link', { name: 'Crear mi cuenta' })).toHaveAttribute(
+      'href',
+      '/registro',
+    );
+    expect(within(closing).getByText(/escanéalo y empieza por el primer quiz/)).toBeInTheDocument();
+    visitor.unmount();
+
+    mockApi(full);
+    renderAt('/');
+    const signedIn = await screen.findByRole('region', { name: 'La puerta se abre con tu libro' });
+    expect(await within(signedIn).findByRole('link', { name: 'Ir a mi panel' })).toHaveAttribute(
+      'href',
+      '/panel',
+    );
+    expect(within(signedIn).getByText('Tu avance te espera en el panel.')).toBeInTheDocument();
+    expect(
+      within(signedIn).queryByRole('link', { name: 'Crear mi cuenta' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('un título largo de experiencia usa la letra del sistema y uno corto, la serifa', async () => {
+    const longTitle = '[PLACEHOLDER] Quiz uno: se juega una sola vez y sin repetir';
+    mockApi(
+      {
+        ...full,
+        'GET /api/books/libro-1': () =>
+          json({
+            ...detail,
+            experiences: [
+              { kind: 'quiz', id: '670000000000000000000021', order: 1, title: longTitle },
+              { kind: 'quiz', id: '670000000000000000000022', order: 2, title: 'Quiz dos' },
+            ],
+          }),
+      },
+      NO_SESSION,
+    );
+    renderAt('/');
+    const section = await screen.findByRole('region', { name: /experiencia inmersiva/ });
+    expect(within(section).getByText(longTitle).className).toContain('font-sans');
+    expect(within(section).getByText(longTitle).className).not.toContain('font-display');
+    expect(within(section).getByText('Quiz dos').className).toContain('font-display');
+  });
+
   it('con un solo libro no hay secuencia de publicación', async () => {
     mockApi(
       {
