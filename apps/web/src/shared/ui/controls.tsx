@@ -11,14 +11,14 @@ import {
 /** Controles de formulario con los design tokens. Mobile-first: objetivos táctiles de 44 px. */
 
 const field =
-  'w-full min-h-11 rounded-xl border border-border bg-bg/60 px-3.5 py-2 text-base text-text transition placeholder:text-muted focus:border-primary focus:shadow-[0_0_0_3px_rgb(63_216_255/0.22)] focus:outline-none disabled:opacity-60';
+  'w-full min-h-11 rounded-xl border border-border bg-bg/60 px-3.5 py-2 text-base text-text transition placeholder:text-muted focus:border-primary focus:shadow-focus focus:outline-none disabled:opacity-60';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 
 const variants: Record<ButtonVariant, string> = {
   primary: 'btn-primary',
   secondary: 'btn-secondary',
-  danger: 'bg-danger text-primary-contrast hover:shadow-[0_0_18px_rgb(255_135_145/0.45)]',
+  danger: 'bg-danger text-primary-contrast hover:shadow-glow-danger',
   ghost: 'text-text hover:bg-surface-alt',
 };
 
