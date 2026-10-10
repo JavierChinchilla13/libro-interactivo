@@ -273,8 +273,10 @@ describe('landing: con contenido', () => {
     expect(items[0]).toHaveTextContent('Personajes');
     expect(items[0]).toHaveTextContent('Bloqueado');
     expect(items[0]).toHaveTextContent('[PLACEHOLDER] Tras el Quiz 2');
-    // Sin mensaje propio usa el texto general de bloqueo de la autora.
-    expect(items[1]).toHaveTextContent('[PLACEHOLDER] Sigue leyendo');
+    // Sin mensaje propio no repite el texto general en la tarjeta: se dice una sola vez bajo la lista.
+    expect(items[1]).toHaveTextContent('Bloqueado');
+    expect(items[1]).not.toHaveTextContent('[PLACEHOLDER] Sigue leyendo');
+    expect(within(wiki).getAllByText('[PLACEHOLDER] Sigue leyendo')).toHaveLength(1);
     expect(items[2]).toHaveTextContent('Glosario');
     expect(items[2]).toHaveTextContent('Abierto para todos');
     expect(items[2]).not.toHaveTextContent('Bloqueado');
@@ -284,7 +286,9 @@ describe('landing: con contenido', () => {
     mockApi(full, NO_SESSION);
     const visitor = renderAt('/');
     const section = await screen.findByRole('region', { name: /experiencia inmersiva/ });
-    expect(within(section).getAllByText('[PLACEHOLDER] Sigue leyendo')).toHaveLength(2);
+    expect(within(section).getAllByText('[PLACEHOLDER] Sigue leyendo')).toHaveLength(1);
+    expect(within(section).getByText('Se abre con el QR de tu libro')).toBeInTheDocument();
+    expect(within(section).getByText('Antes, completa el Quiz 1')).toBeInTheDocument();
     expect(within(section).getByText('[PLACEHOLDER] Quiz dos')).toBeInTheDocument();
     expect(within(section).queryByRole('link', { name: 'Ver mi avance' })).not.toBeInTheDocument();
     visitor.unmount();
@@ -296,6 +300,39 @@ describe('landing: con contenido', () => {
       'href',
       '/panel',
     );
+  });
+
+  it('con un solo libro no hay secuencia de publicación', async () => {
+    mockApi(
+      {
+        ...full,
+        'GET /api/books': () => json({ books: [summary({})] }),
+      },
+      NO_SESSION,
+    );
+    renderAt('/');
+    await screen.findByRole('region', { name: 'Wiki del universo' });
+    expect(
+      screen.queryByRole('region', { name: 'Secuencia de publicación' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('un libro sin portada, sinopsis ni lema no abre una ficha vacía ni su enlace', async () => {
+    mockApi(
+      {
+        ...full,
+        'GET /api/books/libro-1': () =>
+          json({ ...detail, cover: undefined, synopsis: '', tagline: undefined }),
+      },
+      NO_SESSION,
+    );
+    renderAt('/');
+    await screen.findByRole('region', { name: 'Wiki del universo' });
+    expect(
+      screen.queryByRole('region', { name: /\[PLACEHOLDER\] Libro 1/ }),
+    ).not.toBeInTheDocument();
+    const hero = screen.getByRole('region', { name: /Frase del universo/ });
+    expect(within(hero).queryByRole('link', { name: 'Conoce el libro' })).not.toBeInTheDocument();
   });
 
   it('la secuencia marca «Próximamente» con la fecha y «Publicado» al ya disponible', async () => {
