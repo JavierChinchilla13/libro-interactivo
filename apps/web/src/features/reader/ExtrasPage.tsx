@@ -37,7 +37,7 @@ export function ExtrasPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="font-display text-2xl font-bold">Capítulos extra</h1>
+      <h1 className="page-title">Capítulos extra</h1>
       {extras.data?.locked !== false ? (
         <Card className="flex flex-col gap-3">
           <h2 className="font-semibold">Aún están bloqueados</h2>
@@ -111,9 +111,7 @@ export function ExtraViewPage() {
     const locked = extra.error instanceof ApiClientError && extra.error.code === 'NOT_UNLOCKED';
     return (
       <Card className="mx-auto max-w-lg">
-        <h1 className="mb-3 font-display text-2xl font-bold">
-          {locked ? 'Aún está bloqueado' : 'No pudimos abrirlo'}
-        </h1>
+        <h1 className="mb-3 page-title">{locked ? 'Aún está bloqueado' : 'No pudimos abrirlo'}</h1>
         <p className="mb-4 text-muted">
           {locked
             ? 'Completa todos los quizzes y el juego de este libro para abrir los capítulos extra.'
@@ -134,7 +132,7 @@ export function ExtraViewPage() {
           ✕ Cerrar
         </Link>
       </p>
-      <h1 className="font-display text-2xl font-bold">{data.title}</h1>
+      <h1 className="page-title">{data.title}</h1>
 
       {data.kind === 'text' ? <SafeHtml html={data.bodyHtml} /> : null}
 

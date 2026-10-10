@@ -30,11 +30,7 @@ export function ResultView({
     <article className="flex flex-col gap-5" aria-label="Tu resultado">
       <div className="fade-up" style={step(0)}>
         <p className="eyebrow">Tu resultado</p>
-        <Heading
-          ref={heading}
-          tabIndex={-1}
-          className="text-gradient mt-1 font-display text-4xl font-bold leading-tight focus:outline-none sm:text-5xl"
-        >
+        <Heading ref={heading} tabIndex={-1} className="page-title mt-1 focus:outline-none">
           {result.title}
         </Heading>
       </div>
@@ -71,7 +67,7 @@ export function ResultView({
       {result.facts && result.facts.length > 0 ? (
         <dl className="fade-up grid gap-3 sm:grid-cols-2" style={step(3)}>
           {result.facts.map((fact, factIndex) => (
-            <div key={factIndex} className="glass rounded-token-lg p-4">
+            <div key={factIndex} className="surface rounded-token-lg p-4">
               <dt className="text-xs text-muted">{fact.label}</dt>
               <dd className="font-medium">{fact.value}</dd>
             </div>

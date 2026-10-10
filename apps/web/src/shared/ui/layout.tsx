@@ -29,7 +29,7 @@ export function Card({
   className?: string;
   as?: 'section' | 'div' | 'article';
 }) {
-  return <Tag className={`glass rounded-token-lg p-4 sm:p-5 ${className}`}>{children}</Tag>;
+  return <Tag className={`surface rounded-token-lg p-4 sm:p-5 ${className}`}>{children}</Tag>;
 }
 
 export function PageHeader({
@@ -44,7 +44,7 @@ export function PageHeader({
   return (
     <div className="fade-up mb-7 flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h1 className="section-title">{title}</h1>
+        <h1 className="page-title">{title}</h1>
         {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
@@ -66,7 +66,7 @@ export function Alert({
   return (
     <div
       role={tone === 'danger' ? 'alert' : 'status'}
-      className={`rounded-token-lg border border-l-4 border-line ${border} bg-surface-alt/80 p-3.5 text-sm backdrop-blur`}
+      className={`rounded-token-lg border border-l-4 border-line ${border} bg-surface-alt p-3.5 text-sm`}
     >
       {title ? <p className="font-semibold">{title}</p> : null}
       {children}

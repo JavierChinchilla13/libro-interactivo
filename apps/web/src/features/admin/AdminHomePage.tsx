@@ -4,7 +4,7 @@ import { Card, PageHeader } from '../../shared/ui/layout';
 import { booksApi, keys } from './api';
 
 const shortcut =
-  'glass card-link flex min-h-12 items-center rounded-token-lg px-4 text-sm font-medium';
+  'surface card-link flex min-h-12 items-center rounded-token-lg px-4 text-sm font-medium';
 
 /** Inicio del panel: resumen y atajos. */
 export function AdminHomePage() {

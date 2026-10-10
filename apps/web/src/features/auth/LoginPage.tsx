@@ -53,7 +53,7 @@ export function LoginPage() {
   return (
     <div className="mx-auto max-w-md">
       <Card>
-        <h1 className="mb-4 font-display text-2xl font-bold">Ingresar</h1>
+        <h1 className="mb-4 page-title">Ingresar</h1>
         <form onSubmit={submit} noValidate className="flex flex-col gap-4">
           <TextField
             label="Correo"

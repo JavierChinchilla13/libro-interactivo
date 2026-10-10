@@ -68,7 +68,7 @@ export function RedeemPage() {
     return (
       <div className="mx-auto max-w-lg">
         <Card>
-          <h1 className="mb-3 font-display text-2xl font-bold">Código no válido</h1>
+          <h1 className="mb-3 page-title">Código no válido</h1>
           <Alert>
             {network
               ? 'No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.'
@@ -83,7 +83,7 @@ export function RedeemPage() {
   return (
     <div className="mx-auto max-w-lg">
       <Card className="flex flex-col gap-4">
-        <h1 className="font-display text-2xl font-bold">Desbloquear contenido</h1>
+        <h1 className="page-title">Desbloquear contenido</h1>
         <p>
           <span className="text-muted">{info.bookTitle}</span>
           <br />

@@ -110,10 +110,7 @@ export function Hero({
           </>
         ) : (
           <>
-            <h1
-              id="hero-title"
-              className="text-gradient font-display text-4xl font-bold leading-[1.1] sm:text-5xl lg:text-6xl"
-            >
+            <h1 id="hero-title" className="display-title">
               {headline}
             </h1>
             <div className="max-w-prose text-lg text-muted">
@@ -178,7 +175,10 @@ export function ClosingBand({
   sessionReady: boolean;
 }) {
   return (
-    <section aria-labelledby="cierre-title" className="glass rounded-token-lg px-6 py-10 sm:px-10">
+    <section
+      aria-labelledby="cierre-title"
+      className="surface rounded-token-lg px-6 py-10 sm:px-10"
+    >
       <div className="grid items-center gap-8">
         <div className="flex flex-col items-start gap-4">
           <h2 id="cierre-title" className="section-title">
@@ -218,7 +218,7 @@ export function SectionsSkeleton() {
         <div
           key={index}
           aria-hidden="true"
-          className="glass h-44 rounded-token-lg motion-safe:animate-pulse"
+          className="surface h-44 rounded-token-lg motion-safe:animate-pulse"
         />
       ))}
     </div>

@@ -27,7 +27,7 @@ export function FanArtsPage() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="font-display text-3xl font-bold">Fan arts</h1>
+        <h1 className="page-title">Fan arts</h1>
         <p className="text-muted">Dibujos de lectores del universo Memorias.</p>
       </div>
 

@@ -80,7 +80,7 @@ export function PanelLayout() {
       {immersive ? null : (
         <nav
           aria-label="Panel (móvil)"
-          className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-bg/85 backdrop-blur-xl sm:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-bg sm:hidden"
         >
           {ITEMS.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} className={bottom}>

@@ -178,7 +178,7 @@ export function QuizPage() {
     const locked = intro.error instanceof ApiClientError && intro.error.code === 'NOT_UNLOCKED';
     return (
       <Card className="mx-auto max-w-lg">
-        <h1 className="mb-3 font-display text-2xl font-bold">
+        <h1 className="mb-3 page-title">
           {locked ? 'Aún no puedes hacer este quiz' : 'No pudimos abrir el quiz'}
         </h1>
         <p className="mb-4 text-muted">
@@ -215,9 +215,7 @@ export function QuizPage() {
               Quiz {position + 1} de {experiences.length}
             </p>
           ) : null}
-          <PhaseHeading className="text-gradient font-display text-3xl font-bold sm:text-4xl">
-            {quiz.title}
-          </PhaseHeading>
+          <PhaseHeading className="page-title">{quiz.title}</PhaseHeading>
         </div>
         {quiz.instructionsHtml ? <SafeHtml html={quiz.instructionsHtml} /> : null}
         <p className="text-sm text-muted">
@@ -321,7 +319,7 @@ export function QuizPage() {
         </fieldset>
         {submit.isError ? <Alert>{errorMessage(submit.error)}</Alert> : null}
         {/* Las acciones quedan abajo, al alcance del pulgar, y ocupan el ancho. */}
-        <div className="sticky bottom-0 z-10 -mx-4 mt-auto flex gap-3 border-t border-line bg-bg/90 px-4 py-3 backdrop-blur-xl">
+        <div className="sticky bottom-0 z-10 -mx-4 mt-auto flex gap-3 border-t border-line bg-bg px-4 py-3">
           <Button
             variant="secondary"
             className="!min-h-12"

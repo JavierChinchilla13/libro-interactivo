@@ -199,7 +199,7 @@ export function AccountPage() {
   const navigate = useNavigate();
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-5">
-      <h1 className="font-display text-2xl font-bold">Mi cuenta</h1>
+      <h1 className="page-title">Mi cuenta</h1>
       <NameForm />
       <PasswordForm />
       <DeleteAccount />

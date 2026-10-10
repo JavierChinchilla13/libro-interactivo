@@ -37,7 +37,7 @@ export function WikiPage() {
   return (
     <div className="flex flex-col gap-2">
       <div>
-        <h1 className="font-display text-3xl font-bold">Wiki del universo</h1>
+        <h1 className="page-title">Wiki del universo</h1>
         <p className="text-muted">{book.title}</p>
       </div>
       {list.length === 0 || !active ? (
