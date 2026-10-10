@@ -28,7 +28,7 @@ export function ResultsPage() {
   const list = results.data?.results ?? [];
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="font-display text-2xl font-bold">Mis resultados</h1>
+      <h1 className="page-title">Mis resultados</h1>
       {list.length === 0 ? (
         <EmptyState title="Todavía no tienes resultados">
           Cuando completes un quiz, aquí queda lo que descubriste.{' '}
@@ -84,7 +84,7 @@ export function ResultDetailPage() {
   if (detail.isError) {
     return (
       <Card className="mx-auto max-w-lg">
-        <h1 className="mb-3 font-display text-2xl font-bold">Todavía no tienes este resultado</h1>
+        <h1 className="mb-3 page-title">Todavía no tienes este resultado</h1>
         <p className="mb-4 text-muted">Completa el quiz para verlo aquí.</p>
         <Link to="/panel" className="underline">
           Volver a mi panel

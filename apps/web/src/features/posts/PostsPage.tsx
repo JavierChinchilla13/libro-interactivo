@@ -22,7 +22,7 @@ export function PostCardItem({ post }: { post: PostCard }) {
     <li>
       <Link
         to={`/actualizaciones/${post.slug}`}
-        className="glass card-link group flex h-full flex-col overflow-hidden rounded-token-lg"
+        className="surface card-link group flex h-full flex-col overflow-hidden rounded-token-lg"
       >
         {post.thumbnail ? (
           <img
@@ -72,7 +72,7 @@ export function PostsPage() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="font-display text-3xl font-bold">Actualizaciones</h1>
+        <h1 className="page-title">Actualizaciones</h1>
         <p className="text-muted">Ferias, eventos y novedades de la autora.</p>
       </div>
       <div role="group" aria-label="Filtrar por tipo" className="flex flex-wrap gap-2">

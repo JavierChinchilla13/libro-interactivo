@@ -6,7 +6,7 @@ export function AuthShell({ title, children }: { title: string; children: ReactN
   return (
     <div className="mx-auto max-w-md">
       <Card>
-        <h1 className="mb-4 font-display text-2xl font-bold">{title}</h1>
+        <h1 className="mb-4 page-title">{title}</h1>
         {children}
       </Card>
     </div>

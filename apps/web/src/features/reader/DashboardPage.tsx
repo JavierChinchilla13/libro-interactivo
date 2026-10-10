@@ -90,9 +90,7 @@ export function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-gradient font-display text-3xl font-bold sm:text-4xl">
-          Hola, {session.data?.name}
-        </h1>
+        <h1 className="page-title">Hola, {session.data?.name}</h1>
         {book ? (
           <p className="text-muted">
             {books.length > 1 ? (

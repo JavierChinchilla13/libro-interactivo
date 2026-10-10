@@ -66,7 +66,7 @@ export function WikiEntryPage() {
       ) : null}
       <div>
         {entry.group ? <p className="text-sm text-muted">{entry.group}</p> : null}
-        <h1 className="font-display text-3xl font-bold">{entry.name}</h1>
+        <h1 className="page-title">{entry.name}</h1>
         {entry.summary ? <p className="mt-1 text-muted">{entry.summary}</p> : null}
       </div>
       {entry.bodyHtml ? <SafeHtml html={entry.bodyHtml} /> : null}

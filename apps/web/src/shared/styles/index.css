@@ -215,7 +215,6 @@
     border: 1px solid var(--token-border);
     background: var(--token-glass);
     color: var(--token-text);
-    backdrop-filter: blur(6px);
   }
   .btn-secondary:hover {
     border-color: var(--token-primary);
@@ -311,18 +310,11 @@
     box-shadow: 0 0 10px color-mix(in srgb, var(--token-primary) 55%, transparent);
   }
 
-  /* Tarjeta de vidrio: fondo translúcido, borde fino y un brillo en el borde superior. */
-  .glass {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--token-primary) 7%, transparent),
-        transparent 38%
-      ),
-      var(--token-glass);
+  /* Superficie elevada: tono sólido con un filete fino y sombra tintada de azul (sin vidrio ni desenfoque). */
+  .surface {
+    background: var(--token-surface);
     border: 1px solid var(--token-line);
-    box-shadow: var(--token-glow-soft);
-    backdrop-filter: blur(10px);
+    box-shadow: var(--token-elev-1);
   }
   /* Tarjeta que es un enlace: se eleva y brilla al pasar el cursor. */
   .card-link {
@@ -340,22 +332,27 @@
       0 0 24px color-mix(in srgb, var(--token-primary) 18%, transparent);
   }
 
-  /* Títulos de sección: gran serifa con un filete cian debajo. */
+  /* Titulares: serifa Cinzel en color sólido. Display = héroe; page-title = h1 de toda página; section-title = h2. */
+  .display-title,
+  .page-title,
   .section-title {
     font-family: var(--token-font-display);
-    font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem);
-    font-weight: 700;
-    line-height: 1.15;
+    letter-spacing: 0.01em;
   }
-  .section-title::after {
-    content: '';
-    display: block;
-    width: 3.5rem;
-    height: 3px;
-    margin-top: 0.7rem;
-    border-radius: 9999px;
-    background: linear-gradient(90deg, var(--token-primary), transparent);
-    box-shadow: 0 0 14px color-mix(in srgb, var(--token-primary) 60%, transparent);
+  .display-title {
+    font-size: var(--token-text-display);
+    font-weight: 700;
+    line-height: var(--token-leading-display);
+  }
+  .page-title {
+    font-size: var(--token-text-h1);
+    font-weight: 600;
+    line-height: var(--token-leading-heading);
+  }
+  .section-title {
+    font-size: var(--token-text-h2);
+    font-weight: 600;
+    line-height: var(--token-leading-heading);
   }
   .eyebrow {
     font-size: 0.75rem;
@@ -363,13 +360,6 @@
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--token-primary);
-  }
-  /* Texto con degradado (del blanco al cian). */
-  .text-gradient {
-    background: linear-gradient(120deg, var(--token-text) 10%, var(--token-primary) 95%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
   }
   /* Marco con resplandor: portadas e ilustraciones destacadas. */
   .glow-frame {
