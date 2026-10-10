@@ -11,6 +11,7 @@ import {
   AuthorSection,
   BookSection,
   BuySection,
+  ClosingBand,
   Experiences,
   FeaturedPosts,
   Hero,
@@ -102,6 +103,7 @@ export function HomePage() {
           <SagaSection books={books.data?.books ?? []} />
           <BuySection links={book?.purchaseLinks ?? []} />
           <ReviewsSection reviews={reviews.data?.reviews ?? []} />
+          <ClosingBand signedIn={Boolean(session.data)} sessionReady={!session.isPending} />
         </>
       )}
       {heroStatus === 'loading' ? null : <AuthorSection site={site.data} />}

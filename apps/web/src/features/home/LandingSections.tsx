@@ -169,6 +169,49 @@ export function Hero({
   );
 }
 
+/**
+ * Cierre de la página: la puerta del inicio vuelve a aparecer en reposo y la acción principal se repite, para que la
+ * última impresión sea la invitación a entrar y no el formulario de contacto.
+ */
+export function ClosingBand({
+  signedIn,
+  sessionReady,
+}: {
+  signedIn: boolean;
+  sessionReady: boolean;
+}) {
+  return (
+    <section aria-labelledby="cierre-title" className="glass rounded-token-lg px-6 py-10 sm:px-10">
+      <div className="grid items-center gap-8 sm:grid-cols-[auto_1fr]">
+        <div aria-hidden="true" className="mx-auto w-20 sm:w-24">
+          <div className="portal" />
+        </div>
+        <div className="flex flex-col items-start gap-4">
+          <h2 id="cierre-title" className="section-title">
+            La puerta se abre con tu libro
+          </h2>
+          <p className="max-w-prose text-muted">
+            {signedIn
+              ? 'Tu avance te espera en el panel.'
+              : 'Tu ejemplar trae un código QR: escanéalo y empieza por el primer quiz.'}
+          </p>
+          {sessionReady ? (
+            signedIn ? (
+              <Link to="/panel" className={`${primaryLink} !min-h-12 !px-7 !text-base`}>
+                Ir a mi panel
+              </Link>
+            ) : (
+              <Link to="/registro" className={`${primaryLink} !min-h-12 !px-7 !text-base`}>
+                Crear mi cuenta
+              </Link>
+            )
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /** Relleno de altura fija mientras llegan las secciones: la página no salta cuando aparecen. */
 export function SectionsSkeleton() {
   return (
@@ -236,6 +279,13 @@ export function BookSection({ book }: { book: PublicBookDetail }) {
  * Vista previa de la wiki. Una pestaña con regla se ve «bloqueada» con el mensaje de la autora y **nada más**:
  * el contenido real lo entrega el servidor solo a quien ya avanzó.
  */
+/** Cinzel luce en títulos cortos; una frase larga se lee mejor en la letra del sistema (Regla de la Serifa Escasa). */
+export const SHORT_TITLE_MAX = 28;
+export const cardTitleClass = (title: string) =>
+  title.length > SHORT_TITLE_MAX
+    ? 'font-sans text-base font-semibold'
+    : 'font-display text-lg font-semibold';
+
 /** Candado dibujado (cerrado o abierto): un solo trazo, hereda el color del texto. */
 function LockIcon({ open = false }: { open?: boolean }) {
   return (
@@ -272,7 +322,7 @@ export function WikiPreview({
           <li key={tab.kind}>
             <Card className="flex h-full flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
-                <p className="font-display text-lg font-semibold">{tab.title}</p>
+                <p className={cardTitleClass(tab.title)}>{tab.title}</p>
                 <span aria-hidden="true" className={tab.locked ? 'text-muted' : 'text-primary'}>
                   <LockIcon open={!tab.locked} />
                 </span>
@@ -327,7 +377,7 @@ export function Experiences({
                 className={`flex h-full flex-col gap-1 ${opensFirst ? '!border-primary/60 shadow-glow' : ''}`}
               >
                 <p className="text-sm text-muted">Quiz {experience.order}</p>
-                <p className="font-display text-lg font-semibold">{experience.title}</p>
+                <p className={cardTitleClass(experience.title)}>{experience.title}</p>
                 {signedIn ? null : (
                   <p
                     className={`mt-2 flex items-center gap-2 text-sm ${opensFirst ? 'text-primary' : 'text-muted'}`}
