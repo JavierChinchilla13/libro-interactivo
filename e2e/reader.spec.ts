@@ -174,20 +174,21 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await expect(page.getByRole('heading', { name: seeded.quizTitle })).toBeVisible();
     await expect(page.getByText('Elige lo que más va contigo.')).toBeVisible();
     await page.getByRole('button', { name: 'Comenzar' }).click();
-    await expect(page.getByText('Pregunta 1 de 2')).toBeVisible();
+    await expect(page.getByText('Pregunta 1 de 2', { exact: true })).toBeVisible();
     const next = page.getByRole('button', { name: /Siguiente/ });
     await expect(next).toBeDisabled();
     await page.getByRole('radio', { name: 'Me quedo' }).check();
     await next.click();
-    await expect(page.getByText('Pregunta 2 de 2')).toBeVisible();
+    await expect(page.getByText('Pregunta 2 de 2', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: /Atrás/ }).click();
     await expect(page.getByRole('radio', { name: 'Me quedo' })).toBeChecked();
     await page.getByRole('button', { name: /Siguiente/ }).click();
     await page.getByRole('radio', { name: 'Me quedo' }).check();
     await page.getByRole('button', { name: 'Terminar' }).click();
 
+    // El revelado no avanza solo: la lectora abre la puerta con «Ver mi resultado» (aparece tras la última línea).
     await expect(page.getByText('Decodificando tus respuestas…')).toBeVisible();
-    await page.getByRole('button', { name: 'Saltar ›' }).click();
+    await page.getByRole('button', { name: 'Ver mi resultado' }).click();
     await expect(page.getByRole('heading', { name: 'Eres de los que se quedan' })).toBeVisible();
     await expect(page.getByText('Cápsula 7')).toBeVisible();
     await expect(page.getByText('100%')).toBeVisible();
