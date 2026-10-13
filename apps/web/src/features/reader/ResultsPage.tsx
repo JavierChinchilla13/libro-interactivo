@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
 import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
-import { Alert, Card, EmptyState, Loading } from '../../shared/ui/layout';
+import { Alert, Card, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
 import { readerApi, readerKeys } from './api';
 import { ResultView } from './ResultView';
 import { useSelectedBook } from './useBook';
@@ -28,7 +28,7 @@ export function ResultsPage() {
   const list = results.data?.results ?? [];
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="page-title">Mis resultados</h1>
+      <PageHeader title="Mis resultados" />
       {list.length === 0 ? (
         <EmptyState title="Todavía no tienes resultados">
           Cuando completes un quiz, aquí queda lo que descubriste.{' '}
@@ -37,10 +37,10 @@ export function ResultsPage() {
           </Link>
         </EmptyState>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="divide-y divide-line border-y border-line">
           {list.map((item) => (
             <li key={item.quizId}>
-              <Card as="article" className="flex items-center gap-4">
+              <article className="flex items-center gap-4 py-4">
                 {item.media?.kind === 'image' ? (
                   <img
                     src={thumbUrl(item.media.image.url, 160)}
@@ -61,7 +61,7 @@ export function ResultsPage() {
                 <Link to={`/panel/resultados/${item.quizId}`} className="underline">
                   Ver<span className="sr-only"> {item.resultTitle}</span>
                 </Link>
-              </Card>
+              </article>
             </li>
           ))}
         </ul>

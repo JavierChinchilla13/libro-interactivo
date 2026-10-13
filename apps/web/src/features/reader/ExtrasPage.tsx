@@ -6,7 +6,7 @@ import { ApiClientError } from '../../shared/api/client';
 import { errorMessage } from '../../shared/api/messages';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Button } from '../../shared/ui/controls';
-import { Alert, Badge, Card, EmptyState, Loading } from '../../shared/ui/layout';
+import { Alert, Badge, Card, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
 import { readerApi, readerKeys } from './api';
 import { useSelectedBook } from './useBook';
 
@@ -37,9 +37,9 @@ export function ExtrasPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="page-title">Capítulos extra</h1>
+      <PageHeader title="Capítulos extra" />
       {extras.data?.locked !== false ? (
-        <Card className="flex flex-col gap-3">
+        <section className="flex flex-col gap-3 border-l-2 border-unlit pl-5">
           <h2 className="font-semibold">Aún están bloqueados</h2>
           <p className="text-sm text-muted">
             Completa todos los quizzes y el juego de este libro para abrirlos.
@@ -52,7 +52,7 @@ export function ExtrasPage() {
           <Link to="/panel" className="text-sm underline">
             Ir a mi panel
           </Link>
-        </Card>
+        </section>
       ) : extras.data.extras.length === 0 ? (
         <EmptyState title="Por ahora no hay capítulos extra">
           La autora los irá agregando.
@@ -60,10 +60,10 @@ export function ExtrasPage() {
       ) : (
         <>
           <p className="text-sm text-muted">{book?.title} · ¡Completaste todo!</p>
-          <ul className="flex flex-col gap-3">
+          <ul className="divide-y divide-line border-y border-line">
             {extras.data.extras.map((extra) => (
               <li key={extra.id}>
-                <Card as="article" className="flex items-center justify-between gap-4">
+                <article className="flex items-center justify-between gap-4 py-4">
                   <div className="min-w-0">
                     <h2 className="font-semibold">{extra.title}</h2>
                     <p className="text-xs text-muted">{KIND[extra.kind]}</p>
@@ -71,11 +71,11 @@ export function ExtrasPage() {
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     {extra.opened ? <Badge tone="success">Visto</Badge> : null}
-                    <Link to={`/panel/extras/${extra.id}`} className="btn btn-primary">
+                    <Link to={`/panel/extras/${extra.id}`} className="btn btn-secondary">
                       Abrir<span className="sr-only"> {extra.title}</span>
                     </Link>
                   </div>
-                </Card>
+                </article>
               </li>
             ))}
           </ul>

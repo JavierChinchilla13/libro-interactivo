@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 import { ApiClientError } from '../../shared/api/client';
 import { errorMessage, fieldErrors } from '../../shared/api/messages';
 import { Button, TextField } from '../../shared/ui/controls';
-import { Alert, Card } from '../../shared/ui/layout';
+import { Alert, PageHeader } from '../../shared/ui/layout';
 import { accountApi } from '../auth/accountApi';
 import { PasswordField } from '../auth/PasswordField';
 import { SESSION_KEY, useLogout, useSession } from '../auth/session';
@@ -32,7 +32,7 @@ function NameForm() {
   }
 
   return (
-    <Card>
+    <section className="border-t border-line pt-6">
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <h2 className="font-semibold">Datos</h2>
         <TextField
@@ -49,11 +49,11 @@ function NameForm() {
         />
         {save.isSuccess ? <Alert tone="success" title="Nombre actualizado" /> : null}
         {save.isError ? <Alert>{errorMessage(save.error)}</Alert> : null}
-        <Button type="submit" className="self-start" loading={save.isPending}>
+        <Button type="submit" variant="secondary" className="self-start" loading={save.isPending}>
           Guardar nombre
         </Button>
       </form>
-    </Card>
+    </section>
   );
 }
 
@@ -91,7 +91,7 @@ function PasswordForm() {
     change.error instanceof ApiClientError && /actual/i.test(change.error.message);
 
   return (
-    <Card>
+    <section className="border-t border-line pt-6">
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <h2 className="font-semibold">Cambiar contraseña</h2>
         <PasswordField
@@ -124,11 +124,11 @@ function PasswordForm() {
           </Alert>
         ) : null}
         {change.isError && !wrongCurrent ? <Alert>{errorMessage(change.error)}</Alert> : null}
-        <Button type="submit" className="self-start" loading={change.isPending}>
+        <Button type="submit" variant="secondary" className="self-start" loading={change.isPending}>
           Cambiar contraseña
         </Button>
       </form>
-    </Card>
+    </section>
   );
 }
 
@@ -146,7 +146,7 @@ function DeleteAccount() {
   const wrong = remove.error instanceof ApiClientError && remove.error.status === 400;
 
   return (
-    <Card>
+    <section className="border-t border-line pt-6">
       <h2 className="font-semibold">Eliminar mi cuenta</h2>
       <p className="mt-1 text-sm text-muted">
         Se borran tu cuenta y tu progreso para siempre. Tus resultados de quizzes quedan solo como
@@ -189,7 +189,7 @@ function DeleteAccount() {
           Eliminar mi cuenta…
         </Button>
       )}
-    </Card>
+    </section>
   );
 }
 
@@ -198,8 +198,8 @@ export function AccountPage() {
   const logout = useLogout();
   const navigate = useNavigate();
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-5">
-      <h1 className="page-title">Mi cuenta</h1>
+    <div className="mx-auto flex max-w-xl flex-col gap-6">
+      <PageHeader title="Mi cuenta" />
       <NameForm />
       <PasswordForm />
       <DeleteAccount />
