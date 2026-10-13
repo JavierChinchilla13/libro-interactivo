@@ -54,6 +54,14 @@ export function RevealSequence({
       className="relative flex min-h-[60dvh] flex-col items-center justify-center gap-8 overflow-hidden text-center"
     >
       <div aria-hidden="true" className="reveal-glow" />
+      {/* El hilo llega y su último punto se enciende: la luz que se expande es la de ese punto. */}
+      <div aria-hidden="true" className="thread-animated relative flex flex-col items-center">
+        <span className="h-14 w-px bg-linear-to-b from-unlit/0 to-lit" />
+        <span className="relative size-3.5">
+          <span className="thread-ignite absolute inset-0 rounded-full bg-lit shadow-lit" />
+          <span className="thread-bloom absolute inset-0 rounded-full border-2 border-lit" />
+        </span>
+      </div>
       <div aria-live="polite" className="relative flex flex-col gap-4">
         {lines.slice(0, shown).map((line, index) => (
           <p key={index} className="reveal-line font-display text-xl sm:text-2xl">

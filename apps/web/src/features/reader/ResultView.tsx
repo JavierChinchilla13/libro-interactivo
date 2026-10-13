@@ -29,7 +29,7 @@ export function ResultView({
   return (
     <article className="flex flex-col gap-5" aria-label="Tu resultado">
       <div className="fade-up" style={step(0)}>
-        <p className="eyebrow">Tu resultado</p>
+        <p className="eyebrow text-accent">Tu resultado</p>
         <Heading ref={heading} tabIndex={-1} className="page-title mt-1 focus:outline-none">
           {result.title}
         </Heading>
@@ -40,7 +40,7 @@ export function ResultView({
           src={thumbUrl(media.image.url, 900)}
           alt={media.image.alt}
           style={step(1)}
-          className="img-frame fade-up max-h-96 w-auto max-w-full self-start rounded-token-lg"
+          className="img-frame fade-up max-h-96 w-auto max-w-full self-start rounded-token-md"
         />
       ) : null}
       {media?.kind === 'video' ? (
@@ -54,7 +54,7 @@ export function ResultView({
           controls
           aria-label={media.video.alt}
           style={step(1)}
-          className="fade-up max-h-96 max-w-full self-start rounded-token-lg border border-border"
+          className="img-frame fade-up max-h-96 max-w-full self-start rounded-token-md"
         />
       ) : null}
 
@@ -65,10 +65,13 @@ export function ResultView({
       ) : null}
 
       {result.facts && result.facts.length > 0 ? (
-        <dl className="fade-up grid gap-3 sm:grid-cols-2" style={step(3)}>
+        <dl className="fade-up divide-y divide-line border-y border-line" style={step(3)}>
           {result.facts.map((fact, factIndex) => (
-            <div key={factIndex} className="surface rounded-token-lg p-4">
-              <dt className="text-xs text-muted">{fact.label}</dt>
+            <div
+              key={factIndex}
+              className="grid gap-1 py-3 sm:grid-cols-[minmax(0,10rem)_1fr] sm:gap-4"
+            >
+              <dt className="text-sm text-muted">{fact.label}</dt>
               <dd className="font-medium">{fact.value}</dd>
             </div>
           ))}
