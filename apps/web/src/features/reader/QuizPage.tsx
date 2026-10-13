@@ -7,7 +7,7 @@ import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Button } from '../../shared/ui/controls';
-import { Alert, Card, Loading } from '../../shared/ui/layout';
+import { Alert, Loading } from '../../shared/ui/layout';
 import { readerApi, readerKeys } from './api';
 import { lockedMessage } from './DashboardPage';
 import { ResultView } from './ResultView';
@@ -177,7 +177,7 @@ export function QuizPage() {
   if (intro.isError) {
     const locked = intro.error instanceof ApiClientError && intro.error.code === 'NOT_UNLOCKED';
     return (
-      <Card className="mx-auto max-w-lg">
+      <section className="mx-auto max-w-lg">
         <h1 className="mb-3 page-title">
           {locked ? 'Aún no puedes hacer este quiz' : 'No pudimos abrir el quiz'}
         </h1>
@@ -189,7 +189,7 @@ export function QuizPage() {
         <Link to="/panel" className="underline">
           Volver a mi panel
         </Link>
-      </Card>
+      </section>
     );
   }
 
@@ -206,7 +206,7 @@ export function QuizPage() {
           <img
             src={thumbUrl(quiz.image.url, 900)}
             alt={quiz.image.alt}
-            className="max-h-64 w-auto max-w-full self-start rounded-token-lg border border-border"
+            className="img-frame max-h-64 w-auto max-w-full self-start rounded-token-md"
           />
         ) : null}
         <div>
@@ -244,7 +244,12 @@ export function QuizPage() {
           </Alert>
         ) : null}
         {quiz.canStart ? (
-          <Button className="self-start" loading={start.isPending} onClick={() => start.mutate()}>
+          <Button
+            size="lg"
+            className="self-start"
+            loading={start.isPending}
+            onClick={() => start.mutate()}
+          >
             {quiz.inProgressAttemptId
               ? 'Continuar'
               : quiz.status === 'completed'
@@ -284,12 +289,15 @@ export function QuizPage() {
           aria-valuemax={stage.questions.length}
           aria-valuenow={index + 1}
           aria-valuetext={`Pregunta ${index + 1} de ${stage.questions.length}`}
-          className="meter"
+          className="flex gap-1.5"
         >
-          <div
-            className="meter-fill"
-            style={{ width: `${((index + 1) / stage.questions.length) * 100}%` }}
-          />
+          {stage.questions.map((item, position) => (
+            <span
+              key={item.id}
+              aria-hidden="true"
+              className={`h-1.5 flex-1 rounded-full transition-colors ${position <= index ? 'bg-primary' : 'bg-unlit/40'}`}
+            />
+          ))}
         </div>
         {stage.title && index === 0 ? <p className="text-xl font-semibold">{stage.title}</p> : null}
         <fieldset className="flex flex-col gap-3">
@@ -300,7 +308,7 @@ export function QuizPage() {
             <img
               src={thumbUrl(question.image.url, 800)}
               alt={question.image.alt}
-              className="max-h-56 w-auto max-w-full self-start rounded-token"
+              className="img-frame max-h-56 w-auto max-w-full self-start rounded-token-md"
             />
           ) : null}
           {question.answers.map((answer) => (
@@ -317,7 +325,7 @@ export function QuizPage() {
         </fieldset>
         {submit.isError ? <Alert>{errorMessage(submit.error)}</Alert> : null}
         {/* Las acciones quedan abajo, al alcance del pulgar, y ocupan el ancho. */}
-        <div className="sticky bottom-0 z-10 -mx-4 mt-auto flex gap-3 border-t border-line bg-bg px-4 py-3">
+        <div className="sticky bottom-0 z-10 -mx-4 mt-auto flex gap-3 border-t border-line bg-bg px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
           <Button
             variant="secondary"
             size="lg"

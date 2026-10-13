@@ -192,13 +192,7 @@
   .option,
   .option input,
   .meter-fill {
-    height: 100%;
-    border-radius: inherit;
-    background: var(--token-primary);
-    transition: width var(--token-dur-slow) var(--token-ease-out);
-  }
-  .option:hover {
-    transform: none;
+    transition: none !important;
   }
 }
 
@@ -332,55 +326,49 @@
   .meter-fill {
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, var(--token-primary), var(--token-primary-end));
-    box-shadow: 0 0 12px color-mix(in srgb, var(--token-primary) 60%, transparent);
-    transition: width 500ms ease;
+    background: var(--token-primary);
+    transition: width var(--token-dur-slow) var(--token-ease-out);
   }
-  /* Respuesta de un quiz: tarjeta grande que se ilumina al elegirla. */
+  /* Respuesta de un quiz: fila de ancho completo; al elegirla se enciende (anillo de luz y marca de selección). */
   .option {
     display: flex;
     min-height: 3.5rem;
     cursor: pointer;
     align-items: center;
     gap: 0.9rem;
-    border-radius: var(--token-radius-lg);
+    border-radius: var(--token-radius-md);
     border: 1px solid var(--token-line);
-    background: var(--token-glass);
+    background: var(--token-surface);
     padding: 0.8rem 1.1rem;
-    transition:
-      border-color 200ms ease,
-      background-color 200ms ease,
-      box-shadow 200ms ease,
-      transform 160ms ease;
+    transition-property: border-color, background-color, box-shadow;
+    transition-duration: var(--token-dur-fast);
+    transition-timing-function: var(--token-ease-out);
   }
   .option:hover {
     border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
-    transform: translateX(2px);
   }
   .option:has(input:checked) {
     border-color: var(--token-primary);
-    background: color-mix(in srgb, var(--token-primary) 12%, var(--token-glass));
-    box-shadow:
-      var(--token-glow-soft),
-      0 0 22px color-mix(in srgb, var(--token-primary) 22%, transparent);
+    background: color-mix(in srgb, var(--token-primary) 12%, var(--token-surface));
+    box-shadow: var(--token-lit-ring);
   }
-  /* Botón de opción propio: aro del color del borde que se llena de luz cian al elegirlo. */
+  /* Marca de selección propia: aro que se llena de cian con una palomita (no depende solo del color). */
   .option input {
     appearance: none;
-    width: 1.35rem;
-    height: 1.35rem;
+    width: 1.5rem;
+    height: 1.5rem;
     flex-shrink: 0;
     border: 2px solid var(--token-border);
-    border-radius: 9999px;
-    background: transparent;
-    transition:
-      border-color 200ms ease,
-      box-shadow 200ms ease;
+    border-radius: var(--token-radius-pill);
+    background: transparent center / 70% no-repeat;
+    transition-property: border-color, background-color;
+    transition-duration: var(--token-dur-fast);
+    transition-timing-function: var(--token-ease-out);
   }
   .option input:checked {
     border-color: var(--token-primary);
-    background: radial-gradient(circle, var(--token-primary) 0 42%, transparent 46%);
-    box-shadow: 0 0 10px color-mix(in srgb, var(--token-primary) 55%, transparent);
+    background-color: var(--token-primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2304152b' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
   }
 
   /* Banda a sangre de pantalla: fondo hundido que se extiende a los lados sin salirse del contenedor. */
