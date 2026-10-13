@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 export function Brand({ to = '/', label = 'Universo Memorias' }: { to?: string; label?: string }) {
   return (
     <Link
+      viewTransition
       to={to}
       className="flex min-h-11 items-center gap-2.5 font-display text-lg font-bold tracking-wide text-text"
     >

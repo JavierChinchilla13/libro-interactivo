@@ -15,7 +15,7 @@ const FOOTER_LINKS = [
   { to: '/contacto', label: 'Contacto' },
 ] as const;
 
-const footerLink = 'inline-flex min-h-11 items-center hover:text-text';
+const footerLink = 'link-slide inline-flex min-h-11 items-center hover:text-text';
 
 /** Marco de las páginas públicas: cabecera fija, contenido y pie. Mobile-first (menú desplegable en el celular). */
 export function PublicLayout() {
@@ -27,7 +27,7 @@ export function PublicLayout() {
   return (
     <div className="flex min-h-dvh flex-col">
       <SkipLink />
-      <header className="sticky top-0 z-40 border-b border-line bg-bg/75 backdrop-blur-xl">
+      <header className="site-header sticky top-0 z-40 border-b border-line bg-bg/75 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-3 px-4 py-2.5">
           <Brand />
           <button
@@ -45,19 +45,19 @@ export function PublicLayout() {
             onClick={() => setOpen(false)}
             className={`${open ? 'flex' : 'hidden'} absolute inset-x-0 top-full flex-col gap-1 border-b border-line bg-bg p-3 md:static md:flex md:flex-row md:items-center md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none`}
           >
-            <NavLink to="/" end className={navTab}>
+            <NavLink to="/" end viewTransition className={navTab}>
               Inicio
             </NavLink>
-            <NavLink to="/wiki" className={navTab}>
+            <NavLink to="/wiki" viewTransition className={navTab}>
               Wiki
             </NavLink>
-            <NavLink to="/actualizaciones" className={navTab}>
+            <NavLink to="/actualizaciones" viewTransition className={navTab}>
               Actualizaciones
             </NavLink>
-            <NavLink to="/fan-arts" className={navTab}>
+            <NavLink to="/fan-arts" viewTransition className={navTab}>
               Fan arts
             </NavLink>
-            <NavLink to="/contacto" className={navTab}>
+            <NavLink to="/contacto" viewTransition className={navTab}>
               Contacto
             </NavLink>
             {user ? (
@@ -66,7 +66,7 @@ export function PublicLayout() {
               </NavLink>
             ) : (
               <>
-                <NavLink to="/ingresar" className={navTab}>
+                <NavLink to="/ingresar" viewTransition className={navTab}>
                   Ingresar
                 </NavLink>
                 <NavLink to="/registro" className={ctaClass}>
@@ -97,7 +97,7 @@ export function PublicLayout() {
               <ul className="flex flex-wrap gap-x-6 md:justify-end">
                 {FOOTER_LINKS.map((item) => (
                   <li key={item.to}>
-                    <Link to={item.to} className={footerLink}>
+                    <Link to={item.to} viewTransition className={footerLink}>
                       {item.label}
                     </Link>
                   </li>

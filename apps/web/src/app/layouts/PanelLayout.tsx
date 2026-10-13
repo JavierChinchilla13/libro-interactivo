@@ -27,14 +27,20 @@ export function PanelLayout() {
   return (
     <div className={`flex min-h-dvh flex-col ${immersive ? '' : 'pb-16 sm:pb-0'}`}>
       <SkipLink />
-      <header className="sticky top-0 z-40 border-b border-line bg-bg/75 backdrop-blur-xl">
+      <header className="site-header sticky top-0 z-40 border-b border-line bg-bg/75 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-4 px-4 py-2.5">
           <Brand to="/panel" />
           {immersive ? null : (
             <>
               <nav aria-label="Panel" className="hidden gap-1 sm:flex">
                 {ITEMS.map((item) => (
-                  <NavLink key={item.to} to={item.to} end={item.end} className={navTab}>
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    viewTransition
+                    className={navTab}
+                  >
                     {item.label}
                   </NavLink>
                 ))}
