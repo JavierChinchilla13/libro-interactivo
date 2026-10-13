@@ -66,7 +66,7 @@ export function HomePage() {
   const showBook = book !== undefined && Boolean(book.cover || book.synopsis || book.tagline);
 
   return (
-    <div className="flex flex-col gap-14">
+    <div className="flex flex-col">
       <Hero
         site={site.data}
         hasBook={showBook && !sectionsLoading}
@@ -75,23 +75,24 @@ export function HomePage() {
         status={heroStatus}
       />
       {failed.length > 0 && !sectionsLoading ? (
-        <Alert tone="warning" title="No pudimos cargar todo el contenido">
-          <div className="mt-2">
-            <Button
-              variant="secondary"
-              onClick={() => failed.forEach((query) => void query.refetch())}
-            >
-              Reintentar
-            </Button>
-          </div>
-        </Alert>
+        <div className="mt-6">
+          <Alert tone="warning" title="No pudimos cargar todo el contenido">
+            <div className="mt-2">
+              <Button
+                variant="secondary"
+                onClick={() => failed.forEach((query) => void query.refetch())}
+              >
+                Reintentar
+              </Button>
+            </div>
+          </Alert>
+        </div>
       ) : null}
       {sectionsLoading ? (
         <SectionsSkeleton />
       ) : (
         <>
           {book && showBook ? <BookSection book={book} /> : null}
-          {book ? <WikiPreview tabs={book.wikiTabs} lockMessage={lockMessage} /> : null}
           {book ? (
             <Experiences
               experiences={book.experiences}
@@ -99,14 +100,17 @@ export function HomePage() {
               signedIn={Boolean(session.data)}
             />
           ) : null}
+          {book ? <WikiPreview tabs={book.wikiTabs} lockMessage={lockMessage} /> : null}
           <FeaturedPosts posts={featuredPosts.data?.posts ?? []} />
           <SagaSection books={books.data?.books ?? []} />
-          <BuySection links={book?.purchaseLinks ?? []} />
           <ReviewsSection reviews={reviews.data?.reviews ?? []} />
-          <ClosingBand signedIn={Boolean(session.data)} sessionReady={!session.isPending} />
+          <BuySection links={book?.purchaseLinks ?? []} />
         </>
       )}
       {heroStatus === 'loading' ? null : <AuthorSection site={site.data} />}
+      {sectionsLoading ? null : (
+        <ClosingBand signedIn={Boolean(session.data)} sessionReady={!session.isPending} />
+      )}
     </div>
   );
 }

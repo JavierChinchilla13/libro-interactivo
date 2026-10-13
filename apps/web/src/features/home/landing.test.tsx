@@ -260,7 +260,7 @@ describe('landing: con contenido', () => {
     expect(within(book).getByText('ISBN: 978-0-00')).toBeInTheDocument();
     expect(within(book).getByRole('img', { name: 'Portada del libro 1' })).toHaveAttribute(
       'src',
-      expect.stringContaining('/upload/f_auto,q_auto,w_480/'),
+      expect.stringContaining('/upload/f_auto,q_auto,w_640/'),
     );
   });
 
