@@ -11,6 +11,7 @@ import { HomePage } from '../features/home/HomePage';
 import { PostsPage } from '../features/posts/PostsPage';
 import { RequireAuth, RequireRole } from './guards';
 import { PublicLayout } from './layouts/PublicLayout';
+import { NotFoundPage } from './NotFoundPage';
 
 /**
  * Pantalla con carga diferida (código dividido): se descarga al entrar a la ruta. Así la página principal no trae
@@ -54,7 +55,7 @@ export const routes: RouteObject[] = [
       { path: 'olvide-mi-contrasena', element: <ForgotPasswordPage /> },
       { path: 'restablecer/:token', element: <ResetPasswordPage /> },
       { path: 'u/:token', element: <RedeemPage /> },
-      { path: '*', element: <p className="text-muted">Página no encontrada.</p> },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
   {

@@ -13,7 +13,6 @@ import { Link } from 'react-router';
 import { thumbUrl } from '../../../shared/lib/cloudinary';
 import { formatDateTime } from '../../../shared/lib/dates';
 import { SafeHtml } from '../../../shared/ui/SafeHtml';
-import { Card } from '../../../shared/ui/layout';
 import { Lightbox } from './Lightbox';
 import { PostFrame, PostHeader, primaryLink, secondaryLink, templateData } from './parts';
 
@@ -56,7 +55,7 @@ function FeaturedImagePost({ post, preview }: ViewProps) {
             alt={data.image.alt}
             width={data.image.width}
             height={data.image.height}
-            className="h-auto w-full sm:rounded-token-lg"
+            className="h-auto w-full sm:rounded-token-md"
           />
           {data.caption ? (
             <figcaption className="px-4 pt-2 text-sm text-muted sm:px-0">{data.caption}</figcaption>
@@ -85,7 +84,7 @@ function GalleryPost({ post, preview }: ViewProps) {
                 type="button"
                 onClick={() => setOpen(index)}
                 aria-label={`Ampliar foto ${index + 1}${item.caption ? `: ${item.caption}` : ''}`}
-                className="block w-full overflow-hidden rounded-token border border-border"
+                className="img-frame block w-full overflow-hidden rounded-token-md"
               >
                 <img
                   src={thumbUrl(item.image.url, 400)}
@@ -114,7 +113,7 @@ function EventPost({ post, preview }: ViewProps) {
   return (
     <PostFrame>
       <PostHeader post={post} preview={preview} />
-      <Card as="div" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4 border-y border-line py-5">
         <dl className="grid gap-3 sm:grid-cols-2">
           {data.startsAt ? (
             <div>
@@ -161,7 +160,7 @@ function EventPost({ post, preview }: ViewProps) {
             ) : null}
           </div>
         ) : null}
-      </Card>
+      </div>
       <Body html={data.bodyHtml} />
     </PostFrame>
   );
@@ -179,7 +178,7 @@ function InvitationPost({ post, preview }: ViewProps) {
           alt={data.image.alt}
           width={data.image.width}
           height={data.image.height}
-          className="h-auto w-full rounded-token-lg border border-border"
+          className="img-frame h-auto w-full rounded-token-md"
         />
       ) : null}
       <Body html={data.bodyHtml} />
@@ -204,14 +203,14 @@ function AnnouncementPost({ post, preview }: ViewProps) {
   return (
     <PostFrame>
       <PostHeader post={post} preview={preview} />
-      <Card as="div" className="flex flex-col items-start gap-3">
+      <div className="flex flex-col items-start gap-3 border-y border-line py-5">
         {data.image ? (
           <img
             src={thumbUrl(data.image.url, 480)}
             alt={data.image.alt}
             width={data.image.width}
             height={data.image.height}
-            className="h-auto max-h-60 w-auto max-w-full rounded-token"
+            className="img-frame h-auto max-h-60 w-auto max-w-full rounded-token-md"
           />
         ) : null}
         <p className="text-sm font-medium text-muted">Nuevo contenido disponible</p>
@@ -222,7 +221,7 @@ function AnnouncementPost({ post, preview }: ViewProps) {
         <Link to={isExtra ? '/panel/extras' : '/'} className={primaryLink}>
           {data.ctaLabel ?? 'Ver ahora'}
         </Link>
-      </Card>
+      </div>
       <Body html={data.bodyHtml} />
     </PostFrame>
   );

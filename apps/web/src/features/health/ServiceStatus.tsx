@@ -9,10 +9,7 @@ export function ServiceStatus() {
   const ok = !isPending && !isError && data?.db === 'up';
 
   return (
-    <section
-      aria-label="Estado del servicio"
-      className="rounded-token-lg border border-border bg-surface p-4"
-    >
+    <section aria-label="Estado del servicio" className="max-w-xl border-y border-line py-5">
       <h2 className="text-base font-semibold">Estado del servicio</h2>
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
         <dt className="text-muted">Servidor</dt>
