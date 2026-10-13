@@ -115,7 +115,7 @@ export function QuizPage() {
         : view.phase === 'result'
           ? `Tu resultado · ${view.result.title}`
           : quizTitle;
-  useDocumentTitle(`${titleByPhase} · Libro Interactivo`);
+  useDocumentTitle(`${titleByPhase} · Universo Memorias`);
 
   /** Lo que cambia al terminar un intento: el avance, los resultados y la introducción de este quiz. */
   const refreshAfterCompleting = useCallback(async () => {

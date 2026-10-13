@@ -4,7 +4,7 @@ const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 
 export interface ResendOptions {
   apiKey: string;
-  /** Remitente con dominio verificado en Resend, p. ej. `Libro Interactivo <avisos@midominio.com>`. */
+  /** Remitente con dominio verificado en Resend, p. ej. `Universo Memorias <avisos@midominio.com>`. */
   from: string;
   /** Inyectable para pruebas. */
   fetchImpl?: typeof fetch;

@@ -90,9 +90,7 @@ export function PublicLayout() {
         <div className="mx-auto grid w-full max-w-[var(--token-page-max)] gap-8 px-4 py-10 md:grid-cols-[minmax(0,1fr)_auto] md:gap-16">
           <div className="flex flex-col gap-3">
             <Brand />
-            <p className="max-w-xs">
-              Universo Memorias: una saga que se lee, se descubre y se juega.
-            </p>
+            <p className="max-w-xs">Una saga que se lee, se descubre y se juega.</p>
           </div>
           <div className="flex flex-col gap-1 md:items-end">
             <nav aria-label="Pie de página">
@@ -125,7 +123,7 @@ export function PublicLayout() {
           </div>
         </div>
         <p className="border-t border-line px-4 py-2 text-center text-xs">
-          Libro Interactivo · universo Memorias ·{' '}
+          Universo Memorias ·{' '}
           <Link
             to="/estado"
             className="inline-flex min-h-11 items-center underline hover:text-text"
