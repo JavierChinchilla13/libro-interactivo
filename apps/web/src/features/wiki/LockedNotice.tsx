@@ -36,8 +36,10 @@ export function LockedNotice({ title, message }: { title: string; message?: stri
 /** Tarjeta de una entrada bloqueada: sin nombre ni imagen (el servidor no los envía). */
 export function LockedCard() {
   return (
-    <li className="rounded-token-lg border border-dashed border-border bg-surface-alt p-4 text-center">
-      <LockIcon className="mx-auto size-6 text-muted" />
+    <li className="rounded-token-md bg-surface p-4 text-center">
+      <span className="mx-auto grid size-10 place-items-center rounded-full border-2 border-unlit text-muted">
+        <LockIcon className="size-5" />
+      </span>
       <p className="mt-1 text-sm font-medium">Bloqueado</p>
       <p className="text-xs text-muted">{DEFAULT_LOCK_TEXT}</p>
     </li>

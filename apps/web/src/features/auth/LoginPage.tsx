@@ -3,7 +3,8 @@ import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { ApiClientError } from '../../shared/api/client';
 import { Button, TextField } from '../../shared/ui/controls';
-import { Alert, Card } from '../../shared/ui/layout';
+import { Alert } from '../../shared/ui/layout';
+import { AuthShell, QR_TAGLINE } from './AuthShell';
 import { homeFor, useLogin, useSession } from './session';
 
 /**
@@ -51,45 +52,42 @@ export function LoginPage() {
           : null;
 
   return (
-    <div className="mx-auto max-w-md">
-      <Card>
-        <h1 className="mb-4 page-title">Ingresar</h1>
-        <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-          <TextField
-            label="Correo"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            error={errors.email}
-            required
-          />
-          <TextField
-            label="Contraseña"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            error={errors.password}
-            required
-          />
-          {message ? <Alert>{message}</Alert> : null}
-          <Button type="submit" loading={login.isPending}>
-            Ingresar
-          </Button>
-          <div className="flex flex-col gap-1 text-sm">
-            <Link to="/olvide-mi-contrasena" className="underline">
-              ¿Olvidaste tu contraseña?
+    <AuthShell title="Ingresar" tagline={QR_TAGLINE}>
+      <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+        <TextField
+          label="Correo"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          error={errors.email}
+          required
+        />
+        <TextField
+          label="Contraseña"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          error={errors.password}
+          required
+        />
+        {message ? <Alert>{message}</Alert> : null}
+        <Button type="submit" loading={login.isPending}>
+          Ingresar
+        </Button>
+        <div className="flex flex-col gap-1 text-sm">
+          <Link to="/olvide-mi-contrasena" className="underline">
+            ¿Olvidaste tu contraseña?
+          </Link>
+          <span className="text-muted">
+            ¿No tienes cuenta?{' '}
+            <Link to="/registro" state={location.state} className="underline">
+              Crea una
             </Link>
-            <span className="text-muted">
-              ¿No tienes cuenta?{' '}
-              <Link to="/registro" state={location.state} className="underline">
-                Crea una
-              </Link>
-            </span>
-          </div>
-        </form>
-      </Card>
-    </div>
+          </span>
+        </div>
+      </form>
+    </AuthShell>
   );
 }
