@@ -3,13 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 import { useLogout, useSession } from '../../features/auth/session';
 import { Button } from '../../shared/ui/controls';
 import { Brand } from '../../shared/ui/Brand';
-
-const link = ({ isActive }: { isActive: boolean }) =>
-  `relative flex min-h-11 items-center rounded-xl px-3 text-sm font-medium transition ${
-    isActive
-      ? 'bg-primary/12 text-primary before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary before:shadow-glow'
-      : 'text-muted hover:bg-surface-alt/70 hover:text-text'
-  }`;
+import { MAIN_ID, sideLink, SkipLink } from '../../shared/ui/nav';
 
 /** Secciones del menú: contenido (editoras y administradoras) y las solo de administradoras. */
 const CONTENT = [
@@ -43,6 +37,7 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
+      <SkipLink />
       <aside className="border-b border-line bg-bg lg:sticky lg:top-0 lg:h-dvh lg:overflow-y-auto lg:border-b-0 lg:border-r">
         <div className="flex items-center justify-between gap-2 px-4 py-3">
           <Brand to="/admin" label="Panel" />
@@ -66,7 +61,7 @@ export function AdminLayout() {
             Contenido
           </p>
           {CONTENT.map((item) => (
-            <NavLink key={item.to} to={item.to} className={link}>
+            <NavLink key={item.to} to={item.to} className={sideLink}>
               {item.label}
             </NavLink>
           ))}
@@ -76,7 +71,7 @@ export function AdminLayout() {
                 Solo administradores
               </p>
               {ADMIN_ONLY.map((item) => (
-                <NavLink key={item.to} to={item.to} className={link}>
+                <NavLink key={item.to} to={item.to} className={sideLink}>
                   {item.label}
                 </NavLink>
               ))}
@@ -107,7 +102,11 @@ export function AdminLayout() {
             </Button>
           </div>
         </header>
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-8 sm:py-8">
+        <main
+          id={MAIN_ID}
+          tabIndex={-1}
+          className="min-w-0 flex-1 px-4 py-6 focus:outline-none sm:px-8 sm:py-8"
+        >
           <div className="fade-up">
             <Outlet />
           </div>
