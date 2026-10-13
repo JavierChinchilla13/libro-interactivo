@@ -5,7 +5,7 @@ import { ApiClientError } from '../../shared/api/client';
 import { fieldErrors } from '../../shared/api/messages';
 import { Button, TextField } from '../../shared/ui/controls';
 import { Alert } from '../../shared/ui/layout';
-import { AuthShell } from './AuthShell';
+import { AuthShell, QR_TAGLINE } from './AuthShell';
 import { PasswordField } from './PasswordField';
 import { homeFor, useRegister, useSession } from './session';
 
@@ -52,7 +52,7 @@ export function RegisterPage() {
             : null;
 
   return (
-    <AuthShell title="Crea tu cuenta">
+    <AuthShell title="Crea tu cuenta" tagline={QR_TAGLINE}>
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <TextField
           label="Nombre"

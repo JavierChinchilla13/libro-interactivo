@@ -44,7 +44,7 @@ function EntryCard({ entry }: { entry: Open<PublicWikiLeaf> }) {
     <li>
       <Link
         to={`/wiki/entrada/${entry.id}`}
-        className="flex h-full flex-col gap-2 rounded-token-lg border border-border bg-surface p-3 hover:bg-surface-alt"
+        className="group flex h-full flex-col gap-2 rounded-token-md"
       >
         {entry.image ? (
           <img
@@ -53,10 +53,10 @@ function EntryCard({ entry }: { entry: Open<PublicWikiLeaf> }) {
             width={entry.image.width}
             height={entry.image.height}
             loading="lazy"
-            className="aspect-square w-full rounded-token object-cover"
+            className="img-frame aspect-square w-full rounded-token-md object-cover transition-opacity group-hover:opacity-85"
           />
         ) : null}
-        <span className="font-semibold">{entry.name}</span>
+        <span className="font-semibold group-hover:underline">{entry.name}</span>
         {entry.group ? <span className="text-xs text-muted">{entry.group}</span> : null}
         {entry.summary ? <span className="text-sm text-muted">{entry.summary}</span> : null}
       </Link>
@@ -64,7 +64,7 @@ function EntryCard({ entry }: { entry: Open<PublicWikiLeaf> }) {
   );
 }
 
-const gridClass = 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4';
+const gridClass = 'grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4';
 
 function Cards({ entries, empty }: { entries: readonly PublicWikiLeaf[]; empty: string }) {
   if (entries.length === 0) return <EmptyState title={empty} />;
@@ -105,12 +105,12 @@ export function PowersView({ bookId, section }: { bookId: string; section: Publi
   return (
     <div className="flex flex-col gap-4">
       {section.introHtml ? <SafeHtml html={section.introHtml} /> : null}
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="max-w-3xl divide-y divide-line">
         {fields.map((field) =>
           field.locked ? (
             <LockedCard key={field.id} />
           ) : (
-            <li key={field.id} className="rounded-token-lg border border-border bg-surface p-4">
+            <li key={field.id} className="py-5 first:pt-0">
               <div className="flex items-center gap-3">
                 {field.image ? (
                   <img
@@ -186,7 +186,7 @@ export function PlacesView({ bookId, section }: { bookId: string; section: Publi
           alt={section.mapImage.alt}
           width={section.mapImage.width}
           height={section.mapImage.height}
-          className="h-auto max-w-full rounded-token-lg border border-border"
+          className="img-frame h-auto max-w-full rounded-token-md"
         />
       ) : null}
       {groups.length > 0 ? (
@@ -245,7 +245,11 @@ export function GlossaryView({ bookId, section }: { bookId: string; section: Pub
         value={text}
         onChange={(event) => setText(event.target.value)}
       />
-      <div role="group" aria-label="Filtrar por letra" className="flex flex-wrap gap-1">
+      <div
+        role="group"
+        aria-label="Filtrar por letra"
+        className="sticky top-[4.25rem] z-10 -mx-4 flex flex-wrap gap-1 bg-bg/95 px-4 py-2"
+      >
         {LETTERS.map((option) => (
           <button
             key={option}

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { errorMessage } from '../../shared/api/messages';
-import { Alert, EmptyState, Loading, TabPanel, Tabs } from '../../shared/ui/layout';
+import { Alert, EmptyState, Loading, PageHeader, TabPanel, Tabs } from '../../shared/ui/layout';
 import { useSession } from '../auth/session';
 import { useSelectedBook } from '../reader/useBook';
 import { wikiApi, wikiKeys } from './api';
@@ -9,6 +9,12 @@ import { LockedNotice } from './LockedNotice';
 import { SECTION_SLUGS, sectionFromSlug } from './sections';
 import { CharactersView, GlossaryView, PlacesView, PowersView } from './SectionViews';
 import { LockIcon } from '../../shared/ui/icons';
+
+const homeLink = (
+  <Link to="/" className="btn btn-secondary">
+    Volver al inicio
+  </Link>
+);
 
 /**
  * Wiki del universo: personajes, poderes, lugares y glosario en una sola página con pestañas.
@@ -29,20 +35,17 @@ export function WikiPage() {
 
   if (isPending || (book && sections.isPending)) return <Loading />;
   if (error) return <Alert>{errorMessage(error)}</Alert>;
-  if (!book) return <EmptyState title="Todavía no hay una wiki disponible." />;
+  if (!book) return <EmptyState title="Todavía no hay una wiki disponible." action={homeLink} />;
   if (sections.isError) return <Alert>{errorMessage(sections.error)}</Alert>;
 
   const list = sections.data?.sections ?? [];
   const active = list.find((s) => s.kind === sectionFromSlug(slug)) ?? list[0];
 
   return (
-    <div className="flex flex-col gap-2">
-      <div>
-        <h1 className="page-title">Wiki del universo</h1>
-        <p className="text-muted">{book.title}</p>
-      </div>
+    <div className="flex flex-col">
+      <PageHeader title="Wiki del universo" subtitle={book.title} />
       {list.length === 0 || !active ? (
-        <EmptyState title="Este libro todavía no tiene wiki." />
+        <EmptyState title="Este libro todavía no tiene wiki." action={homeLink} />
       ) : (
         <>
           <Tabs

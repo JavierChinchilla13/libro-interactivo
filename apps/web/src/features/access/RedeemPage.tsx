@@ -3,7 +3,8 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router';
 import { ApiClientError, apiRequest } from '../../shared/api/client';
-import { Alert, Card, Loading } from '../../shared/ui/layout';
+import { Alert, Loading } from '../../shared/ui/layout';
+import { AuthShell, QR_TAGLINE } from '../auth/AuthShell';
 import { useSession } from '../auth/session';
 
 /** Clave donde se recuerda el código mientras la persona inicia sesión o se registra (se borra al canjear). */
@@ -66,24 +67,20 @@ export function RedeemPage() {
   if (resolved.isError) {
     const network = resolved.error instanceof ApiClientError && resolved.error.code === 'NETWORK';
     return (
-      <div className="mx-auto max-w-lg">
-        <Card>
-          <h1 className="mb-3 page-title">Código no válido</h1>
-          <Alert>
-            {network
-              ? 'No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.'
-              : `${INVALID} Revisa que sea el código impreso en tu libro.`}
-          </Alert>
-        </Card>
-      </div>
+      <AuthShell title="Código no válido" lit={0}>
+        <Alert>
+          {network
+            ? 'No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.'
+            : `${INVALID} Revisa que sea el código impreso en tu libro.`}
+        </Alert>
+      </AuthShell>
     );
   }
 
   const info = resolved.data;
   return (
-    <div className="mx-auto max-w-lg">
-      <Card className="flex flex-col gap-4">
-        <h1 className="page-title">Desbloquear contenido</h1>
+    <AuthShell title="Desbloquear contenido" lit={redeem.isSuccess ? 1 : 0} tagline={QR_TAGLINE}>
+      <div className="flex flex-col gap-4">
         <p>
           <span className="text-muted">{info.bookTitle}</span>
           <br />
@@ -140,7 +137,7 @@ export function RedeemPage() {
             </div>
           </div>
         ) : null}
-      </Card>
-    </div>
+      </div>
+    </AuthShell>
   );
 }
