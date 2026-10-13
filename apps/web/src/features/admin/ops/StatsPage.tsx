@@ -8,7 +8,7 @@ function Figure({ label, value, hint }: { label: string; value: ReactNode; hint?
   return (
     <Card as="div" className="flex flex-col gap-1">
       <p className="text-sm text-muted">{label}</p>
-      <p className="font-display text-3xl font-bold">{value}</p>
+      <p className="font-display text-3xl font-bold tabular-nums">{value}</p>
       {hint ? <p className="text-xs text-muted">{hint}</p> : null}
     </Card>
   );

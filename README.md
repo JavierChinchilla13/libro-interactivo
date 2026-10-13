@@ -1,4 +1,4 @@
-# Libro Interactivo — universo Memorias
+# Universo Memorias
 
 Plataforma web que acompaña la saga de libros "Memorias": sitio público, cuentas de lectores, quizzes, juego final, capítulos extra, actualizaciones, personajes, glosario, fan arts, reseñas y panel de administración. Todo el contenido vive en la base de datos y está organizado por libro.
 

@@ -1,11 +1,13 @@
 import type { ProgressResponse } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
-import { Alert, Badge, Card, EmptyState, Loading } from '../../shared/ui/layout';
+import { Alert, Badge, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
+import { ThreadItem, ThreadList } from '../../shared/ui/ThreadList';
 import { errorMessage } from '../../shared/api/messages';
 import { useSession } from '../auth/session';
 import { readerApi, readerKeys } from './api';
 import { useSelectedBook } from './useBook';
+import { LockIcon } from '../../shared/ui/icons';
 
 type Experience = ProgressResponse['experiences'][number];
 
@@ -19,27 +21,29 @@ export function lockedMessage(experience: Experience): string {
 
 const linkButton = 'btn';
 
-function ExperienceCard({ experience }: { experience: Experience }) {
+/** Un paso del hilo: el punto está encendido si ya se abrió (disponible o completado) y apagado si sigue bloqueado. */
+function ExperienceStep({ experience, primary }: { experience: Experience; primary: boolean }) {
   return (
-    <Card as="article" className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs text-muted">Quiz {experience.order}</p>
-          <h3 className="font-display text-lg font-semibold">{experience.title}</h3>
-        </div>
+    <ThreadItem state={experience.status === 'locked' ? 'unlit' : 'lit'}>
+      <p className="label tabular-nums">Quiz {experience.order}</p>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <h3 className="text-lg font-semibold">{experience.title}</h3>
         {experience.status === 'completed' ? <Badge tone="success">Completado</Badge> : null}
         {experience.status === 'available' ? <Badge tone="primary">Disponible</Badge> : null}
         {experience.status === 'locked' ? <Badge>Bloqueado</Badge> : null}
       </div>
 
       {experience.status === 'locked' ? (
-        <p className="text-sm text-muted">🔒 {lockedMessage(experience)}</p>
+        <p className="mt-2 flex items-start gap-2 text-sm text-muted">
+          <LockIcon className="mt-0.5 size-4" />
+          {lockedMessage(experience)}
+        </p>
       ) : null}
 
       {experience.status === 'available' ? (
         <Link
           to={`/panel/quiz/${experience.id}`}
-          className={`${linkButton} self-start btn-primary`}
+          className={`${linkButton} mt-3 ${primary ? 'btn-primary' : 'btn-secondary'}`}
         >
           {experience.inProgress ? 'Continuar' : 'Empezar'}
           <span className="sr-only"> {experience.title}</span>
@@ -47,7 +51,7 @@ function ExperienceCard({ experience }: { experience: Experience }) {
       ) : null}
 
       {experience.status === 'completed' ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <Link to={`/panel/resultados/${experience.id}`} className={`${linkButton} btn-secondary`}>
             Ver mi resultado<span className="sr-only"> de {experience.title}</span>
           </Link>
@@ -63,7 +67,7 @@ function ExperienceCard({ experience }: { experience: Experience }) {
           )}
         </div>
       ) : null}
-    </Card>
+    </ThreadItem>
   );
 }
 
@@ -86,36 +90,33 @@ export function DashboardPage() {
   const experiences = progress.data?.experiences ?? [];
   const done = experiences.filter((e) => e.status === 'completed').length;
   const nothingOpen = experiences.length > 0 && experiences.every((e) => e.status === 'locked');
+  // El único botón primario de la vista es el siguiente paso: el primer quiz disponible.
+  const nextId = experiences.find((e) => e.status === 'available')?.id;
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-gradient font-display text-3xl font-bold sm:text-4xl">
-          Hola, {session.data?.name}
-        </h1>
-        {book ? (
-          <p className="text-muted">
-            {books.length > 1 ? (
-              <label className="flex items-center gap-2">
-                <span>Libro</span>
-                <select
-                  value={book.id}
-                  onChange={(event) => select(event.target.value)}
-                  className="min-h-11 rounded-token border border-border bg-surface px-2"
-                >
-                  {books.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id}>
-                      {candidate.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              book.title
-            )}
-          </p>
-        ) : null}
-      </div>
+      <PageHeader
+        title={`Hola, ${session.data?.name ?? ''}`}
+        subtitle={book && books.length <= 1 ? book.title : undefined}
+        actions={
+          book && books.length > 1 ? (
+            <label className="flex items-center gap-2 text-sm text-muted">
+              <span>Libro</span>
+              <select
+                value={book.id}
+                onChange={(event) => select(event.target.value)}
+                className="min-h-11 rounded-token border border-border bg-surface px-2 text-text"
+              >
+                {books.map((candidate) => (
+                  <option key={candidate.id} value={candidate.id}>
+                    {candidate.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : undefined
+        }
+      />
 
       {!book ? (
         <EmptyState title="Todavía no hay libros disponibles">Vuelve pronto.</EmptyState>
@@ -154,23 +155,25 @@ export function DashboardPage() {
           {experiences.length === 0 ? (
             <EmptyState title="Este libro todavía no tiene quizzes publicados" />
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-2" aria-label="Experiencias del libro">
+            <ThreadList label="Experiencias del libro">
               {experiences.map((experience) => (
-                <li key={experience.id}>
-                  <ExperienceCard experience={experience} />
-                </li>
+                <ExperienceStep
+                  key={experience.id}
+                  experience={experience}
+                  primary={experience.id === nextId}
+                />
               ))}
-            </ul>
+            </ThreadList>
           )}
 
-          <Card className="flex flex-col gap-2">
-            <h2 className="font-display text-lg font-semibold">Capítulos extra</h2>
+          <section className="flex flex-col gap-2 border-t border-line pt-6">
+            <h2 className="text-lg font-semibold">Capítulos extra</h2>
             {progress.data.bookCompleted ? (
               <>
                 <p className="text-sm">
                   ¡Completaste todo el libro! Ya puedes abrir los capítulos extra.
                 </p>
-                <Link to="/panel/extras" className={`${linkButton} self-start btn-primary`}>
+                <Link to="/panel/extras" className={`${linkButton} self-start btn-secondary`}>
                   Ver los extras
                 </Link>
               </>
@@ -184,15 +187,15 @@ export function DashboardPage() {
                 </span>
               </>
             )}
-          </Card>
+          </section>
 
-          <Card className="flex flex-col gap-2">
-            <h2 className="font-display text-lg font-semibold">Mis resultados</h2>
+          <section className="flex flex-col gap-2 border-t border-line pt-6">
+            <h2 className="text-lg font-semibold">Mis resultados</h2>
             <p className="text-sm text-muted">Todo lo que has descubierto.</p>
             <Link to="/panel/resultados" className={`${linkButton} btn-secondary self-start`}>
               Ver mis resultados
             </Link>
-          </Card>
+          </section>
         </>
       ) : null}
     </div>

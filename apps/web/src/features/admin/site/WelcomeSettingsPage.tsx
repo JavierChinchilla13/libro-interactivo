@@ -112,9 +112,7 @@ function WelcomeForm({ initial }: { initial: WelcomeSettings }) {
           <h2 className="mb-2 font-semibold">Así lo verá el lector</h2>
           {form.bodyHtml ? (
             <>
-              {form.title ? (
-                <p className="mb-2 font-display text-xl font-bold">{form.title}</p>
-              ) : null}
+              {form.title ? <p className="section-title mb-2">{form.title}</p> : null}
               <SafeHtml html={form.bodyHtml} />
             </>
           ) : (

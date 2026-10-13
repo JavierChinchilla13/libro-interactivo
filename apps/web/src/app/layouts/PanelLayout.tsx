@@ -3,6 +3,7 @@ import { homeFor, isStaff, useLogout, useSession } from '../../features/auth/ses
 import { WelcomeModal } from '../../features/reader/WelcomeModal';
 import { Button } from '../../shared/ui/controls';
 import { Brand } from '../../shared/ui/Brand';
+import { bottomTab, MAIN_ID, navTab, SkipLink } from '../../shared/ui/nav';
 
 const ITEMS = [
   { to: '/panel', label: 'Panel', end: true },
@@ -10,19 +11,6 @@ const ITEMS = [
   { to: '/panel/extras', label: 'Extras', end: false },
   { to: '/panel/cuenta', label: 'Cuenta', end: false },
 ] as const;
-
-const top = ({ isActive }: { isActive: boolean }) =>
-  `rounded-full px-3.5 py-2 text-sm font-medium transition ${
-    isActive
-      ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
-      : 'text-muted hover:bg-surface-alt/70 hover:text-text'
-  }`;
-const bottom = ({ isActive }: { isActive: boolean }) =>
-  `relative flex min-h-14 flex-1 flex-col items-center justify-center text-xs font-medium transition ${
-    isActive
-      ? 'text-primary before:absolute before:top-0 before:h-0.5 before:w-10 before:rounded-full before:bg-primary before:shadow-glow'
-      : 'text-muted'
-  }`;
 
 /**
  * Marco del panel del lector: navegación inferior en el celular, superior en escritorio.
@@ -38,14 +26,21 @@ export function PanelLayout() {
 
   return (
     <div className={`flex min-h-dvh flex-col ${immersive ? '' : 'pb-16 sm:pb-0'}`}>
-      <header className="sticky top-0 z-40 border-b border-line bg-bg/75 backdrop-blur-xl">
+      <SkipLink />
+      <header className="site-header sticky top-0 z-40 border-b border-line bg-bg/75 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-4 px-4 py-2.5">
           <Brand to="/panel" />
           {immersive ? null : (
             <>
               <nav aria-label="Panel" className="hidden gap-1 sm:flex">
                 {ITEMS.map((item) => (
-                  <NavLink key={item.to} to={item.to} end={item.end} className={top}>
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    viewTransition
+                    className={navTab}
+                  >
                     {item.label}
                   </NavLink>
                 ))}
@@ -72,7 +67,11 @@ export function PanelLayout() {
           )}
         </div>
       </header>
-      <main className="mx-auto w-full max-w-[var(--token-page-max)] flex-1 px-4 py-6 sm:py-10">
+      <main
+        id={MAIN_ID}
+        tabIndex={-1}
+        className="mx-auto w-full max-w-[var(--token-page-max)] flex-1 px-4 py-6 focus:outline-none sm:py-10"
+      >
         <div className="fade-up">
           <Outlet />
         </div>
@@ -80,10 +79,10 @@ export function PanelLayout() {
       {immersive ? null : (
         <nav
           aria-label="Panel (móvil)"
-          className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-bg/85 backdrop-blur-xl sm:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-bg sm:hidden"
         >
           {ITEMS.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className={bottom}>
+            <NavLink key={item.to} to={item.to} end={item.end} className={bottomTab}>
               {item.label}
             </NavLink>
           ))}

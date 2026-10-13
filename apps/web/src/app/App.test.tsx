@@ -71,6 +71,6 @@ describe('navegación', () => {
   it('muestra "Página no encontrada" en rutas inexistentes', () => {
     mockFetch(new Error('no importa'));
     renderApp('/ruta-que-no-existe');
-    expect(screen.getByText('Página no encontrada.')).toBeInTheDocument();
+    expect(screen.getByText('Página no encontrada')).toBeInTheDocument();
   });
 });

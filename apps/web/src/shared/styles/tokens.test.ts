@@ -32,7 +32,7 @@ function contrast(a: string, b: string): number {
 }
 
 describe('contraste de la paleta (WCAG AA)', () => {
-  const surfaces = ['bg', 'surface', 'surface-alt'];
+  const surfaces = ['bg', 'surface', 'surface-alt', 'sunken'];
 
   it('el texto normal tiene al menos 4.5:1 sobre todos los fondos', () => {
     for (const surface of surfaces) {
@@ -48,12 +48,17 @@ describe('contraste de la paleta (WCAG AA)', () => {
   it('el texto de los botones sobre el cian y sobre el color de peligro tiene al menos 4.5:1', () => {
     expect(contrast(token('primary-contrast'), token('primary'))).toBeGreaterThanOrEqual(4.5);
     expect(contrast(token('primary-contrast'), token('danger'))).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(token('primary-contrast'), token('primary-end'))).toBeGreaterThanOrEqual(4.5);
   });
 
   it('los bordes de campos y controles tienen al menos 3:1 sobre la tarjeta y el fondo', () => {
     for (const surface of ['bg', 'surface']) {
       expect(contrast(token('border'), token(surface)), surface).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('el estado «apagado» (bloqueado) se distingue de las superficies con al menos 3:1', () => {
+    for (const surface of ['bg', 'surface', 'sunken']) {
+      expect(contrast(token('unlit'), token(surface)), surface).toBeGreaterThanOrEqual(3);
     }
   });
 

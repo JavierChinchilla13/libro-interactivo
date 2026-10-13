@@ -111,7 +111,7 @@ function StageView({
   const complete = stage.questions.every((question) => answers[question.id] !== undefined);
   return (
     <div className="flex flex-col gap-5">
-      {stage.title ? <h3 className="font-display text-lg font-semibold">{stage.title}</h3> : null}
+      {stage.title ? <h3 className="text-lg font-semibold">{stage.title}</h3> : null}
       {stage.questions.map((question, index) => (
         <fieldset key={question.id} className="flex flex-col gap-2">
           <legend className="font-medium">
@@ -167,7 +167,7 @@ function ResultView({ result }: { result: ResultPayload }) {
           Efecto: {result.reveal?.effect ?? result.revealIntro?.effect}
         </p>
       ) : null}
-      <h3 className="font-display text-2xl font-bold">{result.title}</h3>
+      <h3 className="page-title">{result.title}</h3>
       {result.media?.kind === 'image' ? (
         <img
           src={thumbUrl(result.media.image.url, 640)}

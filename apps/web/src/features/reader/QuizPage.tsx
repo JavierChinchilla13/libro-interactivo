@@ -7,7 +7,7 @@ import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Button } from '../../shared/ui/controls';
-import { Alert, Card, Loading } from '../../shared/ui/layout';
+import { Alert, Loading } from '../../shared/ui/layout';
 import { readerApi, readerKeys } from './api';
 import { lockedMessage } from './DashboardPage';
 import { ResultView } from './ResultView';
@@ -70,7 +70,7 @@ function LeaveButton({ unsaved }: { unsaved: boolean }) {
   return (
     <Button
       variant="ghost"
-      className="self-start !px-3"
+      className="self-start px-3"
       onClick={() => {
         if (
           !unsaved ||
@@ -115,7 +115,7 @@ export function QuizPage() {
         : view.phase === 'result'
           ? `Tu resultado · ${view.result.title}`
           : quizTitle;
-  useDocumentTitle(`${titleByPhase} · Libro Interactivo`);
+  useDocumentTitle(`${titleByPhase} · Universo Memorias`);
 
   /** Lo que cambia al terminar un intento: el avance, los resultados y la introducción de este quiz. */
   const refreshAfterCompleting = useCallback(async () => {
@@ -177,8 +177,8 @@ export function QuizPage() {
   if (intro.isError) {
     const locked = intro.error instanceof ApiClientError && intro.error.code === 'NOT_UNLOCKED';
     return (
-      <Card className="mx-auto max-w-lg">
-        <h1 className="mb-3 font-display text-2xl font-bold">
+      <section className="mx-auto max-w-lg">
+        <h1 className="mb-3 page-title">
           {locked ? 'Aún no puedes hacer este quiz' : 'No pudimos abrir el quiz'}
         </h1>
         <p className="mb-4 text-muted">
@@ -189,7 +189,7 @@ export function QuizPage() {
         <Link to="/panel" className="underline">
           Volver a mi panel
         </Link>
-      </Card>
+      </section>
     );
   }
 
@@ -206,18 +206,16 @@ export function QuizPage() {
           <img
             src={thumbUrl(quiz.image.url, 900)}
             alt={quiz.image.alt}
-            className="max-h-64 w-auto max-w-full self-start rounded-token-lg border border-border"
+            className="img-frame max-h-64 w-auto max-w-full self-start rounded-token-md"
           />
         ) : null}
         <div>
           {position >= 0 ? (
-            <p className="text-sm text-muted">
+            <p className="label">
               Quiz {position + 1} de {experiences.length}
             </p>
           ) : null}
-          <PhaseHeading className="text-gradient font-display text-3xl font-bold sm:text-4xl">
-            {quiz.title}
-          </PhaseHeading>
+          <PhaseHeading className="page-title text-h2">{quiz.title}</PhaseHeading>
         </div>
         {quiz.instructionsHtml ? <SafeHtml html={quiz.instructionsHtml} /> : null}
         <p className="text-sm text-muted">
@@ -246,7 +244,12 @@ export function QuizPage() {
           </Alert>
         ) : null}
         {quiz.canStart ? (
-          <Button className="self-start" loading={start.isPending} onClick={() => start.mutate()}>
+          <Button
+            size="lg"
+            className="self-start"
+            loading={start.isPending}
+            onClick={() => start.mutate()}
+          >
             {quiz.inProgressAttemptId
               ? 'Continuar'
               : quiz.status === 'completed'
@@ -286,25 +289,26 @@ export function QuizPage() {
           aria-valuemax={stage.questions.length}
           aria-valuenow={index + 1}
           aria-valuetext={`Pregunta ${index + 1} de ${stage.questions.length}`}
-          className="meter"
+          className="flex gap-1.5"
         >
-          <div
-            className="meter-fill"
-            style={{ width: `${((index + 1) / stage.questions.length) * 100}%` }}
-          />
+          {stage.questions.map((item, position) => (
+            <span
+              key={item.id}
+              aria-hidden="true"
+              className={`h-1.5 flex-1 rounded-full transition-colors ${position <= index ? 'bg-primary' : 'bg-unlit/40'}`}
+            />
+          ))}
         </div>
-        {stage.title && index === 0 ? (
-          <p className="font-display text-xl font-semibold">{stage.title}</p>
-        ) : null}
+        {stage.title && index === 0 ? <p className="text-xl font-semibold">{stage.title}</p> : null}
         <fieldset className="flex flex-col gap-3">
-          <legend className="mb-4 font-display text-2xl font-semibold leading-snug sm:text-3xl">
+          <legend className="mb-4 text-2xl font-semibold leading-snug sm:text-3xl">
             {question.text}
           </legend>
           {question.image ? (
             <img
               src={thumbUrl(question.image.url, 800)}
               alt={question.image.alt}
-              className="max-h-56 w-auto max-w-full self-start rounded-token"
+              className="img-frame max-h-56 w-auto max-w-full self-start rounded-token-md"
             />
           ) : null}
           {question.answers.map((answer) => (
@@ -321,10 +325,10 @@ export function QuizPage() {
         </fieldset>
         {submit.isError ? <Alert>{errorMessage(submit.error)}</Alert> : null}
         {/* Las acciones quedan abajo, al alcance del pulgar, y ocupan el ancho. */}
-        <div className="sticky bottom-0 z-10 -mx-4 mt-auto flex gap-3 border-t border-line bg-bg/90 px-4 py-3 backdrop-blur-xl">
+        <div className="sticky bottom-0 z-10 -mx-4 mt-auto flex gap-3 border-t border-line bg-bg px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
           <Button
             variant="secondary"
-            className="!min-h-12"
+            size="lg"
             disabled={index === 0}
             onClick={() => patch({ index: index - 1 })}
           >
@@ -332,7 +336,8 @@ export function QuizPage() {
           </Button>
           {last ? (
             <Button
-              className="!min-h-12 flex-1"
+              size="lg"
+              className="flex-1"
               disabled={chosen === undefined}
               loading={submit.isPending}
               onClick={() => submit.mutate({ attemptId, stageId: stage.stageId, answers })}
@@ -341,7 +346,8 @@ export function QuizPage() {
             </Button>
           ) : (
             <Button
-              className="!min-h-12 flex-1"
+              size="lg"
+              className="flex-1"
               disabled={chosen === undefined}
               onClick={() => patch({ index: index + 1 })}
             >
@@ -378,10 +384,7 @@ export function QuizPage() {
     <div className="mx-auto flex max-w-xl flex-col gap-6">
       <ResultView result={view.result} asPage />
       <div className="flex flex-col gap-3">
-        <Link
-          to={primary.to}
-          className="btn btn-primary !min-h-12 w-full !text-base sm:w-auto sm:self-start"
-        >
+        <Link to={primary.to} className="btn btn-primary btn-lg w-full sm:w-auto sm:self-start">
           {primary.label}
         </Link>
         {next && next.status === 'locked' ? (
@@ -405,7 +408,7 @@ export function QuizPage() {
           {quiz.allowRetake ? (
             <Button
               variant="ghost"
-              className="!px-2 !text-sm underline underline-offset-4"
+              className="px-2 text-sm underline underline-offset-4"
               onClick={() => {
                 setView({ phase: 'intro' });
                 void intro.refetch();

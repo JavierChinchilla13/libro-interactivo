@@ -28,7 +28,7 @@ export function PostHeader({
       <Badge tone={post.category === 'evento' ? 'warning' : 'neutral'}>
         {POST_CATEGORY_LABELS[post.category]}
       </Badge>
-      <Title className="font-display text-3xl font-bold sm:text-4xl">{post.title}</Title>
+      <Title className="page-title">{post.title}</Title>
       <p className="text-sm text-muted">{formatShortDate(post.publishedAt)}</p>
     </header>
   );

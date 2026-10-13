@@ -5,7 +5,7 @@ import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
 import { formatShortDate } from '../../shared/lib/dates';
 import { Button } from '../../shared/ui/controls';
-import { Alert, Badge, EmptyState, Loading } from '../../shared/ui/layout';
+import { Alert, Badge, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
 import { postKeys, postsApi } from './api';
 
 /** Filtro por tipo: la dirección usa el plural en español (`?tipo=eventos`). */
@@ -17,12 +17,12 @@ const FILTERS: { label: string; slug: string | null; category: PostCategory | un
 ];
 
 /** Tarjeta de una publicación: miniatura, tipo, título, fecha y primer párrafo. */
-export function PostCardItem({ post }: { post: PostCard }) {
+export function PostCardItem({ post, className = '' }: { post: PostCard; className?: string }) {
   return (
-    <li>
+    <li className={className}>
       <Link
         to={`/actualizaciones/${post.slug}`}
-        className="glass card-link group flex h-full flex-col overflow-hidden rounded-token-lg"
+        className="surface card-link group flex h-full flex-col overflow-hidden rounded-token-md"
       >
         {post.thumbnail ? (
           <img
@@ -31,7 +31,7 @@ export function PostCardItem({ post }: { post: PostCard }) {
             width={post.thumbnail.width}
             height={post.thumbnail.height}
             loading="lazy"
-            className="aspect-video w-full bg-surface-alt object-cover transition duration-500 group-hover:scale-[1.03]"
+            className="aspect-video w-full bg-surface-alt object-cover"
           />
         ) : (
           <div
@@ -45,7 +45,7 @@ export function PostCardItem({ post }: { post: PostCard }) {
               {POST_CATEGORY_LABELS[post.category]}
             </Badge>
           </span>
-          <span className="font-display text-lg font-semibold leading-snug">{post.title}</span>
+          <span className="text-lg font-semibold leading-snug">{post.title}</span>
           <span className="text-xs text-muted">{formatShortDate(post.publishedAt)}</span>
           {post.excerpt ? <span className="text-sm text-muted">{post.excerpt}</span> : null}
         </span>
@@ -71,10 +71,7 @@ export function PostsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="font-display text-3xl font-bold">Actualizaciones</h1>
-        <p className="text-muted">Ferias, eventos y novedades de la autora.</p>
-      </div>
+      <PageHeader title="Actualizaciones" subtitle="Ferias, eventos y novedades de la autora." />
       <div role="group" aria-label="Filtrar por tipo" className="flex flex-wrap gap-2">
         {FILTERS.map((filter) => (
           <button

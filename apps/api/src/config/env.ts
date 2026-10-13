@@ -35,7 +35,7 @@ const envSchema = z.object({
   RESET_TOKEN_TTL_MINUTES: z.coerce.number().int().min(5).max(1440).default(30),
   /** Proveedor de correo: `memory` (solo desarrollo/pruebas), `gmail` (SMTP) o `resend` (API HTTP). */
   MAIL_PROVIDER: z.enum(['memory', 'gmail', 'resend']),
-  /** Remitente, p. ej. `Libro Interactivo <avisos@midominio.com>`. Obligatorio con Resend; con Gmail es la propia cuenta. */
+  /** Remitente, p. ej. `Universo Memorias <avisos@midominio.com>`. Obligatorio con Resend; con Gmail es la propia cuenta. */
   MAIL_FROM: z.string().min(3).optional(),
   GMAIL_USER: z.email('debe ser un correo de Gmail').optional(),
   /** Contraseña de aplicación de Google (16 caracteres; se aceptan con espacios). Nunca la contraseña normal. */

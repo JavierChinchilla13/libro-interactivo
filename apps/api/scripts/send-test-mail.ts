@@ -21,7 +21,7 @@ console.log(`Proveedor: ${env.MAIL_PROVIDER}`);
 try {
   await createMailProvider({ ...env, NODE_ENV: 'development' }, logger).send({
     to,
-    subject: 'Prueba de correo de Libro Interactivo',
+    subject: 'Prueba de correo de Universo Memorias',
     text: 'Si lees esto, el envío de correos funciona correctamente.',
     html: '<p>Si lees esto, el envío de correos <strong>funciona correctamente</strong>.</p>',
   });

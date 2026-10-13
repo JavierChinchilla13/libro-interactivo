@@ -29,7 +29,7 @@ export function Card({
   className?: string;
   as?: 'section' | 'div' | 'article';
 }) {
-  return <Tag className={`glass rounded-token-lg p-4 sm:p-5 ${className}`}>{children}</Tag>;
+  return <Tag className={`surface rounded-token-lg p-4 sm:p-5 ${className}`}>{children}</Tag>;
 }
 
 export function PageHeader({
@@ -44,7 +44,7 @@ export function PageHeader({
   return (
     <div className="fade-up mb-7 flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h1 className="section-title">{title}</h1>
+        <h1 className="page-title">{title}</h1>
         {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
@@ -66,7 +66,7 @@ export function Alert({
   return (
     <div
       role={tone === 'danger' ? 'alert' : 'status'}
-      className={`rounded-token-lg border border-l-4 border-line ${border} bg-surface-alt/80 p-3.5 text-sm backdrop-blur`}
+      className={`rounded-token-lg border border-l-4 border-line ${border} bg-surface-alt p-3.5 text-sm`}
     >
       {title ? <p className="font-semibold">{title}</p> : null}
       {children}
@@ -74,11 +74,25 @@ export function Alert({
   );
 }
 
-export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
+export function EmptyState({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children?: ReactNode;
+  /** Una salida (enlace o botón) para que la persona no se quede en un callejón. */
+  action?: ReactNode;
+}) {
   return (
-    <div className="rounded-token-lg border border-dashed border-border bg-surface/40 p-8 text-center">
+    <div className="flex flex-col items-center rounded-token-md bg-surface p-8 text-center">
+      <span
+        aria-hidden="true"
+        className="mb-4 size-3.5 rounded-full border-2 border-unlit bg-surface"
+      />
       <p className="font-medium">{title}</p>
       {children ? <div className="mt-2 text-sm text-muted">{children}</div> : null}
+      {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
 }
@@ -93,7 +107,7 @@ export function Loading({ label = 'Cargando…' }: { label?: string }) {
 
 export interface TabItem<T extends string> {
   id: T;
-  label: string;
+  label: ReactNode;
   badge?: ReactNode;
 }
 

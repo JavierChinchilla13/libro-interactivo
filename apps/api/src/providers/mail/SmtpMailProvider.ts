@@ -67,6 +67,6 @@ export function createGmailProvider(options: {
     secure: true,
     user: options.user,
     pass: options.appPassword,
-    from: options.from ?? `Libro Interactivo <${options.user}>`,
+    from: options.from ?? `Universo Memorias <${options.user}>`,
   });
 }

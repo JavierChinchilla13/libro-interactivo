@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
-import { Alert, EmptyState, Loading } from '../../shared/ui/layout';
+import { Alert, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
 import { Lightbox } from '../posts/templates/Lightbox';
 import { booksApi, readerKeys } from '../reader/api';
 import { communityApi, communityKeys } from './api';
@@ -26,10 +26,7 @@ export function FanArtsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="font-display text-3xl font-bold">Fan arts</h1>
-        <p className="text-muted">Dibujos de lectores del universo Memorias.</p>
-      </div>
+      <PageHeader title="Fan arts" subtitle="Dibujos de lectores del universo Memorias." />
 
       {published.length > 1 ? (
         <div role="group" aria-label="Filtrar por libro" className="flex flex-wrap gap-2">
@@ -60,7 +57,7 @@ export function FanArtsPage() {
                 type="button"
                 onClick={() => setOpen(index)}
                 aria-label={`Ampliar el fan art ${art.title ?? `de ${art.artistName}`}`}
-                className="block w-full overflow-hidden rounded-token-lg border border-border"
+                className="img-frame block w-full overflow-hidden rounded-token-md"
               >
                 <img
                   src={thumbUrl(art.image.url, 480)}

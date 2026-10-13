@@ -2,6 +2,53 @@
 @import '@fontsource-variable/cinzel/wght.css';
 @import './tokens.css';
 
+/*
+ * Letras de texto: solo el subconjunto latino (cubre el español) y el eje de peso, sin cursivas. Se declaran aquí en
+ * lugar de importar el CSS completo de cada paquete para que el navegador no conozca ni descargue los demás alfabetos.
+ */
+@font-face {
+  font-family: 'Jost Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/jost/files/jost-latin-wght-normal.woff2')
+    format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url('@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2')
+    format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/*
+ * Letras de reserva con las métricas de Jost y Newsreader (medidas contra Arial y Georgia): mientras la fuente real
+ * carga, el texto ocupa el mismo espacio y la página no salta (CLS).
+ */
+@font-face {
+  font-family: 'Jost Fallback';
+  src: local('Arial');
+  size-adjust: 96.16%;
+  ascent-override: 111.28%;
+  descent-override: 39.52%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Newsreader Fallback';
+  src: local('Georgia');
+  size-adjust: 96.01%;
+  ascent-override: 77.07%;
+  descent-override: 28.12%;
+  line-gap-override: 0%;
+}
+
 /* Los utilitarios de Tailwind leen los tokens (inline = respeta cambios en runtime, p. ej. tema por libro). */
 @theme inline {
   --color-bg: var(--token-bg);
@@ -12,7 +59,6 @@
   --color-border: var(--token-border);
   --color-line: var(--token-line);
   --color-primary: var(--token-primary);
-  --color-primary-end: var(--token-primary-end);
   --color-primary-contrast: var(--token-primary-contrast);
   --color-accent: var(--token-accent);
   --color-danger: var(--token-danger);
@@ -20,10 +66,29 @@
   --color-warning: var(--token-warning);
   --radius-token: var(--token-radius);
   --radius-token-lg: var(--token-radius-lg);
-  --shadow-glow: var(--token-glow);
-  --shadow-glow-soft: var(--token-glow-soft);
+  --radius-token-sm: var(--token-radius-sm);
+  --radius-token-md: var(--token-radius-md);
+  --radius-token-xl: var(--token-radius-xl);
+  --shadow-focus: var(--token-focus-ring);
+  --shadow-elev-2: var(--token-elev-2);
+  --shadow-lit: var(--token-lit-ring);
   --font-sans: var(--token-font-sans);
   --font-display: var(--token-font-display);
+  --font-read: var(--token-font-read);
+  --color-sunken: var(--token-sunken);
+  --color-lit: var(--token-lit);
+  --color-unlit: var(--token-unlit);
+  --text-display: var(--token-text-display);
+  --text-display--line-height: var(--token-leading-display);
+  --text-h1: var(--token-text-h1);
+  --text-h1--line-height: var(--token-leading-heading);
+  --text-h2: var(--token-text-h2);
+  --text-h2--line-height: var(--token-leading-heading);
+  --spacing-section-tight: var(--token-section-tight);
+  --spacing-section-regular: var(--token-section-regular);
+  --spacing-section-loose: var(--token-section-loose);
+  --ease-token-out: var(--token-ease-out);
+  --ease-token-in-out: var(--token-ease-in-out);
 }
 
 /* ---------------------------------------------------------------------------------------------------------------
@@ -60,6 +125,72 @@
     transform: none;
   }
 }
+/* El hilo: se dibuja, aparecen sus puntos y el primero se enciende. Solo con `.thread-animated`. */
+@keyframes thread-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes thread-lit-draw {
+  from {
+    stroke-dashoffset: var(--thread-lit, 0);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes thread-node {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes thread-ignite {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes thread-bloom {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+.thread-animated .thread-base {
+  stroke-dasharray: 1;
+  animation: thread-draw var(--token-dur-scene) var(--token-ease-in-out) both;
+}
+.thread-animated .thread-lit {
+  animation: thread-lit-draw 700ms var(--token-ease-out) 500ms both;
+}
+.thread-animated .thread-node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thread-node var(--token-dur-slow) var(--token-ease-out) both;
+}
+.thread-animated .thread-ignite {
+  animation: thread-ignite var(--token-dur-slow) var(--token-ease-out) 700ms both;
+}
+.thread-animated .thread-bloom {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: thread-bloom 1100ms var(--token-ease-out) 700ms both;
+}
 .reveal-line {
   animation: reveal-in 700ms ease both;
 }
@@ -70,7 +201,11 @@
   width: min(90vw, 34rem);
   aspect-ratio: 1;
   border-radius: 9999px;
-  background: radial-gradient(circle, rgb(63 216 255 / 0.26), transparent 62%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--token-primary) 26%, transparent),
+    transparent 62%
+  );
   pointer-events: none;
   animation: glow-grow 1800ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
@@ -78,13 +213,219 @@
 .fade-up {
   animation: fade-up 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
+/* ---------------------------------------------------------------------------------------------------------------
+ * Movimiento ligado al scroll. Solo transform y opacity (más el avance de una línea y una variable de la luz).
+ * Con navegadores sin `animation-timeline`, o con «reducir movimiento», todo queda visible y estático.
+ * ------------------------------------------------------------------------------------------------------------- */
+@property --amb {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --amb-x {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes word-in {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes rail-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes node-on {
+  to {
+    border-color: var(--token-lit);
+    background-color: var(--token-lit);
+    box-shadow: var(--token-lit-ring);
+  }
+}
+/* La luz ambiental: una sola, lenta; cambia de lugar y de tono (cian → lavanda) a lo largo de la página. */
+@keyframes ambient {
+  from {
+    --amb: 0;
+    --amb-x: 24%;
+  }
+  to {
+    --amb: 1;
+    --amb-x: 78%;
+  }
+}
+
+/* Estado por defecto (sin soporte o con «reducir movimiento»): visible, completo y sin carril. */
+.statement-band {
+  padding-block: var(--token-section-loose);
+}
+.statement {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--token-font-display);
+  font-size: clamp(2.25rem, 1rem + 5vw, 5rem);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+/* Numeral editorial grande (01, 02, 03) sobre el título de las secciones en dos columnas. */
+.section-numeral {
+  margin: 0 0 0.25rem;
+  font-family: var(--token-font-display);
+  font-size: clamp(3.5rem, 2rem + 6vw, 7rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--token-unlit);
+}
+.page-rail,
+.section-node {
+  display: none;
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* M1 · Aparición al entrar en pantalla, escalonada con `--i`. */
+    .reveal,
+    .reveal-children > * {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry calc(var(--i, 0) * 6%) entry calc(40% + var(--i, 0) * 6%);
+    }
+    .reveal-children > :nth-child(2) {
+      --i: 1;
+    }
+    .reveal-children > :nth-child(3) {
+      --i: 2;
+    }
+    .reveal-children > :nth-child(4) {
+      --i: 3;
+    }
+    .reveal-children > :nth-child(5) {
+      --i: 4;
+    }
+    .reveal-children > :nth-child(n + 6) {
+      --i: 5;
+    }
+
+    /* M4 · Enunciado: cada palabra se enciende cuando el enunciado cruza la pantalla. */
+    .statement {
+      view-timeline: --statement block;
+    }
+    /* Atenuada pero legible (contraste AA incluso sin haber avanzado): 55 % de opacidad. */
+    .statement-word {
+      opacity: 0.55;
+      animation: word-in linear both;
+      animation-timeline: --statement;
+      animation-range: cover calc(8% + var(--i, 0) * 4%) cover calc(30% + var(--i, 0) * 4%);
+    }
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* M2 · El carril de lectura: se dibuja con el avance de la página y cada sección enciende su punto. */
+    .page-rail-host {
+      view-timeline: --page block;
+    }
+    .page-rail-host .page-rail {
+      display: block;
+      position: absolute;
+      inset-block: 0;
+      left: -0.75rem;
+      width: 2px;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .page-rail-track {
+      stroke: color-mix(in srgb, var(--token-unlit) 45%, transparent);
+    }
+    .page-rail-fill {
+      stroke: var(--token-lit);
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: rail-draw linear both;
+      animation-timeline: --page;
+      animation-range: cover 50vh cover calc(100% - 50vh);
+    }
+    .page-rail-host .section-node {
+      display: block;
+      position: absolute;
+      left: -0.75rem;
+      width: 0.625rem;
+      height: 0.625rem;
+      margin-left: calc(1px - 0.3125rem);
+      border: 2px solid var(--token-unlit);
+      border-radius: 9999px;
+      background-color: var(--token-bg);
+      z-index: 2;
+      pointer-events: none;
+      animation: node-on linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 40%;
+    }
+    .page-rail-host [data-space='tight'] > .section-node {
+      top: calc(var(--token-section-tight) + 0.9rem);
+    }
+    .page-rail-host [data-space='regular'] > .section-node {
+      top: calc(var(--token-section-regular) + 0.9rem);
+    }
+    .page-rail-host [data-space='loose'] > .section-node {
+      top: calc(var(--token-section-loose) + 0.9rem);
+    }
+
+    /* M7 · La luz ambiental cambia de lugar y de tono con el scroll de toda la página. */
+    html {
+      animation: ambient linear both;
+      animation-timeline: scroll(root);
+    }
+  }
+}
+
+/* M6 · Transición entre páginas (View Transitions): la cabecera se queda y el contenido se funde. */
+@supports (view-transition-name: none) {
+  .site-header {
+    view-transition-name: site-header;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: var(--token-dur-fast);
+    animation-timing-function: var(--token-ease-out);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
   .reveal-line,
   .reveal-glow,
-  .fade-up {
+  .fade-up,
+  .thread-animated .thread-base,
+  .thread-animated .thread-lit,
+  .thread-animated .thread-node,
+  .thread-animated .thread-ignite,
+  .thread-animated .thread-bloom {
     animation: none !important;
   }
   .btn,
@@ -95,8 +436,10 @@
   .meter-fill {
     transition: none !important;
   }
-  .option:hover {
-    transform: none;
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
 
@@ -108,21 +451,28 @@
   }
   body {
     margin: 0;
-    /* Fondo: niebla azul arriba y un toque lavanda a la derecha sobre el marino (solo los colores de la paleta). */
-    background:
-      radial-gradient(
-        ellipse 85% 560px at 50% -60px,
-        color-mix(in srgb, var(--token-bg-glow) 75%, transparent),
-        transparent
-      ),
-      radial-gradient(ellipse 45% 460px at 100% 8%, rgb(168 155 255 / 0.11), transparent),
-      var(--token-bg);
-    background-repeat: no-repeat;
     min-height: 100dvh;
     color: var(--token-text);
     font-family: var(--token-font-sans);
     line-height: 1.6;
     -webkit-text-size-adjust: 100%;
+  }
+  /* Luz ambiental: la niebla azul de arriba, fija en la pantalla; con el scroll cambia de lugar y de tono. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 90% 62vh at var(--amb-x) -10vh,
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--token-accent) calc(var(--amb) * 60%), var(--token-bg-glow)) 72%,
+        transparent
+      ),
+      transparent
+    );
   }
   :focus-visible {
     outline: 3px solid var(--token-primary);
@@ -131,7 +481,6 @@
   h1,
   h2,
   h3 {
-    letter-spacing: 0.02em;
     text-wrap: balance;
   }
   p {
@@ -143,49 +492,49 @@
 }
 
 @layer components {
-  /* Botones: forma de píldora, degradado cian → azul y resplandor al pasar el cursor o enfocar. */
+  /* Botones: píldora de 44 px. El primario es cian plano; la luz solo aparece al enfocar (anillo de foco global). */
   .btn {
     display: inline-flex;
     min-height: 2.75rem;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 9999px;
+    border-radius: var(--token-radius-pill);
     padding: 0 1.35rem;
     font-size: 0.875rem;
     font-weight: 600;
     line-height: 1;
     text-decoration: none;
-    transition:
-      transform 160ms ease,
-      box-shadow 200ms ease,
-      background-color 200ms ease,
-      border-color 200ms ease;
+    transition-property: transform, background-color, border-color, color;
+    transition-duration: var(--token-dur-fast);
+    transition-timing-function: var(--token-ease-out);
   }
-  .btn:hover {
-    transform: translateY(-1px);
+  .btn:active:not(:disabled) {
+    transform: scale(0.96);
   }
-  .btn:active {
-    transform: none;
+  /* Acción principal de una vista (CTA): 48 px y letra de cuerpo. */
+  .btn-lg {
+    min-height: 3rem;
+    padding-inline: 1.75rem;
+    font-size: 1rem;
+  }
+  .btn-compact {
+    padding-inline: 1rem;
   }
   .btn-primary {
-    background-image: linear-gradient(120deg, var(--token-primary), var(--token-primary-end));
+    background-color: var(--token-primary);
     color: var(--token-primary-contrast);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25);
   }
-  .btn-primary:hover,
-  .btn-primary:focus-visible {
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.35),
-      var(--token-glow);
+  .btn-primary:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--token-primary) 85%, white);
   }
   .btn-secondary {
     border: 1px solid var(--token-border);
     background: var(--token-glass);
     color: var(--token-text);
-    backdrop-filter: blur(6px);
   }
-  .btn-secondary:hover {
+  .btn-secondary:hover:not(:disabled) {
     border-color: var(--token-primary);
     background: color-mix(in srgb, var(--token-primary) 10%, var(--token-glass));
   }
@@ -214,7 +563,6 @@
     background: color-mix(in srgb, var(--token-primary) 16%, transparent);
     color: var(--token-primary);
     font-weight: 600;
-    box-shadow: 0 0 14px rgb(63 216 255 / 0.2);
   }
 
   /* Barras de avance: pista con borde fino y relleno cian con resplandor. */
@@ -228,118 +576,149 @@
   .meter-fill {
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, var(--token-primary), var(--token-primary-end));
-    box-shadow: 0 0 12px rgb(63 216 255 / 0.6);
-    transition: width 500ms ease;
+    background: var(--token-primary);
+    transition: width var(--token-dur-slow) var(--token-ease-out);
   }
-  /* Respuesta de un quiz: tarjeta grande que se ilumina al elegirla. */
+  /* Respuesta de un quiz: fila de ancho completo; al elegirla se enciende (anillo de luz y marca de selección). */
   .option {
     display: flex;
     min-height: 3.5rem;
     cursor: pointer;
     align-items: center;
     gap: 0.9rem;
-    border-radius: var(--token-radius-lg);
+    border-radius: var(--token-radius-md);
     border: 1px solid var(--token-line);
-    background: var(--token-glass);
+    background: var(--token-surface);
     padding: 0.8rem 1.1rem;
-    transition:
-      border-color 200ms ease,
-      background-color 200ms ease,
-      box-shadow 200ms ease,
-      transform 160ms ease;
+    transition-property: border-color, background-color, box-shadow;
+    transition-duration: var(--token-dur-fast);
+    transition-timing-function: var(--token-ease-out);
   }
   .option:hover {
     border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
-    transform: translateX(2px);
   }
   .option:has(input:checked) {
     border-color: var(--token-primary);
-    background: color-mix(in srgb, var(--token-primary) 12%, var(--token-glass));
-    box-shadow:
-      var(--token-glow-soft),
-      0 0 22px rgb(63 216 255 / 0.22);
+    background: color-mix(in srgb, var(--token-primary) 12%, var(--token-surface));
+    box-shadow: var(--token-lit-ring);
   }
-  /* Botón de opción propio: aro del color del borde que se llena de luz cian al elegirlo. */
+  /* Marca de selección propia: aro que se llena de cian con una palomita (no depende solo del color). */
   .option input {
     appearance: none;
-    width: 1.35rem;
-    height: 1.35rem;
+    width: 1.5rem;
+    height: 1.5rem;
     flex-shrink: 0;
     border: 2px solid var(--token-border);
-    border-radius: 9999px;
-    background: transparent;
-    transition:
-      border-color 200ms ease,
-      box-shadow 200ms ease;
+    border-radius: var(--token-radius-pill);
+    background: transparent center / 70% no-repeat;
+    transition-property: border-color, background-color;
+    transition-duration: var(--token-dur-fast);
+    transition-timing-function: var(--token-ease-out);
   }
   .option input:checked {
     border-color: var(--token-primary);
-    background: radial-gradient(circle, var(--token-primary) 0 42%, transparent 46%);
-    box-shadow: 0 0 10px rgb(63 216 255 / 0.55);
+    background-color: var(--token-primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2304152b' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
   }
 
-  /* Tarjeta de vidrio: fondo translúcido, borde fino y un brillo en el borde superior. */
-  .glass {
-    background:
-      linear-gradient(180deg, rgb(63 216 255 / 0.07), transparent 38%), var(--token-glass);
-    border: 1px solid var(--token-line);
-    box-shadow: var(--token-glow-soft);
-    backdrop-filter: blur(10px);
+  /* M5 · Enlace de texto: línea tenue fija y, al pasar el cursor o enfocar, otra cian que se desliza de izquierda a derecha. */
+  .link-slide {
+    background-image:
+      linear-gradient(var(--token-primary), var(--token-primary)),
+      linear-gradient(
+        color-mix(in srgb, currentColor 40%, transparent),
+        color-mix(in srgb, currentColor 40%, transparent)
+      );
+    background-repeat: no-repeat;
+    background-position:
+      0 100%,
+      0 100%;
+    background-size:
+      0 1px,
+      100% 1px;
+    padding-bottom: 2px;
+    text-decoration: none;
+    transition: background-size var(--token-dur-fast) var(--token-ease-out);
   }
-  /* Tarjeta que es un enlace: se eleva y brilla al pasar el cursor. */
+  .link-slide:hover,
+  .link-slide:focus-visible {
+    background-size:
+      100% 1px,
+      100% 1px;
+  }
+
+  /* Banda a sangre de pantalla: fondo hundido que se extiende a los lados sin salirse del contenedor. */
+  .section-band {
+    background: color-mix(in srgb, var(--token-sunken) 88%, transparent);
+    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--token-sunken) 88%, transparent);
+    clip-path: inset(0 -100vmax);
+  }
+  /* Banda elevada: más clara que el fondo; alterna con la hundida para dar ritmo por bandas. */
+  .section-band-raised {
+    background: color-mix(in srgb, var(--token-surface) 88%, transparent);
+    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--token-surface) 88%, transparent);
+    clip-path: inset(0 -100vmax);
+  }
+
+  /* Superficie elevada: tono sólido con un filete fino y sombra tintada de azul (sin vidrio ni desenfoque). */
+  .surface {
+    background: var(--token-surface);
+    border: 1px solid var(--token-line);
+    box-shadow: var(--token-elev-1);
+  }
+  /* Tarjeta que es un enlace: cambia de tono y de filete al pasar el cursor o enfocar (sin elevarse ni brillar). */
   .card-link {
-    transition:
-      transform 200ms ease,
-      border-color 200ms ease,
-      box-shadow 200ms ease;
+    transition-property: background-color, border-color;
+    transition-duration: var(--token-dur-fast);
+    transition-timing-function: var(--token-ease-out);
   }
   .card-link:hover,
   .card-link:focus-visible {
-    transform: translateY(-3px);
+    background: var(--token-surface-alt);
     border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
-    box-shadow:
-      var(--token-glow-soft),
-      0 0 24px rgb(63 216 255 / 0.18);
   }
 
-  /* Títulos de sección: gran serifa con un filete cian debajo. */
+  /* Titulares: serifa Cinzel en color sólido. Display = héroe; page-title = h1 de toda página; section-title = h2. */
+  .display-title,
+  .page-title,
   .section-title {
     font-family: var(--token-font-display);
-    font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem);
-    font-weight: 700;
-    line-height: 1.15;
+    letter-spacing: 0.01em;
   }
-  .section-title::after {
-    content: '';
-    display: block;
-    width: 3.5rem;
-    height: 3px;
-    margin-top: 0.7rem;
-    border-radius: 9999px;
-    background: linear-gradient(90deg, var(--token-primary), transparent);
-    box-shadow: 0 0 14px rgb(63 216 255 / 0.6);
+  .display-title {
+    font-size: var(--token-text-display);
+    font-weight: 700;
+    line-height: var(--token-leading-display);
+  }
+  .page-title {
+    font-size: var(--token-text-h1);
+    font-weight: 600;
+    line-height: var(--token-leading-heading);
+  }
+  .section-title {
+    font-size: var(--token-text-h2);
+    font-weight: 600;
+    line-height: var(--token-leading-heading);
+  }
+  /* Etiquetas pequeñas en MAYÚSCULAS con mucho tracking: solo donde dan información (a qué quiz, qué pregunta). */
+  .label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--token-muted);
   }
   .eyebrow {
     font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.22em;
+    font-weight: 500;
+    letter-spacing: 0.24em;
     text-transform: uppercase;
     color: var(--token-primary);
   }
-  /* Texto con degradado (del blanco al cian). */
-  .text-gradient {
-    background: linear-gradient(120deg, #ffffff 10%, var(--token-primary) 95%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  /* Marco con resplandor: portadas e ilustraciones destacadas. */
-  .glow-frame {
-    border: 1px solid color-mix(in srgb, var(--token-primary) 55%, transparent);
-    box-shadow:
-      0 0 0 4px rgb(63 216 255 / 0.07),
-      0 0 38px rgb(63 216 255 / 0.28);
+  /* Marco de imágenes (portadas, avatar, resultado): un contorno de 1 px, sin resplandor. */
+  .img-frame {
+    outline: 1px solid oklch(1 0 0 / 0.1);
+    outline-offset: -1px;
     background: var(--token-surface-alt);
   }
 }
