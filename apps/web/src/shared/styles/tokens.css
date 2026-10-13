@@ -14,7 +14,7 @@
   --token-surface: #0b2142;
   --token-surface-alt: #123057;
   /* Hundido: bandas más oscuras que el fondo para dar ritmo a la página sin recurrir a tarjetas. */
-  --token-sunken: #040f22;
+  --token-sunken: #030b1a;
   --token-text: #e8f5ff;
   --token-muted: #9cc2e2;
   --token-border: #4278b0;
@@ -66,17 +66,20 @@
     0 0 24px -6px color-mix(in srgb, var(--token-primary) 35%, transparent);
 
   /* ---- Tipografía ---- */
-  /* Texto: Geist (variable, autohospedada); si no carga, la letra del sistema. */
+  /* Interfaz: Jost (variable, autohospedada): navegación, botones, formularios y textos cortos. */
   --token-font-sans:
-    'Geist Variable', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    sans-serif;
+    'Jost Variable', 'Jost Fallback', system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  /* Lectura larga: Newsreader (variable, autohospedada): wiki, publicaciones, reseñas, biografía, sinopsis. */
+  --token-font-read:
+    'Newsreader Variable', 'Newsreader Fallback', Georgia, 'Times New Roman', serif;
   /* Títulos: Cinzel (serifa clásica); si no carga, una serifa del sistema. */
   --token-font-display: 'Cinzel Variable', 'Cinzel', Georgia, 'Times New Roman', serif;
   /* Escala fluida (móvil → escritorio). Un solo tamaño de h1 para todo el sitio. */
-  --token-text-display: clamp(2.25rem, 1rem + 4.4vw, 4rem);
-  --token-text-h1: clamp(1.875rem, 1.3rem + 2.4vw, 2.75rem);
-  --token-text-h2: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
-  --token-text-h3: 1.25rem;
+  --token-text-display: clamp(2.5rem, 1rem + 5.2vw, 4.5rem);
+  --token-text-h1: clamp(2.25rem, 1.2rem + 3.2vw, 3.5rem);
+  --token-text-h2: clamp(1.875rem, 1.1rem + 2.8vw, 3rem);
+  --token-text-h3: 1.375rem;
   --token-leading-display: 1.05;
   --token-leading-heading: 1.15;
 
