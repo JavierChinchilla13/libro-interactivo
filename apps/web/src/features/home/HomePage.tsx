@@ -2,6 +2,8 @@ import type { PublicBookSummary } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '../../shared/ui/controls';
 import { Alert } from '../../shared/ui/layout';
+import { PageRail } from '../../shared/ui/PageRail';
+import { Statement } from '../../shared/ui/Statement';
 import { useSession } from '../auth/session';
 import { communityApi, communityKeys } from '../community/api';
 import { postKeys, postsApi } from '../posts/api';
@@ -20,6 +22,9 @@ import {
   SectionsSkeleton,
   WikiPreview,
 } from './LandingSections';
+
+/** Enunciado de gran escala (texto que ya existe en el pie del sitio). */
+const STATEMENT = 'Una saga que se lee, se descubre y se juega.';
 
 /** El libro que se destaca: el publicado más reciente de la saga (el de mayor posición). */
 function pickFeatured(books: readonly PublicBookSummary[]): PublicBookSummary | undefined {
@@ -66,7 +71,7 @@ export function HomePage() {
   const showBook = book !== undefined && Boolean(book.cover || book.synopsis || book.tagline);
 
   return (
-    <div className="flex flex-col gap-14">
+    <div className="flex flex-col">
       <Hero
         site={site.data}
         hasBook={showBook && !sectionsLoading}
@@ -75,38 +80,46 @@ export function HomePage() {
         status={heroStatus}
       />
       {failed.length > 0 && !sectionsLoading ? (
-        <Alert tone="warning" title="No pudimos cargar todo el contenido">
-          <div className="mt-2">
-            <Button
-              variant="secondary"
-              onClick={() => failed.forEach((query) => void query.refetch())}
-            >
-              Reintentar
-            </Button>
-          </div>
-        </Alert>
+        <div className="mt-6">
+          <Alert tone="warning" title="No pudimos cargar todo el contenido">
+            <div className="mt-2">
+              <Button
+                variant="secondary"
+                onClick={() => failed.forEach((query) => void query.refetch())}
+              >
+                Reintentar
+              </Button>
+            </div>
+          </Alert>
+        </div>
       ) : null}
       {sectionsLoading ? (
         <SectionsSkeleton />
       ) : (
         <>
-          {book && showBook ? <BookSection book={book} /> : null}
-          {book ? <WikiPreview tabs={book.wikiTabs} lockMessage={lockMessage} /> : null}
-          {book ? (
-            <Experiences
-              experiences={book.experiences}
-              lockMessage={lockMessage}
-              signedIn={Boolean(session.data)}
-            />
-          ) : null}
-          <FeaturedPosts posts={featuredPosts.data?.posts ?? []} />
-          <SagaSection books={books.data?.books ?? []} />
-          <BuySection links={book?.purchaseLinks ?? []} />
-          <ReviewsSection reviews={reviews.data?.reviews ?? []} />
-          <ClosingBand signedIn={Boolean(session.data)} sessionReady={!session.isPending} />
+          <Statement text={STATEMENT} />
+          <div className="page-rail-host relative">
+            <PageRail />
+            {book && showBook ? <BookSection book={book} /> : null}
+            {book ? (
+              <Experiences
+                experiences={book.experiences}
+                lockMessage={lockMessage}
+                signedIn={Boolean(session.data)}
+              />
+            ) : null}
+            {book ? <WikiPreview tabs={book.wikiTabs} lockMessage={lockMessage} /> : null}
+            <FeaturedPosts posts={featuredPosts.data?.posts ?? []} />
+            <SagaSection books={books.data?.books ?? []} />
+            <ReviewsSection reviews={reviews.data?.reviews ?? []} />
+            <BuySection links={book?.purchaseLinks ?? []} />
+            {heroStatus === 'loading' ? null : <AuthorSection site={site.data} />}
+          </div>
         </>
       )}
-      {heroStatus === 'loading' ? null : <AuthorSection site={site.data} />}
+      {sectionsLoading ? null : (
+        <ClosingBand signedIn={Boolean(session.data)} sessionReady={!session.isPending} />
+      )}
     </div>
   );
 }

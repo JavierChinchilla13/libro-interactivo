@@ -39,7 +39,7 @@ export function sanitizeForDisplay(html: string): string {
 export function SafeHtml({ html, className = '' }: { html: string; className?: string }) {
   return (
     <div
-      className={`[&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_ul]:list-disc [&_ul]:pl-6 ${className}`}
+      className={`font-read text-[1.1875rem] leading-relaxed [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_ul]:list-disc [&_ul]:pl-6 ${className}`}
       dangerouslySetInnerHTML={{ __html: sanitizeForDisplay(html) }}
     />
   );

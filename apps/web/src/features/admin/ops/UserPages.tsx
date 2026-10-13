@@ -186,7 +186,7 @@ export function UserListPage() {
           <EmptyState title="No hay personas con ese filtro" />
         ) : null}
         {data && data.users.length > 0 ? (
-          <div className="glass overflow-x-auto rounded-token-lg">
+          <div className="surface overflow-x-auto rounded-token-lg">
             <table className="w-full text-left text-sm">
               <caption className="sr-only">Usuarios</caption>
               <thead className="text-xs uppercase tracking-wide text-muted">

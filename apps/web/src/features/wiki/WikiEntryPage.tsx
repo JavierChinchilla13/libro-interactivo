@@ -4,11 +4,12 @@ import { ApiClientError } from '../../shared/api/client';
 import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
-import { Alert, Card, Loading } from '../../shared/ui/layout';
+import { Alert, Loading } from '../../shared/ui/layout';
 import { useSession } from '../auth/session';
 import { wikiApi, wikiKeys } from './api';
 import { LockedNotice } from './LockedNotice';
 import { SECTION_SLUGS, sectionOfEntry } from './sections';
+import { LockIcon } from '../../shared/ui/icons';
 
 function BackLink({ to, label }: { to: string; label: string }) {
   return (
@@ -61,33 +62,39 @@ export function WikiEntryPage() {
           alt={entry.image.alt}
           width={entry.image.width}
           height={entry.image.height}
-          className="h-auto max-h-96 w-auto max-w-full self-start rounded-token-lg border border-border"
+          className="img-frame h-auto max-h-96 w-auto max-w-full self-start rounded-token-md"
         />
       ) : null}
       <div>
         {entry.group ? <p className="text-sm text-muted">{entry.group}</p> : null}
-        <h1 className="font-display text-3xl font-bold">{entry.name}</h1>
+        <h1 className="page-title">{entry.name}</h1>
         {entry.summary ? <p className="mt-1 text-muted">{entry.summary}</p> : null}
       </div>
       {entry.bodyHtml ? <SafeHtml html={entry.bodyHtml} /> : null}
       {entry.fields.length > 0 ? (
-        <dl className="grid gap-3 sm:grid-cols-2">
+        <dl className="divide-y divide-line border-y border-line">
           {entry.fields.map((field, index) => (
-            <div key={index} className="rounded-token bg-surface-alt p-3">
-              <dt className="text-xs text-muted">{field.label}</dt>
+            <div
+              key={index}
+              className="grid gap-1 py-3 sm:grid-cols-[minmax(0,10rem)_1fr] sm:gap-4"
+            >
+              <dt className="text-sm text-muted">{field.label}</dt>
               <dd className="font-medium">{field.value}</dd>
             </div>
           ))}
         </dl>
       ) : null}
       {related.length > 0 ? (
-        <Card>
-          <h2 className="mb-2 font-semibold">Relacionado</h2>
+        <section aria-labelledby="relacionado-title">
+          <h2 id="relacionado-title" className="mb-2 text-lg font-semibold">
+            Relacionado
+          </h2>
           <ul className="flex flex-col gap-2">
             {related.map((item) =>
               item.locked ? (
-                <li key={item.id} className="text-sm text-muted">
-                  🔒 Bloqueado
+                <li key={item.id} className="flex items-center gap-1.5 text-sm text-muted">
+                  <LockIcon className="size-4" />
+                  Bloqueado
                 </li>
               ) : (
                 <li key={item.id}>
@@ -98,7 +105,7 @@ export function WikiEntryPage() {
               ),
             )}
           </ul>
-        </Card>
+        </section>
       ) : null}
     </article>
   );

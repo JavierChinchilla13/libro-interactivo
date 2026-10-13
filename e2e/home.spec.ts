@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('portada (humo)', () => {
   test('carga la home y muestra el título', async ({ page }) => {
     await page.goto('/');
-    await expect(page).toHaveTitle('Libro Interactivo');
+    await expect(page).toHaveTitle('Universo Memorias');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 

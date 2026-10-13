@@ -121,7 +121,7 @@ test.describe('fan arts y reseñas (escritorio)', () => {
       reviews.getByText(new RegExp(`Una historia que no suelto ${stamp} <b>negrita</b>`)),
     ).toBeVisible();
     await expect(reviews.getByText(`Lector E2E ${stamp}`, { exact: false })).toBeVisible();
-    await expect(reviews.getByRole('img', { name: '5 de 5 estrellas' })).toBeVisible();
+    await expect(reviews.getByText('Valoración: 5 de 5')).toBeVisible();
     await expect(view.getByText(`Reseña oculta ${stamp}`)).toHaveCount(0);
     await expect(reviews.locator('b')).toHaveCount(0);
 

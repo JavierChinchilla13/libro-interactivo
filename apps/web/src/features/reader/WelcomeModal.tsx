@@ -38,9 +38,9 @@ export function WelcomeModal() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="welcome-title"
-        className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-token-lg border border-border bg-surface p-6 shadow-xl"
+        className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-token-xl border border-line bg-surface p-6 shadow-elev-2"
       >
-        <h2 id="welcome-title" className="mb-3 font-display text-2xl font-bold">
+        <h2 id="welcome-title" className="mb-3 section-title">
           {welcome.data.title ?? 'Bienvenida'}
         </h2>
         <SafeHtml html={welcome.data.bodyHtml} />

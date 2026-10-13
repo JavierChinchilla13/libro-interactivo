@@ -32,7 +32,7 @@ describe('fan arts', () => {
     const first = await screen.findByRole('img', { name: 'Dibujo arte1' });
     expect(first).toHaveAttribute('loading', 'lazy');
     expect(first).toHaveAttribute('src', expect.stringContaining('w_480'));
-    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(within(screen.getByRole('main')).getAllByRole('listitem')).toHaveLength(2);
     expect(
       within(screen.getByRole('main')).getByRole('link', { name: 'Contacto' }),
     ).toHaveAttribute('href', '/contacto');
@@ -148,9 +148,9 @@ describe('reseñas en la landing', () => {
     expect(await within(section).findByText(/Reseña número 1/)).toBeInTheDocument();
     expect(within(section).getByText(/Lector 1/)).toBeInTheDocument();
     expect(within(section).getByText(/Goodreads/)).toBeInTheDocument();
-    expect(within(section).getByRole('img', { name: '4 de 5 estrellas' })).toBeInTheDocument();
+    expect(within(section).getByText('Valoración: 4 de 5')).toBeInTheDocument();
     // La segunda no trae calificación ni fuente.
-    expect(within(section).getAllByRole('img')).toHaveLength(1);
+    expect(within(section).getAllByText(/Valoración:/)).toHaveLength(1);
   });
 
   it('es texto plano: el HTML de una reseña se muestra como texto, nunca se ejecuta', async () => {
