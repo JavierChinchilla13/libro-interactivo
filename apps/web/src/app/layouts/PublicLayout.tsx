@@ -4,13 +4,8 @@ import { Link, NavLink, Outlet } from 'react-router';
 import { homeFor, useSession } from '../../features/auth/session';
 import { publicApi, publicKeys } from '../../features/home/api';
 import { Brand } from '../../shared/ui/Brand';
+import { MAIN_ID, navTab, SkipLink } from '../../shared/ui/nav';
 
-const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `inline-flex min-h-11 items-center rounded-full px-3.5 text-sm font-medium transition ${
-    isActive
-      ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
-      : 'text-muted hover:bg-surface-alt/70 hover:text-text'
-  }`;
 const ctaClass = () => 'btn btn-primary btn-compact';
 
 const FOOTER_LINKS = [
@@ -20,7 +15,9 @@ const FOOTER_LINKS = [
   { to: '/contacto', label: 'Contacto' },
 ] as const;
 
-/** Marco de las páginas públicas: cabecera de vidrio fija, contenido y pie. Mobile-first (menú desplegable en el celular). */
+const footerLink = 'inline-flex min-h-11 items-center hover:text-text';
+
+/** Marco de las páginas públicas: cabecera fija, contenido y pie. Mobile-first (menú desplegable en el celular). */
 export function PublicLayout() {
   const session = useSession();
   const user = session.data;
@@ -29,6 +26,7 @@ export function PublicLayout() {
   const social = site.data?.social ?? [];
   return (
     <div className="flex min-h-dvh flex-col">
+      <SkipLink />
       <header className="sticky top-0 z-40 border-b border-line bg-bg/75 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-3 px-4 py-2.5">
           <Brand />
@@ -47,19 +45,19 @@ export function PublicLayout() {
             onClick={() => setOpen(false)}
             className={`${open ? 'flex' : 'hidden'} absolute inset-x-0 top-full flex-col gap-1 border-b border-line bg-bg p-3 md:static md:flex md:flex-row md:items-center md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none`}
           >
-            <NavLink to="/" end className={linkClass}>
+            <NavLink to="/" end className={navTab}>
               Inicio
             </NavLink>
-            <NavLink to="/wiki" className={linkClass}>
+            <NavLink to="/wiki" className={navTab}>
               Wiki
             </NavLink>
-            <NavLink to="/actualizaciones" className={linkClass}>
+            <NavLink to="/actualizaciones" className={navTab}>
               Actualizaciones
             </NavLink>
-            <NavLink to="/fan-arts" className={linkClass}>
+            <NavLink to="/fan-arts" className={navTab}>
               Fan arts
             </NavLink>
-            <NavLink to="/contacto" className={linkClass}>
+            <NavLink to="/contacto" className={navTab}>
               Contacto
             </NavLink>
             {user ? (
@@ -68,7 +66,7 @@ export function PublicLayout() {
               </NavLink>
             ) : (
               <>
-                <NavLink to="/ingresar" className={linkClass}>
+                <NavLink to="/ingresar" className={navTab}>
                   Ingresar
                 </NavLink>
                 <NavLink to="/registro" className={ctaClass}>
@@ -79,67 +77,61 @@ export function PublicLayout() {
           </nav>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-[var(--token-page-max)] flex-1 px-4 py-8 sm:py-12">
+      <main
+        id={MAIN_ID}
+        tabIndex={-1}
+        className="mx-auto w-full max-w-[var(--token-page-max)] flex-1 px-4 py-8 focus:outline-none sm:py-12"
+      >
         <div className="fade-up">
           <Outlet />
         </div>
       </main>
-      <footer className="relative mt-10 border-t border-line bg-bg/60 text-sm text-muted">
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/60 to-transparent"
-        />
-        <div className="mx-auto grid w-full max-w-[var(--token-page-max)] gap-8 px-4 py-10 md:grid-cols-[1.2fr_1fr_1fr]">
+      <footer className="mt-section-regular border-t border-line bg-sunken text-sm text-muted">
+        <div className="mx-auto grid w-full max-w-[var(--token-page-max)] gap-8 px-4 py-10 md:grid-cols-[minmax(0,1fr)_auto] md:gap-16">
           <div className="flex flex-col gap-3">
             <Brand />
             <p className="max-w-xs">
               Universo Memorias: una saga que se lee, se descubre y se juega.
             </p>
           </div>
-          <nav aria-label="Pie de página" className="flex flex-col gap-1.5">
-            <p className="mb-1 text-sm font-semibold">Explora</p>
-            {FOOTER_LINKS.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="inline-flex min-h-11 items-center hover:text-text"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1 md:items-end">
+            <nav aria-label="Pie de página">
+              <ul className="flex flex-wrap gap-x-6 md:justify-end">
+                {FOOTER_LINKS.map((item) => (
+                  <li key={item.to}>
+                    <Link to={item.to} className={footerLink}>
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
             {social.length > 0 ? (
-              <>
-                <p className="mb-1 text-sm font-semibold">Síguenos</p>
-                <ul aria-label="Redes sociales" className="flex flex-col gap-1.5">
-                  {social.map((link) => (
-                    <li key={link.url}>
-                      <a
-                        className="inline-flex min-h-11 items-center hover:text-text"
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {link.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </>
+              <ul aria-label="Redes sociales" className="flex flex-wrap gap-x-6 md:justify-end">
+                {social.map((link) => (
+                  <li key={link.url}>
+                    <a
+                      className={footerLink}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             ) : null}
-            <p className="mt-1">
-              <Link
-                to="/estado"
-                className="inline-flex min-h-11 items-center underline hover:text-text"
-              >
-                Estado del sitio
-              </Link>
-            </p>
           </div>
         </div>
-        <p className="border-t border-line py-4 text-center text-xs">
-          Libro Interactivo · universo Memorias
+        <p className="border-t border-line px-4 py-2 text-center text-xs">
+          Libro Interactivo · universo Memorias ·{' '}
+          <Link
+            to="/estado"
+            className="inline-flex min-h-11 items-center underline hover:text-text"
+          >
+            Estado del sitio
+          </Link>
         </p>
       </footer>
     </div>
