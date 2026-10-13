@@ -6,7 +6,7 @@ export interface RenderedEmail {
   text: string;
 }
 
-const BRAND = 'Libro Interactivo';
+const BRAND = 'Universo Memorias';
 
 /** Marco común: tipografía del sistema y colores neutros (la identidad visual llega en la fase 12). */
 function layout(title: string, bodyHtml: string): string {

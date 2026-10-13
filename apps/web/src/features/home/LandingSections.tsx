@@ -79,7 +79,6 @@ export function Hero({
       className="relative grid items-center gap-10 py-4 md:min-h-[min(80dvh,46rem)] md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] md:gap-12 md:py-14"
     >
       <div className="flex max-w-3xl flex-col gap-6">
-        <p className="eyebrow">Universo Memorias</p>
         {status === 'loading' ? (
           <>
             <h1 id="hero-title" className="sr-only">
