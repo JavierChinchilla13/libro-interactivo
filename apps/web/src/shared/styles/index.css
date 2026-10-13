@@ -383,6 +383,13 @@
     box-shadow: 0 0 10px color-mix(in srgb, var(--token-primary) 55%, transparent);
   }
 
+  /* Banda a sangre de pantalla: fondo hundido que se extiende a los lados sin salirse del contenedor. */
+  .section-band {
+    background: var(--token-sunken);
+    box-shadow: 0 0 0 100vmax var(--token-sunken);
+    clip-path: inset(0 -100vmax);
+  }
+
   /* Superficie elevada: tono sólido con un filete fino y sombra tintada de azul (sin vidrio ni desenfoque). */
   .surface {
     background: var(--token-surface);

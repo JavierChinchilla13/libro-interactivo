@@ -6,12 +6,13 @@ import type {
   PublicSiteResponse,
   PurchaseLink,
 } from '@libro/shared';
-import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { thumbUrl } from '../../shared/lib/cloudinary';
 import { formatDate } from '../../shared/lib/dates';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
-import { Badge, Card } from '../../shared/ui/layout';
+import { Badge } from '../../shared/ui/layout';
+import { Section } from '../../shared/ui/Section';
+import { ThreadItem, ThreadList } from '../../shared/ui/ThreadList';
 import { PostCardItem } from '../posts/PostsPage';
 import { ContactForm } from './ContactForm';
 import { LockIcon } from '../../shared/ui/icons';
@@ -20,28 +21,6 @@ import { Thread } from '../../shared/ui/Thread';
 const buttonLink = 'btn';
 const primaryLink = `${buttonLink} btn-primary`;
 const secondaryLink = `${buttonLink} btn-secondary`;
-
-function Section({
-  id,
-  title,
-  intro,
-  children,
-}: {
-  id: string;
-  title: string;
-  intro?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-24">
-      <h2 id={`${id}-title`} className="section-title">
-        {title}
-      </h2>
-      {intro ? <p className="mt-3 max-w-prose text-muted">{intro}</p> : null}
-      <div className="mt-7">{children}</div>
-    </section>
-  );
-}
 
 export type HeroStatus = 'loading' | 'error' | 'ready';
 
@@ -177,30 +156,32 @@ export function ClosingBand({
   return (
     <section
       aria-labelledby="cierre-title"
-      className="surface rounded-token-lg px-6 py-10 sm:px-10"
+      className="section-band mt-section-loose py-section-loose"
     >
-      <div className="grid items-center gap-8">
-        <div className="flex flex-col items-start gap-4">
-          <h2 id="cierre-title" className="section-title">
-            Empieza con tu libro
-          </h2>
-          <p className="max-w-prose text-muted">
-            {signedIn
-              ? 'Tu avance te espera en el panel.'
-              : 'Tu ejemplar trae un código QR: escanéalo y empieza por el primer quiz.'}
-          </p>
-          {sessionReady ? (
-            signedIn ? (
-              <Link to="/panel" className={`${primaryLink} btn-lg`}>
-                Ir a mi panel
-              </Link>
-            ) : (
-              <Link to="/registro" className={`${primaryLink} btn-lg`}>
-                Crear mi cuenta
-              </Link>
-            )
-          ) : null}
-        </div>
+      <div aria-hidden="true" className="mb-6 flex flex-col items-start pl-[0.2rem]">
+        <span className="h-14 w-px bg-linear-to-b from-unlit/0 to-lit" />
+        <span className="size-3.5 rounded-full border-2 border-lit bg-lit shadow-lit" />
+      </div>
+      <div className="flex flex-col items-start gap-4">
+        <h2 id="cierre-title" className="section-title">
+          Empieza con tu libro
+        </h2>
+        <p className="max-w-prose text-muted">
+          {signedIn
+            ? 'Tu avance te espera en el panel.'
+            : 'Tu ejemplar trae un código QR: escanéalo y empieza por el primer quiz.'}
+        </p>
+        {sessionReady ? (
+          signedIn ? (
+            <Link to="/panel" className={`${primaryLink} btn-lg`}>
+              Ir a mi panel
+            </Link>
+          ) : (
+            <Link to="/registro" className={`${primaryLink} btn-lg`}>
+              Crear mi cuenta
+            </Link>
+          )
+        ) : null}
       </div>
     </section>
   );
@@ -212,7 +193,7 @@ export function SectionsSkeleton() {
     <div
       role="status"
       aria-label="Cargando el contenido"
-      className="flex min-h-[70dvh] flex-col gap-6"
+      className="mt-section-regular flex min-h-[70dvh] flex-col gap-6"
     >
       {[0, 1, 2].map((index) => (
         <div
@@ -225,21 +206,21 @@ export function SectionsSkeleton() {
   );
 }
 
-/** Ficha del libro destacado: portada con marco de luz, géneros, sinopsis, advertencia de contenido, edad e ISBN. */
+/** Ficha del libro destacado: portada, géneros, sinopsis, advertencia de contenido, edad e ISBN. */
 export function BookSection({ book }: { book: PublicBookDetail }) {
   return (
     <Section id="libro" title={book.title} intro={book.tagline}>
-      <div className="grid gap-8 sm:grid-cols-[minmax(0,15rem)_1fr]">
+      <div className="grid gap-10 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14">
         {book.cover ? (
           <img
-            src={thumbUrl(book.cover.url, 480)}
+            src={thumbUrl(book.cover.url, 640)}
             alt={book.cover.alt}
             width={book.cover.width}
             height={book.cover.height}
-            className="img-frame h-auto w-full max-w-60 rounded-token-lg"
+            className="img-frame h-auto w-full max-w-72 rounded-token-md md:max-w-none"
           />
         ) : null}
-        <div className="flex flex-col gap-5">
+        <div className="flex max-w-prose flex-col gap-5">
           {book.genres.length > 0 ? (
             <ul aria-label="Géneros" className="flex flex-wrap gap-2">
               {book.genres.map((genre) => (
@@ -253,7 +234,7 @@ export function BookSection({ book }: { book: PublicBookDetail }) {
           {book.contentWarning || book.minAge !== undefined ? (
             <aside
               aria-label="Advertencia de contenido sensible"
-              className="rounded-token-lg border border-warning/30 border-l-4 border-l-warning bg-warning/5 p-4 text-sm"
+              className="border-l-2 border-warning pl-4 text-sm"
             >
               <p className="font-semibold text-warning">Advertencia de contenido sensible</p>
               {book.contentWarning ? <SafeHtml html={book.contentWarning} /> : null}
@@ -270,8 +251,8 @@ export function BookSection({ book }: { book: PublicBookDetail }) {
 }
 
 /**
- * Vista previa de la wiki. Una pestaña con regla se ve «bloqueada» con el mensaje de la autora y **nada más**:
- * el contenido real lo entrega el servidor solo a quien ya avanzó.
+ * Vista previa de la wiki, como un índice. Una pestaña con regla se ve «bloqueada» con el mensaje de la autora y
+ * **nada más**: el contenido real lo entrega el servidor solo a quien ya avanzó.
  */
 export function WikiPreview({
   tabs,
@@ -284,30 +265,27 @@ export function WikiPreview({
   // El texto general de bloqueo se dice una sola vez; cada pestaña solo repite el suyo si la autora le puso uno propio.
   const needsGeneral = tabs.some((tab) => tab.locked && !tab.lockedMessage);
   return (
-    <Section id="wiki" title="Wiki del universo">
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <Section id="wiki" title="Wiki del universo" space="tight">
+      <ul className="max-w-3xl divide-y divide-line border-y border-line">
         {tabs.map((tab) => (
-          <li key={tab.kind}>
-            <Card className="flex h-full flex-col gap-2">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-lg font-semibold">{tab.title}</p>
-                <span aria-hidden="true" className={tab.locked ? 'text-muted' : 'text-primary'}>
-                  <LockIcon open={!tab.locked} />
-                </span>
-              </div>
+          <li key={tab.kind} className="py-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <p className="text-xl font-semibold">{tab.title}</p>
               {tab.locked ? (
-                <>
-                  <span>
-                    <Badge tone="warning">Bloqueado</Badge>
-                  </span>
-                  {tab.lockedMessage ? (
-                    <p className="text-sm text-muted">{tab.lockedMessage}</p>
-                  ) : null}
-                </>
+                <p className="flex items-center gap-1.5 text-sm text-muted">
+                  <LockIcon className="size-4" />
+                  Bloqueado
+                </p>
               ) : (
-                <p className="text-sm text-muted">Abierto para todos</p>
+                <p className="flex items-center gap-1.5 text-sm text-primary">
+                  <LockIcon open className="size-4" />
+                  Abierto para todos
+                </p>
               )}
-            </Card>
+            </div>
+            {tab.locked && tab.lockedMessage ? (
+              <p className="mt-1 text-sm text-muted">{tab.lockedMessage}</p>
+            ) : null}
           </li>
         ))}
       </ul>
@@ -320,8 +298,9 @@ export function WikiPreview({
 }
 
 /**
- * Solo el nombre de cada experiencia. A un visitante se le dice qué falta para abrir cada una: la primera se abre con
- * el QR del libro y las demás al completar la anterior; el texto de bloqueo de la autora se dice una sola vez.
+ * Las experiencias del libro como pasos de un mismo hilo. A un visitante se le dice qué falta para abrir cada una:
+ * la primera se abre con el QR del libro y las demás al completar la anterior; el texto de bloqueo de la autora se
+ * dice una sola vez.
  */
 export function Experiences({
   experiences,
@@ -335,33 +314,32 @@ export function Experiences({
   if (experiences.length === 0) return null;
   const first = Math.min(...experiences.map((experience) => experience.order));
   return (
-    <Section id="experiencias" title="Vive una experiencia inmersiva">
-      <ul className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-4">
+    <Section id="experiencias" title="Vive una experiencia inmersiva" tone="sunken" space="loose">
+      <ThreadList>
         {experiences.map((experience) => {
           const opensFirst = !signedIn && experience.order === first;
           return (
-            <li key={experience.id}>
-              <Card
-                className={`flex h-full flex-col gap-1 ${opensFirst ? '!border-primary/60 shadow-glow' : ''}`}
-              >
-                <p className="text-sm text-muted">Quiz {experience.order}</p>
-                <p className="text-lg font-semibold">{experience.title}</p>
-                {signedIn ? null : (
-                  <p
-                    className={`mt-2 flex items-center gap-2 text-sm ${opensFirst ? 'text-primary' : 'text-muted'}`}
-                  >
-                    <LockIcon open={opensFirst} />
-                    {opensFirst
-                      ? 'Se abre con el QR de tu libro'
-                      : `Antes, completa el Quiz ${experience.order - 1}`}
-                  </p>
-                )}
-              </Card>
-            </li>
+            <ThreadItem
+              key={experience.id}
+              state={signedIn ? 'neutral' : opensFirst ? 'lit' : 'unlit'}
+            >
+              <p className="text-sm tabular-nums text-muted">Quiz {experience.order}</p>
+              <p className="text-lg font-semibold">{experience.title}</p>
+              {signedIn ? null : (
+                <p
+                  className={`mt-2 flex items-center gap-2 text-sm ${opensFirst ? 'text-primary' : 'text-muted'}`}
+                >
+                  <LockIcon open={opensFirst} className="size-4" />
+                  {opensFirst
+                    ? 'Se abre con el QR de tu libro'
+                    : `Antes, completa el Quiz ${experience.order - 1}`}
+                </p>
+              )}
+            </ThreadItem>
           );
         })}
-      </ul>
-      <p className="mt-4 text-sm text-muted">
+      </ThreadList>
+      <p className="mt-6 text-sm text-muted">
         {signedIn ? 'Cada experiencia se abre a medida que avanzas en tu lectura.' : lockMessage}
       </p>
       {signedIn ? (
@@ -373,13 +351,17 @@ export function Experiences({
   );
 }
 
-/** Las últimas publicaciones destacadas por la autora (si no hay ninguna, la sección no aparece). */
+/** Las últimas publicaciones destacadas por la autora: una grande y las demás a su lado (si no hay, no aparece). */
 export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
   if (posts.length === 0) return null;
+  const [lead, ...rest] = posts;
   return (
     <Section id="actualizaciones" title="Actualizaciones">
-      <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {posts.map((post) => (
+      <ul
+        className={`grid gap-5 ${rest.length > 0 ? 'lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]' : 'max-w-xl'}`}
+      >
+        {lead ? <PostCardItem key={lead.id} post={lead} className="lg:row-span-2" /> : null}
+        {rest.map((post) => (
           <PostCardItem key={post.id} post={post} />
         ))}
       </ul>
@@ -393,27 +375,41 @@ export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
 /** Reseñas que la autora eligió mostrar. Son texto plano: React lo escapa, nunca se interpreta como HTML. */
 export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }) {
   if (reviews.length === 0) return null;
+  const [lead, ...rest] = reviews;
+  const attribution = (review: PublicReview) => (
+    <>
+      <p className="text-sm font-medium">
+        — {review.authorName}
+        {review.source ? <span className="font-normal text-muted"> · {review.source}</span> : null}
+      </p>
+      {review.rating ? (
+        <p className="text-sm tabular-nums text-muted">Valoración: {review.rating} de 5</p>
+      ) : null}
+    </>
+  );
   return (
-    <Section id="resenas" title="Reseñas de lectores">
-      <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {reviews.map((review) => (
-          <li key={review.id}>
-            <Card as="div" className="flex h-full flex-col gap-3">
-              {review.rating ? (
-                <p className="text-sm font-medium tabular-nums text-muted">
-                  Valoración: {review.rating} de 5
-                </p>
-              ) : null}
-              <blockquote className="flex-1 leading-relaxed">“{review.text}”</blockquote>
-              <p className="text-sm font-medium">
-                — {review.authorName}
-                {review.source ? (
-                  <span className="font-normal text-muted"> · {review.source}</span>
-                ) : null}
-              </p>
-            </Card>
+    <Section id="resenas" title="Reseñas de lectores" space="tight">
+      <ul className="flex flex-col gap-10">
+        {lead ? (
+          <li className="max-w-3xl border-l-2 border-primary/50 pl-6">
+            <blockquote className="text-xl font-medium leading-snug sm:text-2xl">
+              “{lead.text}”
+            </blockquote>
+            <div className="mt-4 flex flex-col gap-1">{attribution(lead)}</div>
           </li>
-        ))}
+        ) : null}
+        {rest.length > 0 ? (
+          <li className="list-none">
+            <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {rest.map((review) => (
+                <li key={review.id} className="border-l border-line pl-4">
+                  <blockquote className="leading-relaxed">“{review.text}”</blockquote>
+                  <div className="mt-3 flex flex-col gap-1">{attribution(review)}</div>
+                </li>
+              ))}
+            </ul>
+          </li>
+        ) : null}
       </ul>
     </Section>
   );
@@ -424,8 +420,8 @@ export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }
   const author = site?.author;
   return (
     <Section id="autora" title="Conoce a la autora">
-      <div className="grid gap-10 lg:grid-cols-2">
-        <div className="flex flex-col gap-5">
+      <div className="grid gap-10 lg:grid-cols-2 lg:gap-0">
+        <div className="flex flex-col gap-5 lg:pr-10">
           <div className="flex items-center gap-4">
             {author?.photo ? (
               <img
@@ -433,7 +429,7 @@ export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }
                 alt={author.photo.alt}
                 width={120}
                 height={120}
-                className="img-frame size-28 rounded-full object-cover"
+                className="img-frame size-28 rounded-token-xl object-cover"
               />
             ) : null}
             <p className="text-xl font-semibold">
@@ -462,10 +458,10 @@ export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }
             ))}
           </ul>
         </div>
-        <Card as="div">
+        <div className="lg:border-l lg:border-line lg:pl-10">
           <h3 className="mb-4 text-xl font-semibold">Escríbeme</h3>
           <ContactForm />
-        </Card>
+        </div>
       </div>
     </Section>
   );
@@ -479,7 +475,7 @@ export function SagaSection({ books }: { books: PublicBookSummary[] }) {
     <Section id="saga" title="Secuencia de publicación">
       <ul
         aria-label="Libros de la saga"
-        className="-mx-4 flex snap-x gap-5 overflow-x-auto px-4 pb-4"
+        className="-mx-4 flex scroll-px-4 snap-x gap-5 overflow-x-auto px-4 pb-4"
         tabIndex={0}
       >
         {books.map((book) => (
@@ -542,20 +538,23 @@ export function BuySection({ links }: { links: PurchaseLink[] }) {
     .map((group) => ({ ...group, items: links.filter((link) => link.region === group.region) }))
     .filter((group) => group.items.length > 0);
   return (
-    <Section id="comprar" title="Cómo comprar el libro">
+    <Section id="comprar" title="Cómo comprar el libro" tone="sunken">
       {groups.length === 0 ? (
         <p className="text-muted">[PLACEHOLDER] Pronto publicaremos dónde conseguir el libro.</p>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2">
-          {groups.map((group) => (
-            <Card key={group.region}>
+        <div className="grid gap-10 sm:grid-cols-2 sm:gap-0">
+          {groups.map((group, index) => (
+            <div
+              key={group.region}
+              className={index > 0 ? 'sm:border-l sm:border-line sm:pl-10' : 'sm:pr-10'}
+            >
               <h3 className="mb-4 text-xl font-semibold">{group.title}</h3>
               <ul className="flex flex-col gap-4">
-                {group.items.map((link, index) => (
-                  <PurchaseItem key={`${link.label}-${index}`} link={link} />
+                {group.items.map((link, i) => (
+                  <PurchaseItem key={`${link.label}-${i}`} link={link} />
                 ))}
               </ul>
-            </Card>
+            </div>
           ))}
         </div>
       )}

@@ -17,9 +17,9 @@ const FILTERS: { label: string; slug: string | null; category: PostCategory | un
 ];
 
 /** Tarjeta de una publicación: miniatura, tipo, título, fecha y primer párrafo. */
-export function PostCardItem({ post }: { post: PostCard }) {
+export function PostCardItem({ post, className = '' }: { post: PostCard; className?: string }) {
   return (
-    <li>
+    <li className={className}>
       <Link
         to={`/actualizaciones/${post.slug}`}
         className="surface card-link group flex h-full flex-col overflow-hidden rounded-token-lg"
