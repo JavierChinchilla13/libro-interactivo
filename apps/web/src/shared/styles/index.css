@@ -1,7 +1,53 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/cinzel/wght.css';
-@import '@fontsource-variable/geist/wght.css';
 @import './tokens.css';
+
+/*
+ * Letras de texto: solo el subconjunto latino (cubre el español) y el eje de peso, sin cursivas. Se declaran aquí en
+ * lugar de importar el CSS completo de cada paquete para que el navegador no conozca ni descargue los demás alfabetos.
+ */
+@font-face {
+  font-family: 'Jost Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/jost/files/jost-latin-wght-normal.woff2')
+    format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url('@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2')
+    format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/*
+ * Letras de reserva con las métricas de Jost y Newsreader (medidas contra Arial y Georgia): mientras la fuente real
+ * carga, el texto ocupa el mismo espacio y la página no salta (CLS).
+ */
+@font-face {
+  font-family: 'Jost Fallback';
+  src: local('Arial');
+  size-adjust: 96.16%;
+  ascent-override: 111.28%;
+  descent-override: 39.52%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Newsreader Fallback';
+  src: local('Georgia');
+  size-adjust: 96.01%;
+  ascent-override: 77.07%;
+  descent-override: 28.12%;
+  line-gap-override: 0%;
+}
 
 /* Los utilitarios de Tailwind leen los tokens (inline = respeta cambios en runtime, p. ej. tema por libro). */
 @theme inline {
@@ -33,6 +79,7 @@
   --shadow-lit: var(--token-lit-ring);
   --font-sans: var(--token-font-sans);
   --font-display: var(--token-font-display);
+  --font-read: var(--token-font-read);
   --color-sunken: var(--token-sunken);
   --color-lit: var(--token-lit);
   --color-unlit: var(--token-unlit);
@@ -377,6 +424,12 @@
     box-shadow: 0 0 0 100vmax var(--token-sunken);
     clip-path: inset(0 -100vmax);
   }
+  /* Banda elevada: más clara que el fondo; alterna con la hundida para dar ritmo por bandas. */
+  .section-band-raised {
+    background: var(--token-surface);
+    box-shadow: 0 0 0 100vmax var(--token-surface);
+    clip-path: inset(0 -100vmax);
+  }
 
   /* Superficie elevada: tono sólido con un filete fino y sombra tintada de azul (sin vidrio ni desenfoque). */
   .surface {
@@ -418,10 +471,18 @@
     font-weight: 600;
     line-height: var(--token-leading-heading);
   }
+  /* Etiquetas pequeñas en MAYÚSCULAS con mucho tracking: solo donde dan información (a qué quiz, qué pregunta). */
+  .label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--token-muted);
+  }
   .eyebrow {
     font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.22em;
+    font-weight: 500;
+    letter-spacing: 0.24em;
     text-transform: uppercase;
     color: var(--token-primary);
   }

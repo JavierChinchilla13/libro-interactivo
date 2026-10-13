@@ -25,7 +25,7 @@ const linkButton = 'btn';
 function ExperienceStep({ experience, primary }: { experience: Experience; primary: boolean }) {
   return (
     <ThreadItem state={experience.status === 'locked' ? 'unlit' : 'lit'}>
-      <p className="text-sm tabular-nums text-muted">Quiz {experience.order}</p>
+      <p className="label tabular-nums">Quiz {experience.order}</p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <h3 className="text-lg font-semibold">{experience.title}</h3>
         {experience.status === 'completed' ? <Badge tone="success">Completado</Badge> : null}

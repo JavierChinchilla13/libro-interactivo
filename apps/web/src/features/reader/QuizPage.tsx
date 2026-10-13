@@ -211,11 +211,11 @@ export function QuizPage() {
         ) : null}
         <div>
           {position >= 0 ? (
-            <p className="text-sm text-muted">
+            <p className="label">
               Quiz {position + 1} de {experiences.length}
             </p>
           ) : null}
-          <PhaseHeading className="page-title">{quiz.title}</PhaseHeading>
+          <PhaseHeading className="page-title text-h2">{quiz.title}</PhaseHeading>
         </div>
         {quiz.instructionsHtml ? <SafeHtml html={quiz.instructionsHtml} /> : null}
         <p className="text-sm text-muted">

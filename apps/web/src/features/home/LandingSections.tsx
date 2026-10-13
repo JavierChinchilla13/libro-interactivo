@@ -22,6 +22,19 @@ const buttonLink = 'btn';
 const primaryLink = `${buttonLink} btn-primary`;
 const secondaryLink = `${buttonLink} btn-secondary`;
 
+/** El titular del héroe con su última palabra en el color de acción (el texto lo escribe la autora). */
+function LastWordAccent({ text }: { text: string }) {
+  const trimmed = text.trimEnd();
+  const space = trimmed.lastIndexOf(' ');
+  if (space === -1) return <>{text}</>;
+  return (
+    <>
+      {trimmed.slice(0, space + 1)}
+      <span className="text-primary">{trimmed.slice(space + 1)}</span>
+    </>
+  );
+}
+
 export type HeroStatus = 'loading' | 'error' | 'ready';
 
 /** Barra de relleno mientras llega un texto (no ocupa lectura para lectores de pantalla). */
@@ -63,17 +76,19 @@ export function Hero({
     <section
       aria-labelledby="hero-title"
       aria-busy={status === 'loading' || undefined}
-      className="relative grid items-center gap-10 py-4 md:min-h-[min(80dvh,46rem)] md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:gap-12 md:py-14"
+      className="relative grid items-center gap-10 py-4 md:min-h-[min(80dvh,46rem)] md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] md:gap-12 md:py-14"
     >
       <div className="flex max-w-3xl flex-col gap-6">
+        <p className="eyebrow">Universo Memorias</p>
         {status === 'loading' ? (
           <>
             <h1 id="hero-title" className="sr-only">
               Universo Memorias
             </h1>
-            <div className="flex flex-col gap-3">
-              <Bar className="h-10 w-11/12 sm:h-12 lg:h-14" />
-              <Bar className="h-10 w-2/3 sm:h-12 lg:h-14" />
+            {/* Dos renglones con la altura real del titular (display): al llegar el texto, la página no se mueve. */}
+            <div className="flex flex-col gap-[calc(var(--token-text-display)*0.15)]">
+              <Bar className="h-[calc(var(--token-text-display)*0.95)] w-11/12" />
+              <Bar className="h-[calc(var(--token-text-display)*0.95)] w-2/3" />
             </div>
             <div className="flex max-w-prose flex-col gap-2.5">
               <Bar className="h-4 w-full" />
@@ -84,7 +99,7 @@ export function Hero({
         ) : (
           <>
             <h1 id="hero-title" className="display-title">
-              {headline}
+              <LastWordAccent text={headline} />
             </h1>
             <div className="max-w-prose text-lg text-muted">
               {site?.universe.introHtml ? (
@@ -156,7 +171,7 @@ export function ClosingBand({
   return (
     <section
       aria-labelledby="cierre-title"
-      className="section-band mt-section-loose py-section-loose"
+      className="section-band-raised flex min-h-[min(70dvh,40rem)] flex-col justify-center py-section-loose"
     >
       <div aria-hidden="true" className="mb-6 flex flex-col items-start pl-[0.2rem]">
         <span className="h-14 w-px bg-linear-to-b from-unlit/0 to-lit" />
@@ -164,7 +179,7 @@ export function ClosingBand({
       </div>
       <div className="flex flex-col items-start gap-4">
         <h2 id="cierre-title" className="section-title">
-          Empieza con tu libro
+          Empieza con tu <span className="text-primary">libro</span>
         </h2>
         <p className="max-w-prose text-muted">
           {signedIn
@@ -193,7 +208,7 @@ export function SectionsSkeleton() {
     <div
       role="status"
       aria-label="Cargando el contenido"
-      className="mt-section-regular flex min-h-[70dvh] flex-col gap-6"
+      className="flex min-h-[70dvh] flex-col gap-6 py-section-regular"
     >
       {[0, 1, 2].map((index) => (
         <div
@@ -265,7 +280,7 @@ export function WikiPreview({
   // El texto general de bloqueo se dice una sola vez; cada pestaña solo repite el suyo si la autora le puso uno propio.
   const needsGeneral = tabs.some((tab) => tab.locked && !tab.lockedMessage);
   return (
-    <Section id="wiki" title="Wiki del universo" space="tight">
+    <Section id="wiki" title="Wiki del universo" tone="raised" space="regular">
       <ul className="max-w-3xl divide-y divide-line border-y border-line">
         {tabs.map((tab) => (
           <li key={tab.kind} className="py-4">
@@ -314,7 +329,14 @@ export function Experiences({
   if (experiences.length === 0) return null;
   const first = Math.min(...experiences.map((experience) => experience.order));
   return (
-    <Section id="experiencias" title="Vive una experiencia inmersiva" tone="sunken" space="loose">
+    <Section
+      id="experiencias"
+      title="Vive una experiencia inmersiva"
+      accent="inmersiva"
+      tone="sunken"
+      space="loose"
+      tall
+    >
       <ThreadList>
         {experiences.map((experience) => {
           const opensFirst = !signedIn && experience.order === first;
@@ -323,7 +345,7 @@ export function Experiences({
               key={experience.id}
               state={signedIn ? 'neutral' : opensFirst ? 'lit' : 'unlit'}
             >
-              <p className="text-sm tabular-nums text-muted">Quiz {experience.order}</p>
+              <p className="label tabular-nums">Quiz {experience.order}</p>
               <p className="text-lg font-semibold">{experience.title}</p>
               {signedIn ? null : (
                 <p
@@ -388,11 +410,11 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
     </>
   );
   return (
-    <Section id="resenas" title="Reseñas de lectores" space="tight">
+    <Section id="resenas" title="Reseñas de lectores" tone="raised">
       <ul className="flex flex-col gap-10">
         {lead ? (
           <li className="max-w-3xl border-l-2 border-primary/50 pl-6">
-            <blockquote className="text-xl font-medium leading-snug sm:text-2xl">
+            <blockquote className="font-read text-2xl leading-snug sm:text-3xl">
               “{lead.text}”
             </blockquote>
             <div className="mt-4 flex flex-col gap-1">{attribution(lead)}</div>
@@ -403,7 +425,9 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
             <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {rest.map((review) => (
                 <li key={review.id} className="border-l border-line pl-4">
-                  <blockquote className="leading-relaxed">“{review.text}”</blockquote>
+                  <blockquote className="font-read text-lg leading-relaxed">
+                    “{review.text}”
+                  </blockquote>
                   <div className="mt-3 flex flex-col gap-1">{attribution(review)}</div>
                 </li>
               ))}
@@ -472,7 +496,7 @@ export function SagaSection({ books }: { books: PublicBookSummary[] }) {
   // Un solo libro no es una secuencia: ya tiene su propia sección.
   if (books.length < 2) return null;
   return (
-    <Section id="saga" title="Secuencia de publicación">
+    <Section id="saga" title="Secuencia de publicación" tone="sunken">
       <ul
         aria-label="Libros de la saga"
         className="-mx-4 flex scroll-px-4 snap-x gap-5 overflow-x-auto px-4 pb-4"
@@ -538,7 +562,7 @@ export function BuySection({ links }: { links: PurchaseLink[] }) {
     .map((group) => ({ ...group, items: links.filter((link) => link.region === group.region) }))
     .filter((group) => group.items.length > 0);
   return (
-    <Section id="comprar" title="Cómo comprar el libro" tone="sunken">
+    <Section id="comprar" title="Cómo comprar el libro" tone="sunken" space="loose" tall>
       {groups.length === 0 ? (
         <p className="text-muted">[PLACEHOLDER] Pronto publicaremos dónde conseguir el libro.</p>
       ) : (

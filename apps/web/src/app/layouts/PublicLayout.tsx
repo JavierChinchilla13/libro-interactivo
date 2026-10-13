@@ -86,7 +86,7 @@ export function PublicLayout() {
           <Outlet />
         </div>
       </main>
-      <footer className="mt-section-regular border-t border-line bg-sunken text-sm text-muted">
+      <footer className="border-t border-line bg-sunken text-sm text-muted">
         <div className="mx-auto grid w-full max-w-[var(--token-page-max)] gap-8 px-4 py-10 md:grid-cols-[minmax(0,1fr)_auto] md:gap-16">
           <div className="flex flex-col gap-3">
             <Brand />
