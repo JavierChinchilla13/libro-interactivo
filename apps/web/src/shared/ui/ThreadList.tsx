@@ -15,7 +15,7 @@ const NODE: Record<ThreadState, string> = {
 
 export function ThreadList({ label, children }: { label?: string; children: ReactNode }) {
   return (
-    <ol aria-label={label} className="m-0 list-none p-0">
+    <ol aria-label={label} className="reveal-children m-0 list-none p-0">
       {children}
     </ol>
   );
@@ -31,7 +31,9 @@ export function ThreadItem({ state, children }: { state: ThreadState; children: 
           }`}
         />
         <span
-          className={`relative mt-[0.2rem] size-3.5 shrink-0 rounded-full border-2 ${NODE[state]}`}
+          className={`relative mt-[0.2rem] size-3.5 shrink-0 rounded-full border-2 transition-[transform,border-color] duration-150 ease-out group-hover/item:scale-125 ${
+            state === 'unlit' ? 'group-hover/item:border-primary' : ''
+          } ${NODE[state]}`}
         />
       </div>
       <div className="pb-9 group-last/item:pb-0">{children}</div>

@@ -71,7 +71,7 @@ export function Hero({
       : (site?.universe.headline ?? '[PLACEHOLDER] Frase principal del sitio');
   const cta = `${buttonLink} btn-lg w-full sm:w-auto`;
   const textLink =
-    'inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-muted underline underline-offset-4 transition hover:text-text';
+    'link-slide inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-muted hover:text-text';
   return (
     <section
       aria-labelledby="hero-title"
@@ -280,7 +280,7 @@ export function WikiPreview({
   const needsGeneral = tabs.some((tab) => tab.locked && !tab.lockedMessage);
   return (
     <Section id="wiki" title="Wiki del universo" tone="raised" space="regular">
-      <ul className="max-w-3xl divide-y divide-line border-y border-line">
+      <ul className="reveal-children max-w-3xl divide-y divide-line border-y border-line">
         {tabs.map((tab) => (
           <li key={tab.kind} className="py-4">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -332,6 +332,7 @@ export function Experiences({
       id="experiencias"
       title="Vive una experiencia inmersiva"
       accent="inmersiva"
+      numeral="01"
       tone="sunken"
       space="loose"
       tall
@@ -379,7 +380,7 @@ export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
   return (
     <Section id="actualizaciones" title="Actualizaciones">
       <ul
-        className={`grid gap-5 ${rest.length > 0 ? 'lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]' : 'max-w-xl'}`}
+        className={`reveal-children grid gap-5 ${rest.length > 0 ? 'lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]' : 'max-w-xl'}`}
       >
         {lead ? <PostCardItem key={lead.id} post={lead} className="lg:row-span-2" /> : null}
         {rest.map((post) => (
@@ -442,7 +443,7 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
 export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }) {
   const author = site?.author;
   return (
-    <Section id="autora" title="Conoce a la autora">
+    <Section id="autora" title="Conoce a la autora" numeral="03">
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-0">
         <div className="flex flex-col gap-5 lg:pr-10">
           <div className="flex items-center gap-4">
@@ -561,7 +562,14 @@ export function BuySection({ links }: { links: PurchaseLink[] }) {
     .map((group) => ({ ...group, items: links.filter((link) => link.region === group.region) }))
     .filter((group) => group.items.length > 0);
   return (
-    <Section id="comprar" title="Cómo comprar el libro" tone="sunken" space="loose" tall>
+    <Section
+      id="comprar"
+      title="Cómo comprar el libro"
+      numeral="02"
+      tone="sunken"
+      space="loose"
+      tall
+    >
       {groups.length === 0 ? (
         <p className="text-muted">[PLACEHOLDER] Pronto publicaremos dónde conseguir el libro.</p>
       ) : (

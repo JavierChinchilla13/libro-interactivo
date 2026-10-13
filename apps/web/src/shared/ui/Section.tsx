@@ -34,6 +34,9 @@ function Accented({ text, accent }: { text: string; accent?: string | undefined 
  * - `space`: cuánto aire lleva (tight / regular / loose).
  * - `tall`: una idea por pantalla: la sección ocupa buena parte del alto y centra su contenido.
  * - `accent`: una palabra del título en el color de acción.
+ * - `numeral`: composición editorial en dos columnas (escritorio): título pegajoso a la izquierda con un numeral
+ *   grande («01») y el contenido a la derecha.
+ * Cada sección lleva su punto sobre el carril de lectura (`PageRail`) y aparece al entrar en pantalla.
  */
 export function Section({
   id,
@@ -43,6 +46,7 @@ export function Section({
   space = 'regular',
   tall = false,
   accent,
+  numeral,
   className = '',
   children,
 }: {
@@ -53,22 +57,48 @@ export function Section({
   space?: Space;
   tall?: boolean;
   accent?: string;
+  numeral?: string;
   className?: string;
   children: ReactNode;
 }) {
+  const head = (
+    <>
+      {numeral ? (
+        <p aria-hidden="true" className="section-numeral">
+          {numeral}
+        </p>
+      ) : null}
+      <h2 id={`${id}-title`} className="section-title reveal">
+        <Accented text={title} accent={accent} />
+      </h2>
+      {intro ? <p className="mt-3 max-w-prose text-muted">{intro}</p> : null}
+    </>
+  );
   return (
     <section
       id={id}
       aria-labelledby={`${id}-title`}
-      className={`scroll-mt-24 ${inside[space]} ${bands[tone]} ${
+      data-space={space}
+      className={`relative scroll-mt-24 ${inside[space]} ${bands[tone]} ${
         tall ? 'flex min-h-[min(70dvh,40rem)] flex-col justify-center' : ''
       } ${className}`}
     >
-      <h2 id={`${id}-title`} className="section-title">
-        <Accented text={title} accent={accent} />
-      </h2>
-      {intro ? <p className="mt-3 max-w-prose text-muted">{intro}</p> : null}
-      <div className="mt-7">{children}</div>
+      <span aria-hidden="true" className="section-node" />
+      {numeral ? (
+        <div className="lg:grid lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
+          <div className="lg:sticky lg:top-28 lg:self-start">{head}</div>
+          <div className="reveal mt-7 lg:mt-0" style={{ ['--i' as string]: 1 }}>
+            {children}
+          </div>
+        </div>
+      ) : (
+        <>
+          {head}
+          <div className="reveal mt-7" style={{ ['--i' as string]: 1 }}>
+            {children}
+          </div>
+        </>
+      )}
     </section>
   );
 }

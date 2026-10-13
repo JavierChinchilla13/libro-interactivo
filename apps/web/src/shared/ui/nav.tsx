@@ -5,10 +5,10 @@
 
 /** Pestaña de la barra superior: la activa se subraya en cian (en el menú desplegable del celular, se resalta). */
 export const navTab = ({ isActive }: { isActive: boolean }) =>
-  `inline-flex min-h-11 items-center px-3.5 text-sm font-medium transition-colors ${
+  `inline-flex min-h-11 items-center bg-[linear-gradient(var(--token-primary),var(--token-primary))] bg-[length:0_2px] bg-[position:0_100%] bg-no-repeat px-3.5 text-sm font-medium transition-[background-size,color] duration-150 ease-out ${
     isActive
-      ? 'text-primary max-md:bg-surface-alt md:text-text md:shadow-[inset_0_-2px_0_0_var(--token-primary)]'
-      : 'text-muted hover:text-text'
+      ? 'text-primary max-md:bg-surface-alt md:bg-[length:100%_2px] md:text-text'
+      : 'text-muted hover:bg-[length:40%_2px] hover:text-text'
   }`;
 
 /** Pestaña inferior del panel en el celular: la activa lleva una marca cian arriba (sin brillo). */
