@@ -103,10 +103,12 @@ describe('landing: sin contenido cargado', () => {
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: '[PLACEHOLDER] Frase principal del sitio',
+        name: 'Universo Memorias',
       }),
     ).toBeInTheDocument();
-    expect(screen.getByText('[PLACEHOLDER] ¿Qué es el universo Memorias?')).toBeInTheDocument();
+    expect(
+      await screen.findByText('[PLACEHOLDER] ¿Qué es el universo Memorias?'),
+    ).toBeInTheDocument();
     // Las secciones se montan tras el primer pintado del héroe.
     expect(await screen.findByText(/Pronto publicaremos dónde conseguir/)).toBeInTheDocument();
     expect(await screen.findByText('[PLACEHOLDER] Nombre de la autora')).toBeInTheDocument();

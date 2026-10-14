@@ -67,7 +67,7 @@ export function Hero({
   const headline =
     status === 'error'
       ? 'Universo Memorias'
-      : (site?.universe.headline ?? '[PLACEHOLDER] Frase principal del sitio');
+      : site?.universe.headline?.trim() || 'Universo Memorias';
   const cta = `${buttonLink} btn-lg w-full sm:w-auto`;
   return (
     <section
