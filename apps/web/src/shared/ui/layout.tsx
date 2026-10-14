@@ -138,7 +138,7 @@ export function Tabs<T extends string>({
           aria-selected={tab.id === active}
           aria-controls={`panel-${tab.id}`}
           onClick={() => onChange(tab.id)}
-          className={`-mb-px flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-medium ${
+          className={`-mb-px flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-medium transition-colors duration-(--token-dur-fast) ease-token-out ${
             tab.id === active
               ? 'border-primary text-text'
               : 'border-transparent text-muted hover:text-text'
