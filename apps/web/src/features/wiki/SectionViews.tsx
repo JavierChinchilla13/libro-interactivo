@@ -53,10 +53,10 @@ function EntryCard({ entry }: { entry: Open<PublicWikiLeaf> }) {
             width={entry.image.width}
             height={entry.image.height}
             loading="lazy"
-            className="img-frame aspect-square w-full rounded-token-md object-cover transition-opacity duration-(--token-dur-fast) ease-token-out group-hover:opacity-85"
+            className="img-frame aspect-square w-full rounded-token-xs object-cover transition-opacity duration-(--token-dur-fast) ease-token-out group-hover:opacity-85"
           />
         ) : null}
-        <span className="font-semibold group-hover:underline">{entry.name}</span>
+        <span className="font-display text-lg font-medium group-hover:underline">{entry.name}</span>
         {entry.group ? <span className="text-xs text-muted">{entry.group}</span> : null}
         {entry.summary ? <span className="text-sm text-muted">{entry.summary}</span> : null}
       </Link>
@@ -119,7 +119,7 @@ export function PowersView({ bookId, section }: { bookId: string; section: Publi
                     width={64}
                     height={64}
                     loading="lazy"
-                    className="size-16 rounded-token object-cover"
+                    className="size-16 rounded-token-xs object-cover"
                   />
                 ) : null}
                 <div>
