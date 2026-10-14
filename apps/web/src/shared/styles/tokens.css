@@ -29,6 +29,9 @@
   --token-lit: var(--token-primary);
   --token-unlit: #4278b0;
 
+  /* Vidrio de la barra flotante (único lugar con desenfoque). */
+  --token-glass: color-mix(in srgb, var(--token-surface) 72%, transparent);
+
   /* Línea fina de separación. */
   --token-line: rgb(120 190 255 / 0.2);
 

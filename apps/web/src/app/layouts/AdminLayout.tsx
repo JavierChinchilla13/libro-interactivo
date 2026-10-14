@@ -20,7 +20,6 @@ const CONTENT = [
 /** Solo administradoras. */
 const ADMIN_ONLY = [
   { to: '/admin/qr', label: 'Códigos QR' },
-  { to: '/admin/usuarios', label: 'Usuarios' },
   { to: '/admin/mensajes', label: 'Mensajes de contacto' },
   { to: '/admin/estadisticas', label: 'Estadísticas' },
   { to: '/admin/ajustes', label: 'Ajustes del sitio' },
@@ -58,6 +57,20 @@ export function AdminLayout() {
           onClick={() => setOpen(false)}
         >
           <p className="px-3 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
+            Atajos
+          </p>
+          <NavLink to="/" end className={sideLink}>
+            Ver sitio
+          </NavLink>
+          <NavLink to="/panel" end className={sideLink}>
+            Mi panel
+          </NavLink>
+          {isAdmin ? (
+            <NavLink to="/admin/usuarios" className={sideLink}>
+              Usuarios
+            </NavLink>
+          ) : null}
+          <p className="px-3 pt-4 text-xs font-semibold uppercase tracking-wide text-muted">
             Contenido
           </p>
           {CONTENT.map((item) => (
@@ -86,8 +99,11 @@ export function AdminLayout() {
             {user?.name} · {isAdmin ? 'Administradora' : 'Editora'}
           </p>
           <div className="flex items-center gap-2">
-            <Link to="/" className="text-sm underline">
+            <Link to="/" className="link-slide inline-flex min-h-11 items-center text-sm">
               Ver sitio
+            </Link>
+            <Link to="/panel" className="link-slide inline-flex min-h-11 items-center text-sm">
+              Mi panel
             </Link>
             <Button
               variant="secondary"

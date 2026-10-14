@@ -13,9 +13,17 @@ const NODE: Record<ThreadState, string> = {
   neutral: 'border-muted/60 bg-muted/60',
 };
 
-export function ThreadList({ label, children }: { label?: string; children: ReactNode }) {
+export function ThreadList({
+  label,
+  className = '',
+  children,
+}: {
+  label?: string;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <ol aria-label={label} className="reveal-children m-0 list-none p-0">
+    <ol aria-label={label} className={`reveal-children m-0 list-none p-0 ${className}`}>
       {children}
     </ol>
   );

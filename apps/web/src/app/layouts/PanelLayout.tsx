@@ -27,8 +27,8 @@ export function PanelLayout() {
   return (
     <div className={`flex min-h-dvh flex-col ${immersive ? '' : 'pb-16 sm:pb-0'}`}>
       <SkipLink />
-      <header className="site-header sticky top-0 z-40 border-b border-line bg-bg">
-        <div className="mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-4 px-4 py-2.5">
+      <header className="site-header sticky top-3 z-40 px-3">
+        <div className="nav-pill mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-4 py-1.5 pl-5 pr-2">
           <Brand to="/panel" />
           {immersive ? null : (
             <>

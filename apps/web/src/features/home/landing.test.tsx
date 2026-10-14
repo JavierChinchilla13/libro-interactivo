@@ -170,34 +170,14 @@ describe('landing: el héroe lleva al libro en la mano', () => {
     );
   });
 
-  it('la placa muestra la portada real y, sin ella, una portada tipográfica sin texto de borrador', async () => {
+  it('el héroe va centrado y sin imagen; la portada vive en la ficha del libro', async () => {
     mockApi(full, NO_SESSION);
-    const withCover = renderAt('/');
+    renderAt('/');
     const hero = await screen.findByRole('region', { name: /Frase del universo/ });
-    expect(
-      await within(hero).findByRole('img', { name: 'Portada del libro 1' }),
-    ).toBeInTheDocument();
-    withCover.unmount();
-
-    mockApi(
-      {
-        ...full,
-        'GET /api/books': () => json({ books: [summary({ cover: undefined })] }),
-        'GET /api/books/libro-1': () =>
-          json({ ...detail, cover: undefined, synopsis: '', tagline: undefined }),
-      },
-      NO_SESSION,
-    );
-    const { container } = renderAt('/');
-    await screen.findByRole('region', { name: 'Wiki del universo' });
-    const plate = container.querySelector('.plate');
-    expect(plate).not.toBeNull();
-    expect(plate).toHaveTextContent('Universo');
-    expect(plate).toHaveTextContent('Memorias');
-    expect(plate).not.toHaveTextContent('PLACEHOLDER');
-    // Solo Cinzel: ninguna etiqueta en la letra de interfaz dentro de la portada tipográfica.
-    expect(plate?.querySelector('.label')).toBeNull();
-    expect(plate).toHaveAttribute('aria-hidden', 'true');
+    expect(within(hero).queryByRole('img', { name: /Portada/ })).not.toBeInTheDocument();
+    expect(hero.className).toContain('text-center');
+    const book = await screen.findByRole('region', { name: '[PLACEHOLDER] Libro 1' });
+    expect(within(book).getByRole('img', { name: 'Portada del libro 1' })).toBeInTheDocument();
   });
 
   it('con sesión la acción principal es continuar la lectura y no ofrece crear cuenta', async () => {

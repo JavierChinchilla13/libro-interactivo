@@ -248,6 +248,33 @@
 }
 
 /* M6 · Transición entre páginas (View Transitions): la cabecera se queda y el contenido se funde. */
+@keyframes mesh-drift {
+  from {
+    transform: translate3d(-3%, -2%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3%, 3%, 0) scale(1.08);
+  }
+}
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-mesh::before {
+    animation: mesh-drift 40s ease-in-out infinite alternate;
+  }
+  .hero-enter {
+    animation: hero-enter 420ms var(--token-ease-out) 80ms both;
+  }
+}
+
 @supports (view-transition-name: none) {
   .site-header {
     view-transition-name: site-header;
@@ -639,6 +666,47 @@
     height: 1px;
     margin-top: 6cqw;
     background: var(--token-border);
+  }
+  /* Barra flotante en píldora (estilo del ejemplo): vidrio fino, borde de 1 px, sin sombra pesada. */
+  .nav-pill {
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-pill);
+    background: var(--token-glass);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    backdrop-filter: blur(16px) saturate(1.3);
+  }
+  .nav-menu {
+    border: 1px solid var(--token-line);
+    border-radius: 1.5rem;
+    background: color-mix(in srgb, var(--token-surface) 98%, transparent);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+  /* Tarjeta centrada de ingreso y registro. */
+  .auth-card {
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-xl);
+    background: var(--token-glass);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+  /* Degradado del inicio: dos manchas (cian y lavanda) que se desplazan muy despacio; solo transform. */
+  .hero-mesh {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: min(95dvh, 52rem);
+    overflow: clip;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .hero-mesh::before {
+    content: '';
+    position: absolute;
+    inset: -20% -20%;
+    background:
+      radial-gradient(38% 45% at 22% 32%, rgb(63 216 255 / 0.2), transparent 70%),
+      radial-gradient(42% 50% at 78% 38%, rgb(168 155 255 / 0.24), transparent 70%),
+      radial-gradient(36% 38% at 50% 68%, rgb(66 120 176 / 0.28), transparent 70%);
   }
   /* Marco de imágenes (portadas, avatar, resultado): un contorno de 1 px, sin resplandor. */
   .img-frame {

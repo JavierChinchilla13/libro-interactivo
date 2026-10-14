@@ -12,7 +12,7 @@ import { thumbUrl } from '../../shared/lib/cloudinary';
 import { formatDate, formatShortDate } from '../../shared/lib/dates';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Badge } from '../../shared/ui/layout';
-import { HERO_COVER_SIZES, Plate, PortraitPlate } from '../../shared/ui/Plate';
+import { Plate, PortraitPlate } from '../../shared/ui/Plate';
 import { Section } from '../../shared/ui/Section';
 import { ThreadItem, ThreadList } from '../../shared/ui/ThreadList';
 import { ArrowUpRightIcon, LockIcon } from '../../shared/ui/icons';
@@ -47,23 +47,19 @@ function Bar({ className }: { className: string }) {
 }
 
 /**
- * Frase principal y presentación del universo (editables por la autora en «Portada y autora»).
- * Cuatro elementos y la placa: titular, presentación y las dos acciones. Los botones no dependen de ningún dato: el
- * héroe se pinta de inmediato y solo los textos esperan. La acción principal es entrar con el libro en la mano
- * (crear cuenta o continuar la lectura). La placa muestra la portada real si el libro ya la tiene.
+ * Frase principal y presentación del universo (editables por la autora en «Portada y autora»), todo centrado sobre
+ * el degradado del inicio. Titular, presentación y dos acciones: los botones no dependen de ningún dato (el héroe se
+ * pinta de inmediato y solo los textos esperan). La acción principal es entrar con el libro en la mano.
+ * El titular y la presentación (lo que mide el LCP) se ven de inmediato; solo las acciones entran con un fundido corto
+ * (CSS: GSAP retrasaba el LCP unos 0.4 s por su descarga).
  */
 export function Hero({
   site,
-  cover,
-  coverPending,
   signedIn,
   sessionReady,
   status,
 }: {
   site: PublicSiteResponse | undefined;
-  cover: PublicBookDetail['cover'];
-  /** La lista de libros aún no llegó: no se sabe si hay portada ni de qué forma. */
-  coverPending: boolean;
   signedIn: boolean;
   sessionReady: boolean;
   status: HeroStatus;
@@ -77,73 +73,57 @@ export function Hero({
     <section
       aria-labelledby="hero-title"
       aria-busy={status === 'loading' || undefined}
-      className="relative grid grid-cols-[minmax(0,1fr)] items-center gap-10 py-4 md:min-h-[min(80dvh,46rem)] md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-14 md:py-14"
+      className="relative z-10 mx-auto flex max-w-4xl flex-col items-center gap-7 py-10 text-center md:min-h-[min(72dvh,42rem)] md:justify-center md:py-16"
     >
-      <div className="flex max-w-3xl flex-col gap-6">
-        {status === 'loading' ? (
+      {status === 'loading' ? (
+        <>
+          <h1 id="hero-title" className="sr-only">
+            Universo Memorias
+          </h1>
+          {/* Dos renglones con la altura real del titular (display): al llegar el texto, la página no se mueve. */}
+          <div className="flex w-full flex-col items-center gap-[calc(var(--token-text-display)*0.15)]">
+            <Bar className="h-[calc(var(--token-text-display)*0.95)] w-11/12" />
+            <Bar className="h-[calc(var(--token-text-display)*0.95)] w-2/3" />
+          </div>
+          <div className="flex w-full max-w-prose flex-col items-center gap-2.5">
+            <Bar className="h-4 w-full" />
+            <Bar className="h-4 w-10/12" />
+            <Bar className="h-4 w-7/12" />
+          </div>
+        </>
+      ) : (
+        <>
+          <h1 id="hero-title" className="display-title break-words">
+            <LastWordEmphasis text={headline} />
+          </h1>
+          <div className="mx-auto max-w-[var(--token-measure)] text-lg text-muted">
+            {site?.universe.introHtml ? (
+              <SafeHtml html={site.universe.introHtml} />
+            ) : status === 'ready' ? (
+              <p>[PLACEHOLDER] ¿Qué es el universo Memorias?</p>
+            ) : null}
+          </div>
+        </>
+      )}
+      <div className="hero-enter flex w-full flex-col items-center gap-3 pt-1 sm:w-auto sm:flex-row sm:justify-center">
+        {!sessionReady ? (
           <>
-            <h1 id="hero-title" className="sr-only">
-              Universo Memorias
-            </h1>
-            {/* Dos renglones con la altura real del titular (display): al llegar el texto, la página no se mueve. */}
-            <div className="flex flex-col gap-[calc(var(--token-text-display)*0.15)]">
-              <Bar className="h-[calc(var(--token-text-display)*0.95)] w-11/12" />
-              <Bar className="h-[calc(var(--token-text-display)*0.95)] w-2/3" />
-            </div>
-            <div className="flex max-w-prose flex-col gap-2.5">
-              <Bar className="h-4 w-full" />
-              <Bar className="h-4 w-10/12" />
-              <Bar className="h-4 w-7/12" />
-            </div>
+            <Bar className="h-12 w-full sm:w-72" />
+            <Bar className="h-12 w-full sm:w-44" />
           </>
+        ) : signedIn ? (
+          <Link to="/panel" className={`${primaryLink} ${cta}`}>
+            Continuar mi lectura
+          </Link>
         ) : (
           <>
-            <h1 id="hero-title" className="display-title break-words">
-              <LastWordEmphasis text={headline} />
-            </h1>
-            <div className="max-w-[var(--token-measure)] text-lg text-muted">
-              {site?.universe.introHtml ? (
-                <SafeHtml html={site.universe.introHtml} />
-              ) : status === 'ready' ? (
-                <p>[PLACEHOLDER] ¿Qué es el universo Memorias?</p>
-              ) : null}
-            </div>
-          </>
-        )}
-        <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap sm:items-center">
-          {!sessionReady ? (
-            <>
-              <Bar className="h-12 w-full sm:w-72" />
-              <Bar className="h-12 w-full sm:w-44" />
-            </>
-          ) : signedIn ? (
-            <Link to="/panel" className={`${primaryLink} ${cta}`}>
-              Continuar mi lectura
+            <Link to="/registro" className={`${primaryLink} ${cta}`}>
+              Tengo el libro: crear mi cuenta
             </Link>
-          ) : (
-            <>
-              <Link to="/registro" className={`${primaryLink} ${cta}`}>
-                Tengo el libro: crear mi cuenta
-              </Link>
-              <Link to="/ingresar" className={`${secondaryLink} ${cta}`}>
-                Ya tengo cuenta
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
-      {/* El hueco de la portada se reserva (la más alta posible en el celular) para que la página no salte al llegar
-          la lista de libros, sea la portada alta, apaisada o la tipográfica. */}
-      <div className="min-h-[min(90vw,22.5rem)] md:min-h-0">
-        {coverPending ? null : (
-          <Plate
-            cover={cover}
-            priority
-            className="w-3/5 max-w-60 md:ml-auto md:w-full md:max-w-[19rem]"
-            landscapeClassName="w-full max-w-md md:ml-auto"
-            sizes={HERO_COVER_SIZES.tall}
-            landscapeSizes={HERO_COVER_SIZES.landscape}
-          />
+            <Link to="/ingresar" className={`${secondaryLink} ${cta}`}>
+              Ya tengo cuenta
+            </Link>
+          </>
         )}
       </div>
     </section>
@@ -166,7 +146,7 @@ export function ClosingBand({
       aria-labelledby="cierre-title"
       className="section-band-raised flex min-h-[min(70dvh,40rem)] flex-col justify-center py-section-loose"
     >
-      <div className="flex flex-col items-start gap-4">
+      <div className="flex flex-col items-center gap-4 text-center">
         <h2 id="cierre-title" className="section-title">
           Empieza con tu <span className="emph">libro</span>
         </h2>
@@ -275,7 +255,7 @@ export function WikiPreview({
   // El texto general de bloqueo se dice una sola vez; cada pestaña solo repite el suyo si la autora le puso uno propio.
   const needsGeneral = tabs.some((tab) => tab.locked && !tab.lockedMessage);
   return (
-    <Section id="wiki" title="Wiki del universo" tone="raised" space="regular">
+    <Section id="wiki" title="Wiki del universo" tone="raised" space="regular" align="center">
       <ul className="reveal-children divide-y divide-line border-y border-line">
         {tabs.map((tab) => (
           <li key={tab.kind} className="py-6">
@@ -300,9 +280,11 @@ export function WikiPreview({
         ))}
       </ul>
       {needsGeneral ? <p className="mt-5 text-muted">{lockMessage}</p> : null}
-      <Link to="/wiki" className={`${primaryLink} mt-8`}>
-        Entrar a la wiki
-      </Link>
+      <div className="mt-8 text-center">
+        <Link to="/wiki" className={primaryLink}>
+          Entrar a la wiki
+        </Link>
+      </div>
     </Section>
   );
 }
@@ -328,12 +310,12 @@ export function Experiences({
       id="experiencias"
       title="Vive una experiencia inmersiva"
       emphasis="inmersiva"
-      split
+      align="center"
       tone="sunken"
       space="loose"
       tall
     >
-      <ThreadList>
+      <ThreadList className="mx-auto max-w-xl">
         {experiences.map((experience) => {
           const opensFirst = !signedIn && experience.order === first;
           return (
@@ -386,7 +368,7 @@ export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
   if (posts.length === 0) return null;
   const [lead, ...rest] = posts;
   return (
-    <Section id="actualizaciones" title="Actualizaciones">
+    <Section id="actualizaciones" title="Actualizaciones" align="center">
       <div
         className={`grid gap-10 ${rest.length > 0 ? 'lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16' : ''}`}
       >
@@ -431,9 +413,11 @@ export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
           </ul>
         ) : null}
       </div>
-      <Link to="/actualizaciones" className={`${secondaryLink} mt-8`}>
-        Ver todas las actualizaciones
-      </Link>
+      <div className="mt-8 text-center">
+        <Link to="/actualizaciones" className={secondaryLink}>
+          Ver todas las actualizaciones
+        </Link>
+      </div>
     </Section>
   );
 }
@@ -454,7 +438,7 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
     </>
   );
   return (
-    <Section id="resenas" title="Reseñas de lectores" tone="raised">
+    <Section id="resenas" title="Reseñas de lectores" tone="raised" align="center">
       <ul className="flex flex-col gap-10">
         {lead ? (
           <li className="max-w-3xl border-l-2 border-border pl-6">
@@ -548,7 +532,7 @@ export function SagaSection({ books }: { books: PublicBookSummary[] }) {
   // Un solo libro no es una secuencia: ya tiene su propia sección.
   if (books.length < 2) return null;
   return (
-    <Section id="saga" title="Secuencia de publicación" tone="sunken">
+    <Section id="saga" title="Secuencia de publicación" tone="sunken" align="center">
       <ul
         aria-label="Libros de la saga"
         className="-mx-4 flex scroll-px-4 snap-x gap-5 overflow-x-auto px-4 pb-4"

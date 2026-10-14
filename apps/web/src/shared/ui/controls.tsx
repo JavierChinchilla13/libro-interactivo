@@ -10,7 +10,7 @@ import {
 
 /** Controles de formulario con los design tokens. Mobile-first: objetivos táctiles de 44 px. */
 
-const field =
+export const fieldClass =
   'w-full min-w-0 max-w-full min-h-11 rounded-xl border border-border bg-bg/60 px-3.5 py-2 text-base text-text transition-[border-color,box-shadow] duration-(--token-dur-fast) ease-token-out placeholder:text-muted focus:border-primary focus:shadow-focus focus:outline-none disabled:opacity-60';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
@@ -113,7 +113,7 @@ export function TextField({ label, hint, error, required, wrapperClassName, ...r
           aria-describedby={describedBy}
           aria-invalid={invalid || undefined}
           required={required}
-          className={field}
+          className={fieldClass}
           {...rest}
         />
       )}
@@ -151,7 +151,7 @@ export function TextAreaField({
           aria-describedby={describedBy}
           aria-invalid={invalid || undefined}
           required={required}
-          className={field}
+          className={fieldClass}
           {...rest}
         />
       )}
@@ -192,7 +192,7 @@ export function SelectField({
           aria-describedby={describedBy}
           aria-invalid={invalid || undefined}
           required={required}
-          className={field}
+          className={fieldClass}
           {...rest}
         >
           {placeholder !== undefined ? <option value="">{placeholder}</option> : null}
