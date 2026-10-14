@@ -62,8 +62,8 @@
   /* Títulos: Cinzel (serifa clásica); si no carga, una serifa del sistema. */
   --token-font-display: 'Cinzel Variable', 'Cinzel', Georgia, 'Times New Roman', serif;
   /* Escala fluida (móvil → escritorio). Un solo tamaño de h1 para todo el sitio. */
-  --token-text-display: clamp(2.5rem, 1rem + 5.6vw, 5rem);
-  --token-text-h1: clamp(2.25rem, 1.2rem + 3.2vw, 3.5rem);
+  --token-text-display: clamp(2.25rem, 1rem + 5.6vw, 5rem);
+  --token-text-h1: clamp(1.875rem, 1.2rem + 3.2vw, 3.5rem);
   --token-text-h2: clamp(1.875rem, 1.1rem + 2.8vw, 3rem);
   --token-leading-display: 1.05;
   --token-leading-heading: 1.15;

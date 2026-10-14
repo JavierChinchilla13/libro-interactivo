@@ -92,7 +92,7 @@ export function Section({
   if (aside) {
     // En el celular el título va antes que la pieza: se reordena con `order`.
     layout = (
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-x-16 lg:gap-y-8">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-x-16 lg:gap-y-8">
         <div className="max-lg:order-2 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
           {aside}
         </div>
