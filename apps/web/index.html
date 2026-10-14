@@ -7,6 +7,68 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#06142b" />
     <title>Universo Memorias</title>
+    <!--
+      Pedidos tempranos: la portada necesita /api/site y /api/books para pintarse, y el JS de la app tarda en llegar. Se
+      piden aquí, la app reutiliza las respuestas (una vez cada una) y, con la portada del libro destacado, se avisa al
+      navegador para que la descargue ya. `sizes` y los anchos replican `Plate` (hay una prueba que los compara).
+      Si algo falla, la app pide todo por su cuenta.
+    -->
+    <script>
+      (function () {
+        var early = (window.__early = {});
+        function request(path) {
+          return (early[path] = fetch('/api' + path, { credentials: 'include' }).then(
+            function (response) {
+              return response;
+            },
+            function () {
+              return null;
+            },
+          ));
+        }
+        request('/site');
+        request('/books').then(function (response) {
+          if (!response || !response.ok) return;
+          response
+            .clone()
+            .json()
+            .then(function (data) {
+              var books = ((data && data.books) || []).filter(function (book) {
+                return book.status === 'published';
+              });
+              books.sort(function (a, b) {
+                return b.order - a.order;
+              });
+              var cover = books[0] && books[0].cover;
+              if (!cover || !cover.url || cover.url.indexOf('/upload/') < 0) return;
+              var landscape = cover.width / cover.height > 1;
+              var set = [320, 480, 640, 720, 960]
+                .map(function (width) {
+                  return (
+                    cover.url.replace('/upload/', '/upload/f_auto,q_auto,w_' + width + '/') +
+                    ' ' +
+                    width +
+                    'w'
+                  );
+                })
+                .join(', ');
+              var link = document.createElement('link');
+              link.setAttribute('rel', 'preload');
+              link.setAttribute('as', 'image');
+              link.setAttribute('imagesrcset', set);
+              link.setAttribute(
+                'imagesizes',
+                landscape
+                  ? '(min-width: 1152px) 443px, (min-width: 768px) calc((100vw - 88px) * 0.4167), calc(100vw - 32px)'
+                  : '(min-width: 768px) 304px, 240px',
+              );
+              link.setAttribute('fetchpriority', 'high');
+              document.head.appendChild(link);
+            })
+            .catch(function () {});
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

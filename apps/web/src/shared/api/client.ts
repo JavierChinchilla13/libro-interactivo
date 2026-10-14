@@ -21,6 +21,18 @@ interface RequestOptions {
   retried?: boolean;
 }
 
+/**
+ * Respuestas que `index.html` pidió antes de que cargara la app (`/site`, `/books`). Cada una se entrega una sola vez;
+ * si no existe (o la red falló) la petición se hace como siempre.
+ */
+function takeEarly(path: string): Promise<Response | null> | undefined {
+  const registry = (window as unknown as { __early?: Record<string, Promise<Response | null>> })
+    .__early;
+  const found = registry?.[path];
+  if (registry && found) delete registry[path];
+  return found;
+}
+
 /** Una sola renovación a la vez: varias peticiones que reciben 401 juntas comparten el mismo intento. */
 let refreshing: Promise<boolean> | null = null;
 
@@ -44,9 +56,12 @@ export async function apiRequest<T>(
   schema: ZodType<T>,
   options: RequestOptions = {},
 ): Promise<T> {
-  let response: Response;
+  let response: Response | null = null;
+  const early =
+    (options.method ?? 'GET') === 'GET' && !options.retried ? takeEarly(path) : undefined;
+  if (early) response = await early;
   try {
-    response = await fetch(`/api${path}`, {
+    response ??= await fetch(`/api${path}`, {
       method: options.method ?? 'GET',
       credentials: 'include',
       headers: options.body === undefined ? undefined : { 'Content-Type': 'application/json' },
