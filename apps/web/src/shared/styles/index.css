@@ -428,9 +428,10 @@
     cursor: pointer;
     align-items: center;
     gap: 0.9rem;
-    border-radius: var(--token-radius-md);
+    border-radius: var(--token-radius-xs);
     border: 1px solid var(--token-line);
-    background: var(--token-surface);
+    border-left: 2px solid var(--token-line);
+    background: transparent;
     padding: 0.8rem 1.1rem;
     transition-property: border-color, background-color;
     transition-duration: var(--token-dur-fast);
@@ -441,10 +442,11 @@
       border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
     }
   }
+  /* Elegida: filete cian de 2 px a la izquierda y la marca de selección; sin halo ni sombra. */
   .option:has(input:checked) {
-    border-color: var(--token-primary);
-    background: color-mix(in srgb, var(--token-primary) 12%, var(--token-surface));
-    box-shadow: var(--token-lit-ring);
+    border-color: var(--token-line);
+    border-left-color: var(--token-primary);
+    background: color-mix(in srgb, var(--token-primary) 8%, transparent);
   }
   /* Marca de selección propia: aro que se llena de cian con una palomita (no depende solo del color). */
   .option input {
