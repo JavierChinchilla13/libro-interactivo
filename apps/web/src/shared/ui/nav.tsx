@@ -3,17 +3,22 @@
  * estilo de pestaña activa y el enlace «Saltar al contenido» para quien navega con teclado.
  */
 
-/** Pestaña de la barra superior: la activa se subraya en cian (en el menú desplegable del celular, se resalta). */
+/** Base de la pestaña: el subrayado es un pseudoelemento que solo cambia de escala (composición, sin repintar). */
+const tabBase =
+  'relative inline-flex min-h-11 items-center px-3.5 text-sm font-medium transition-colors duration-(--token-dur-fast) ease-token-out after:absolute after:inset-x-3.5 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-primary after:transition-transform after:duration-(--token-dur-fast) after:ease-token-out';
+const tabIdle = 'text-muted hover:text-text hover:after:scale-x-40';
+
+/** Pestaña de la barra superior (en fila desde `md`): la activa se subraya en cian; en el menú desplegable, se resalta. */
 export const navTab = ({ isActive }: { isActive: boolean }) =>
-  `inline-flex min-h-11 items-center bg-[linear-gradient(var(--token-primary),var(--token-primary))] bg-[length:0_2px] bg-[position:0_100%] bg-no-repeat px-3.5 text-sm font-medium transition-[background-size,color] duration-150 ease-out ${
-    isActive
-      ? 'text-primary max-md:bg-surface-alt md:bg-[length:100%_2px] md:text-text'
-      : 'text-muted hover:bg-[length:40%_2px] hover:text-text'
-  }`;
+  `${tabBase} ${isActive ? 'text-primary max-md:bg-surface-alt md:text-text md:after:scale-x-100' : tabIdle}`;
+
+/** Igual, pero la fila empieza en `lg`: la cabecera pública lleva más pestañas y a 768 px no caben con holgura. */
+export const navTabLg = ({ isActive }: { isActive: boolean }) =>
+  `${tabBase} ${isActive ? 'text-primary max-lg:bg-surface-alt lg:text-text lg:after:scale-x-100' : tabIdle}`;
 
 /** Pestaña inferior del panel en el celular: la activa lleva una marca cian arriba (sin brillo). */
 export const bottomTab = ({ isActive }: { isActive: boolean }) =>
-  `relative flex min-h-14 flex-1 flex-col items-center justify-center text-xs font-medium transition-colors ${
+  `relative flex min-h-14 flex-1 flex-col items-center justify-center text-xs font-medium transition-colors duration-(--token-dur-fast) ease-token-out ${
     isActive
       ? 'text-primary before:absolute before:top-0 before:h-0.5 before:w-10 before:rounded-full before:bg-primary'
       : 'text-muted hover:text-text'
@@ -21,7 +26,7 @@ export const bottomTab = ({ isActive }: { isActive: boolean }) =>
 
 /** Enlace del menú lateral de administración. */
 export const sideLink = ({ isActive }: { isActive: boolean }) =>
-  `relative flex min-h-11 items-center rounded-token-sm px-3 text-sm font-medium transition-colors ${
+  `relative flex min-h-11 items-center rounded-token-sm px-3 text-sm font-medium transition-colors duration-(--token-dur-fast) ease-token-out ${
     isActive
       ? 'bg-primary/12 text-primary before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary'
       : 'text-muted hover:bg-surface-alt/70 hover:text-text'

@@ -69,6 +69,7 @@
   --radius-token-sm: var(--token-radius-sm);
   --radius-token-md: var(--token-radius-md);
   --radius-token-xl: var(--token-radius-xl);
+  --radius-token-xs: var(--token-radius-xs);
   --shadow-focus: var(--token-focus-ring);
   --shadow-elev-2: var(--token-elev-2);
   --shadow-lit: var(--token-lit-ring);
@@ -107,51 +108,25 @@
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
     transform: none;
   }
 }
-/* El resplandor del revelado crece desde el centro: la luz se «enciende» antes de que aparezcan las líneas. */
-@keyframes glow-grow {
+/* El revelado: un aro nítido crece una sola vez desde el centro y se desvanece (sin halo ni desenfoque). */
+@keyframes ring-grow {
   from {
+    opacity: 0.55;
+    transform: scale(0.2);
+  }
+  to {
     opacity: 0;
-    transform: scale(0.4);
-  }
-  to {
-    opacity: 1;
-    transform: none;
+    transform: scale(1);
   }
 }
-/* El hilo: se dibuja, aparecen sus puntos y el primero se enciende. Solo con `.thread-animated`. */
-@keyframes thread-draw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-@keyframes thread-lit-draw {
-  from {
-    stroke-dashoffset: var(--thread-lit, 0);
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-@keyframes thread-node {
-  from {
-    opacity: 0;
-    transform: scale(0.6);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
+/* El punto del revelado se enciende y suelta un anillo. Solo dentro de `.thread-animated`. */
 @keyframes thread-ignite {
   from {
     opacity: 0;
@@ -170,18 +145,6 @@
     transform: scale(2.4);
   }
 }
-.thread-animated .thread-base {
-  stroke-dasharray: 1;
-  animation: thread-draw var(--token-dur-scene) var(--token-ease-in-out) both;
-}
-.thread-animated .thread-lit {
-  animation: thread-lit-draw 700ms var(--token-ease-out) 500ms both;
-}
-.thread-animated .thread-node {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: thread-node var(--token-dur-slow) var(--token-ease-out) both;
-}
 .thread-animated .thread-ignite {
   animation: thread-ignite var(--token-dur-slow) var(--token-ease-out) 700ms both;
 }
@@ -192,45 +155,31 @@
   animation: thread-bloom 1100ms var(--token-ease-out) 700ms both;
 }
 .reveal-line {
-  animation: reveal-in 700ms ease both;
+  animation: reveal-in 700ms var(--token-ease-out) both;
 }
-.reveal-glow {
+.reveal-ring {
   position: absolute;
   inset: 0;
   margin: auto;
   width: min(90vw, 34rem);
   aspect-ratio: 1;
   border-radius: 9999px;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--token-primary) 26%, transparent),
-    transparent 62%
-  );
+  border: 1px solid color-mix(in srgb, var(--token-primary) 70%, transparent);
   pointer-events: none;
-  animation: glow-grow 1800ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: ring-grow 900ms var(--token-ease-in-out) both;
 }
 /* Entrada suave del contenido de cada página. */
 .fade-up {
-  animation: fade-up 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: fade-up var(--token-dur-base) var(--token-ease-out) both;
 }
 /* ---------------------------------------------------------------------------------------------------------------
- * Movimiento ligado al scroll. Solo transform y opacity (más el avance de una línea y una variable de la luz).
+ * Movimiento ligado al scroll. Solo transform y opacity.
  * Con navegadores sin `animation-timeline`, o con «reducir movimiento», todo queda visible y estático.
  * ------------------------------------------------------------------------------------------------------------- */
-@property --amb {
-  syntax: '<number>';
-  inherits: true;
-  initial-value: 0;
-}
-@property --amb-x {
-  syntax: '<percentage>';
-  inherits: true;
-  initial-value: 50%;
-}
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(1.75rem);
+    transform: translateY(1rem);
   }
   to {
     opacity: 1;
@@ -245,34 +194,7 @@
     opacity: 1;
   }
 }
-@keyframes rail-draw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-@keyframes node-on {
-  to {
-    border-color: var(--token-lit);
-    background-color: var(--token-lit);
-    box-shadow: var(--token-lit-ring);
-  }
-}
-/* La luz ambiental: una sola, lenta; cambia de lugar y de tono (cian → lavanda) a lo largo de la página. */
-@keyframes ambient {
-  from {
-    --amb: 0;
-    --amb-x: 24%;
-  }
-  to {
-    --amb: 1;
-    --amb-x: 78%;
-  }
-}
-
-/* Estado por defecto (sin soporte o con «reducir movimiento»): visible, completo y sin carril. */
+/* Estado por defecto (sin soporte o con «reducir movimiento»): visible y completo. */
 .statement-band {
   padding-block: var(--token-section-loose);
 }
@@ -286,22 +208,6 @@
   letter-spacing: 0.01em;
   text-wrap: balance;
 }
-/* Numeral editorial grande (01, 02, 03) sobre el título de las secciones en dos columnas. */
-.section-numeral {
-  margin: 0 0 0.25rem;
-  font-family: var(--token-font-display);
-  font-size: clamp(3.5rem, 2rem + 6vw, 7rem);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  font-variant-numeric: lining-nums tabular-nums;
-  color: var(--token-unlit);
-}
-.page-rail,
-.section-node {
-  display: none;
-}
-
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     /* M1 · Aparición al entrar en pantalla, escalonada con `--i`. */
@@ -341,75 +247,41 @@
   }
 }
 
-@supports (animation-timeline: scroll()) {
-  @media (prefers-reduced-motion: no-preference) {
-    /* M2 · El carril de lectura: se dibuja con el avance de la página y cada sección enciende su punto. */
-    .page-rail-host {
-      view-timeline: --page block;
-    }
-    .page-rail-host .page-rail {
-      display: block;
-      position: absolute;
-      inset-block: 0;
-      left: -0.75rem;
-      width: 2px;
-      height: 100%;
-      z-index: 1;
-      pointer-events: none;
-    }
-    .page-rail-track {
-      stroke: color-mix(in srgb, var(--token-unlit) 45%, transparent);
-    }
-    .page-rail-fill {
-      stroke: var(--token-lit);
-      stroke-dasharray: 1;
-      stroke-dashoffset: 1;
-      animation: rail-draw linear both;
-      animation-timeline: --page;
-      animation-range: cover 50vh cover calc(100% - 50vh);
-    }
-    .page-rail-host .section-node {
-      display: block;
-      position: absolute;
-      left: -0.75rem;
-      width: 0.625rem;
-      height: 0.625rem;
-      margin-left: calc(1px - 0.3125rem);
-      border: 2px solid var(--token-unlit);
-      border-radius: 9999px;
-      background-color: var(--token-bg);
-      z-index: 2;
-      pointer-events: none;
-      animation: node-on linear both;
-      animation-timeline: view();
-      animation-range: cover 0% cover 40%;
-    }
-    .page-rail-host [data-space='tight'] > .section-node {
-      top: calc(var(--token-section-tight) + 0.9rem);
-    }
-    .page-rail-host [data-space='regular'] > .section-node {
-      top: calc(var(--token-section-regular) + 0.9rem);
-    }
-    .page-rail-host [data-space='loose'] > .section-node {
-      top: calc(var(--token-section-loose) + 0.9rem);
-    }
-
-    /* M7 · La luz ambiental cambia de lugar y de tono con el scroll de toda la página. */
-    html {
-      animation: ambient linear both;
-      animation-timeline: scroll(root);
-    }
+/* M6 · Transición entre páginas (View Transitions): la cabecera se queda y el contenido se funde. */
+@keyframes mesh-drift {
+  from {
+    transform: translate3d(-3%, -2%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3%, 3%, 0) scale(1.08);
+  }
+}
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-mesh::before {
+    animation: mesh-drift 40s ease-in-out infinite alternate;
+  }
+  .hero-enter {
+    animation: hero-enter 420ms var(--token-ease-out) 80ms both;
   }
 }
 
-/* M6 · Transición entre páginas (View Transitions): la cabecera se queda y el contenido se funde. */
 @supports (view-transition-name: none) {
   .site-header {
     view-transition-name: site-header;
   }
   ::view-transition-old(root),
   ::view-transition-new(root) {
-    animation-duration: var(--token-dur-fast);
+    animation-duration: var(--token-dur-base);
     animation-timing-function: var(--token-ease-out);
   }
 }
@@ -419,11 +291,8 @@
     scroll-behavior: auto;
   }
   .reveal-line,
-  .reveal-glow,
+  .reveal-ring,
   .fade-up,
-  .thread-animated .thread-base,
-  .thread-animated .thread-lit,
-  .thread-animated .thread-node,
   .thread-animated .thread-ignite,
   .thread-animated .thread-bloom {
     animation: none !important;
@@ -457,23 +326,6 @@
     line-height: 1.6;
     -webkit-text-size-adjust: 100%;
   }
-  /* Luz ambiental: la niebla azul de arriba, fija en la pantalla; con el scroll cambia de lugar y de tono. */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background: radial-gradient(
-      ellipse 90% 62vh at var(--amb-x) -10vh,
-      color-mix(
-        in srgb,
-        color-mix(in srgb, var(--token-accent) calc(var(--amb) * 60%), var(--token-bg-glow)) 72%,
-        transparent
-      ),
-      transparent
-    );
-  }
   :focus-visible {
     outline: 3px solid var(--token-primary);
     outline-offset: 2px;
@@ -485,6 +337,17 @@
   }
   p {
     text-wrap: pretty;
+  }
+  /* Red de seguridad: una palabra sin cortes (una URL, un nombre larguísimo) se parte en vez de ensanchar la página. */
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  li,
+  blockquote,
+  a {
+    overflow-wrap: anywhere;
   }
   ::selection {
     background: color-mix(in srgb, var(--token-primary) 40%, transparent);
@@ -505,12 +368,14 @@
     font-weight: 600;
     line-height: 1;
     text-decoration: none;
-    transition-property: transform, background-color, border-color, color;
-    transition-duration: var(--token-dur-fast);
-    transition-timing-function: var(--token-ease-out);
+    transition:
+      transform var(--token-dur-press) var(--token-ease-out),
+      background-color var(--token-dur-fast) var(--token-ease-out),
+      border-color var(--token-dur-fast) var(--token-ease-out),
+      color var(--token-dur-fast) var(--token-ease-out);
   }
   .btn:active:not(:disabled) {
-    transform: scale(0.96);
+    transform: scale(0.97);
   }
   /* Acción principal de una vista (CTA): 48 px y letra de cuerpo. */
   .btn-lg {
@@ -524,19 +389,22 @@
   .btn-primary {
     background-color: var(--token-primary);
     color: var(--token-primary-contrast);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25);
   }
-  .btn-primary:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--token-primary) 85%, white);
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover:not(:disabled) {
+      background-color: color-mix(in srgb, var(--token-primary) 85%, white);
+    }
   }
   .btn-secondary {
     border: 1px solid var(--token-border);
-    background: var(--token-glass);
+    background: transparent;
     color: var(--token-text);
   }
-  .btn-secondary:hover:not(:disabled) {
-    border-color: var(--token-primary);
-    background: color-mix(in srgb, var(--token-primary) 10%, var(--token-glass));
+  @media (hover: hover) and (pointer: fine) {
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--token-primary);
+      background: color-mix(in srgb, var(--token-primary) 10%, transparent);
+    }
   }
 
   /* Filtros y letras: píldoras que se «encienden» al elegirlas (aria-pressed). */
@@ -547,16 +415,17 @@
     justify-content: center;
     border-radius: 9999px;
     border: 1px solid var(--token-border);
-    background: var(--token-glass);
+    background: var(--token-surface);
     padding: 0 1.1rem;
     font-size: 0.875rem;
     transition:
-      border-color 200ms ease,
-      background-color 200ms ease,
-      box-shadow 200ms ease;
+      border-color var(--token-dur-fast) var(--token-ease-out),
+      background-color var(--token-dur-fast) var(--token-ease-out);
   }
-  .chip:hover:not(:disabled) {
-    border-color: var(--token-primary);
+  @media (hover: hover) and (pointer: fine) {
+    .chip:hover:not(:disabled) {
+      border-color: var(--token-primary);
+    }
   }
   .chip[aria-pressed='true'] {
     border-color: var(--token-primary);
@@ -586,21 +455,25 @@
     cursor: pointer;
     align-items: center;
     gap: 0.9rem;
-    border-radius: var(--token-radius-md);
+    border-radius: var(--token-radius-xs);
     border: 1px solid var(--token-line);
-    background: var(--token-surface);
+    border-left: 2px solid var(--token-line);
+    background: transparent;
     padding: 0.8rem 1.1rem;
-    transition-property: border-color, background-color, box-shadow;
+    transition-property: border-color, background-color;
     transition-duration: var(--token-dur-fast);
     transition-timing-function: var(--token-ease-out);
   }
-  .option:hover {
-    border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
+  @media (hover: hover) and (pointer: fine) {
+    .option:hover {
+      border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
+    }
   }
+  /* Elegida: filete cian de 2 px a la izquierda y la marca de selección; sin halo ni sombra. */
   .option:has(input:checked) {
-    border-color: var(--token-primary);
-    background: color-mix(in srgb, var(--token-primary) 12%, var(--token-surface));
-    box-shadow: var(--token-lit-ring);
+    border-color: var(--token-line);
+    border-left-color: var(--token-primary);
+    background: color-mix(in srgb, var(--token-primary) 8%, transparent);
   }
   /* Marca de selección propia: aro que se llena de cian con una palomita (no depende solo del color). */
   .option input {
@@ -621,42 +494,48 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2304152b' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
   }
 
-  /* M5 · Enlace de texto: línea tenue fija y, al pasar el cursor o enfocar, otra cian que se desliza de izquierda a derecha. */
+  /* M5 · Enlace de texto: línea tenue fija y otra cian que se desliza de izquierda a derecha (solo transform). */
   .link-slide {
-    background-image:
-      linear-gradient(var(--token-primary), var(--token-primary)),
-      linear-gradient(
-        color-mix(in srgb, currentColor 40%, transparent),
-        color-mix(in srgb, currentColor 40%, transparent)
-      );
-    background-repeat: no-repeat;
-    background-position:
-      0 100%,
-      0 100%;
-    background-size:
-      0 1px,
-      100% 1px;
-    padding-bottom: 2px;
+    position: relative;
     text-decoration: none;
-    transition: background-size var(--token-dur-fast) var(--token-ease-out);
   }
-  .link-slide:hover,
-  .link-slide:focus-visible {
-    background-size:
-      100% 1px,
-      100% 1px;
+  .link-slide::before,
+  .link-slide::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 1px;
+    pointer-events: none;
+  }
+  .link-slide::before {
+    background: color-mix(in srgb, currentColor 40%, transparent);
+  }
+  .link-slide::after {
+    background: var(--token-primary);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--token-dur-fast) var(--token-ease-out);
+  }
+  .link-slide:focus-visible::after {
+    transform: scaleX(1);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .link-slide:hover::after {
+      transform: scaleX(1);
+    }
   }
 
   /* Banda a sangre de pantalla: fondo hundido que se extiende a los lados sin salirse del contenedor. */
   .section-band {
-    background: color-mix(in srgb, var(--token-sunken) 88%, transparent);
-    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--token-sunken) 88%, transparent);
+    background: var(--token-sunken);
+    box-shadow: 0 0 0 100vmax var(--token-sunken);
     clip-path: inset(0 -100vmax);
   }
   /* Banda elevada: más clara que el fondo; alterna con la hundida para dar ritmo por bandas. */
   .section-band-raised {
-    background: color-mix(in srgb, var(--token-surface) 88%, transparent);
-    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--token-surface) 88%, transparent);
+    background: var(--token-surface);
+    box-shadow: 0 0 0 100vmax var(--token-surface);
     clip-path: inset(0 -100vmax);
   }
 
@@ -672,10 +551,15 @@
     transition-duration: var(--token-dur-fast);
     transition-timing-function: var(--token-ease-out);
   }
-  .card-link:hover,
   .card-link:focus-visible {
     background: var(--token-surface-alt);
     border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .card-link:hover {
+      background: var(--token-surface-alt);
+      border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
+    }
   }
 
   /* Titulares: serifa Cinzel en color sólido. Display = héroe; page-title = h1 de toda página; section-title = h2. */
@@ -687,7 +571,7 @@
   }
   .display-title {
     font-size: var(--token-text-display);
-    font-weight: 700;
+    font-weight: var(--token-weight-display);
     line-height: var(--token-leading-display);
   }
   .page-title {
@@ -697,8 +581,12 @@
   }
   .section-title {
     font-size: var(--token-text-h2);
-    font-weight: 600;
+    font-weight: var(--token-weight-display);
     line-height: var(--token-leading-heading);
+  }
+  /* Énfasis de un titular: la palabra destacada sube de peso dentro de la misma familia (no cambia de color). */
+  .emph {
+    font-weight: var(--token-weight-emphasis);
   }
   /* Etiquetas pequeñas en MAYÚSCULAS con mucho tracking: solo donde dan información (a qué quiz, qué pregunta). */
   .label {
@@ -714,6 +602,111 @@
     letter-spacing: 0.24em;
     text-transform: uppercase;
     color: var(--token-primary);
+  }
+  /* Placa: el objeto-libro de la página. Sin portada real es una portada tipográfica: el nombre del sitio en Cinzel
+     dentro de un doble filete fino. Con portada, la imagen ocupa su lugar con la misma proporción. */
+  .plate {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    container-type: inline-size;
+    aspect-ratio: 2 / 3;
+    border-radius: var(--token-radius-xs);
+    background: var(--token-surface);
+    box-shadow: var(--token-elev-2);
+    text-align: center;
+  }
+  .plate-portrait {
+    aspect-ratio: 4 / 5;
+  }
+  .plate::before,
+  .plate::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    border: 1px solid color-mix(in srgb, var(--token-border) 60%, transparent);
+  }
+  .plate::before {
+    inset: 0.75rem;
+  }
+  .plate::after {
+    inset: calc(0.75rem + 5px);
+    border-color: color-mix(in srgb, var(--token-border) 30%, transparent);
+  }
+  .plate-kicker,
+  .plate-name,
+  .plate-initial {
+    margin: 0;
+    font-family: var(--token-font-display);
+    text-transform: uppercase;
+  }
+  .plate-kicker {
+    margin-bottom: 4cqw;
+    padding-left: 0.42em;
+    font-size: 5.2cqw;
+    font-weight: 500;
+    letter-spacing: 0.42em;
+  }
+  .plate-name {
+    padding-left: 0.1em;
+    font-size: 10.5cqw;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: 0.1em;
+  }
+  .plate-initial {
+    font-size: 38cqw;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .plate-rule {
+    width: 14cqw;
+    height: 1px;
+    margin-top: 6cqw;
+    background: var(--token-border);
+  }
+  /* Barra flotante en píldora (estilo del ejemplo): vidrio fino, borde de 1 px, sin sombra pesada. */
+  .nav-pill {
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-pill);
+    background: var(--token-glass);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    backdrop-filter: blur(16px) saturate(1.3);
+  }
+  .nav-menu {
+    border: 1px solid var(--token-line);
+    border-radius: 1.5rem;
+    background: color-mix(in srgb, var(--token-surface) 98%, transparent);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+  /* Tarjeta centrada de ingreso y registro. */
+  .auth-card {
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-xl);
+    background: var(--token-glass);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+  /* Degradado del inicio: dos manchas (cian y lavanda) que se desplazan muy despacio; solo transform. */
+  .hero-mesh {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: min(95dvh, 52rem);
+    overflow: clip;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .hero-mesh::before {
+    content: '';
+    position: absolute;
+    inset: -20% -20%;
+    background:
+      radial-gradient(38% 45% at 22% 32%, rgb(63 216 255 / 0.2), transparent 70%),
+      radial-gradient(42% 50% at 78% 38%, rgb(168 155 255 / 0.24), transparent 70%),
+      radial-gradient(36% 38% at 50% 68%, rgb(66 120 176 / 0.28), transparent 70%);
   }
   /* Marco de imágenes (portadas, avatar, resultado): un contorno de 1 px, sin resplandor. */
   .img-frame {

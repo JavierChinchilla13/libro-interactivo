@@ -43,11 +43,11 @@ export function PageHeader({
 }) {
   return (
     <div className="fade-up mb-7 flex flex-wrap items-start justify-between gap-3">
-      <div>
+      <div className="min-w-0">
         <h1 className="page-title">{title}</h1>
         {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
       </div>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      {actions ? <div className="flex min-w-0 max-w-full flex-wrap gap-2">{actions}</div> : null}
     </div>
   );
 }
@@ -138,7 +138,7 @@ export function Tabs<T extends string>({
           aria-selected={tab.id === active}
           aria-controls={`panel-${tab.id}`}
           onClick={() => onChange(tab.id)}
-          className={`-mb-px flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-medium ${
+          className={`-mb-px flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-medium transition-colors duration-(--token-dur-fast) ease-token-out ${
             tab.id === active
               ? 'border-primary text-text'
               : 'border-transparent text-muted hover:text-text'

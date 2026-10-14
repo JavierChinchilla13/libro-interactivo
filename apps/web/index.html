@@ -3,10 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Plataforma interactiva de la saga Memorias." />
+    <meta name="description" content="Universo Memorias: la plataforma interactiva de la saga." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#06142b" />
     <title>Universo Memorias</title>
+    <!--
+      Pedidos tempranos: la portada necesita /api/site y /api/books para pintarse y el JS de la app tarda en llegar. Se
+      piden aquí y la app reutiliza las respuestas (una vez cada una). Si algo falla, la app pide todo por su cuenta.
+    -->
+    <script>
+      (function () {
+        var early = (window.__early = {});
+        function request(path) {
+          return (early[path] = fetch('/api' + path, { credentials: 'include' }).then(
+            function (response) {
+              return response;
+            },
+            function () {
+              return null;
+            },
+          ));
+        }
+        request('/site');
+        request('/books');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

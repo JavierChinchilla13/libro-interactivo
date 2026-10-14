@@ -42,4 +42,47 @@ describe('apiRequest', () => {
     expect(error).toBeInstanceOf(ApiClientError);
     expect((error as ApiClientError).code).toBe('NETWORK');
   });
+
+  describe('respuestas tempranas de index.html', () => {
+    const ok = { status: 'ok', db: 'up', uptimeSeconds: 12 };
+    afterEach(() => {
+      delete (window as unknown as { __early?: unknown }).__early;
+    });
+
+    it('usa la respuesta que ya se pidió, una sola vez, sin repetir la petición', async () => {
+      const fetchMock = vi.fn(async () => new Response(JSON.stringify(ok), { status: 200 }));
+      vi.stubGlobal('fetch', fetchMock);
+      (window as unknown as { __early: unknown }).__early = {
+        '/health': Promise.resolve(new Response(JSON.stringify(ok), { status: 200 })),
+      };
+      await expect(apiRequest('/health', healthResponseSchema)).resolves.toMatchObject({
+        status: 'ok',
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+      // La segunda vez ya no hay respuesta temprana: pide como siempre.
+      await apiRequest('/health', healthResponseSchema);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('si la petición temprana falló, pide por su cuenta', async () => {
+      const fetchMock = vi.fn(async () => new Response(JSON.stringify(ok), { status: 200 }));
+      vi.stubGlobal('fetch', fetchMock);
+      (window as unknown as { __early: unknown }).__early = { '/health': Promise.resolve(null) };
+      await apiRequest('/health', healthResponseSchema);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('un error del API en la respuesta temprana se trata igual que en una petición normal', async () => {
+      (window as unknown as { __early: unknown }).__early = {
+        '/health': Promise.resolve(
+          new Response(JSON.stringify({ error: { code: 'FORBIDDEN', message: 'No' } }), {
+            status: 403,
+          }),
+        ),
+      };
+      await expect(apiRequest('/health', healthResponseSchema)).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+      });
+    });
+  });
 });

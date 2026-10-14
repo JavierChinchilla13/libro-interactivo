@@ -1,7 +1,7 @@
 import type { ProgressResponse } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
-import { Alert, Badge, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
+import { Alert, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
 import { ThreadItem, ThreadList } from '../../shared/ui/ThreadList';
 import { errorMessage } from '../../shared/api/messages';
 import { useSession } from '../auth/session';
@@ -28,9 +28,13 @@ function ExperienceStep({ experience, primary }: { experience: Experience; prima
       <p className="label tabular-nums">Quiz {experience.order}</p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <h3 className="text-lg font-semibold">{experience.title}</h3>
-        {experience.status === 'completed' ? <Badge tone="success">Completado</Badge> : null}
-        {experience.status === 'available' ? <Badge tone="primary">Disponible</Badge> : null}
-        {experience.status === 'locked' ? <Badge>Bloqueado</Badge> : null}
+        {experience.status === 'completed' ? (
+          <span className="label !text-success">Completado</span>
+        ) : null}
+        {experience.status === 'available' ? (
+          <span className="label !text-primary">Disponible</span>
+        ) : null}
+        {experience.status === 'locked' ? <span className="label">Bloqueado</span> : null}
       </div>
 
       {experience.status === 'locked' ? (
@@ -100,12 +104,12 @@ export function DashboardPage() {
         subtitle={book && books.length <= 1 ? book.title : undefined}
         actions={
           book && books.length > 1 ? (
-            <label className="flex items-center gap-2 text-sm text-muted">
+            <label className="flex min-w-0 max-w-full items-center gap-2 text-sm text-muted">
               <span>Libro</span>
               <select
                 value={book.id}
                 onChange={(event) => select(event.target.value)}
-                className="min-h-11 rounded-token border border-border bg-surface px-2 text-text"
+                className="min-h-11 min-w-0 max-w-full rounded-token border border-border bg-surface px-2 text-text"
               >
                 {books.map((candidate) => (
                   <option key={candidate.id} value={candidate.id}>
@@ -183,7 +187,7 @@ export function DashboardPage() {
                   Se desbloquean al completar todos los quizzes y el juego de este libro.
                 </p>
                 <span>
-                  <Badge>Bloqueados</Badge>
+                  <span className="label">Bloqueados</span>
                 </span>
               </>
             )}

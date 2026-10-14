@@ -1,6 +1,7 @@
 import {
   changePasswordRequestSchema,
   forgotPasswordRequestSchema,
+  googleLoginRequestSchema,
   loginRequestSchema,
   registerRequestSchema,
   resetPasswordRequestSchema,
@@ -15,6 +16,7 @@ import type { Guards } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 import type { AuthService } from '../services/auth.service.js';
+import type { GoogleVerifier } from '../services/google.service.js';
 import type { PasswordResetService } from '../services/passwordReset.service.js';
 
 export interface AuthRouterDeps {
@@ -24,6 +26,8 @@ export interface AuthRouterDeps {
   guards: Guards;
   env: Pick<Env, 'NODE_ENV' | 'COOKIE_DOMAIN'>;
   limits: Limits;
+  /** Sin verificador (no hay GOOGLE_CLIENT_ID) la ruta responde 404. */
+  google?: GoogleVerifier | undefined;
 }
 
 export function createAuthRouter({
@@ -33,8 +37,9 @@ export function createAuthRouter({
   guards,
   env,
   limits,
+  google,
 }: AuthRouterDeps): Router {
-  const controller = createAuthController(auth, env);
+  const controller = createAuthController(auth, env, google);
   const recoveryController = createRecoveryController(recovery);
   const router = Router();
 
@@ -49,6 +54,12 @@ export function createAuthRouter({
     createRateLimiter(limits.login),
     validate({ body: loginRequestSchema }),
     controller.login,
+  );
+  router.post(
+    '/google',
+    createRateLimiter(limits.login),
+    validate({ body: googleLoginRequestSchema }),
+    controller.googleLogin,
   );
   router.post('/refresh', createRateLimiter(limits.refresh), controller.refresh);
   router.post('/logout', controller.logout);

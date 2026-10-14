@@ -34,6 +34,7 @@ import { createExtraService } from './services/extra.service.js';
 import { createAccountService } from './services/account.service.js';
 import { createAuthService, type AuthService } from './services/auth.service.js';
 import { createContactService } from './services/contact.service.js';
+import { createGoogleVerifier, type GoogleVerifier } from './services/google.service.js';
 import { createPasswordResetService } from './services/passwordReset.service.js';
 import { createProgressService } from './services/progress.service.js';
 import { cryptoRandomInt, type RandomInt } from './services/quiz-engine.js';
@@ -65,6 +66,7 @@ export interface AppDeps {
     | 'GMAIL_USER'
     | 'GMAIL_APP_PASSWORD'
     | 'RESEND_API_KEY'
+    | 'GOOGLE_CLIENT_ID'
     | 'CONTACT_RECIPIENT_EMAIL'
     | 'REQUIRE_QR_UNLOCK'
     | 'ACCESS_TOKEN_SECRET'
@@ -90,6 +92,8 @@ export interface AppDeps {
   tasks?: BackgroundTasks;
   /** Azar del barajado y de los empates de quizzes; por defecto `crypto`. Inyectable para pruebas con semilla. */
   random?: RandomInt;
+  /** Verificador de ingreso con Google; por defecto el real si hay GOOGLE_CLIENT_ID. */
+  google?: GoogleVerifier;
   /** Proveedor de imágenes (firma de subida); por defecto Cloudinary si hay credenciales. */
   images?: ImageProvider;
   /** Almacenamiento privado S3-compatible; por defecto el real si hay credenciales o uno en memoria. */
@@ -192,6 +196,9 @@ export function createApp(
   app.use(
     '/api',
     createApiRouter({
+      google:
+        deps.google ??
+        (deps.env.GOOGLE_CLIENT_ID ? createGoogleVerifier(deps.env.GOOGLE_CLIENT_ID) : undefined),
       env: deps.env,
       isDbUp: deps.isDbUp,
       auth,

@@ -10,8 +10,8 @@ import {
 
 /** Controles de formulario con los design tokens. Mobile-first: objetivos táctiles de 44 px. */
 
-const field =
-  'w-full min-h-11 rounded-xl border border-border bg-bg/60 px-3.5 py-2 text-base text-text transition placeholder:text-muted focus:border-primary focus:shadow-focus focus:outline-none disabled:opacity-60';
+export const fieldClass =
+  'w-full min-w-0 max-w-full min-h-11 rounded-xl border border-border bg-bg/60 px-3.5 py-2 text-base text-text transition-[border-color,box-shadow] duration-(--token-dur-fast) ease-token-out placeholder:text-muted focus:border-primary focus:shadow-focus focus:outline-none disabled:opacity-60';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 /** `md` = 44 px; `lg` = acción principal (48 px, letra mayor); `compact` = menos relleno horizontal. */
@@ -71,7 +71,7 @@ export function Field({ label, hint, error, required, children, className = '' }
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
   return (
-    <div className={`flex flex-col gap-1 ${className}`}>
+    <div className={`flex min-w-0 flex-col gap-1 ${className}`}>
       <label htmlFor={id} className="text-sm font-medium">
         {label}
         {required ? <span aria-hidden="true"> *</span> : null}
@@ -113,7 +113,7 @@ export function TextField({ label, hint, error, required, wrapperClassName, ...r
           aria-describedby={describedBy}
           aria-invalid={invalid || undefined}
           required={required}
-          className={field}
+          className={fieldClass}
           {...rest}
         />
       )}
@@ -151,7 +151,7 @@ export function TextAreaField({
           aria-describedby={describedBy}
           aria-invalid={invalid || undefined}
           required={required}
-          className={field}
+          className={fieldClass}
           {...rest}
         />
       )}
@@ -192,7 +192,7 @@ export function SelectField({
           aria-describedby={describedBy}
           aria-invalid={invalid || undefined}
           required={required}
-          className={field}
+          className={fieldClass}
           {...rest}
         >
           {placeholder !== undefined ? <option value="">{placeholder}</option> : null}

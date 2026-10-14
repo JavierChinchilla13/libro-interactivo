@@ -40,7 +40,7 @@ export function ResultView({
           src={thumbUrl(media.image.url, 900)}
           alt={media.image.alt}
           style={step(1)}
-          className="img-frame fade-up max-h-96 w-auto max-w-full self-start rounded-token-md"
+          className="img-frame fade-up max-h-96 w-auto max-w-full self-start rounded-token-xs"
         />
       ) : null}
       {media?.kind === 'video' ? (
@@ -54,7 +54,7 @@ export function ResultView({
           controls
           aria-label={media.video.alt}
           style={step(1)}
-          className="img-frame fade-up max-h-96 max-w-full self-start rounded-token-md"
+          className="img-frame fade-up max-h-96 max-w-full self-start rounded-token-xs"
         />
       ) : null}
 

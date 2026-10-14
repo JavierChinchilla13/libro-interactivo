@@ -70,7 +70,7 @@ export function PostsPage() {
   const posts = query.data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex min-h-[85dvh] flex-col gap-5">
       <PageHeader title="Actualizaciones" subtitle="Ferias, eventos y novedades de la autora." />
       <div role="group" aria-label="Filtrar por tipo" className="flex flex-wrap gap-2">
         {FILTERS.map((filter) => (

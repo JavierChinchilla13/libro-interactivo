@@ -5,9 +5,10 @@ import { ApiClientError } from '../../shared/api/client';
 import { fieldErrors } from '../../shared/api/messages';
 import { Button, TextField } from '../../shared/ui/controls';
 import { Alert } from '../../shared/ui/layout';
-import { AuthShell, QR_TAGLINE } from './AuthShell';
+import { AuthShell, OrDivider, QR_TAGLINE } from './AuthShell';
+import { GOOGLE_CLIENT_ID, GoogleButton } from './GoogleButton';
 import { PasswordField } from './PasswordField';
-import { homeFor, useRegister, useSession } from './session';
+import { homeFor, useGoogleLogin, useRegister, useSession } from './session';
 
 /**
  * Crear cuenta. Valida con la política del servidor mientras se escribe; el correo
@@ -16,6 +17,7 @@ import { homeFor, useRegister, useSession } from './session';
 export function RegisterPage() {
   const session = useSession();
   const register = useRegister();
+  const google = useGoogleLogin();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
@@ -53,6 +55,19 @@ export function RegisterPage() {
 
   return (
     <AuthShell title="Crea tu cuenta" tagline={QR_TAGLINE}>
+      {GOOGLE_CLIENT_ID ? (
+        <>
+          <GoogleButton
+            disabled={google.isPending}
+            onCredential={(credential) =>
+              google.mutate(credential, {
+                onSuccess: (data) => void navigate(from ?? homeFor(data.user), { replace: true }),
+              })
+            }
+          />
+          <OrDivider />
+        </>
+      ) : null}
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <TextField
           label="Nombre"
@@ -84,7 +99,7 @@ export function RegisterPage() {
         <Button type="submit" loading={register.isPending}>
           Crear cuenta
         </Button>
-        <p className="text-sm text-muted">
+        <p className="text-center text-sm text-muted">
           ¿Ya tienes cuenta?{' '}
           <Link to="/ingresar" state={location.state} className="underline">
             Ingresa
