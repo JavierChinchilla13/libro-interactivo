@@ -26,3 +26,21 @@ export function LockIcon({
     </svg>
   );
 }
+
+/** Flecha hacia arriba y a la derecha: un enlace que abre fuera del sitio. */
+export function ArrowUpRightIcon({ className = 'size-5' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={`shrink-0 ${className}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M7 17 17 7M8 7h9v9" />
+    </svg>
+  );
+}

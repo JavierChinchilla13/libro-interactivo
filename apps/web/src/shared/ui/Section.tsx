@@ -15,15 +15,15 @@ const bands: Record<Tone, string> = {
   raised: 'section-band-raised',
 };
 
-/** El titular con una palabra de acento (color de acción), si `accent` aparece en él. */
-function Accented({ text, accent }: { text: string; accent?: string | undefined }) {
-  const at = accent ? text.lastIndexOf(accent) : -1;
-  if (!accent || at === -1) return <>{text}</>;
+/** El titular con una palabra de énfasis: sube de peso dentro de Cinzel (no cambia de color), si aparece en él. */
+function Emphasized({ text, word }: { text: string; word?: string | undefined }) {
+  const at = word ? text.lastIndexOf(word) : -1;
+  if (!word || at === -1) return <>{text}</>;
   return (
     <>
       {text.slice(0, at)}
-      <span className="text-primary">{accent}</span>
-      {text.slice(at + accent.length)}
+      <span className="emph">{word}</span>
+      {text.slice(at + word.length)}
     </>
   );
 }
@@ -33,10 +33,13 @@ function Accented({ text, accent }: { text: string; accent?: string | undefined 
  * - `tone`: `sunken` (banda más oscura) o `raised` (banda más clara), a sangre de pantalla; `base` va sobre el fondo.
  * - `space`: cuánto aire lleva (tight / regular / loose).
  * - `tall`: una idea por pantalla: la sección ocupa buena parte del alto y centra su contenido.
- * - `accent`: una palabra del título en el color de acción.
- * - `numeral`: composición editorial en dos columnas (escritorio): título pegajoso a la izquierda con un numeral
- *   grande («01») y el contenido a la derecha.
- * Cada sección lleva su punto sobre el carril de lectura (`PageRail`) y aparece al entrar en pantalla.
+ * - `emphasis`: una palabra del título que sube de peso.
+ * - `split`: composición editorial (escritorio): un filete fino arriba, el título pegajoso a la izquierda y el
+ *   contenido a la derecha. En el celular todo va en una columna bajo el mismo filete.
+ * - `aside`: composición de objeto (escritorio): una pieza (portada, retrato) pegajosa a la izquierda y, a su
+ *   derecha, el título y el contenido. En el celular el orden es título, pieza y contenido.
+ * - `align="center"`: el título y la introducción van centrados sobre el contenido.
+ * La sección aparece al entrar en pantalla (solo con CSS, ver `.reveal`).
  */
 export function Section({
   id,
@@ -45,8 +48,10 @@ export function Section({
   tone = 'base',
   space = 'regular',
   tall = false,
-  accent,
-  numeral,
+  emphasis,
+  split = false,
+  aside,
+  align = 'start',
   className = '',
   children,
 }: {
@@ -56,49 +61,69 @@ export function Section({
   tone?: Tone;
   space?: Space;
   tall?: boolean;
-  accent?: string;
-  numeral?: string;
+  emphasis?: string;
+  split?: boolean;
+  aside?: ReactNode;
+  align?: 'start' | 'center';
   className?: string;
   children: ReactNode;
 }) {
+  const centered = align === 'center';
   const head = (
-    <>
-      {numeral ? (
-        <p aria-hidden="true" className="section-numeral">
-          {numeral}
+    <div className={centered ? 'text-center' : ''}>
+      <h2 id={`${id}-title`} className="section-title reveal">
+        <Emphasized text={title} word={emphasis} />
+      </h2>
+      {intro ? (
+        <p
+          className={`mt-3 max-w-[var(--token-measure)] font-read text-xl text-muted ${centered ? 'mx-auto' : ''}`}
+        >
+          {intro}
         </p>
       ) : null}
-      <h2 id={`${id}-title`} className="section-title reveal">
-        <Accented text={title} accent={accent} />
-      </h2>
-      {intro ? <p className="mt-3 max-w-prose text-muted">{intro}</p> : null}
-    </>
+    </div>
   );
+  const body = (
+    <div className="reveal" style={{ ['--i' as string]: 1 }}>
+      {children}
+    </div>
+  );
+  let layout: ReactNode;
+  if (aside) {
+    // En el celular el título va antes que la pieza: se reordena con `order`.
+    layout = (
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-x-16 lg:gap-y-8">
+        <div className="max-lg:order-2 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-28 lg:self-start">
+          {aside}
+        </div>
+        <div className="max-lg:order-1 lg:col-start-2 lg:row-start-1 lg:self-end">{head}</div>
+        <div className="max-lg:order-3 lg:col-start-2 lg:row-start-2">{body}</div>
+      </div>
+    );
+  } else if (split) {
+    layout = (
+      <div className="border-t border-line pt-8 lg:grid lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16 lg:pt-10">
+        <div className="lg:sticky lg:top-28 lg:self-start">{head}</div>
+        <div className="mt-7 lg:mt-0">{body}</div>
+      </div>
+    );
+  } else {
+    layout = (
+      <>
+        {head}
+        <div className="mt-7 lg:mt-10">{body}</div>
+      </>
+    );
+  }
   return (
     <section
       id={id}
       aria-labelledby={`${id}-title`}
-      data-space={space}
       className={`relative scroll-mt-24 ${inside[space]} ${bands[tone]} ${
         tall ? 'flex min-h-[min(70dvh,40rem)] flex-col justify-center' : ''
       } ${className}`}
     >
-      <span aria-hidden="true" className="section-node" />
-      {numeral ? (
-        <div className="lg:grid lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
-          <div className="lg:sticky lg:top-28 lg:self-start">{head}</div>
-          <div className="reveal mt-7 lg:mt-0" style={{ ['--i' as string]: 1 }}>
-            {children}
-          </div>
-        </div>
-      ) : (
-        <>
-          {head}
-          <div className="reveal mt-7" style={{ ['--i' as string]: 1 }}>
-            {children}
-          </div>
-        </>
-      )}
+      {layout}
     </section>
   );
 }

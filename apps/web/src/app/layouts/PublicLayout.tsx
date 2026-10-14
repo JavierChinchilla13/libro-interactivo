@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router';
+import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { homeFor, useSession } from '../../features/auth/session';
 import { publicApi, publicKeys } from '../../features/home/api';
 import { Brand } from '../../shared/ui/Brand';
-import { MAIN_ID, navTab, SkipLink } from '../../shared/ui/nav';
+import { MAIN_ID, navTabLg, SkipLink } from '../../shared/ui/nav';
 
 const ctaClass = () => 'btn btn-primary btn-compact';
 
@@ -13,6 +13,7 @@ const FOOTER_LINKS = [
   { to: '/actualizaciones', label: 'Actualizaciones' },
   { to: '/fan-arts', label: 'Fan arts' },
   { to: '/contacto', label: 'Contacto' },
+  { to: '/#comprar', label: 'Cómo comprar' },
 ] as const;
 
 const footerLink = 'link-slide inline-flex min-h-11 items-center hover:text-text';
@@ -22,17 +23,19 @@ export function PublicLayout() {
   const session = useSession();
   const user = session.data;
   const [open, setOpen] = useState(false);
+  // La portada no se anima al entrar: lo primero que se ve (titular y portada) es lo que mide el LCP.
+  const isHome = useLocation().pathname === '/';
   const site = useQuery({ queryKey: publicKeys.site, queryFn: publicApi.site, retry: false });
   const social = site.data?.social ?? [];
   return (
     <div className="flex min-h-dvh flex-col">
       <SkipLink />
-      <header className="site-header sticky top-0 z-40 border-b border-line bg-bg/75 backdrop-blur-xl">
+      <header className="site-header sticky top-0 z-40 border-b border-line bg-bg">
         <div className="mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-3 px-4 py-2.5">
           <Brand />
           <button
             type="button"
-            className="btn btn-secondary btn-compact md:hidden"
+            className="btn btn-secondary btn-compact lg:hidden"
             aria-expanded={open}
             aria-controls="menu-principal"
             onClick={() => setOpen((value) => !value)}
@@ -43,30 +46,36 @@ export function PublicLayout() {
             id="menu-principal"
             aria-label="Principal"
             onClick={() => setOpen(false)}
-            className={`${open ? 'flex' : 'hidden'} absolute inset-x-0 top-full flex-col gap-1 border-b border-line bg-bg p-3 md:static md:flex md:flex-row md:items-center md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none`}
+            className={`${open ? 'flex' : 'hidden'} absolute inset-x-0 top-full flex-col gap-1 border-b border-line bg-bg p-3 lg:static lg:flex lg:flex-row lg:items-center lg:border-0 lg:bg-transparent lg:p-0`}
           >
-            <NavLink to="/" end viewTransition className={navTab}>
+            <NavLink to="/" end viewTransition className={navTabLg}>
               Inicio
             </NavLink>
-            <NavLink to="/wiki" viewTransition className={navTab}>
+            <NavLink to="/wiki" viewTransition className={navTabLg}>
               Wiki
             </NavLink>
-            <NavLink to="/actualizaciones" viewTransition className={navTab}>
+            <NavLink to="/actualizaciones" viewTransition className={navTabLg}>
               Actualizaciones
             </NavLink>
-            <NavLink to="/fan-arts" viewTransition className={navTab}>
+            <NavLink to="/fan-arts" viewTransition className={navTabLg}>
               Fan arts
             </NavLink>
-            <NavLink to="/contacto" viewTransition className={navTab}>
+            <NavLink to="/contacto" viewTransition className={navTabLg}>
               Contacto
             </NavLink>
+            <Link
+              to={{ pathname: '/', hash: '#comprar' }}
+              className={navTabLg({ isActive: false })}
+            >
+              Comprar
+            </Link>
             {user ? (
               <NavLink to={homeFor(user)} className={ctaClass}>
                 Mi panel
               </NavLink>
             ) : (
               <>
-                <NavLink to="/ingresar" viewTransition className={navTab}>
+                <NavLink to="/ingresar" viewTransition className={navTabLg}>
                   Ingresar
                 </NavLink>
                 <NavLink to="/registro" className={ctaClass}>
@@ -82,7 +91,7 @@ export function PublicLayout() {
         tabIndex={-1}
         className="mx-auto w-full max-w-[var(--token-page-max)] flex-1 px-4 py-8 focus:outline-none sm:py-12"
       >
-        <div className="fade-up">
+        <div className={isHome ? undefined : 'fade-up'}>
           <Outlet />
         </div>
       </main>

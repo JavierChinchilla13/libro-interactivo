@@ -67,7 +67,7 @@ export function RedeemPage() {
   if (resolved.isError) {
     const network = resolved.error instanceof ApiClientError && resolved.error.code === 'NETWORK';
     return (
-      <AuthShell title="Código no válido" lit={0}>
+      <AuthShell title="Código no válido">
         <Alert>
           {network
             ? 'No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.'
@@ -79,7 +79,7 @@ export function RedeemPage() {
 
   const info = resolved.data;
   return (
-    <AuthShell title="Desbloquear contenido" lit={redeem.isSuccess ? 1 : 0} tagline={QR_TAGLINE}>
+    <AuthShell title="Desbloquear contenido" tagline={QR_TAGLINE}>
       <div className="flex flex-col gap-4">
         <p>
           <span className="text-muted">{info.bookTitle}</span>
