@@ -311,6 +311,17 @@
   p {
     text-wrap: pretty;
   }
+  /* Red de seguridad: una palabra sin cortes (una URL, un nombre larguísimo) se parte en vez de ensanchar la página. */
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  li,
+  blockquote,
+  a {
+    overflow-wrap: anywhere;
+  }
   ::selection {
     background: color-mix(in srgb, var(--token-primary) 40%, transparent);
   }

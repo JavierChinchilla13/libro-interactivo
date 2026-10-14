@@ -77,7 +77,7 @@ export function Hero({
     <section
       aria-labelledby="hero-title"
       aria-busy={status === 'loading' || undefined}
-      className="relative grid items-center gap-10 py-4 md:min-h-[min(80dvh,46rem)] md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-14 md:py-14"
+      className="relative grid grid-cols-[minmax(0,1fr)] items-center gap-10 py-4 md:min-h-[min(80dvh,46rem)] md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-14 md:py-14"
     >
       <div className="flex max-w-3xl flex-col gap-6">
         {status === 'loading' ? (

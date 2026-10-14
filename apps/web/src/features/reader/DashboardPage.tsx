@@ -100,12 +100,12 @@ export function DashboardPage() {
         subtitle={book && books.length <= 1 ? book.title : undefined}
         actions={
           book && books.length > 1 ? (
-            <label className="flex items-center gap-2 text-sm text-muted">
+            <label className="flex min-w-0 max-w-full items-center gap-2 text-sm text-muted">
               <span>Libro</span>
               <select
                 value={book.id}
                 onChange={(event) => select(event.target.value)}
-                className="min-h-11 rounded-token border border-border bg-surface px-2 text-text"
+                className="min-h-11 min-w-0 max-w-full rounded-token border border-border bg-surface px-2 text-text"
               >
                 {books.map((candidate) => (
                   <option key={candidate.id} value={candidate.id}>

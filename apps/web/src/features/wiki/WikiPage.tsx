@@ -22,6 +22,15 @@ const homeLink = (
  * autora y sin contenido: el servidor decide en cada petición según la sesión y el progreso.
  */
 export function WikiPage() {
+  // Alto mínimo: mientras carga y al llegar el contenido el pie no se mueve (CLS).
+  return (
+    <div className="min-h-[85dvh]">
+      <WikiContent />
+    </div>
+  );
+}
+
+function WikiContent() {
   const { section: slug } = useParams();
   const navigate = useNavigate();
   const viewer = useSession().data?.id ?? 'visitante';
