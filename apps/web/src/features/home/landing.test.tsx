@@ -107,13 +107,13 @@ describe('landing: sin contenido cargado', () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByText('[PLACEHOLDER] ¿Qué es el universo Memorias?')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Conoce el libro' })).not.toBeInTheDocument();
+    // Las secciones se montan tras el primer pintado del héroe.
+    expect(await screen.findByText(/Pronto publicaremos dónde conseguir/)).toBeInTheDocument();
+    expect(await screen.findByText('[PLACEHOLDER] Nombre de la autora')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Wiki del universo' })).not.toBeInTheDocument();
     expect(
       screen.queryByRole('heading', { name: /experiencia inmersiva/ }),
     ).not.toBeInTheDocument();
-    expect(screen.getByText(/Pronto publicaremos dónde conseguir/)).toBeInTheDocument();
-    expect(screen.getByText('[PLACEHOLDER] Nombre de la autora')).toBeInTheDocument();
   });
 
   it('si falla el API de ajustes muestra el nombre del universo (no un borrador) y permite reintentar', async () => {
@@ -144,7 +144,7 @@ describe('landing: sin contenido cargado', () => {
 });
 
 describe('landing: el héroe lleva al libro en la mano', () => {
-  it('sin sesión la acción principal es crear la cuenta y se explica el QR', async () => {
+  it('sin sesión la acción principal es crear la cuenta; «Comprar» vive en la cabecera', async () => {
     mockApi(full, NO_SESSION);
     renderAt('/');
     const hero = await screen.findByRole('region', { name: /Frase del universo/ });
@@ -155,15 +155,29 @@ describe('landing: el héroe lleva al libro en la mano', () => {
       'href',
       '/ingresar',
     );
-    expect(within(hero).getByText(/Escanea el código QR de tu ejemplar/)).toBeInTheDocument();
-    expect(await within(hero).findByRole('link', { name: 'Conoce el libro' })).toHaveAttribute(
+    // El héroe es solo titular, presentación y dos acciones: nada de frases ni enlaces sueltos.
+    expect(within(hero).getAllByRole('link')).toHaveLength(2);
+    expect(within(hero).queryByText(/Escanea el código QR/)).not.toBeInTheDocument();
+    const header = screen.getByRole('banner');
+    expect(within(header).getByRole('link', { name: 'Comprar' })).toHaveAttribute(
       'href',
-      '#libro',
+      '/#comprar',
     );
-    expect(within(hero).getByRole('link', { name: 'Cómo comprar el libro' })).toHaveAttribute(
+    const footer = screen.getByRole('contentinfo');
+    expect(within(footer).getByRole('link', { name: 'Cómo comprar' })).toHaveAttribute(
       'href',
-      '#comprar',
+      '/#comprar',
     );
+  });
+
+  it('el héroe va centrado y sin imagen; la portada vive en la ficha del libro', async () => {
+    mockApi(full, NO_SESSION);
+    renderAt('/');
+    const hero = await screen.findByRole('region', { name: /Frase del universo/ });
+    expect(within(hero).queryByRole('img', { name: /Portada/ })).not.toBeInTheDocument();
+    expect(hero.className).toContain('text-center');
+    const book = await screen.findByRole('region', { name: '[PLACEHOLDER] Libro 1' });
+    expect(within(book).getByRole('img', { name: 'Portada del libro 1' })).toBeInTheDocument();
   });
 
   it('con sesión la acción principal es continuar la lectura y no ofrece crear cuenta', async () => {
@@ -177,7 +191,6 @@ describe('landing: el héroe lleva al libro en la mano', () => {
     expect(
       within(hero).queryByRole('link', { name: 'Tengo el libro: crear mi cuenta' }),
     ).not.toBeInTheDocument();
-    expect(within(hero).queryByText(/Escanea el código QR/)).not.toBeInTheDocument();
   });
 
   it('mientras se comprueba la sesión no ofrece crear cuenta a quien ya la tiene', async () => {
@@ -377,8 +390,17 @@ describe('landing: con contenido', () => {
     expect(
       screen.queryByRole('region', { name: /\[PLACEHOLDER\] Libro 1/ }),
     ).not.toBeInTheDocument();
-    const hero = screen.getByRole('region', { name: /Frase del universo/ });
-    expect(within(hero).queryByRole('link', { name: 'Conoce el libro' })).not.toBeInTheDocument();
+  });
+
+  it('el inicio no lleva carril de lectura ni numerales: el hilo solo marca estado en las experiencias', async () => {
+    mockApi(full, NO_SESSION);
+    const { container } = renderAt('/');
+    await screen.findByRole('region', { name: 'Wiki del universo' });
+    expect(container.querySelector('.page-rail, .section-node, .section-numeral')).toBeNull();
+    // Los únicos puntos del hilo son los de la lista de experiencias.
+    expect(container.querySelectorAll('[data-thread]')).toHaveLength(0);
+    const experiences = screen.getByRole('region', { name: /experiencia inmersiva/ });
+    expect(within(experiences).getAllByRole('listitem')).toHaveLength(2);
   });
 
   it('la secuencia marca «Próximamente» con la fecha y «Publicado» al ya disponible', async () => {
@@ -421,6 +443,12 @@ describe('landing: con contenido', () => {
       'mailto:autora@ejemplo.com',
     );
     expect(within(author).getByRole('link', { name: 'Instagram' })).toBeInTheDocument();
+    // El formulario ya no vive en la portada: solo la invitación a la página de contacto.
+    expect(within(author).queryByLabelText(/Nombre completo/)).not.toBeInTheDocument();
+    expect(within(author).getByRole('link', { name: 'Escríbele a la autora' })).toHaveAttribute(
+      'href',
+      '/contacto',
+    );
     const footerLinks = within(screen.getByRole('list', { name: 'Redes sociales' }));
     expect(footerLinks.getByRole('link', { name: 'Instagram' })).toHaveAttribute(
       'rel',

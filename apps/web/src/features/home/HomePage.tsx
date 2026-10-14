@@ -1,8 +1,9 @@
 import type { PublicBookSummary } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router';
 import { Button } from '../../shared/ui/controls';
 import { Alert } from '../../shared/ui/layout';
-import { PageRail } from '../../shared/ui/PageRail';
 import { Statement } from '../../shared/ui/Statement';
 import { useSession } from '../auth/session';
 import { communityApi, communityKeys } from '../community/api';
@@ -62,7 +63,36 @@ export function HomePage() {
   // El héroe no espera a nadie: aparece de inmediato y solo sus textos esperan a `site`. Las secciones de abajo
   // se reservan con un relleno de altura fija (sin saltos de diseño) y entran juntas cuando todo respondió.
   const heroStatus = site.isLoading ? 'loading' : site.isError ? 'error' : 'ready';
-  const sectionsLoading = [books, detail, featuredPosts, reviews].some((query) => query.isLoading);
+  // Las secciones se montan cuando el héroe ya se pintó (su elemento más grande es el LCP): así sus letras
+  // (Newsreader) y sus imágenes no compiten con el primer pintado. Mientras tanto se ve el relleno de altura fija.
+  // Si el navegador no informa del LCP, o tarda, se montan igual (el respaldo es corto).
+  const [afterFirstPaint, setAfterFirstPaint] = useState(false);
+  useEffect(() => {
+    if (heroStatus === 'loading') return;
+    const release = () => setAfterFirstPaint(true);
+    const supported =
+      typeof PerformanceObserver !== 'undefined' &&
+      PerformanceObserver.supportedEntryTypes?.includes('largest-contentful-paint');
+    if (!supported) {
+      release();
+      return;
+    }
+    const fallback = setTimeout(release, 1200);
+    const observer = new PerformanceObserver((list) => {
+      const inHero = list.getEntries().some((entry) => {
+        const element = (entry as PerformanceEntry & { element?: Element | null }).element;
+        return Boolean(element?.closest('[aria-labelledby="hero-title"]'));
+      });
+      if (inHero) release();
+    });
+    observer.observe({ type: 'largest-contentful-paint', buffered: true });
+    return () => {
+      clearTimeout(fallback);
+      observer.disconnect();
+    };
+  }, [heroStatus]);
+  const sectionsLoading =
+    !afterFirstPaint || [books, detail, featuredPosts, reviews].some((query) => query.isLoading);
   const failed = [site, books, detail].filter((query) => query.isError);
 
   const lockMessage = site.data?.lockMessage ?? 'Bloqueado: avanza en tu lectura';
@@ -70,11 +100,17 @@ export function HomePage() {
   // La ficha del libro solo aparece si tiene algo que contar además del título.
   const showBook = book !== undefined && Boolean(book.cover || book.synopsis || book.tagline);
 
+  // Un enlace con ancla (`/#comprar`) llega antes de que las secciones existan: se desplaza cuando ya están.
+  const location = useLocation();
+  useEffect(() => {
+    if (sectionsLoading || !location.hash) return;
+    document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
+  }, [sectionsLoading, location.hash, location.key]);
+
   return (
     <div className="flex flex-col">
       <Hero
         site={site.data}
-        hasBook={showBook && !sectionsLoading}
         signedIn={Boolean(session.data)}
         sessionReady={!session.isPending}
         status={heroStatus}
@@ -98,23 +134,20 @@ export function HomePage() {
       ) : (
         <>
           <Statement text={STATEMENT} />
-          <div className="page-rail-host relative">
-            <PageRail />
-            {book && showBook ? <BookSection book={book} /> : null}
-            {book ? (
-              <Experiences
-                experiences={book.experiences}
-                lockMessage={lockMessage}
-                signedIn={Boolean(session.data)}
-              />
-            ) : null}
-            {book ? <WikiPreview tabs={book.wikiTabs} lockMessage={lockMessage} /> : null}
-            <FeaturedPosts posts={featuredPosts.data?.posts ?? []} />
-            <SagaSection books={books.data?.books ?? []} />
-            <ReviewsSection reviews={reviews.data?.reviews ?? []} />
-            <BuySection links={book?.purchaseLinks ?? []} />
-            {heroStatus === 'loading' ? null : <AuthorSection site={site.data} />}
-          </div>
+          {book && showBook ? <BookSection book={book} /> : null}
+          {book ? (
+            <Experiences
+              experiences={book.experiences}
+              lockMessage={lockMessage}
+              signedIn={Boolean(session.data)}
+            />
+          ) : null}
+          {book ? <WikiPreview tabs={book.wikiTabs} lockMessage={lockMessage} /> : null}
+          <FeaturedPosts posts={featuredPosts.data?.posts ?? []} />
+          <SagaSection books={books.data?.books ?? []} />
+          <ReviewsSection reviews={reviews.data?.reviews ?? []} />
+          <BuySection links={book?.purchaseLinks ?? []} />
+          {heroStatus === 'loading' ? null : <AuthorSection site={site.data} />}
         </>
       )}
       {sectionsLoading ? null : (

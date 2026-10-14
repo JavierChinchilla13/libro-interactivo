@@ -32,7 +32,7 @@ test.describe('códigos QR y capítulos extra', () => {
 
     await page.goto('/admin/qr'); // recarga: la lista de libros se sembró por API
     await expect(page.getByRole('link', { name: 'Códigos QR' })).toBeVisible();
-    await page.getByLabel('Libro').selectOption({ label: bookTitle });
+    await page.getByLabel('Libro', { exact: true }).selectOption({ label: bookTitle });
     await page.getByLabel('Quiz', { exact: true }).selectOption({ index: 1 });
     await page.getByRole('button', { name: 'Crear código' }).click();
 
@@ -103,7 +103,7 @@ test.describe('códigos QR y capítulos extra', () => {
     const { bookTitle } = await seedPublishedQuiz(page.request, stamp);
 
     await page.goto('/admin/extras'); // recarga: la lista de libros se sembró por API
-    await page.getByLabel('Libro').selectOption({ label: bookTitle });
+    await page.getByLabel('Libro', { exact: true }).selectOption({ label: bookTitle });
     await page.getByRole('link', { name: '+ Nuevo extra' }).click();
     await page.getByRole('textbox', { name: /^Título/ }).fill('Extra E2E');
     await page.getByRole('textbox', { name: 'Texto del capítulo' }).fill('Texto secreto del extra');
@@ -116,7 +116,7 @@ test.describe('códigos QR y capítulos extra', () => {
     await expect(page.getByText(/no cuenta como «visto»/)).toBeVisible();
 
     await page.getByRole('link', { name: '← Capítulos extra' }).click();
-    await page.getByLabel('Libro').selectOption({ label: bookTitle });
+    await page.getByLabel('Libro', { exact: true }).selectOption({ label: bookTitle });
     await expect(
       page.getByRole('row', { name: /Extra E2E.*Texto en pantalla.*Publicado/ }),
     ).toBeVisible();

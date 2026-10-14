@@ -53,7 +53,7 @@ export function RevealSequence({
       data-effect={effect}
       className="relative flex min-h-[60dvh] flex-col items-center justify-center gap-8 overflow-hidden text-center"
     >
-      <div aria-hidden="true" className="reveal-glow" />
+      <div aria-hidden="true" className="reveal-ring" />
       {/* El hilo llega y su último punto se enciende: la luz que se expande es la de ese punto. */}
       <div aria-hidden="true" className="thread-animated relative flex flex-col items-center">
         <span className="h-14 w-px bg-linear-to-b from-unlit/0 to-lit" />

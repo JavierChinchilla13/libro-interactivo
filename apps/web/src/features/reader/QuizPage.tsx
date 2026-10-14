@@ -206,7 +206,7 @@ export function QuizPage() {
           <img
             src={thumbUrl(quiz.image.url, 900)}
             alt={quiz.image.alt}
-            className="img-frame max-h-64 w-auto max-w-full self-start rounded-token-md"
+            className="img-frame max-h-64 w-auto max-w-full self-start rounded-token-xs"
           />
         ) : null}
         <div>
@@ -295,7 +295,7 @@ export function QuizPage() {
             <span
               key={item.id}
               aria-hidden="true"
-              className={`h-1.5 flex-1 rounded-full transition-colors ${position <= index ? 'bg-primary' : 'bg-unlit/40'}`}
+              className={`h-1.5 flex-1 rounded-full transition-colors duration-(--token-dur-fast) ease-token-out ${position <= index ? 'bg-primary' : 'bg-unlit/40'}`}
             />
           ))}
         </div>
@@ -308,7 +308,7 @@ export function QuizPage() {
             <img
               src={thumbUrl(question.image.url, 800)}
               alt={question.image.alt}
-              className="img-frame max-h-56 w-auto max-w-full self-start rounded-token-md"
+              className="img-frame max-h-56 w-auto max-w-full self-start rounded-token-xs"
             />
           ) : null}
           {question.answers.map((answer) => (

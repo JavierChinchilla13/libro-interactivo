@@ -1,11 +1,48 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
+
+/**
+ * Precarga las letras que se ven en el primer pintado: Cinzel (el titular, que es el LCP) y Jost (la presentación y los
+ * botones), ambas en su subconjunto latino. Sin esto se descubren cuando el CSS ya se descargó y se analizó, y el texto
+ * se pinta con la letra de reserva y salta al llegar la real. Toma los nombres con hash del build.
+ */
+function preloadFirstPaintFonts(): Plugin {
+  const wanted = [/cinzel-latin-wght-normal[^/]*\.woff2$/, /jost-latin-wght-normal[^/]*\.woff2$/];
+  return {
+    name: 'preload-first-paint-fonts',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(_html, ctx) {
+        const names = Object.keys(ctx.bundle ?? {});
+        return wanted.flatMap((pattern) => {
+          const file = names.find((name) => pattern.test(name));
+          if (!file) return [];
+          return [
+            {
+              tag: 'link',
+              attrs: {
+                rel: 'preload',
+                as: 'font',
+                type: 'font/woff2',
+                crossorigin: '',
+                href: `/${file}`,
+              },
+              injectTo: 'head' as const,
+            },
+          ];
+        });
+      },
+    },
+  };
+}
 
 const API_TARGET = process.env['VITE_API_PROXY_TARGET'] ?? 'http://localhost:3000';
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), preloadFirstPaintFonts()],
   server: {
     port: 5173,
     // En desarrollo el navegador habla con el mismo origen (:5173); Vite reenvía /api al backend.

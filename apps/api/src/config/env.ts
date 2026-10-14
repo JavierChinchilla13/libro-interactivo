@@ -45,6 +45,8 @@ const envSchema = z.object({
     .pipe(z.string().min(8))
     .optional(),
   RESEND_API_KEY: z.string().min(8).optional(),
+  /** ID de cliente OAuth de Google (público). Sin él, «Continuar con Google» no está disponible. */
+  GOOGLE_CLIENT_ID: z.string().min(10).optional(),
   /** Cloudinary (subida firmada de imágenes y videos desde el panel). Las tres juntas o ninguna. */
   CLOUDINARY_CLOUD_NAME: z.string().min(1).optional(),
   CLOUDINARY_API_KEY: z.string().min(1).optional(),
