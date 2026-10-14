@@ -1,36 +1,35 @@
-import type {
-  PostCard,
-  PublicReview,
-  PublicBookDetail,
-  PublicBookSummary,
-  PublicSiteResponse,
-  PurchaseLink,
+import {
+  POST_CATEGORY_LABELS,
+  type PostCard,
+  type PublicReview,
+  type PublicBookDetail,
+  type PublicBookSummary,
+  type PublicSiteResponse,
+  type PurchaseLink,
 } from '@libro/shared';
 import { Link } from 'react-router';
 import { thumbUrl } from '../../shared/lib/cloudinary';
-import { formatDate } from '../../shared/lib/dates';
+import { formatDate, formatShortDate } from '../../shared/lib/dates';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Badge } from '../../shared/ui/layout';
+import { HERO_COVER_SIZES, Plate, PortraitPlate } from '../../shared/ui/Plate';
 import { Section } from '../../shared/ui/Section';
 import { ThreadItem, ThreadList } from '../../shared/ui/ThreadList';
-import { PostCardItem } from '../posts/PostsPage';
-import { ContactForm } from './ContactForm';
-import { LockIcon } from '../../shared/ui/icons';
-import { Thread } from '../../shared/ui/Thread';
+import { ArrowUpRightIcon, LockIcon } from '../../shared/ui/icons';
 
 const buttonLink = 'btn';
 const primaryLink = `${buttonLink} btn-primary`;
 const secondaryLink = `${buttonLink} btn-secondary`;
 
-/** El titular del héroe con su última palabra en el color de acción (el texto lo escribe la autora). */
-function LastWordAccent({ text }: { text: string }) {
+/** El titular del héroe con su última palabra en más peso (el texto lo escribe la autora; el cian es solo de acción). */
+function LastWordEmphasis({ text }: { text: string }) {
   const trimmed = text.trimEnd();
   const space = trimmed.lastIndexOf(' ');
   if (space === -1) return <>{text}</>;
   return (
     <>
       {trimmed.slice(0, space + 1)}
-      <span className="text-primary">{trimmed.slice(space + 1)}</span>
+      <span className="emph">{trimmed.slice(space + 1)}</span>
     </>
   );
 }
@@ -49,18 +48,22 @@ function Bar({ className }: { className: string }) {
 
 /**
  * Frase principal y presentación del universo (editables por la autora en «Portada y autora»).
- * Los botones no dependen de ningún dato: el héroe se pinta de inmediato y solo los textos esperan.
- * La acción principal es entrar con el libro en la mano (crear cuenta o continuar la lectura).
+ * Cuatro elementos y la placa: titular, presentación y las dos acciones. Los botones no dependen de ningún dato: el
+ * héroe se pinta de inmediato y solo los textos esperan. La acción principal es entrar con el libro en la mano
+ * (crear cuenta o continuar la lectura). La placa muestra la portada real si el libro ya la tiene.
  */
 export function Hero({
   site,
-  hasBook,
+  cover,
+  coverPending,
   signedIn,
   sessionReady,
   status,
 }: {
   site: PublicSiteResponse | undefined;
-  hasBook: boolean;
+  cover: PublicBookDetail['cover'];
+  /** La lista de libros aún no llegó: no se sabe si hay portada ni de qué forma. */
+  coverPending: boolean;
   signedIn: boolean;
   sessionReady: boolean;
   status: HeroStatus;
@@ -70,13 +73,11 @@ export function Hero({
       ? 'Universo Memorias'
       : (site?.universe.headline ?? '[PLACEHOLDER] Frase principal del sitio');
   const cta = `${buttonLink} btn-lg w-full sm:w-auto`;
-  const textLink =
-    'link-slide inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-muted hover:text-text';
   return (
     <section
       aria-labelledby="hero-title"
       aria-busy={status === 'loading' || undefined}
-      className="relative grid items-center gap-10 py-4 md:min-h-[min(80dvh,46rem)] md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] md:gap-12 md:py-14"
+      className="relative grid items-center gap-10 py-4 md:min-h-[min(80dvh,46rem)] md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-14 md:py-14"
     >
       <div className="flex max-w-3xl flex-col gap-6">
         {status === 'loading' ? (
@@ -97,10 +98,10 @@ export function Hero({
           </>
         ) : (
           <>
-            <h1 id="hero-title" className="display-title">
-              <LastWordAccent text={headline} />
+            <h1 id="hero-title" className="display-title break-words">
+              <LastWordEmphasis text={headline} />
             </h1>
-            <div className="max-w-prose text-lg text-muted">
+            <div className="max-w-[var(--token-measure)] text-lg text-muted">
               {site?.universe.introHtml ? (
                 <SafeHtml html={site.universe.introHtml} />
               ) : status === 'ready' ? (
@@ -109,11 +110,6 @@ export function Hero({
             </div>
           </>
         )}
-        {!signedIn && sessionReady ? (
-          <p className="max-w-prose text-base text-text">
-            Escanea el código QR de tu ejemplar y abre tu primer quiz.
-          </p>
-        ) : null}
         <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap sm:items-center">
           {!sessionReady ? (
             <>
@@ -135,23 +131,21 @@ export function Hero({
             </>
           )}
         </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
-          {hasBook ? (
-            <a href="#libro" className={textLink}>
-              Conoce el libro
-            </a>
-          ) : null}
-          <a href="#comprar" className={textLink}>
-            Cómo comprar el libro
-          </a>
-        </div>
-        <Thread orientation="horizontal" animated className="mt-2 w-full max-w-md md:hidden" />
       </div>
-      <Thread
-        orientation="vertical"
-        animated
-        className="hidden w-full max-w-sm justify-self-end md:block"
-      />
+      {/* El hueco de la portada se reserva (la más alta posible en el celular) para que la página no salte al llegar
+          la lista de libros, sea la portada alta, apaisada o la tipográfica. */}
+      <div className="min-h-[min(90vw,22.5rem)] md:min-h-0">
+        {coverPending ? null : (
+          <Plate
+            cover={cover}
+            priority
+            className="w-3/5 max-w-60 md:ml-auto md:w-full md:max-w-[19rem]"
+            landscapeClassName="w-full max-w-md md:ml-auto"
+            sizes={HERO_COVER_SIZES.tall}
+            landscapeSizes={HERO_COVER_SIZES.landscape}
+          />
+        )}
+      </div>
     </section>
   );
 }
@@ -172,13 +166,9 @@ export function ClosingBand({
       aria-labelledby="cierre-title"
       className="section-band-raised flex min-h-[min(70dvh,40rem)] flex-col justify-center py-section-loose"
     >
-      <div aria-hidden="true" className="mb-6 flex flex-col items-start pl-[0.2rem]">
-        <span className="h-14 w-px bg-linear-to-b from-unlit/0 to-lit" />
-        <span className="size-3.5 rounded-full border-2 border-lit bg-lit shadow-lit" />
-      </div>
       <div className="flex flex-col items-start gap-4">
         <h2 id="cierre-title" className="section-title">
-          Empieza con tu <span className="text-primary">libro</span>
+          Empieza con tu <span className="emph">libro</span>
         </h2>
         <p className="max-w-prose text-muted">
           {signedIn
@@ -220,45 +210,51 @@ export function SectionsSkeleton() {
   );
 }
 
-/** Ficha del libro destacado: portada, géneros, sinopsis, advertencia de contenido, edad e ISBN. */
+/**
+ * Ficha del libro destacado: la portada pegajosa a la izquierda (si el libro la tiene) y, a su derecha, el título, el
+ * lema, los géneros en una línea, la sinopsis, la advertencia de contenido, la edad y el ISBN.
+ */
 export function BookSection({ book }: { book: PublicBookDetail }) {
   return (
-    <Section id="libro" title={book.title} intro={book.tagline}>
-      <div className="grid gap-10 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-14">
-        {book.cover ? (
-          <img
-            src={thumbUrl(book.cover.url, 640)}
-            alt={book.cover.alt}
-            width={book.cover.width}
-            height={book.cover.height}
-            className="img-frame h-auto w-full max-w-72 rounded-token-md md:max-w-none"
+    <Section
+      id="libro"
+      title={book.title}
+      intro={book.tagline}
+      aside={
+        book.cover ? (
+          <Plate
+            cover={book.cover}
+            className="mx-auto w-3/5 max-w-72 lg:w-full lg:max-w-none"
+            landscapeClassName="mx-auto w-full max-w-xl lg:max-w-none"
+            sizes="(min-width: 1024px) 440px, 90vw"
           />
+        ) : undefined
+      }
+    >
+      <div className="flex flex-col gap-6">
+        {book.genres.length > 0 ? (
+          <ul aria-label="Géneros" className="flex flex-wrap gap-x-6 gap-y-1">
+            {book.genres.map((genre) => (
+              <li key={genre} className="label">
+                {genre}
+              </li>
+            ))}
+          </ul>
         ) : null}
-        <div className="flex max-w-prose flex-col gap-5">
-          {book.genres.length > 0 ? (
-            <ul aria-label="Géneros" className="flex flex-wrap gap-2">
-              {book.genres.map((genre) => (
-                <li key={genre}>
-                  <Badge>{genre}</Badge>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {book.synopsis ? <SafeHtml html={book.synopsis} /> : null}
-          {book.contentWarning || book.minAge !== undefined ? (
-            <aside
-              aria-label="Advertencia de contenido sensible"
-              className="border-l-2 border-warning pl-4 text-sm"
-            >
-              <p className="font-semibold text-warning">Advertencia de contenido sensible</p>
-              {book.contentWarning ? <SafeHtml html={book.contentWarning} /> : null}
-              {book.minAge !== undefined ? (
-                <p className="mt-1">Recomendado para mayores de {book.minAge} años.</p>
-              ) : null}
-            </aside>
-          ) : null}
-          {book.isbn ? <p className="text-sm text-muted">ISBN: {book.isbn}</p> : null}
-        </div>
+        {book.synopsis ? <SafeHtml html={book.synopsis} /> : null}
+        {book.contentWarning || book.minAge !== undefined ? (
+          <aside
+            aria-label="Advertencia de contenido sensible"
+            className="border-l-2 border-warning pl-4 text-sm"
+          >
+            <p className="font-semibold text-warning">Advertencia de contenido sensible</p>
+            {book.contentWarning ? <SafeHtml html={book.contentWarning} /> : null}
+            {book.minAge !== undefined ? (
+              <p className="mt-1">Recomendado para mayores de {book.minAge} años.</p>
+            ) : null}
+          </aside>
+        ) : null}
+        {book.isbn ? <p className="text-sm text-muted">ISBN: {book.isbn}</p> : null}
       </div>
     </Section>
   );
@@ -280,11 +276,11 @@ export function WikiPreview({
   const needsGeneral = tabs.some((tab) => tab.locked && !tab.lockedMessage);
   return (
     <Section id="wiki" title="Wiki del universo" tone="raised" space="regular">
-      <ul className="reveal-children max-w-3xl divide-y divide-line border-y border-line">
+      <ul className="reveal-children divide-y divide-line border-y border-line">
         {tabs.map((tab) => (
-          <li key={tab.kind} className="py-4">
+          <li key={tab.kind} className="py-6">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <p className="text-xl font-semibold">{tab.title}</p>
+              <p className="font-display text-2xl font-medium sm:text-[1.75rem]">{tab.title}</p>
               {tab.locked ? (
                 <p className="flex items-center gap-1.5 text-sm text-muted">
                   <LockIcon className="size-4" />
@@ -298,13 +294,13 @@ export function WikiPreview({
               )}
             </div>
             {tab.locked && tab.lockedMessage ? (
-              <p className="mt-1 text-sm text-muted">{tab.lockedMessage}</p>
+              <p className="mt-2 text-muted">{tab.lockedMessage}</p>
             ) : null}
           </li>
         ))}
       </ul>
-      {needsGeneral ? <p className="mt-4 text-sm text-muted">{lockMessage}</p> : null}
-      <Link to="/wiki" className={`${primaryLink} mt-6`}>
+      {needsGeneral ? <p className="mt-5 text-muted">{lockMessage}</p> : null}
+      <Link to="/wiki" className={`${primaryLink} mt-8`}>
         Entrar a la wiki
       </Link>
     </Section>
@@ -331,8 +327,8 @@ export function Experiences({
     <Section
       id="experiencias"
       title="Vive una experiencia inmersiva"
-      accent="inmersiva"
-      numeral="01"
+      emphasis="inmersiva"
+      split
       tone="sunken"
       space="loose"
       tall
@@ -346,7 +342,7 @@ export function Experiences({
               state={signedIn ? 'neutral' : opensFirst ? 'lit' : 'unlit'}
             >
               <p className="label tabular-nums">Quiz {experience.order}</p>
-              <p className="text-lg font-semibold">{experience.title}</p>
+              <p className="text-xl font-semibold sm:text-2xl">{experience.title}</p>
               {signedIn ? null : (
                 <p
                   className={`mt-2 flex items-center gap-2 text-sm ${opensFirst ? 'text-primary' : 'text-muted'}`}
@@ -373,21 +369,69 @@ export function Experiences({
   );
 }
 
-/** Las últimas publicaciones destacadas por la autora: una grande y las demás a su lado (si no hay, no aparece). */
+/** Etiqueta pequeña con el tipo y la fecha de una publicación. */
+function PostMeta({ post }: { post: PostCard }) {
+  return (
+    <span className="label tabular-nums">
+      {POST_CATEGORY_LABELS[post.category]} · {formatShortDate(post.publishedAt)}
+    </span>
+  );
+}
+
+/**
+ * Las últimas publicaciones destacadas por la autora: la más reciente con su imagen y su titular grande; las demás
+ * como filas de texto con filete (si no hay, la sección no aparece).
+ */
 export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
   if (posts.length === 0) return null;
   const [lead, ...rest] = posts;
   return (
     <Section id="actualizaciones" title="Actualizaciones">
-      <ul
-        className={`reveal-children grid gap-5 ${rest.length > 0 ? 'lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]' : 'max-w-xl'}`}
+      <div
+        className={`grid gap-10 ${rest.length > 0 ? 'lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16' : ''}`}
       >
-        {lead ? <PostCardItem key={lead.id} post={lead} className="lg:row-span-2" /> : null}
-        {rest.map((post) => (
-          <PostCardItem key={post.id} post={post} />
-        ))}
-      </ul>
-      <Link to="/actualizaciones" className={`${secondaryLink} mt-6`}>
+        {lead ? (
+          <Link to={`/actualizaciones/${lead.slug}`} className="group flex flex-col gap-4">
+            {lead.thumbnail ? (
+              <img
+                src={thumbUrl(lead.thumbnail.url, 960)}
+                alt={lead.thumbnail.alt}
+                width={lead.thumbnail.width}
+                height={lead.thumbnail.height}
+                loading="lazy"
+                className="img-frame aspect-video w-full rounded-token-xs object-cover"
+              />
+            ) : null}
+            <PostMeta post={lead} />
+            <span className="font-display text-3xl font-medium leading-tight group-hover:underline sm:text-4xl">
+              {lead.title}
+            </span>
+            {lead.excerpt ? (
+              <span className="max-w-[var(--token-measure)] font-read text-xl text-muted">
+                {lead.excerpt}
+              </span>
+            ) : null}
+          </Link>
+        ) : null}
+        {rest.length > 0 ? (
+          <ul className="reveal-children divide-y divide-line self-start border-y border-line">
+            {rest.map((post) => (
+              <li key={post.id}>
+                <Link
+                  to={`/actualizaciones/${post.slug}`}
+                  className="group flex flex-col gap-1.5 py-5"
+                >
+                  <PostMeta post={post} />
+                  <span className="text-xl font-semibold leading-snug group-hover:underline">
+                    {post.title}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+      <Link to="/actualizaciones" className={`${secondaryLink} mt-8`}>
         Ver todas las actualizaciones
       </Link>
     </Section>
@@ -401,7 +445,7 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
   const attribution = (review: PublicReview) => (
     <>
       <p className="text-sm font-medium">
-        — {review.authorName}
+        {review.authorName}
         {review.source ? <span className="font-normal text-muted"> · {review.source}</span> : null}
       </p>
       {review.rating ? (
@@ -413,7 +457,7 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
     <Section id="resenas" title="Reseñas de lectores" tone="raised">
       <ul className="flex flex-col gap-10">
         {lead ? (
-          <li className="max-w-3xl border-l-2 border-primary/50 pl-6">
+          <li className="max-w-3xl border-l-2 border-border pl-6">
             <blockquote className="font-read text-2xl leading-snug sm:text-3xl">
               “{lead.text}”
             </blockquote>
@@ -439,53 +483,61 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
   );
 }
 
-/** «Conoce a la autora» y el formulario de contacto. */
+/**
+ * «Conoce a la autora»: el retrato (su foto o, sin ella, una placa con su inicial) a la izquierda y, a su derecha, el
+ * nombre en Cinzel, la biografía, sus enlaces y la invitación a escribirle (el formulario vive en `/contacto`).
+ */
 export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }) {
   const author = site?.author;
+  const name = author?.name ?? '[PLACEHOLDER] Nombre de la autora';
   return (
-    <Section id="autora" title="Conoce a la autora" numeral="03">
-      <div className="grid gap-10 lg:grid-cols-2 lg:gap-0">
-        <div className="flex flex-col gap-5 lg:pr-10">
-          <div className="flex items-center gap-4">
-            {author?.photo ? (
-              <img
-                src={thumbUrl(author.photo.url, 240)}
-                alt={author.photo.alt}
-                width={120}
-                height={120}
-                className="img-frame size-28 rounded-token-xl object-cover"
-              />
-            ) : null}
-            <p className="text-xl font-semibold">
-              {author?.name ?? '[PLACEHOLDER] Nombre de la autora'}
-            </p>
-          </div>
-          {author?.bioHtml ? (
-            <SafeHtml html={author.bioHtml} />
-          ) : (
-            <p className="text-muted">[PLACEHOLDER] Biografía de la autora.</p>
-          )}
-          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-            {author?.publicEmail ? (
-              <li>
-                <a className="underline" href={`mailto:${author.publicEmail}`}>
-                  {author.publicEmail}
-                </a>
-              </li>
-            ) : null}
-            {site?.social.map((link) => (
-              <li key={link.url}>
-                <a className="underline" href={link.url} target="_blank" rel="noopener noreferrer">
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="lg:border-l lg:border-line lg:pl-10">
-          <h3 className="mb-4 text-xl font-semibold">Escríbeme</h3>
-          <ContactForm />
-        </div>
+    <Section
+      id="autora"
+      title="Conoce a la autora"
+      aside={
+        <PortraitPlate
+          photo={author?.photo}
+          name={name}
+          className="mx-auto w-3/5 max-w-72 lg:w-full lg:max-w-none"
+        />
+      }
+    >
+      <div className="flex flex-col gap-6">
+        <h3 className="font-display text-3xl font-medium sm:text-4xl">{name}</h3>
+        {author?.bioHtml ? (
+          <SafeHtml html={author.bioHtml} />
+        ) : (
+          <p className="max-w-[var(--token-measure)] font-read text-[1.1875rem] text-muted">
+            [PLACEHOLDER] Biografía de la autora.
+          </p>
+        )}
+        <ul className="flex flex-wrap gap-x-6 gap-y-1">
+          {author?.publicEmail ? (
+            <li>
+              <a
+                className="link-slide inline-flex min-h-11 items-center"
+                href={`mailto:${author.publicEmail}`}
+              >
+                {author.publicEmail}
+              </a>
+            </li>
+          ) : null}
+          {site?.social.map((link) => (
+            <li key={link.url}>
+              <a
+                className="link-slide inline-flex min-h-11 items-center"
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <Link to="/contacto" className={`${secondaryLink} self-start`}>
+          Escríbele a la autora
+        </Link>
       </div>
     </Section>
   );
@@ -532,27 +584,34 @@ export function SagaSection({ books }: { books: PublicBookSummary[] }) {
   );
 }
 
+/** Una opción de compra: la fila entera es el enlace (flecha de «sale del sitio»); las notas van debajo. */
 function PurchaseItem({ link }: { link: PurchaseLink }) {
   return (
-    <li className="flex flex-col gap-1">
+    <li className="border-t border-line">
       {link.url ? (
         <a
           href={link.url}
           target="_blank"
           rel="noopener noreferrer"
-          className={`${primaryLink} self-start`}
+          className="group flex min-h-[4.5rem] items-center justify-between gap-4 py-4 text-xl font-semibold sm:text-2xl"
         >
-          {link.label}
+          <span className="group-hover:underline">{link.label}</span>
+          <ArrowUpRightIcon className="size-6 text-primary transition-transform duration-(--token-dur-fast) ease-token-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
         </a>
       ) : (
-        <p className="font-medium">{link.label}</p>
+        <p className="flex min-h-[4.5rem] items-center py-4 text-xl font-semibold sm:text-2xl">
+          {link.label}
+        </p>
       )}
-      {link.notes ? <p className="text-sm text-muted">{link.notes}</p> : null}
+      {link.notes ? <p className="-mt-2 pb-4 text-muted">{link.notes}</p> : null}
     </li>
   );
 }
 
-/** Cómo comprar: Costa Rica (envíos y compras presenciales) e internacional (Amazon). Todo sale del libro. */
+/**
+ * Cómo comprar: Costa Rica (envíos y compras presenciales) e internacional (Amazon). Todo sale del libro. El
+ * encabezado va centrado y cada región llena su mitad con filas grandes: no es un botón perdido en una banda vacía.
+ */
 export function BuySection({ links }: { links: PurchaseLink[] }) {
   const regions = [
     { region: 'CR', title: 'Costa Rica' },
@@ -561,26 +620,26 @@ export function BuySection({ links }: { links: PurchaseLink[] }) {
   const groups = regions
     .map((group) => ({ ...group, items: links.filter((link) => link.region === group.region) }))
     .filter((group) => group.items.length > 0);
+  const two = groups.length > 1;
   return (
-    <Section
-      id="comprar"
-      title="Cómo comprar el libro"
-      numeral="02"
-      tone="sunken"
-      space="loose"
-      tall
-    >
+    <Section id="comprar" title="Cómo comprar el libro" tone="sunken" space="loose" align="center">
       {groups.length === 0 ? (
-        <p className="text-muted">[PLACEHOLDER] Pronto publicaremos dónde conseguir el libro.</p>
+        <p className="text-center text-muted">
+          [PLACEHOLDER] Pronto publicaremos dónde conseguir el libro.
+        </p>
       ) : (
-        <div className="grid gap-10 sm:grid-cols-2 sm:gap-0">
+        <div className={`mx-auto grid gap-12 ${two ? 'md:grid-cols-2 md:gap-0' : 'max-w-xl'}`}>
           {groups.map((group, index) => (
             <div
               key={group.region}
-              className={index > 0 ? 'sm:border-l sm:border-line sm:pl-10' : 'sm:pr-10'}
+              className={
+                two ? (index > 0 ? 'md:border-l md:border-line md:pl-12' : 'md:pr-12') : ''
+              }
             >
-              <h3 className="mb-4 text-xl font-semibold">{group.title}</h3>
-              <ul className="flex flex-col gap-4">
+              <h3 className="mb-6 font-display text-2xl font-medium sm:text-[1.75rem]">
+                {group.title}
+              </h3>
+              <ul className="border-b border-line">
                 {group.items.map((link, i) => (
                   <PurchaseItem key={`${link.label}-${i}`} link={link} />
                 ))}

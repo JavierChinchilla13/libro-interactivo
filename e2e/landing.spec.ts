@@ -87,20 +87,23 @@ test.describe('landing pública', () => {
       'https://amazon.com/x',
     );
 
-    // Contacto: el servidor responde 202 y la pantalla confirma.
-    const author = page.getByRole('region', { name: 'Conoce a la autora' });
-    await author.getByLabel(/Nombre completo/).fill('Lectora E2E');
-    await author.getByLabel(/Correo electrónico/).fill('lectora-e2e@ejemplo.com');
-    await author.getByLabel(/^Mensaje/).fill('Hola, este es un mensaje de prueba E2E.');
-    const sent = page.waitForResponse((r) => r.url().endsWith('/api/contact'));
-    await author.getByRole('button', { name: 'Enviar mensaje' }).click();
-    expect((await sent).status()).toBe(202);
-    await expect(author.getByText('Gracias, recibimos tu mensaje.')).toBeVisible();
-
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
     );
     expect(overflow).toBe(false);
+
+    // Contacto: la portada no lleva el formulario, solo la invitación; el servidor responde 202 y la pantalla confirma.
+    const author = page.getByRole('region', { name: 'Conoce a la autora' });
+    await expect(author.getByLabel(/Nombre completo/)).toHaveCount(0);
+    await author.getByRole('link', { name: 'Escríbele a la autora' }).click();
+    await expect(page).toHaveURL(/\/contacto$/);
+    await page.getByLabel(/Nombre completo/).fill('Lectora E2E');
+    await page.getByLabel(/Correo electrónico/).fill('lectora-e2e@ejemplo.com');
+    await page.getByLabel(/^Mensaje/).fill('Hola, este es un mensaje de prueba E2E.');
+    const sent = page.waitForResponse((r) => r.url().endsWith('/api/contact'));
+    await page.getByRole('button', { name: 'Enviar mensaje' }).click();
+    expect((await sent).status()).toBe(202);
+    await expect(page.getByText('Gracias, recibimos tu mensaje.')).toBeVisible();
   });
 
   test('la autora edita la portada en el panel y el visitante la ve', async ({
