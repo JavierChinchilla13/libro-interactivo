@@ -31,7 +31,7 @@ export function ThreadItem({ state, children }: { state: ThreadState; children: 
           }`}
         />
         <span
-          className={`relative mt-[0.2rem] size-3.5 shrink-0 rounded-full border-2 transition-[transform,border-color] duration-150 ease-out group-hover/item:scale-125 ${
+          className={`relative mt-[0.2rem] size-3.5 shrink-0 rounded-full border-2 transition-[transform,border-color] duration-(--token-dur-fast) ease-token-out group-hover/item:scale-125 ${
             state === 'unlit' ? 'group-hover/item:border-primary' : ''
           } ${NODE[state]}`}
         />

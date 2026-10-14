@@ -31,11 +31,11 @@ describe('«reducir movimiento»', () => {
     expect(unexpected).toEqual([]);
   });
 
-  it('apaga el hilo, el revelado y las transiciones de los controles', () => {
+  it('apaga el punto del revelado, su aro y las transiciones de los controles', () => {
     const block = reducedMotionBlock();
     for (const selector of [
-      '.thread-animated .thread-base',
-      '.reveal-glow',
+      '.thread-animated .thread-bloom',
+      '.reveal-ring',
       '.btn',
       '.option',
       '.meter-fill',

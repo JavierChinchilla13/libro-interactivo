@@ -11,7 +11,7 @@ import {
 /** Controles de formulario con los design tokens. Mobile-first: objetivos táctiles de 44 px. */
 
 const field =
-  'w-full min-h-11 rounded-xl border border-border bg-bg/60 px-3.5 py-2 text-base text-text transition placeholder:text-muted focus:border-primary focus:shadow-focus focus:outline-none disabled:opacity-60';
+  'w-full min-h-11 rounded-xl border border-border bg-bg/60 px-3.5 py-2 text-base text-text transition-[border-color,box-shadow] duration-(--token-dur-fast) ease-token-out placeholder:text-muted focus:border-primary focus:shadow-focus focus:outline-none disabled:opacity-60';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 /** `md` = 44 px; `lg` = acción principal (48 px, letra mayor); `compact` = menos relleno horizontal. */

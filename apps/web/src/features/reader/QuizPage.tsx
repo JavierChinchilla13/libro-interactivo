@@ -295,7 +295,7 @@ export function QuizPage() {
             <span
               key={item.id}
               aria-hidden="true"
-              className={`h-1.5 flex-1 rounded-full transition-colors ${position <= index ? 'bg-primary' : 'bg-unlit/40'}`}
+              className={`h-1.5 flex-1 rounded-full transition-colors duration-(--token-dur-fast) ease-token-out ${position <= index ? 'bg-primary' : 'bg-unlit/40'}`}
             />
           ))}
         </div>

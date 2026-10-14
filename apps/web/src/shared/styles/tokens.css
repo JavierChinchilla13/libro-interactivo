@@ -8,13 +8,12 @@
  * (`document.documentElement`): las sombras y resplandores de abajo se derivan del color en `:root`.
  */
 :root {
-  /* Fondo: azul marino profundo. La niebla azul-verdosa se pinta como degradado sobre él. */
+  /* Fondo: azul marino profundo, plano. */
   --token-bg: #06142b;
-  --token-bg-glow: #0d4a7f;
   --token-surface: #0b2142;
   --token-surface-alt: #123057;
   /* Hundido: bandas más oscuras que el fondo para dar ritmo a la página sin recurrir a tarjetas. */
-  --token-sunken: #030b1a;
+  --token-sunken: #040f22;
   --token-text: #e8f5ff;
   --token-muted: #9cc2e2;
   --token-border: #4278b0;
@@ -30,8 +29,7 @@
   --token-lit: var(--token-primary);
   --token-unlit: #4278b0;
 
-  /* Vidrio translúcido de las tarjetas y línea fina de separación. */
-  --token-glass: color-mix(in srgb, var(--token-surface) 62%, transparent);
+  /* Línea fina de separación. */
   --token-line: rgb(120 190 255 / 0.2);
 
   /* Aro de foco de los campos de formulario. */
@@ -44,18 +42,14 @@
   --token-radius-md: 1rem;
   --token-radius-xl: 1.5rem;
   --token-radius-pill: 9999px;
+  /* Portadas y placas: el objeto-libro lleva esquinas casi rectas. */
+  --token-radius-xs: 0.375rem;
 
-  /* ---- Elevación (sustituye al vidrio): sombras tintadas de azul, no negras. ---- */
-  --token-elev-1:
-    inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(2 8 20 / 0.35),
-    0 12px 24px -14px rgb(2 8 20 / 0.55);
-  --token-elev-2:
-    inset 0 1px 0 rgb(255 255 255 / 0.05), 0 2px 4px rgb(2 8 20 / 0.4),
-    0 24px 48px -16px rgb(2 8 20 / 0.7);
-  /* Luz: solo en lo que está encendido, elegido, enfocado o revelándose. */
-  --token-lit-ring:
-    0 0 0 1px color-mix(in srgb, var(--token-primary) 45%, transparent),
-    0 0 24px -6px color-mix(in srgb, var(--token-primary) 35%, transparent);
+  /* ---- Elevación: sombra oscura y corta, nunca brillo. ---- */
+  --token-elev-1: 0 1px 2px rgb(0 0 0 / 0.5);
+  --token-elev-2: 0 8px 20px -6px rgb(0 0 0 / 0.6);
+  /* Estado encendido (elegido, enfocado): un anillo nítido de 2 px, sin desenfoque ni halo. */
+  --token-lit-ring: 0 0 0 2px color-mix(in srgb, var(--token-primary) 60%, transparent);
 
   /* ---- Tipografía ---- */
   /* Interfaz: Jost (variable, autohospedada): navegación, botones, formularios y textos cortos. */
@@ -68,22 +62,30 @@
   /* Títulos: Cinzel (serifa clásica); si no carga, una serifa del sistema. */
   --token-font-display: 'Cinzel Variable', 'Cinzel', Georgia, 'Times New Roman', serif;
   /* Escala fluida (móvil → escritorio). Un solo tamaño de h1 para todo el sitio. */
-  --token-text-display: clamp(2.5rem, 1rem + 5.2vw, 4.5rem);
+  --token-text-display: clamp(2.5rem, 1rem + 5.6vw, 5rem);
   --token-text-h1: clamp(2.25rem, 1.2rem + 3.2vw, 3.5rem);
   --token-text-h2: clamp(1.875rem, 1.1rem + 2.8vw, 3rem);
   --token-leading-display: 1.05;
   --token-leading-heading: 1.15;
+  /* Titulares: peso base y peso de énfasis (la palabra que se destaca sube de peso, no de color). */
+  --token-weight-display: 500;
+  --token-weight-emphasis: 800;
+  /* Medida de lectura: ninguna línea de texto largo pasa de 65 caracteres. */
+  --token-measure: 65ch;
 
   --token-section-tight: clamp(2rem, 1.2rem + 2.4vw, 3rem);
   --token-section-regular: clamp(3rem, 1.8rem + 3.6vw, 5rem);
   --token-section-loose: clamp(4rem, 2.4rem + 5.2vw, 8rem);
 
   /* ---- Movimiento ---- */
-  --token-dur-fast: 150ms;
+  /* Pulsado, respuesta (hover, color), transición de página y estado lento. Solo transform y opacity. */
+  --token-dur-press: 120ms;
+  --token-dur-fast: 160ms;
+  --token-dur-base: 240ms;
   --token-dur-slow: 480ms;
-  --token-dur-scene: 900ms;
-  --token-ease-out: cubic-bezier(0.2, 0, 0, 1);
-  --token-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* Curvas con pegada: arrancan rápido y se asientan (las incorporadas del navegador son demasiado débiles). */
+  --token-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --token-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
   --token-page-max: 72rem;
 }
