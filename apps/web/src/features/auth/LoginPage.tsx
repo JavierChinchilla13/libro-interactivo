@@ -4,8 +4,10 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { ApiClientError } from '../../shared/api/client';
 import { Button, TextField } from '../../shared/ui/controls';
 import { Alert } from '../../shared/ui/layout';
-import { AuthShell, QR_TAGLINE } from './AuthShell';
-import { homeFor, useLogin, useSession } from './session';
+import { AuthShell, OrDivider, QR_TAGLINE } from './AuthShell';
+import { GOOGLE_CLIENT_ID, GoogleButton } from './GoogleButton';
+import { PasswordField } from './PasswordField';
+import { homeFor, useGoogleLogin, useLogin, useSession } from './session';
 
 /**
  * Ingreso. Mensajes genéricos: nunca dice si el correo existe.
@@ -14,6 +16,7 @@ import { homeFor, useLogin, useSession } from './session';
 export function LoginPage() {
   const session = useSession();
   const login = useLogin();
+  const google = useGoogleLogin();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
@@ -41,7 +44,8 @@ export function LoginPage() {
     });
   }
 
-  const failure = login.error instanceof ApiClientError ? login.error : null;
+  const error = login.error ?? google.error;
+  const failure = error instanceof ApiClientError ? error : null;
   const message =
     failure?.code === 'AUTH_INVALID'
       ? 'Correo o contraseña incorrectos.'
@@ -53,6 +57,19 @@ export function LoginPage() {
 
   return (
     <AuthShell title="Ingresar" tagline={QR_TAGLINE}>
+      {GOOGLE_CLIENT_ID ? (
+        <>
+          <GoogleButton
+            disabled={google.isPending}
+            onCredential={(credential) =>
+              google.mutate(credential, {
+                onSuccess: (data) => void navigate(from ?? homeFor(data.user), { replace: true }),
+              })
+            }
+          />
+          <OrDivider />
+        </>
+      ) : null}
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <TextField
           label="Correo"
@@ -63,20 +80,18 @@ export function LoginPage() {
           error={errors.email}
           required
         />
-        <TextField
+        <PasswordField
           label="Contraseña"
-          type="password"
           autoComplete="current-password"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={setPassword}
           error={errors.password}
-          required
         />
         {message ? <Alert>{message}</Alert> : null}
         <Button type="submit" loading={login.isPending}>
           Ingresar
         </Button>
-        <div className="flex flex-col gap-1 text-sm">
+        <div className="flex flex-col items-center gap-1 text-center text-sm">
           <Link to="/olvide-mi-contrasena" className="underline">
             ¿Olvidaste tu contraseña?
           </Link>

@@ -111,8 +111,6 @@ export function HomePage() {
     <div className="flex flex-col">
       <Hero
         site={site.data}
-        cover={book?.cover ?? featured?.cover}
-        coverPending={books.isLoading}
         signedIn={Boolean(session.data)}
         sessionReady={!session.isPending}
         status={heroStatus}

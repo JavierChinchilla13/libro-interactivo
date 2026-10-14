@@ -47,6 +47,12 @@ export const loginRequestSchema = z.object({
 });
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 
+/** Ingreso con Google: el `id_token` (credential) que entrega Google Identity Services; el servidor lo verifica. */
+export const googleLoginRequestSchema = z.object({
+  credential: z.string().min(20, 'Falta la credencial de Google').max(4096),
+});
+export type GoogleLoginRequest = z.infer<typeof googleLoginRequestSchema>;
+
 /** Datos públicos del usuario (nunca incluye hash ni contadores internos). */
 export const authUserSchema = z.object({
   id: objectIdSchema,

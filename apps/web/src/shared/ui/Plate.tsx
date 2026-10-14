@@ -13,16 +13,6 @@ export function plateRatio(image: Pick<Image, 'width' | 'height'>): number {
   return Math.min(MAX_RATIO, Math.max(MIN_RATIO, ratio));
 }
 
-/**
- * Con qué ancho se muestra la portada del héroe (rige qué miniatura se descarga). `index.html` repite estos valores
- * para pedir la imagen antes de que cargue la app; una prueba comprueba que coinciden.
- */
-export const HERO_COVER_SIZES = {
-  tall: '(min-width: 768px) 304px, 240px',
-  landscape:
-    '(min-width: 1152px) 443px, (min-width: 768px) calc((100vw - 88px) * 0.4167), calc(100vw - 32px)',
-} as const;
-
 /** Anchos de la miniatura que se ofrecen al navegador (Cloudinary: solo si la URL es de ahí). */
 export const COVER_WIDTHS = [320, 480, 640, 720, 960] as const;
 

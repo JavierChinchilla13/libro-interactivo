@@ -7,6 +7,7 @@ import { normalizeEmail } from '../lib/email.js';
 import { RefreshToken } from '../models/RefreshToken.js';
 import { User, type UserDoc } from '../models/User.js';
 import { getDummyHash, hashPassword, verifyPassword } from './password.service.js';
+import type { GoogleProfile } from './google.service.js';
 import type { TokenService } from './token.service.js';
 
 /** Intentos fallidos que disparan un bloqueo temporal (y cada múltiplo vuelve a bloquear). */
@@ -23,6 +24,7 @@ const INVALID_CREDENTIALS =
   'Correo o contraseña incorrectos, o demasiados intentos. Inténtalo más tarde.';
 const REGISTER_CONFLICT =
   'No se pudo completar el registro. Si ya tienes una cuenta, inicia sesión o recupera tu contraseña.';
+const GOOGLE_INVALID = 'No pudimos iniciar sesión con Google. Inténtalo de nuevo.';
 const SESSION_INVALID = 'Tu sesión no es válida o caducó. Inicia sesión de nuevo.';
 
 export interface RequestMeta {
@@ -165,6 +167,42 @@ export function createAuthService(options: AuthServiceOptions) {
         { _id: user._id },
         { $set: { failedLoginCount: 0, lastLoginAt: now }, $unset: { lockedUntil: 1 } },
       );
+      const session = await issueSession(user, meta, randomToken(16));
+      return { user: toAuthUser(user), session };
+    },
+
+    /**
+     * Ingreso con Google (el perfil ya viene verificado por `GoogleVerifier`). Un correo verificado por Google es
+     * prueba de que la persona controla esa cuenta: si ya existe se entra; si no, se crea una lectora con una
+     * contraseña al azar que nadie conoce (puede definir una con «Olvidé mi contraseña»).
+     */
+    async loginWithGoogle(
+      profile: GoogleProfile,
+      meta: RequestMeta,
+    ): Promise<{ user: AuthUser; session: Session }> {
+      if (!profile.emailVerified) throw new AppError('AUTH_INVALID', GOOGLE_INVALID);
+      const emailNormalized = normalizeEmail(profile.email);
+      let user = await User.findOne({ emailNormalized });
+      if (user && (user.status !== 'active' || (user.lockedUntil && user.lockedUntil > clock()))) {
+        throw new AppError('AUTH_INVALID', GOOGLE_INVALID);
+      }
+      if (!user) {
+        try {
+          user = await User.create({
+            email: profile.email,
+            emailNormalized,
+            name: profile.name.slice(0, 80),
+            passwordHash: await hashPassword(randomToken(24)),
+            role: 'USER',
+          });
+        } catch (error) {
+          // Dos ingresos simultáneos: gana el índice único y el segundo reutiliza la cuenta creada.
+          if (!isDuplicateKeyError(error)) throw error;
+          user = await User.findOne({ emailNormalized });
+          if (!user) throw error;
+        }
+      }
+      await User.updateOne({ _id: user._id }, { $set: { lastLoginAt: clock() } });
       const session = await issueSession(user, meta, randomToken(16));
       return { user: toAuthUser(user), session };
     },

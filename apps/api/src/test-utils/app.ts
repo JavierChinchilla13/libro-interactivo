@@ -11,6 +11,7 @@ import {
   MemoryStorageProvider,
   type StorageProvider,
 } from '../providers/storage/StorageProvider.js';
+import type { GoogleVerifier } from '../services/google.service.js';
 import type { RandomInt } from '../services/quiz-engine.js';
 
 /** Límites muy altos para que las pruebas no choquen entre sí (las de rate limit pasan los suyos). */
@@ -36,6 +37,8 @@ interface TestAppOptions {
   /** Azar de quizzes (barajado y empates); por defecto `crypto`. Con semilla para pruebas estadísticas. */
   random?: RandomInt;
   images?: ImageProvider;
+  /** Verificador de Google falso para probar el ingreso con Google. */
+  google?: GoogleVerifier;
   /** Almacenamiento privado; por defecto uno en memoria (accesible desde `createTestHarness().storage`). */
   storage?: StorageProvider;
   configure?: (app: Express, ctx: AppContext) => void;
@@ -61,6 +64,7 @@ export function createTestHarness(options: TestAppOptions = {}) {
       ...(options.clock ? { clock: options.clock } : {}),
       ...(options.random ? { random: options.random } : {}),
       ...(options.images ? { images: options.images } : {}),
+      ...(options.google ? { google: options.google } : {}),
       storage: options.storage ?? memoryStorage,
       limits: { ...RELAXED_LIMITS, ...options.limits },
     },

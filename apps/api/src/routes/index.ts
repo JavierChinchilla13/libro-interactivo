@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { Env } from '../config/env.js';
 import type { Limits } from '../config/limits.js';
+import type { GoogleVerifier } from '../services/google.service.js';
 import {
   createAdminPostController,
   createPublicPostController,
@@ -129,6 +130,8 @@ export interface RouteDeps {
   requireUnlocked: RequireUnlocked;
   guards: Guards;
   limits: Limits;
+  /** Verificador de Google; sin él (no hay GOOGLE_CLIENT_ID) `POST /auth/google` responde 404. */
+  google?: GoogleVerifier | undefined;
 }
 
 /** Router raíz de `/api`. Cada módulo (auth, quizzes, …) monta aquí su propio router. */
@@ -146,6 +149,7 @@ export function createApiRouter(deps: RouteDeps): Router {
       guards: deps.guards,
       env: deps.env,
       limits: deps.limits,
+      google: deps.google,
     }),
   );
   router.use('/me', createAccountRouter(accountController, deps.guards, deps.limits));
