@@ -36,6 +36,7 @@ import { createAuthService, type AuthService } from './services/auth.service.js'
 import { createContactService } from './services/contact.service.js';
 import { createGoogleVerifier, type GoogleVerifier } from './services/google.service.js';
 import { createPasswordResetService } from './services/passwordReset.service.js';
+import { createGameService } from './services/game.service.js';
 import { createProgressService } from './services/progress.service.js';
 import { cryptoRandomInt, type RandomInt } from './services/quiz-engine.js';
 import { createQuizService } from './services/quiz.service.js';
@@ -149,6 +150,7 @@ export function createApp(
 
   const progress = createProgressService({ requireQrUnlock: deps.env.REQUIRE_QR_UNLOCK });
   const quizzes = createQuizService({ progress, clock, random: deps.random ?? cryptoRandomInt });
+  const game = createGameService({ progress, clock });
   const quizPublisher = createQuizPublishService({ clock, quizzes });
   const requireUnlocked = createRequireUnlocked(progress);
   const quizAdmin = createQuizAdminService({ clock });
@@ -196,6 +198,7 @@ export function createApp(
   app.use(
     '/api',
     createApiRouter({
+      game,
       google:
         deps.google ??
         (deps.env.GOOGLE_CLIENT_ID ? createGoogleVerifier(deps.env.GOOGLE_CLIENT_ID) : undefined),

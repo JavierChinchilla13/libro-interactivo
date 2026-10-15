@@ -97,7 +97,7 @@ describe('crear, listar, revocar y rotar', () => {
     expect(stored?.createdBy.toString()).toBe(adminUser._id.toString());
   });
 
-  it('un segundo QR activo para el mismo quiz responde 409; el del juego se rechaza hasta la fase 10; quiz inexistente 404', async () => {
+  it('un segundo QR activo para el mismo quiz responde 409; un juego inexistente y un quiz inexistente responden 404', async () => {
     const { admin, create, quiz1 } = await world();
     await create(quiz1._id.toString());
     const dup = await admin
@@ -111,7 +111,7 @@ describe('crear, listar, revocar y rotar', () => {
           .post('/api/admin/access-tokens')
           .send({ kind: 'game', refId: quiz1._id.toString() })
       ).status,
-    ).toBe(400);
+    ).toBe(404);
     expect(
       (
         await admin

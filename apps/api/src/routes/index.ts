@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import type { Env } from '../config/env.js';
 import type { Limits } from '../config/limits.js';
+import { createGameController } from '../controllers/game.controller.js';
+import type { GameService } from '../services/game.service.js';
 import type { GoogleVerifier } from '../services/google.service.js';
+import { createAdminGameRouter, createGameRouter } from './game.routes.js';
 import {
   createAdminPostController,
   createPublicPostController,
@@ -128,6 +131,7 @@ export interface RouteDeps {
   extras: ExtraService;
   clock: Clock;
   requireUnlocked: RequireUnlocked;
+  game: GameService;
   guards: Guards;
   limits: Limits;
   /** Verificador de Google; sin él (no hay GOOGLE_CLIENT_ID) `POST /auth/google` responde 404. */
@@ -192,6 +196,9 @@ export function createApiRouter(deps: RouteDeps): Router {
     createAdminSiteRouter(createAdminSiteController(deps.siteSettings), deps.guards),
   );
   router.use('/contact', createContactRouter(deps.contact, deps.limits));
+  const gameController = createGameController(deps.game);
+  router.use('/game', createGameRouter(gameController, deps.guards));
+  router.use('/admin/game-stories', createAdminGameRouter(gameController, deps.guards));
   router.use('/quizzes', createQuizRouter(quizController, deps.guards, deps.requireUnlocked));
   router.use('/attempts', createAttemptRouter(quizController, deps.guards));
   router.use(

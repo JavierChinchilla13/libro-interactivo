@@ -22,7 +22,9 @@ export function PanelLayout() {
   const navigate = useNavigate();
   const user = session.data;
   // En el quiz solo queda la marca: sin «Salir» ni pestañas que cierren la sesión o abandonen sin querer.
-  const immersive = useMatch('/panel/quiz/:quizId') !== null;
+  const inQuiz = useMatch('/panel/quiz/:quizId') !== null;
+  const inGame = useMatch('/panel/juego/:bookId') !== null;
+  const immersive = inQuiz || inGame;
 
   return (
     <div className={`flex min-h-dvh flex-col ${immersive ? '' : 'pb-16 sm:pb-0'}`}>

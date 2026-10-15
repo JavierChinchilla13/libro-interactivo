@@ -75,6 +75,10 @@ export const routes: RouteObject[] = [
             ...page(() => import('../features/reader/QuizPage'), 'QuizPage'),
           },
           {
+            path: 'juego/:bookId',
+            ...page(() => import('../features/game/GamePage'), 'GamePage'),
+          },
+          {
             path: 'resultados',
             ...page(() => import('../features/reader/ResultsPage'), 'ResultsPage'),
           },

@@ -1,6 +1,7 @@
 import type { PublicBookDetail, PublicBookSummary } from '@libro/shared';
 import { AppError } from '../lib/errors.js';
 import { Book } from '../models/Book.js';
+import { GameStory } from '../models/GameStory.js';
 import { Quiz } from '../models/Quiz.js';
 import { toBookResponse } from './book.service.js';
 
@@ -36,6 +37,9 @@ export function createPublicBookService() {
       .select('title order')
       .sort({ order: 1 })
       .lean();
+    const game = await GameStory.findOne({ bookId: book._id, status: 'published' })
+      .select('title')
+      .lean();
     return {
       ...summaryOf(full),
       synopsis: full.synopsis,
@@ -58,12 +62,25 @@ export function createPublicBookService() {
             : {}),
         })),
       // Solo el nombre y la posición de cada quiz publicado (nunca preguntas ni resultados).
-      experiences: quizzes.map((quiz) => ({
-        kind: 'quiz' as const,
-        id: String(quiz._id),
-        order: quiz.order,
-        title: quiz.title,
-      })),
+      experiences: [
+        ...quizzes.map((quiz) => ({
+          kind: 'quiz' as const,
+          id: String(quiz._id),
+          order: quiz.order,
+          title: quiz.title,
+        })),
+        // El juego, si el libro lo tiene, va siempre al final (solo su nombre).
+        ...(game
+          ? [
+              {
+                kind: 'game' as const,
+                id: String(game._id),
+                order: (quizzes[quizzes.length - 1]?.order ?? 0) + 1,
+                title: game.title,
+              },
+            ]
+          : []),
+      ],
     };
   }
 

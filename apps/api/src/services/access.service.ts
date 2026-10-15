@@ -12,6 +12,7 @@ import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { qrPdf, qrSvg } from '../lib/qr.js';
 import { AccessToken } from '../models/AccessToken.js';
 import { Book } from '../models/Book.js';
+import { GameStory } from '../models/GameStory.js';
 import { Quiz } from '../models/Quiz.js';
 import type { Actor, ProgressService } from './progress.service.js';
 
@@ -68,7 +69,7 @@ export function createAccessService(deps: AccessDeps) {
 
   /** Crea el documento con su token (el id se genera antes para poder firmarlo). */
   async function insert(
-    target: { kind: 'quiz'; refId: string },
+    target: { kind: 'quiz' | 'game'; refId: string },
     bookId: Types.ObjectId,
     label: string,
     actor: Actor,
@@ -88,7 +89,7 @@ export function createAccessService(deps: AccessDeps) {
       if (isDuplicateKey(error)) {
         throw new AppError(
           'CONFLICT',
-          'Ya hay un código activo para este quiz. Revócalo o rótalo.',
+          'Ya hay un código activo para esta experiencia. Revócalo o rótalo.',
         );
       }
       throw error;
@@ -108,10 +109,16 @@ export function createAccessService(deps: AccessDeps) {
     request: CreateAccessTokenRequest,
   ): Promise<AccessTokenResponse> {
     if (request.kind === 'game') {
-      throw new AppError(
-        'VALIDATION',
-        'El código del juego se crea cuando exista el juego (fase 10)',
+      const story = await GameStory.findById(request.refId).select('bookId title').lean();
+      if (!story) throw new AppError('NOT_FOUND', 'No encontramos ese juego');
+      const book = await Book.findById(story.bookId).select('title').lean();
+      const id = await insert(
+        { kind: 'game', refId: request.refId },
+        story.bookId,
+        `${book?.title ?? 'Libro'} — Juego: ${story.title}`,
+        actor,
       );
+      return toResponse(await mustFind(id.toString()));
     }
     const { quiz, label } = await labelFor(request.refId);
     const id = await insert({ kind: 'quiz', refId: request.refId }, quiz.bookId, label, actor);
@@ -153,7 +160,7 @@ export function createAccessService(deps: AccessDeps) {
     let newId: Types.ObjectId;
     try {
       newId = await insert(
-        { kind: 'quiz', refId: targetOf(current).refId.toString() },
+        { kind: targetOf(current).kind, refId: targetOf(current).refId.toString() },
         current.bookId,
         current.label,
         actor,
@@ -207,14 +214,27 @@ export function createAccessService(deps: AccessDeps) {
       tokenHash: hashAccessToken(token),
       status: 'active',
     }).lean();
-    if (!doc || targetOf(doc).kind !== 'quiz') return null;
-    const quiz = await Quiz.findById(targetOf(doc).refId)
-      .select('bookId title status currentVersion')
-      .lean();
-    if (!quiz || quiz.status !== 'published' || quiz.currentVersion < 1) return null;
-    const book = await Book.findById(quiz.bookId).select('title status').lean();
+    if (!doc) return null;
+    let experience: { bookId: Types.ObjectId; refId: Types.ObjectId; title: string };
+    if (targetOf(doc).kind === 'game') {
+      const story = await GameStory.findOne({
+        _id: targetOf(doc).refId,
+        status: 'published',
+      })
+        .select('bookId title')
+        .lean();
+      if (!story) return null;
+      experience = { bookId: story.bookId, refId: story._id, title: story.title };
+    } else {
+      const quiz = await Quiz.findById(targetOf(doc).refId)
+        .select('bookId title status currentVersion')
+        .lean();
+      if (!quiz || quiz.status !== 'published' || quiz.currentVersion < 1) return null;
+      experience = { bookId: quiz.bookId, refId: quiz._id, title: quiz.title };
+    }
+    const book = await Book.findById(experience.bookId).select('title status').lean();
     if (book?.status !== 'published') return null;
-    return { doc, quiz, book };
+    return { doc, experience, book };
   }
 
   /** Metadatos mínimos para mostrar «vas a desbloquear X» antes de iniciar sesión. */
@@ -225,7 +245,7 @@ export function createAccessService(deps: AccessDeps) {
       valid: true,
       bookTitle: found.book.title,
       kind: targetOf(found.doc).kind,
-      title: found.quiz.title,
+      title: found.experience.title,
     };
   }
 
@@ -236,9 +256,9 @@ export function createAccessService(deps: AccessDeps) {
     const now = clock();
     const first = await progress.unlock({
       userId,
-      bookId: found.quiz.bookId.toString(),
+      bookId: found.experience.bookId.toString(),
       kind: targetOf(found.doc).kind,
-      refId: found.quiz._id.toString(),
+      refId: found.experience.refId.toString(),
       accessTokenId: found.doc._id.toString(),
       at: now,
     });
@@ -248,9 +268,9 @@ export function createAccessService(deps: AccessDeps) {
     );
     return {
       kind: targetOf(found.doc).kind,
-      refId: found.quiz._id.toString(),
-      bookId: found.quiz.bookId.toString(),
-      title: found.quiz.title,
+      refId: found.experience.refId.toString(),
+      bookId: found.experience.bookId.toString(),
+      title: found.experience.title,
       alreadyUnlocked: !first,
     };
   }

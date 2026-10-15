@@ -22,10 +22,20 @@ export function lockedMessage(experience: Experience): string {
 const linkButton = 'btn';
 
 /** Un paso del hilo: el punto está encendido si ya se abrió (disponible o completado) y apagado si sigue bloqueado. */
-function ExperienceStep({ experience, primary }: { experience: Experience; primary: boolean }) {
+function ExperienceStep({
+  experience,
+  primary,
+  bookId,
+}: {
+  experience: Experience;
+  primary: boolean;
+  bookId: string;
+}) {
+  const isGame = experience.kind === 'game';
+  const playTo = isGame ? `/panel/juego/${bookId}` : `/panel/quiz/${experience.id}`;
   return (
     <ThreadItem state={experience.status === 'locked' ? 'unlit' : 'lit'}>
-      <p className="label tabular-nums">Quiz {experience.order}</p>
+      <p className="label tabular-nums">{isGame ? 'Juego' : `Quiz ${experience.order}`}</p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <h3 className="text-lg font-semibold">{experience.title}</h3>
         {experience.status === 'completed' ? (
@@ -46,25 +56,28 @@ function ExperienceStep({ experience, primary }: { experience: Experience; prima
 
       {experience.status === 'available' ? (
         <Link
-          to={`/panel/quiz/${experience.id}`}
+          to={playTo}
           className={`${linkButton} mt-3 ${primary ? 'btn-primary' : 'btn-secondary'}`}
         >
-          {experience.inProgress ? 'Continuar' : 'Empezar'}
+          {experience.inProgress ? 'Continuar' : isGame ? 'Jugar' : 'Empezar'}
           <span className="sr-only"> {experience.title}</span>
         </Link>
       ) : null}
 
       {experience.status === 'completed' ? (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Link to={`/panel/resultados/${experience.id}`} className={`${linkButton} btn-secondary`}>
-            Ver mi resultado<span className="sr-only"> de {experience.title}</span>
-          </Link>
-          {experience.allowRetake ? (
+          {isGame ? null : (
             <Link
-              to={`/panel/quiz/${experience.id}`}
-              className={`${linkButton} text-muted underline`}
+              to={`/panel/resultados/${experience.id}`}
+              className={`${linkButton} btn-secondary`}
             >
-              Repetir<span className="sr-only"> {experience.title}</span>
+              Ver mi resultado<span className="sr-only"> de {experience.title}</span>
+            </Link>
+          )}
+          {experience.allowRetake ? (
+            <Link to={playTo} className={`${linkButton} text-muted underline`}>
+              {isGame ? 'Jugar de nuevo' : 'Repetir'}
+              <span className="sr-only"> {experience.title}</span>
             </Link>
           ) : (
             <span className="text-xs text-muted">Solo se juega una vez</span>
@@ -165,6 +178,7 @@ export function DashboardPage() {
                   key={experience.id}
                   experience={experience}
                   primary={experience.id === nextId}
+                  bookId={bookId}
                 />
               ))}
             </ThreadList>
