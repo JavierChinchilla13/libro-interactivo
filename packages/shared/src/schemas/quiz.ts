@@ -245,7 +245,8 @@ export const progressResponseSchema = z.object({
   bookId: objectIdSchema,
   experiences: z.array(
     z.object({
-      kind: z.literal('quiz'),
+      /** `game`: el juego del libro, siempre la última experiencia (su `id` es el de la historia). */
+      kind: z.enum(['quiz', 'game']),
       id: objectIdSchema,
       title: z.string(),
       order: z.number().int(),

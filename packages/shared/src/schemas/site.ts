@@ -145,7 +145,7 @@ export const publicBookDetailSchema = publicBookSummarySchema.extend({
   /** Solo el nombre y la posición de cada quiz publicado: nunca su contenido. */
   experiences: z.array(
     z.object({
-      kind: z.literal('quiz'),
+      kind: z.enum(['quiz', 'game']),
       id: objectIdSchema,
       order: z.number().int(),
       title: z.string(),

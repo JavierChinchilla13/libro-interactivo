@@ -3,6 +3,8 @@ import { Types } from 'mongoose';
 import { AppError } from '../lib/errors.js';
 import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { Book } from '../models/Book.js';
+import { GameSession } from '../models/GameSession.js';
+import { GameStory } from '../models/GameStory.js';
 import { Quiz } from '../models/Quiz.js';
 import { QuizAttempt } from '../models/QuizAttempt.js';
 import { QuizVersion } from '../models/QuizVersion.js';
@@ -77,6 +79,39 @@ export function createProgressService(deps: ProgressDeps) {
     }
   }
 
+  /**
+   * Comprueba que `actor` puede jugar la historia publicada del libro: se abre cuando todos los quizzes publicados están
+   * completados y, con QR, cuando el código del juego se canjeó. El personal del sitio siempre (partida de prueba).
+   * 404 si no hay historia publicada; 403 `NOT_UNLOCKED` sin contenido si falta algo.
+   */
+  async function assertGameAccess(actor: Actor, bookId: string) {
+    const story = await GameStory.findOne({ bookId, status: 'published' }).lean();
+    if (!story) throw new AppError('NOT_FOUND', 'No encontramos ese juego');
+    if (isStaff(actor.role)) return story;
+    const book = await Book.findById(bookId).select('status').lean();
+    if (book?.status !== 'published') throw new AppError('NOT_FOUND', 'No encontramos ese juego');
+
+    const [progress, published] = await Promise.all([
+      UserProgress.findOne({ userId: actor.userId, bookId }).select('completed unlocked').lean(),
+      Quiz.find({ bookId, status: 'published', currentVersion: { $gte: 1 } })
+        .select('_id')
+        .lean(),
+    ]);
+    const done = new Set(
+      (progress?.completed ?? []).filter((c) => c.kind === 'quiz').map((c) => c.refId.toString()),
+    );
+    if (!published.every((quiz) => done.has(quiz._id.toString()))) {
+      throw new AppError('NOT_UNLOCKED', NOT_UNLOCKED_MESSAGE);
+    }
+    if (deps.requireQrUnlock) {
+      const unlocked = (progress?.unlocked ?? []).some(
+        (u) => u.kind === 'game' && u.refId.toString() === story._id.toString(),
+      );
+      if (!unlocked) throw new AppError('NOT_UNLOCKED', NOT_UNLOCKED_MESSAGE);
+    }
+    return story;
+  }
+
   /** Estado de cada quiz del libro para el dashboard (solo nombres y orden: nada de contenido). */
   async function getProgress(userId: string, bookId: string): Promise<ProgressResponse> {
     const book = await Book.findById(bookId).select('status').lean();
@@ -145,6 +180,40 @@ export function createProgressService(deps: ProgressDeps) {
         allowRetake: retake.get(id) ?? true,
       };
     });
+    // El juego, si el libro tiene historia publicada, va siempre al final.
+    const story = await GameStory.findOne({ bookId, status: 'published' }).select('title').lean();
+    if (story) {
+      const id = story._id.toString();
+      const done = (progress?.completed ?? []).some(
+        (c) => c.kind === 'game' && c.refId.toString() === id,
+      );
+      const reachable =
+        previousDone &&
+        (!deps.requireQrUnlock ||
+          (progress?.unlocked ?? []).some((u) => u.kind === 'game' && u.refId.toString() === id));
+      const open = await GameSession.exists({
+        userId,
+        bookId,
+        status: 'in_progress',
+        isTest: false,
+      });
+      const lockedBy =
+        done || reachable
+          ? undefined
+          : !previousDone && waitingFor !== undefined
+            ? { reason: 'order' as const, waitingFor }
+            : { reason: 'qr' as const };
+      experiences.push({
+        kind: 'game' as never,
+        id,
+        title: story.title,
+        order: (experiences[experiences.length - 1]?.order ?? 0) + 1,
+        status: done ? 'completed' : reachable ? 'available' : 'locked',
+        ...(lockedBy ? { lockedBy } : {}),
+        inProgress: Boolean(open),
+        allowRetake: true,
+      } as (typeof experiences)[number]);
+    }
     return {
       bookId,
       experiences,
@@ -204,11 +273,61 @@ export function createProgressService(deps: ProgressDeps) {
   }
 
   /**
-   * ¿Debe el juego estar completado para cerrar el libro? Hasta la fase 10 no existe el juego, así que solo cuentan los
-   * quizzes. Cuando exista, esta función devolverá `true` si el libro tiene una historia publicada.
+   * Registra, de forma atómica, que el juego quedó completado (las partidas de prueba nunca llegan aquí). La primera vez
+   * agrega la entrada; las siguientes solo actualizan la partida vigente. Puede cerrar el libro.
    */
-  async function gameRequired(_bookId: string): Promise<boolean> {
-    return false;
+  async function recordGameCompletion(input: {
+    userId: string;
+    bookId: string;
+    storyId: string;
+    sessionId: string;
+    endingKey: string;
+    at: Date;
+  }): Promise<void> {
+    const entry = { kind: 'game', refId: new Types.ObjectId(input.storyId) };
+    const updateCurrent = () =>
+      UserProgress.updateOne(
+        { userId: input.userId, bookId: input.bookId, completed: { $elemMatch: entry } },
+        {
+          $set: {
+            'completed.$.currentAttemptId': new Types.ObjectId(input.sessionId),
+            'completed.$.currentResultKey': input.endingKey,
+          },
+        },
+      );
+    if ((await updateCurrent()).matchedCount === 0) {
+      try {
+        await UserProgress.updateOne(
+          {
+            userId: input.userId,
+            bookId: input.bookId,
+            completed: { $not: { $elemMatch: entry } },
+          },
+          {
+            $push: {
+              completed: {
+                ...entry,
+                firstCompletedAt: input.at,
+                currentAttemptId: new Types.ObjectId(input.sessionId),
+                currentResultKey: input.endingKey,
+              },
+            },
+          },
+          { upsert: true },
+        );
+      } catch (error) {
+        if (!isDuplicateKey(error)) throw error;
+        await updateCurrent();
+      }
+    }
+    await completeBookIfDone(input.userId, input.bookId, input.at);
+  }
+
+  /**
+   * ¿Debe el juego estar completado para cerrar el libro? Sí cuando el libro tiene una historia publicada.
+   */
+  async function gameRequired(bookId: string): Promise<boolean> {
+    return Boolean(await GameStory.exists({ bookId, status: 'published' }));
   }
 
   /**
@@ -216,18 +335,20 @@ export function createProgressService(deps: ProgressDeps) {
    * libro (y el juego, si lo hay). No se revierte si luego se agrega otro quiz: quien ya abrió los extras los conserva.
    */
   async function completeBookIfDone(userId: string, bookId: string, at: Date): Promise<boolean> {
-    if (await gameRequired(bookId)) return false;
+    const needsGame = await gameRequired(bookId);
     const [published, progress] = await Promise.all([
       Quiz.find({ bookId, status: 'published', currentVersion: { $gte: 1 } })
         .select('_id')
         .lean(),
       UserProgress.findOne({ userId, bookId }).select('completed bookCompletedAt').lean(),
     ]);
-    if (!progress || progress.bookCompletedAt || published.length === 0) return false;
+    if (!progress || progress.bookCompletedAt) return false;
+    if (published.length === 0 && !needsGame) return false;
     const done = new Set(
       progress.completed.filter((c) => c.kind === 'quiz').map((c) => c.refId.toString()),
     );
     if (!published.every((quiz) => done.has(quiz._id.toString()))) return false;
+    if (needsGame && !progress.completed.some((c) => c.kind === 'game')) return false;
     const result = await UserProgress.updateOne(
       { userId, bookId, bookCompletedAt: { $exists: false } },
       { $set: { bookCompletedAt: at } },
@@ -285,8 +406,10 @@ export function createProgressService(deps: ProgressDeps) {
 
   return {
     assertQuizAccess,
+    assertGameAccess,
     getProgress,
     recordQuizCompletion,
+    recordGameCompletion,
     unlock,
     isBookCompleted,
     assertBookCompleted,

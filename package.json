@@ -12,14 +12,14 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run build -w packages/shared && concurrently -k -n shared,api,web -c gray,blue,green \"npm run dev -w packages/shared\" \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "dev": "npm run build -w packages/shared && npm run build -w packages/game-core && concurrently -k -n shared,api,web -c gray,blue,green \"npm run dev -w packages/shared\" \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
     "dev:db": "npm run dev:db -w apps/api",
-    "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w apps/web",
+    "build": "npm run build -w packages/shared && npm run build -w packages/game-core && npm run build -w apps/api && npm run build -w apps/web",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "npm run build -w packages/shared && npm run typecheck --workspaces --if-present",
-    "test": "npm run build -w packages/shared && npm test --workspaces --if-present",
+    "typecheck": "npm run build -w packages/shared && npm run build -w packages/game-core && npm run typecheck --workspaces --if-present",
+    "test": "npm run build -w packages/shared && npm run build -w packages/game-core && npm test --workspaces --if-present",
     "test:e2e": "playwright test"
   },
   "devDependencies": {
