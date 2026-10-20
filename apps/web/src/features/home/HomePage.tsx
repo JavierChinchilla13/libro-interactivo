@@ -10,6 +10,7 @@ import { communityApi, communityKeys } from '../community/api';
 import { postKeys, postsApi } from '../posts/api';
 import { booksApi, readerKeys } from '../reader/api';
 import { publicApi, publicKeys } from './api';
+import { TiltedGrid } from './TiltedGrid';
 import {
   AuthorSection,
   BookSection,
@@ -133,6 +134,7 @@ export function HomePage() {
         <SectionsSkeleton />
       ) : (
         <>
+          <TiltedGrid images={site.data?.universe.headerImages} />
           <Statement text={STATEMENT} />
           {book && showBook ? <BookSection book={book} /> : null}
           {book ? (

@@ -15,13 +15,14 @@ export function PageBackground() {
   const image = site.data?.universe.background;
   const [loaded, setLoaded] = useState(false);
 
+  // Las bandas solo se aclaran cuando la pintura ya se ve: si la imagen no carga, el sitio queda como siempre.
   useEffect(() => {
-    if (!image) return;
+    if (!image || !loaded) return;
     document.documentElement.dataset['pageBg'] = '';
     return () => {
       delete document.documentElement.dataset['pageBg'];
     };
-  }, [image]);
+  }, [image, loaded]);
 
   if (!image) return null;
   const srcSet = WIDTHS.map((width) => `${thumbUrl(image.url, width)} ${width}w`).join(', ');
