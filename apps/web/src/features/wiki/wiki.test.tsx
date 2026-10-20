@@ -127,7 +127,7 @@ describe('wiki: lugares', () => {
     ],
   };
 
-  it('muestra el mensaje, el mapa, la lista y una tarjeta bloqueada sin nombre', async () => {
+  it('muestra el mensaje, el mapa y carpetas por tipo; la primera abierta y lo bloqueado solo contado', async () => {
     mockApi({ ...base, [entriesKey('place')]: () => json(places) }, NO_SESSION);
     renderAt('/wiki/lugares');
     expect(await screen.findByText('[PLACEHOLDER] Mensaje de lugares')).toBeInTheDocument();
@@ -137,19 +137,54 @@ describe('wiki: lugares', () => {
     );
     const sala = await screen.findByRole('link', { name: /Sala/ });
     expect(sala).toHaveAttribute('href', `/wiki/entrada/${'1'.padStart(24, '0')}`);
-    expect(screen.getAllByText('Bloqueado')).toHaveLength(1);
+    const folders = within(screen.getByRole('list', { name: 'Carpetas de lugares' }));
+    expect(folders.getByRole('button', { name: /Sala de experimentación/ })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(folders.getByRole('button', { name: /Ciudad/ })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    // Lo bloqueado solo se cuenta: sin nombre ni tipo, y sus tarjetas no se ven hasta abrir la carpeta.
+    expect(folders.getByRole('button', { name: /Por descubrir/ })).toHaveTextContent(
+      '1 lugar bloqueado',
+    );
+    expect(screen.queryByText('Bloqueado')).not.toBeInTheDocument();
   });
 
-  it('filtra por tipo y oculta las tarjetas bloqueadas (no tienen tipo)', async () => {
+  it('abre una carpeta a la vez, con Esc la cierra y devuelve el foco, y las bloqueadas no dan nombre', async () => {
     mockApi({ ...base, [entriesKey('place')]: () => json(places) }, NO_SESSION);
     renderAt('/wiki/lugares');
     await screen.findByRole('link', { name: /Sala/ });
-    await userEvent.click(screen.getByRole('button', { name: 'Ciudad' }));
+    const ciudad = screen.getByRole('button', { name: /Ciudad/ });
+    await userEvent.click(ciudad);
     expect(screen.getByRole('link', { name: /Ciudad Vieja/ })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Sala/ })).not.toBeInTheDocument();
-    expect(screen.queryByText('Bloqueado')).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Todos' }));
-    expect(screen.getByRole('link', { name: /Sala/ })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Por descubrir/ }));
+    expect(screen.getAllByText('Bloqueado')).toHaveLength(1);
+    await userEvent.click(ciudad);
+    const link = await screen.findByRole('link', { name: /Ciudad Vieja/ });
+    link.focus();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('link', { name: /Ciudad Vieja/ })).not.toBeInTheDocument();
+    expect(ciudad).toHaveFocus();
+    expect(ciudad).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('sin tipos en ningún lugar muestra la lista simple, con lo bloqueado', async () => {
+    mockApi(
+      {
+        ...base,
+        [entriesKey('place')]: () =>
+          json({ entries: [open('1', 'place', 'Sala'), lockedItem('3', 'place')] }),
+      },
+      NO_SESSION,
+    );
+    renderAt('/wiki/lugares');
+    expect(await screen.findByRole('link', { name: /Sala/ })).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Carpetas de lugares' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('Bloqueado')).toHaveLength(1);
   });
 });
 

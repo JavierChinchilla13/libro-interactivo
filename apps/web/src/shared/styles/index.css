@@ -681,6 +681,79 @@
     }
   }
 
+  /* Carpetas de la wiki: vidrio solo aquí (con alternativa sólida), pestaña arriba, un borde que se enciende al abrir. */
+  .glass-folder {
+    position: relative;
+    display: flex;
+    min-height: 7.5rem;
+    width: 100%;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-md);
+    background: var(--token-glass-folder);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    padding: 1.25rem;
+    text-align: left;
+    cursor: pointer;
+    transition-property: border-color, background-color, transform;
+    transition-duration: var(--token-dur-fast);
+    transition-timing-function: var(--token-ease-out);
+  }
+  .glass-folder::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: -0.7rem;
+    width: 5rem;
+    height: 0.8rem;
+    border: 1px solid var(--token-line);
+    border-bottom: 0;
+    border-radius: var(--token-radius-xs) var(--token-radius-xs) 0 0;
+    background: var(--token-glass-folder);
+    transition: border-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .glass-folder:active {
+    transform: scale(0.98);
+  }
+  .glass-folder[aria-expanded='true'] {
+    border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
+    background: color-mix(in srgb, var(--token-surface-alt) 78%, transparent);
+  }
+  .glass-folder[aria-expanded='true']::before {
+    border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .glass-folder:hover {
+      border-color: color-mix(in srgb, var(--token-primary) 45%, var(--token-line));
+    }
+  }
+  .glass-folder-sheet {
+    border-top: 1px solid var(--token-line);
+    padding-top: 1.5rem;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .glass-folder-sheet {
+      animation: folder-open 200ms var(--token-ease-out) both;
+    }
+  }
+  @keyframes folder-open {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .glass-folder,
+    .glass-folder::before {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background: var(--token-surface);
+    }
+  }
+
   /* Cronómetro de la ficha del libro: el número real está siempre; el lienzo de partículas lo cubre si hay movimiento. */
   .countdown {
     display: flex;
