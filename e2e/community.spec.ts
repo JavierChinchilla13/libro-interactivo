@@ -127,6 +127,9 @@ test.describe('fan arts y reseñas (escritorio)', () => {
 
     // La galería: solo el publicado con permiso, y se amplía con el crédito del artista.
     await view.goto(`${baseURL}/fan-arts`);
+    // Con 3 o más obras la página abre en carrusel: para tocar cada obra se pasa a la cuadrícula.
+    const grid = view.getByRole('button', { name: 'Cuadrícula' });
+    if ((await grid.count()) > 0) await grid.click();
     await expect(view.getByRole('button', { name: new RegExp(`Dibujo ${stamp}`) })).toBeVisible();
     for (const hidden of ['Sin Permiso', 'Borrador', 'Archivado']) {
       await expect(
