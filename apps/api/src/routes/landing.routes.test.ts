@@ -146,6 +146,30 @@ describe('PATCH /api/admin/site-settings (secciones)', () => {
     expect(after.universe.background).toBeUndefined();
   });
 
+  it('guarda las imágenes del encabezado (0 o 5 a 9, solo Cloudinary) y las entrega en orden', async () => {
+    const { app, admin } = await staffWorld();
+    const imgs = (n: number) => Array.from({ length: n }, (_, i) => image(`enc-${i}`));
+    const patch = (headerImages: unknown) =>
+      admin.patch('/api/admin/site-settings').send({ universe: { introHtml: '', headerImages } });
+    expect((await patch(imgs(4))).status).toBe(400);
+    expect((await patch(imgs(10))).status).toBe(400);
+    expect(
+      (await patch([...imgs(4), image('x', { url: 'https://evil.example.com/a.png' })])).status,
+    ).toBe(400);
+    await patch(imgs(6)).then((res) => expect(res.status).toBe(200));
+    const pub = publicSiteResponseSchema.parse(
+      (await request(app).get('/api/site').expect(200)).body,
+    );
+    expect(pub.universe.headerImages?.map((item) => item.publicId)).toEqual(
+      imgs(6).map((item) => item.publicId),
+    );
+    await patch([]).then((res) => expect(res.status).toBe(200));
+    const after = publicSiteResponseSchema.parse(
+      (await request(app).get('/api/site').expect(200)).body,
+    );
+    expect(after.universe.headerImages).toBeUndefined();
+  });
+
   it('rechaza enlaces que no son http(s), una foto que no es de Cloudinary y demasiadas redes', async () => {
     const { editor } = await staffWorld();
     const bad = (body: unknown) => editor.patch('/api/admin/site-settings').send(body as object);

@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { json, mockApi, renderAt } from '../../test/mockApi';
 
@@ -44,6 +44,10 @@ describe('PageBackground', () => {
     expect(img.getAttribute('srcset')).toContain('w_1920');
     expect(img.getAttribute('fetchpriority')).toBe('low');
     expect(img.getAttribute('alt')).toBe('');
-    expect(document.documentElement.dataset['pageBg']).toBe('');
+    // Mientras la pintura no carga, las bandas no cambian; al cargar, se aclaran.
+    expect(document.documentElement.dataset['pageBg']).toBeUndefined();
+    fireEvent.load(img);
+    await waitFor(() => expect(document.documentElement.dataset['pageBg']).toBe(''));
+    expect(layer).toHaveAttribute('data-loaded');
   });
 });

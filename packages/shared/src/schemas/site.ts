@@ -29,6 +29,12 @@ export const universeSettingsSchema = z.object({
   introHtml: z.string().max(20_000),
   /** Pintura de fondo de todo el sitio (imagen de Cloudinary; sin ella se ve el color liso). */
   background: imageRefSchema.optional(),
+  /** Imágenes de la rejilla inclinada bajo el titular: ninguna (no se muestra) o entre 5 y 9. */
+  headerImages: z
+    .array(imageRefSchema)
+    .max(9, 'Máximo 9 imágenes')
+    .refine((list) => list.length === 0 || list.length >= 5, 'Sube entre 5 y 9 imágenes, o ninguna')
+    .optional(),
 });
 export type UniverseSettings = z.infer<typeof universeSettingsSchema>;
 

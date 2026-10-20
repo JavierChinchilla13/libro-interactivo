@@ -66,10 +66,15 @@ export function toWelcome(settings: Loaded): WelcomeSettings {
 
 function toUniverse(settings: Loaded): UniverseSettings {
   const background = imageRefSchema.safeParse(settings?.universe?.background);
+  const headerImages = (settings?.universe?.headerImages ?? []).flatMap((item: unknown) => {
+    const parsed = imageRefSchema.safeParse(item);
+    return parsed.success ? [parsed.data] : [];
+  });
   return {
     ...(settings?.universe?.headline ? { headline: settings.universe.headline } : {}),
     introHtml: settings?.universe?.introHtml ?? '',
     ...(background.success ? { background: background.data } : {}),
+    ...(headerImages.length > 0 ? { headerImages } : {}),
   };
 }
 
@@ -146,6 +151,10 @@ export function createSiteSettingsService() {
       assertCloudinaryUrls([universe.background?.url]);
       if (universe.background) set['universe.background'] = universe.background;
       else unset['universe.background'] = 1;
+      assertCloudinaryUrls((universe.headerImages ?? []).map((item) => item.url));
+      if (universe.headerImages && universe.headerImages.length > 0) {
+        set['universe.headerImages'] = universe.headerImages;
+      } else unset['universe.headerImages'] = 1;
     }
     if (author) {
       assertCloudinaryUrls([author.photo?.url]);

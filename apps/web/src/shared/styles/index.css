@@ -681,6 +681,90 @@
     }
   }
 
+  /* Rejilla inclinada del encabezado: hilera curva de imágenes; solo `transform` y una máscara estática. */
+  .tilted-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1.5rem;
+    overflow: clip;
+  }
+  .tilted-stage {
+    width: 100%;
+  }
+  .tilted-stage {
+    perspective: 1100px;
+    mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+  }
+  .tilted-track {
+    display: flex;
+    width: max-content;
+    gap: 1rem;
+    margin: 0;
+    /* El relleno final iguala el hueco entre imágenes: el bucle al -50 % cae exacto, sin salto. */
+    padding: 2rem 1rem 3rem 0;
+    list-style: none;
+    transform: rotateX(14deg) rotateZ(-2.5deg);
+    transform-origin: 50% 100%;
+  }
+  .tilted-tile {
+    flex: none;
+    width: 8.5rem;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: var(--token-radius-xs);
+    background: var(--token-surface-alt);
+  }
+  .tilted-tile img {
+    border-radius: var(--token-radius-xs);
+  }
+  /* En el celular y sin marquesina, solo se ven las imágenes originales y la hilera queda centrada. */
+  .tilted-track {
+    margin-inline: auto;
+  }
+  .tilted-track .tilted-tile[aria-hidden='true'] {
+    display: none;
+  }
+  .tilted-pause {
+    display: none;
+  }
+  @media (min-width: 48rem) {
+    .tilted-tile {
+      width: 12rem;
+    }
+    .tilted-pause {
+      display: none;
+    }
+  }
+  @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) {
+    .tilted-track {
+      margin-inline: 0;
+      animation: tilted-flow 60s linear infinite;
+    }
+    .tilted-track .tilted-tile[aria-hidden='true'] {
+      display: block;
+    }
+    .tilted-grid[data-paused] .tilted-track {
+      animation-play-state: paused;
+    }
+    .tilted-pause {
+      display: inline-flex;
+      min-height: 2.75rem;
+      margin-top: 0.25rem;
+    }
+  }
+  @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+    .tilted-grid:hover .tilted-track {
+      animation-play-state: paused;
+    }
+  }
+  @keyframes tilted-flow {
+    to {
+      transform: rotateX(14deg) rotateZ(-2.5deg) translateX(-50%);
+    }
+  }
+
   /* Pintura de fondo del sitio: capa fija detrás de todo; el velo oscuro mantiene el contraste AA del texto. */
   .page-bg {
     position: fixed;

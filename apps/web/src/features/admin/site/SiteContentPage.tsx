@@ -16,6 +16,7 @@ interface FormState {
   headline: string;
   introHtml: string;
   background: ImageRefInput | undefined;
+  headerImages: ImageRefInput[];
   name: string;
   bioHtml: string;
   photo: ImageRefInput | undefined;
@@ -28,6 +29,7 @@ const fromSettings = (settings: SiteSettingsResponse): FormState => ({
   headline: settings.universe.headline ?? '',
   introHtml: settings.universe.introHtml,
   background: settings.universe.background,
+  headerImages: settings.universe.headerImages ?? [],
   name: settings.author.name ?? '',
   bioHtml: settings.author.bioHtml,
   photo: settings.author.photo,
@@ -51,6 +53,90 @@ export function SiteContentPage() {
   if (settings.isError) return <Alert>{errorMessage(settings.error)}</Alert>;
   if (!settings.data) return <Loading />;
   return <SiteContentForm initial={fromSettings(settings.data)} />;
+}
+
+/** Rejilla inclinada del encabezado: ninguna imagen (no se muestra) o entre 5 y 9, en el orden en que se ven. */
+function HeaderImagesField({
+  value,
+  error,
+  onChange,
+}: {
+  value: ImageRefInput[];
+  error: string | undefined;
+  onChange: (value: ImageRefInput[]) => void;
+}) {
+  const move = (index: number, delta: number) => {
+    const next = [...value];
+    const [item] = next.splice(index, 1);
+    if (item) next.splice(index + delta, 0, item);
+    onChange(next);
+  };
+  return (
+    <fieldset className="flex flex-col gap-3">
+      <legend className="text-sm font-medium">Imágenes del encabezado (5 a 9)</legend>
+      <p className="text-xs text-muted">
+        Se ven en una rejilla inclinada bajo la frase principal. Sin imágenes, la rejilla no se
+        muestra.
+      </p>
+      {value.map((image, index) => (
+        <div
+          key={image.publicId + index}
+          className="flex flex-col gap-2 rounded-token border border-border p-3"
+        >
+          <ImageField
+            label={`Imagen ${index + 1}`}
+            purpose="misc"
+            value={image}
+            onChange={(next) =>
+              onChange(
+                next
+                  ? value.map((it, i) => (i === index ? next : it))
+                  : value.filter((_, i) => i !== index),
+              )
+            }
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={index === 0}
+              onClick={() => move(index, -1)}
+            >
+              ↑<span className="sr-only"> Subir la imagen {index + 1}</span>
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={index === value.length - 1}
+              onClick={() => move(index, 1)}
+            >
+              ↓<span className="sr-only"> Bajar la imagen {index + 1}</span>
+            </Button>
+          </div>
+        </div>
+      ))}
+      {value.length < 9 ? <NewHeaderImage onAdd={(image) => onChange([...value, image])} /> : null}
+      {error ? <Alert>{error}</Alert> : null}
+    </fieldset>
+  );
+}
+
+/** Un campo de subida vacío: al elegir el archivo, la imagen se añade a la lista y el campo vuelve a quedar vacío. */
+function NewHeaderImage({ onAdd }: { onAdd: (image: ImageRefInput) => void }) {
+  const [key, setKey] = useState(0);
+  return (
+    <ImageField
+      key={key}
+      label="Añadir imagen"
+      purpose="misc"
+      value={undefined}
+      onChange={(image) => {
+        if (!image) return;
+        onAdd(image);
+        setKey((k) => k + 1);
+      }}
+    />
+  );
 }
 
 function SiteContentForm({ initial }: { initial: FormState }) {
@@ -81,6 +167,7 @@ function SiteContentForm({ initial }: { initial: FormState }) {
         headline: form.headline.trim() || undefined,
         introHtml: form.introHtml,
         background: form.background,
+        headerImages: form.headerImages,
       },
       author: {
         name: form.name.trim() || undefined,
@@ -140,6 +227,11 @@ function SiteContentForm({ initial }: { initial: FormState }) {
             purpose="theme"
             value={form.background}
             onChange={(background) => set({ background })}
+          />
+          <HeaderImagesField
+            value={form.headerImages}
+            error={errors['universe.headerImages']}
+            onChange={(headerImages) => set({ headerImages })}
           />
         </Card>
 
