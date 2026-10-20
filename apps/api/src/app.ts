@@ -4,7 +4,7 @@ import express, { type Express } from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import type { Env } from './config/env.js';
-import { DEFAULT_LIMITS, type Limits } from './config/limits.js';
+import { DEFAULT_LIMITS, scaleLimits, type Limits } from './config/limits.js';
 import { createBackgroundTasks, type BackgroundTasks } from './lib/background.js';
 import { systemClock, type Clock } from './lib/clock.js';
 import type { Logger } from './lib/logger.js';
@@ -68,6 +68,7 @@ export interface AppDeps {
     | 'GMAIL_APP_PASSWORD'
     | 'RESEND_API_KEY'
     | 'GOOGLE_CLIENT_ID'
+    | 'RATE_LIMIT_MULTIPLIER'
     | 'CONTACT_RECIPIENT_EMAIL'
     | 'REQUIRE_QR_UNLOCK'
     | 'ACCESS_TOKEN_SECRET'
@@ -229,7 +230,10 @@ export function createApp(
       clock,
       requireUnlocked,
       guards,
-      limits: { ...DEFAULT_LIMITS, ...deps.limits },
+      limits: scaleLimits(
+        { ...DEFAULT_LIMITS, ...deps.limits },
+        deps.env.RATE_LIMIT_MULTIPLIER ?? 1,
+      ),
     }),
   );
   configure?.(app, { guards, auth });
