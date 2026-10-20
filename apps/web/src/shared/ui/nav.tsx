@@ -12,9 +12,9 @@ const tabIdle = 'text-muted hover:text-text hover:after:scale-x-40';
 export const navTab = ({ isActive }: { isActive: boolean }) =>
   `${tabBase} ${isActive ? 'text-primary max-md:bg-surface-alt md:text-text md:after:scale-x-100' : tabIdle}`;
 
-/** Igual, pero la fila empieza en `lg`: la cabecera pública lleva más pestañas y a 768 px no caben con holgura. */
+/** Igual, pero la fila empieza en `xl` (1280 px): la cabecera pública lleva más pestañas y por debajo no caben sin romper palabras. */
 export const navTabLg = ({ isActive }: { isActive: boolean }) =>
-  `${tabBase} ${isActive ? 'text-primary max-lg:bg-surface-alt lg:text-text lg:after:scale-x-100' : tabIdle}`;
+  `${tabBase} ${isActive ? 'text-primary max-xl:bg-surface-alt xl:text-text xl:after:scale-x-100' : tabIdle}`;
 
 /** Pestaña inferior del panel en el celular: la activa lleva una marca cian arriba (sin brillo). */
 export const bottomTab = ({ isActive }: { isActive: boolean }) =>

@@ -37,11 +37,11 @@ export function PublicLayout() {
       <PageBackground />
       {isHome ? <div aria-hidden="true" className="hero-mesh" /> : null}
       <header className="site-header sticky top-3 z-40 px-3">
-        <div className="nav-pill mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-3 py-1.5 pl-5 pr-2 lg:pl-7">
+        <div className="nav-pill mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-3 py-1.5 pl-5 pr-2 xl:pl-7">
           <Brand />
           <button
             type="button"
-            className="btn btn-secondary btn-compact lg:hidden"
+            className="btn btn-secondary btn-compact xl:hidden"
             aria-expanded={open}
             aria-controls="menu-principal"
             onClick={() => setOpen((value) => !value)}
@@ -52,9 +52,9 @@ export function PublicLayout() {
             id="menu-principal"
             aria-label="Principal"
             onClick={() => setOpen(false)}
-            className={`${open ? 'flex' : 'hidden'} nav-menu absolute inset-x-3 top-full mt-2 flex-col gap-1 p-3 lg:static lg:mt-0 lg:flex lg:flex-1 lg:flex-row lg:items-center lg:justify-end lg:gap-1 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none`}
+            className={`${open ? 'flex' : 'hidden'} nav-menu absolute inset-x-3 top-full mt-2 flex-col gap-1 p-3 xl:static xl:mt-0 xl:flex xl:flex-1 xl:flex-row xl:items-center xl:justify-end xl:gap-1 xl:border-0 xl:bg-transparent xl:p-0 xl:backdrop-blur-none`}
           >
-            <div className="flex flex-col gap-1 lg:ml-8 lg:mr-auto lg:flex-row lg:items-center">
+            <div className="flex flex-col gap-1 xl:ml-8 xl:mr-auto xl:flex-row xl:items-center">
               <NavLink to="/" end viewTransition className={navTabLg}>
                 Inicio
               </NavLink>
@@ -77,8 +77,8 @@ export function PublicLayout() {
                 Comprar
               </Link>
             </div>
-            <span aria-hidden="true" className="mx-3 hidden h-6 w-px bg-line lg:block" />
-            <div className="flex flex-col gap-1 lg:flex-row lg:items-center">
+            <span aria-hidden="true" className="mx-3 hidden h-6 w-px bg-line xl:block" />
+            <div className="flex flex-col gap-1 xl:flex-row xl:items-center">
               {user ? (
                 <NavLink to={homeFor(user)} className={ctaClass}>
                   Mi panel

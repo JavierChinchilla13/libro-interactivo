@@ -681,6 +681,29 @@
     }
   }
 
+  /* Reseñas: un marco exterior de 1 px con la tarjeta dentro; radios concéntricos (radio exterior = interior + relleno). */
+  .review-frame {
+    --review-radius: var(--token-radius-lg);
+    --review-gap: 0.375rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--review-radius);
+    padding: var(--review-gap);
+    text-align: left;
+  }
+  .review-frame-lead {
+    --review-radius: var(--token-radius-xl);
+  }
+  .review-card {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin: 0;
+    border-radius: calc(var(--review-radius) - var(--review-gap));
+    background: var(--token-surface-alt);
+    padding: 1.5rem;
+  }
+
   /* Coverflow: desplazamiento nativo con ajuste al centro; la inclinación la dibuja la línea de tiempo de desplazamiento. */
   .coverflow {
     --cf-w: clamp(11rem, 58vw, 17rem);

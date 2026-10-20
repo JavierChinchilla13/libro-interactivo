@@ -445,24 +445,30 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
   );
   return (
     <Section id="resenas" title="Reseñas de lectores" tone="raised" align="center">
-      <ul className="flex flex-col gap-10">
+      <ul className="flex flex-col gap-8">
         {lead ? (
-          <li className="max-w-3xl border-l-2 border-border pl-6">
-            <blockquote className="font-read text-2xl leading-snug sm:text-3xl">
-              “{lead.text}”
-            </blockquote>
-            <div className="mt-4 flex flex-col gap-1">{attribution(lead)}</div>
+          <li className="review-frame review-frame-lead max-w-3xl">
+            <figure className="review-card">
+              <blockquote className="font-read text-2xl leading-snug [overflow-wrap:anywhere] sm:text-3xl">
+                “{lead.text}”
+              </blockquote>
+              <figcaption className="mt-auto flex flex-col gap-1">{attribution(lead)}</figcaption>
+            </figure>
           </li>
         ) : null}
         {rest.length > 0 ? (
           <li className="list-none">
-            <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {rest.map((review) => (
-                <li key={review.id} className="border-l border-line pl-4">
-                  <blockquote className="font-read text-lg leading-relaxed">
-                    “{review.text}”
-                  </blockquote>
-                  <div className="mt-3 flex flex-col gap-1">{attribution(review)}</div>
+                <li key={review.id} className="review-frame">
+                  <figure className="review-card">
+                    <blockquote className="font-read text-lg leading-relaxed [overflow-wrap:anywhere]">
+                      “{review.text}”
+                    </blockquote>
+                    <figcaption className="mt-auto flex flex-col gap-1">
+                      {attribution(review)}
+                    </figcaption>
+                  </figure>
                 </li>
               ))}
             </ul>
