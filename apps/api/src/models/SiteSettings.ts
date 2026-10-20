@@ -29,6 +29,7 @@ const siteSettingsSchema = new Schema(
     universe: {
       headline: { type: String, trim: true, maxlength: 200 },
       introHtml: { type: String, default: '' },
+      background: { type: Schema.Types.Mixed },
     },
     /** «Conoce a la autora». `publicEmail` se muestra; `contact.recipientEmail` nunca. */
     author: {

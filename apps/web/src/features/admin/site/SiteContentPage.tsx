@@ -15,6 +15,7 @@ import { errorMessage, fieldErrors } from '../errors';
 interface FormState {
   headline: string;
   introHtml: string;
+  background: ImageRefInput | undefined;
   name: string;
   bioHtml: string;
   photo: ImageRefInput | undefined;
@@ -26,6 +27,7 @@ interface FormState {
 const fromSettings = (settings: SiteSettingsResponse): FormState => ({
   headline: settings.universe.headline ?? '',
   introHtml: settings.universe.introHtml,
+  background: settings.universe.background,
   name: settings.author.name ?? '',
   bioHtml: settings.author.bioHtml,
   photo: settings.author.photo,
@@ -75,7 +77,11 @@ function SiteContentForm({ initial }: { initial: FormState }) {
   function submit(event: FormEvent) {
     event.preventDefault();
     const parsed = updateSiteSettingsRequestSchema.safeParse({
-      universe: { headline: form.headline.trim() || undefined, introHtml: form.introHtml },
+      universe: {
+        headline: form.headline.trim() || undefined,
+        introHtml: form.introHtml,
+        background: form.background,
+      },
       author: {
         name: form.name.trim() || undefined,
         bioHtml: form.bioHtml,
@@ -128,6 +134,12 @@ function SiteContentForm({ initial }: { initial: FormState }) {
             label="¿Qué es el universo Memorias?"
             value={form.introHtml}
             onChange={(introHtml) => set({ introHtml })}
+          />
+          <ImageField
+            label="Fondo del sitio (pintura)"
+            purpose="theme"
+            value={form.background}
+            onChange={(background) => set({ background })}
           />
         </Card>
 

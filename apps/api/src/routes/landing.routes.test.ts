@@ -116,6 +116,36 @@ describe('PATCH /api/admin/site-settings (secciones)', () => {
     expect(after.universe).toEqual({ introHtml: '' });
   });
 
+  it('guarda el fondo del sitio, lo entrega al público y quitarlo lo borra; solo acepta Cloudinary', async () => {
+    const { app, admin } = await staffWorld();
+    const background = image('fondo');
+    await admin
+      .patch('/api/admin/site-settings')
+      .send({ universe: { introHtml: '', background } })
+      .expect(200);
+    const pub = publicSiteResponseSchema.parse(
+      (await request(app).get('/api/site').expect(200)).body,
+    );
+    expect(pub.universe.background?.publicId).toBe(background.publicId);
+
+    const bad = await admin.patch('/api/admin/site-settings').send({
+      universe: {
+        introHtml: '',
+        background: image('x', { url: 'https://evil.example.com/a.png' }),
+      },
+    });
+    expect(bad.status).toBe(400);
+
+    await admin
+      .patch('/api/admin/site-settings')
+      .send({ universe: { introHtml: '' } })
+      .expect(200);
+    const after = publicSiteResponseSchema.parse(
+      (await request(app).get('/api/site').expect(200)).body,
+    );
+    expect(after.universe.background).toBeUndefined();
+  });
+
   it('rechaza enlaces que no son http(s), una foto que no es de Cloudinary y demasiadas redes', async () => {
     const { editor } = await staffWorld();
     const bad = (body: unknown) => editor.patch('/api/admin/site-settings').send(body as object);

@@ -65,9 +65,11 @@ export function toWelcome(settings: Loaded): WelcomeSettings {
 }
 
 function toUniverse(settings: Loaded): UniverseSettings {
+  const background = imageRefSchema.safeParse(settings?.universe?.background);
   return {
     ...(settings?.universe?.headline ? { headline: settings.universe.headline } : {}),
     introHtml: settings?.universe?.introHtml ?? '',
+    ...(background.success ? { background: background.data } : {}),
   };
 }
 
@@ -141,6 +143,9 @@ export function createSiteSettingsService() {
     if (universe) {
       set['universe.introHtml'] = sanitizeRichHtml(universe.introHtml);
       optional('universe.headline', universe.headline);
+      assertCloudinaryUrls([universe.background?.url]);
+      if (universe.background) set['universe.background'] = universe.background;
+      else unset['universe.background'] = 1;
     }
     if (author) {
       assertCloudinaryUrls([author.photo?.url]);

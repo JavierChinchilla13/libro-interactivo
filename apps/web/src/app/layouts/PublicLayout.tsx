@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { homeFor, useSession } from '../../features/auth/session';
 import { publicApi, publicKeys } from '../../features/home/api';
 import { Brand } from '../../shared/ui/Brand';
+import { PageBackground } from '../../shared/ui/PageBackground';
 import { MAIN_ID, navTabLg, SkipLink } from '../../shared/ui/nav';
 
 const ctaClass = () => 'btn btn-primary btn-compact';
@@ -33,6 +34,7 @@ export function PublicLayout() {
   return (
     <div className="relative flex min-h-dvh flex-col">
       <SkipLink />
+      <PageBackground />
       {isHome ? <div aria-hidden="true" className="hero-mesh" /> : null}
       <header className="site-header sticky top-3 z-40 px-3">
         <div className="nav-pill mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-3 py-1.5 pl-5 pr-2 lg:pl-7">

@@ -681,6 +681,45 @@
     }
   }
 
+  /* Pintura de fondo del sitio: capa fija detrás de todo; el velo oscuro mantiene el contraste AA del texto. */
+  .page-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--token-dur-slow) var(--token-ease-out);
+  }
+  .page-bg[data-loaded] {
+    opacity: 1;
+  }
+  .page-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    user-select: none;
+  }
+  .page-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--token-bg) 55%, transparent),
+      color-mix(in srgb, var(--token-bg) 72%, transparent)
+    );
+  }
+  /* Con pintura de fondo, las bandas dejan ver algo de ella (siguen siendo lo bastante sólidas para leer). */
+  html[data-page-bg] .section-band {
+    background: color-mix(in srgb, var(--token-sunken) 82%, transparent);
+    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--token-sunken) 82%, transparent);
+  }
+  html[data-page-bg] .section-band-raised {
+    background: color-mix(in srgb, var(--token-surface) 82%, transparent);
+    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--token-surface) 82%, transparent);
+  }
+
   /* Banda a sangre de pantalla: fondo hundido que se extiende a los lados sin salirse del contenedor. */
   .section-band {
     background: var(--token-sunken);
