@@ -53,6 +53,8 @@ export default defineConfig({
         PORT: String(API_PORT),
         MONGODB_URI: E2E_DB_URI,
         REQUIRE_QR_UNLOCK: 'true',
+        // Una sola máquina hace muchos ingresos y registros seguidos: se relajan los topes de intentos por IP.
+        RATE_LIMIT_MULTIPLIER: '20',
         CORS_ORIGIN: E2E_BASE_URL,
         APP_URL: E2E_BASE_URL,
       },
