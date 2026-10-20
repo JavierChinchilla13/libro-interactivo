@@ -29,8 +29,12 @@
   --token-lit: var(--token-primary);
   --token-unlit: #4278b0;
 
-  /* Vidrio de la barra flotante (único lugar con desenfoque). */
+  /* Vidrio: barra flotante, tarjeta de ingreso y carpetas de la wiki. Nunca en botones, formularios ni tablas. */
   --token-glass: color-mix(in srgb, var(--token-surface) 72%, transparent);
+  --token-glass-folder: color-mix(in srgb, var(--token-surface-alt) 58%, transparent);
+
+  /* Resplandor contenido, solo dentro de los campos animados (ficha de poder y resultado de quiz). */
+  --token-field-glow: 0 0 32px -8px color-mix(in srgb, var(--token-primary) 55%, transparent);
 
   /* Línea fina de separación. */
   --token-line: rgb(120 190 255 / 0.2);
