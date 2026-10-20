@@ -9,6 +9,7 @@ import {
 } from '@libro/shared';
 import { Link } from 'react-router';
 import { thumbUrl } from '../../shared/lib/cloudinary';
+import { releaseTarget } from '../../shared/lib/countdown';
 import { formatDate, formatShortDate } from '../../shared/lib/dates';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Badge } from '../../shared/ui/layout';
@@ -16,6 +17,7 @@ import { Plate, PortraitPlate } from '../../shared/ui/Plate';
 import { Section } from '../../shared/ui/Section';
 import { ThreadItem, ThreadList } from '../../shared/ui/ThreadList';
 import { ArrowUpRightIcon, LockIcon } from '../../shared/ui/icons';
+import { Countdown } from './Countdown';
 
 const buttonLink = 'btn';
 const primaryLink = `${buttonLink} btn-primary`;
@@ -195,6 +197,7 @@ export function SectionsSkeleton() {
  * lema, los géneros en una línea, la sinopsis, la advertencia de contenido, la edad y el ISBN.
  */
 export function BookSection({ book }: { book: PublicBookDetail }) {
+  const releaseAt = releaseTarget(book.releaseDate);
   return (
     <Section
       id="libro"
@@ -222,6 +225,9 @@ export function BookSection({ book }: { book: PublicBookDetail }) {
           </ul>
         ) : null}
         {book.synopsis ? <SafeHtml html={book.synopsis} /> : null}
+        {releaseAt && book.releaseDate ? (
+          <Countdown target={releaseAt} dateLabel={formatDate(book.releaseDate)} />
+        ) : null}
         {book.contentWarning || book.minAge !== undefined ? (
           <aside
             aria-label="Advertencia de contenido sensible"
