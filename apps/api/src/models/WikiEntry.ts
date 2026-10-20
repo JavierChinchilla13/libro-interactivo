@@ -1,4 +1,4 @@
-import { WIKI_KINDS, WIKI_STATUSES } from '@libro/shared';
+import { FIELD_VISUAL_KEYS, WIKI_KINDS, WIKI_STATUSES } from '@libro/shared';
 import { Schema, model, type HydratedDocument, type InferSchemaType } from 'mongoose';
 
 /**
@@ -25,6 +25,8 @@ const wikiEntrySchema = new Schema(
       default: [],
     },
     parentId: { type: Schema.Types.ObjectId, ref: 'WikiEntry' },
+    /** Solo en `power_field`: fondo animado (clave de `FIELD_VISUAL_KEYS`). */
+    visualKey: { type: String, enum: [...FIELD_VISUAL_KEYS] },
     links: { type: [Schema.Types.ObjectId], default: [] },
     unlockAfter: { type: Schema.Types.Mixed },
     lockedDisplay: { type: String, enum: ['show', 'hide'], required: true, default: 'show' },

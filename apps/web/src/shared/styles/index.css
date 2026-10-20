@@ -681,6 +681,172 @@
     }
   }
 
+  /* Humo del ingreso: dos manchas suaves (lavanda y cian) que derivan muy despacio detrás de la tarjeta; solo transform. */
+  .auth-smoke {
+    position: absolute;
+    top: -3rem;
+    bottom: -3rem;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
+    z-index: -1;
+    overflow: clip;
+    pointer-events: none;
+    mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  }
+  .auth-smoke::before,
+  .auth-smoke::after {
+    content: '';
+    position: absolute;
+    width: 30rem;
+    height: 30rem;
+    border-radius: 50%;
+  }
+  .auth-smoke::before {
+    left: 6%;
+    top: 4%;
+    background: radial-gradient(closest-side, rgb(168 155 255 / 0.28), transparent);
+  }
+  .auth-smoke::after {
+    right: 6%;
+    bottom: 4%;
+    background: radial-gradient(closest-side, rgb(63 216 255 / 0.2), transparent);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .auth-smoke::before {
+      animation: smoke-a 38s ease-in-out infinite alternate;
+    }
+    .auth-smoke::after {
+      animation: smoke-b 46s ease-in-out infinite alternate;
+    }
+  }
+  @keyframes smoke-a {
+    to {
+      transform: translate(8rem, 5rem) scale(1.25);
+    }
+  }
+  @keyframes smoke-b {
+    to {
+      transform: translate(-7rem, -4rem) scale(1.2);
+    }
+  }
+
+  /* Portada de un quiz: la imagen del quiz (o un fondo de nebulosa) con el título centrado encima. */
+  .quiz-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-xl);
+    background:
+      radial-gradient(90% 120% at 15% 0%, rgb(168 155 255 / 0.28), transparent 60%),
+      radial-gradient(80% 100% at 90% 100%, rgb(63 216 255 / 0.18), transparent 60%),
+      var(--token-surface);
+  }
+  .quiz-hero-img {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .quiz-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--token-sunken) 82%, transparent),
+      color-mix(in srgb, var(--token-sunken) 40%, transparent) 60%,
+      color-mix(in srgb, var(--token-sunken) 25%, transparent)
+    );
+  }
+  .quiz-hero-content {
+    display: flex;
+    min-height: 13rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: clamp(1.25rem, 4vw, 2rem);
+    text-align: center;
+  }
+
+  /* Escenario de un campo de poder: degradado propio de cada campo, lienzo animado encima y un velo para el texto. */
+  .field-stage {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-xl);
+    box-shadow: var(--token-field-glow);
+    background: radial-gradient(120% 120% at 20% 10%, #123057, var(--token-sunken));
+  }
+  .field-stage[data-key='rain'] {
+    background: radial-gradient(120% 120% at 70% 0%, #0b3a4f, var(--token-sunken));
+  }
+  .field-stage[data-key='neural'] {
+    background: radial-gradient(120% 120% at 20% 20%, #17306b, var(--token-sunken));
+  }
+  .field-stage[data-key='constellation'] {
+    background: radial-gradient(120% 120% at 50% 0%, #2a2766, var(--token-sunken));
+  }
+  .field-stage[data-key='gradient'] {
+    background: linear-gradient(135deg, #123057, #2a2766 60%, #0e4a5c);
+  }
+  .field-stage[data-key='field'] {
+    background: radial-gradient(120% 120% at 30% 100%, #0e4a4a, var(--token-sunken));
+  }
+  .field-stage[data-key='neon'] {
+    background: radial-gradient(120% 120% at 50% 50%, #1d1a4d, var(--token-sunken));
+  }
+  .field-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--token-dur-slow) var(--token-ease-out);
+  }
+  .field-stage[data-ready] .field-canvas {
+    opacity: 1;
+  }
+  .field-stage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--token-sunken) 80%, transparent),
+      color-mix(in srgb, var(--token-sunken) 45%, transparent) 40%,
+      transparent 75%
+    );
+  }
+  .field-stage-content {
+    display: flex;
+    min-height: 16rem;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: clamp(1.25rem, 4vw, 2.25rem);
+  }
+  /* La información va debajo, sobre un color sólido. */
+  .field-sheet {
+    margin-top: -1px;
+    border: 1px solid var(--token-line);
+    border-top: 0;
+    border-radius: 0 0 var(--token-radius-xl) var(--token-radius-xl);
+    background: var(--token-surface);
+    padding: clamp(1.25rem, 4vw, 2rem);
+  }
+
   /* Reseñas: un marco exterior de 1 px con la tarjeta dentro; radios concéntricos (radio exterior = interior + relleno). */
   .review-frame {
     --review-radius: var(--token-radius-lg);
@@ -1009,8 +1175,8 @@
     inset: 0;
     background: linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--token-bg) 55%, transparent),
-      color-mix(in srgb, var(--token-bg) 72%, transparent)
+      color-mix(in srgb, var(--token-bg) 28%, transparent),
+      color-mix(in srgb, var(--token-bg) 52%, transparent)
     );
   }
   /* Con pintura de fondo, las bandas dejan ver algo de ella (siguen siendo lo bastante sólidas para leer). */

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router';
 import { ApiClientError } from '../../shared/api/client';
 import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
+import { FieldStage } from '../../shared/ui/FieldStage';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Alert, Loading } from '../../shared/ui/layout';
 import { useSession } from '../auth/session';
@@ -53,23 +54,25 @@ export function WikiEntryPage() {
 
   const { entry, related } = query.data;
   const back = `/wiki/${SECTION_SLUGS[sectionOfEntry(entry.kind)]}`;
-  return (
-    <article className="mx-auto flex max-w-2xl flex-col gap-5">
-      <BackLink to={back} label="Volver a la wiki" />
-      {entry.image ? (
-        <img
-          src={thumbUrl(entry.image.url, 900)}
-          alt={entry.image.alt}
-          width={entry.image.width}
-          height={entry.image.height}
-          className="img-frame h-auto max-h-96 w-auto max-w-full self-start rounded-token-md"
-        />
-      ) : null}
-      <div>
-        {entry.group ? <p className="text-sm text-muted">{entry.group}</p> : null}
-        <h1 className="page-title">{entry.name}</h1>
-        {entry.summary ? <p className="mt-1 text-muted">{entry.summary}</p> : null}
-      </div>
+
+  const image = entry.image ? (
+    <img
+      src={thumbUrl(entry.image.url, 900)}
+      alt={entry.image.alt}
+      width={entry.image.width}
+      height={entry.image.height}
+      className="img-frame h-auto max-h-96 w-auto max-w-full self-start rounded-token-md"
+    />
+  ) : null;
+  const heading = (
+    <div>
+      {entry.group ? <p className="text-sm text-muted">{entry.group}</p> : null}
+      <h1 className="page-title">{entry.name}</h1>
+      {entry.summary ? <p className="mt-1 text-muted">{entry.summary}</p> : null}
+    </div>
+  );
+  const details = (
+    <>
       {entry.bodyHtml ? <SafeHtml html={entry.bodyHtml} /> : null}
       {entry.fields.length > 0 ? (
         <dl className="divide-y divide-line border-y border-line">
@@ -107,6 +110,30 @@ export function WikiEntryPage() {
           </ul>
         </section>
       ) : null}
+    </>
+  );
+
+  // Un campo de poder con fondo animado: la animación con el título encima y, debajo, un color sólido con la información.
+  if (entry.visualKey) {
+    return (
+      <article className="mx-auto flex max-w-3xl flex-col gap-5">
+        <BackLink to={back} label="Volver a la wiki" />
+        <div>
+          <FieldStage visualKey={entry.visualKey}>{heading}</FieldStage>
+          <div className="field-sheet flex flex-col gap-5">
+            {image}
+            {details}
+          </div>
+        </div>
+      </article>
+    );
+  }
+  return (
+    <article className="mx-auto flex max-w-2xl flex-col gap-5">
+      <BackLink to={back} label="Volver a la wiki" />
+      {image}
+      {heading}
+      {details}
     </article>
   );
 }

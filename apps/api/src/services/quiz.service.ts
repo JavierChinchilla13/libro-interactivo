@@ -1,9 +1,11 @@
 import {
   quizContentSchema,
   type AttemptResponse,
+  fieldVisualKeySchema,
   type QuizContent,
   type QuizIntroResponse,
   type QuizResultsResponse,
+  type ResultPayload,
   type ResultsListResponse,
   type SubmitAnswersRequest,
 } from '@libro/shared';
@@ -14,6 +16,7 @@ import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { Quiz } from '../models/Quiz.js';
 import { QuizAttempt, type QuizAttemptAttrs } from '../models/QuizAttempt.js';
 import { QuizVersion } from '../models/QuizVersion.js';
+import { WikiEntry } from '../models/WikiEntry.js';
 import {
   computeDistribution,
   findResult,
@@ -179,6 +182,31 @@ export function createQuizService(deps: QuizServiceDeps) {
    * Recibe las respuestas de la etapa en curso. El servidor valida que sean exactamente las preguntas de la
    * etapa, cuenta, resuelve empates al azar y devuelve la etapa siguiente o, al terminar, el resultado.
    */
+  /**
+   * Fondo animado del campo del resultado. Solo se arma sobre un resultado FINAL ya calculado (nunca antes), y solo sale
+   * la clave visual y el nombre del campo: el `fieldSlug` del contenido del quiz no viaja al lector.
+   */
+  async function withVisual(
+    payload: ResultPayload,
+    content: QuizContent,
+    quizId: string,
+  ): Promise<ResultPayload> {
+    const fieldSlug = findResult(content, payload.key)?.fieldSlug;
+    if (!fieldSlug) return payload;
+    const quiz = await Quiz.findById(quizId).select('bookId').lean();
+    const field = await WikiEntry.findOne({
+      kind: 'power_field',
+      slug: fieldSlug,
+      status: 'published',
+      $or: [{ bookId: quiz?.bookId }, { bookId: { $exists: false } }],
+    })
+      .select('name visualKey')
+      .lean();
+    const key = fieldVisualKeySchema.safeParse(field?.visualKey);
+    if (!field || !key.success) return payload;
+    return { ...payload, visual: { key: key.data, fieldName: field.name } };
+  }
+
   async function submitAnswers(
     actor: Actor,
     attemptId: string,
@@ -260,7 +288,11 @@ export function createQuizService(deps: QuizServiceDeps) {
       return {
         attemptId: done._id.toString(),
         status: 'completed',
-        result: toResultPayload(content, winner.resultKey, distribution),
+        result: await withVisual(
+          toResultPayload(content, winner.resultKey, distribution),
+          content,
+          attempt.quizId.toString(),
+        ),
       };
     }
 
@@ -360,10 +392,14 @@ export function createQuizService(deps: QuizServiceDeps) {
       current: {
         attemptId: current._id.toString(),
         completedAt: current.completedAt.toISOString(),
-        result: toResultPayload(
+        result: await withVisual(
+          toResultPayload(
+            currentContent,
+            current.finalResultKey,
+            current.distribution ?? undefined,
+          ),
           currentContent,
-          current.finalResultKey,
-          current.distribution ?? undefined,
+          quizId,
         ),
       },
       history: attempts.flatMap((attempt) => {

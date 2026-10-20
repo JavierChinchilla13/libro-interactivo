@@ -1,4 +1,5 @@
 import type {
+  FieldVisualKey,
   ImageRefInput,
   UnlockRule,
   WikiEntryInputPayload,
@@ -36,6 +37,7 @@ export interface WikiForm {
   group: string;
   fields: { label: string; value: string }[];
   parentId: string;
+  visualKey: FieldVisualKey | '';
   links: string[];
   unlockQuizId: string;
   lockedDisplay: 'show' | 'hide';
@@ -56,6 +58,7 @@ export function emptyWikiForm(kind: WikiKind, bookId = ''): WikiForm {
     group: '',
     fields: [],
     parentId: '',
+    visualKey: '',
     links: [],
     unlockQuizId: '',
     lockedDisplay: 'show',
@@ -77,6 +80,7 @@ export function formFromEntry(entry: WikiEntryResponse): WikiForm {
     group: entry.group ?? '',
     fields: entry.fields,
     parentId: entry.parentId ?? '',
+    visualKey: entry.visualKey ?? '',
     links: entry.links,
     unlockQuizId: entry.unlockAfter?.refId ?? '',
     lockedDisplay: entry.lockedDisplay,
@@ -105,6 +109,7 @@ export function payloadFromForm(form: WikiForm): WikiEntryInputPayload {
       ? { fields: form.fields.filter((field) => field.label.trim() && field.value.trim()) }
       : {}),
     ...(form.kind === 'power' && form.parentId ? { parentId: form.parentId } : {}),
+    ...(form.kind === 'power_field' && form.visualKey ? { visualKey: form.visualKey } : {}),
     ...(form.kind === 'place' ? { links: form.links } : {}),
     ...(unlockAfter ? { unlockAfter } : {}),
     lockedDisplay: form.lockedDisplay,

@@ -202,20 +202,22 @@ export function QuizPage() {
     return (
       <div className="mx-auto flex max-w-xl flex-col gap-5">
         <LeaveButton unsaved={false} />
-        {quiz.image ? (
-          <img
-            src={thumbUrl(quiz.image.url, 900)}
-            alt={quiz.image.alt}
-            className="img-frame max-h-64 w-auto max-w-full self-start rounded-token-xs"
-          />
-        ) : null}
-        <div>
-          {position >= 0 ? (
-            <p className="label">
-              Quiz {position + 1} de {experiences.length}
-            </p>
+        <div className="quiz-hero">
+          {quiz.image ? (
+            <img
+              src={thumbUrl(quiz.image.url, 1200)}
+              alt={quiz.image.alt}
+              className="quiz-hero-img"
+            />
           ) : null}
-          <PhaseHeading className="page-title text-h2">{quiz.title}</PhaseHeading>
+          <div className="quiz-hero-content">
+            {position >= 0 ? (
+              <p className="label">
+                Quiz {position + 1} de {experiences.length}
+              </p>
+            ) : null}
+            <PhaseHeading className="page-title text-h2">{quiz.title}</PhaseHeading>
+          </div>
         </div>
         {quiz.instructionsHtml ? <SafeHtml html={quiz.instructionsHtml} /> : null}
         <p className="text-sm text-muted">

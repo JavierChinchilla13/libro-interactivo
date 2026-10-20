@@ -41,6 +41,12 @@ const draftResultSchema = z.object({
   media: mediaSchema.optional(),
   reveal: revealSchema.optional(),
   facts: z.array(factSchema).max(12).optional(),
+  /** Campo de poder (`slug` de la wiki) del resultado: da el fondo animado al terminar el quiz. */
+  fieldSlug: z
+    .string()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    .max(80)
+    .optional(),
 });
 
 /** Contenido que guarda el editor (reemplaza el borrador completo). */
