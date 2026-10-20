@@ -75,7 +75,7 @@ export function Hero({
     <section
       aria-labelledby="hero-title"
       aria-busy={status === 'loading' || undefined}
-      className="relative z-10 mx-auto flex max-w-4xl flex-col items-center gap-7 py-10 text-center md:min-h-[min(72dvh,42rem)] md:justify-center md:py-16"
+      className="relative z-10 mx-auto flex max-w-4xl flex-col items-center gap-7 min-h-[calc(100svh-5rem)] justify-center py-10 text-center md:py-16"
     >
       {status === 'loading' ? (
         <>

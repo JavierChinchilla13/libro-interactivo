@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { imageRefSchema, objectIdSchema } from './common.js';
+import { fieldVisualKeySchema } from './wiki.js';
 
 /**
  * Contratos de los quizzes.
@@ -95,6 +96,12 @@ export const resultDefSchema = z.object({
   media: mediaSchema.optional(),
   reveal: revealSchema.optional(),
   facts: z.array(factSchema).max(12).optional(),
+  /** Campo de poder (`slug` en la wiki) al que pertenece este resultado: da el fondo animado al terminar. */
+  fieldSlug: z
+    .string()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    .max(80)
+    .optional(),
 });
 export type ResultDef = z.infer<typeof resultDefSchema>;
 
@@ -139,6 +146,8 @@ export const resultPayloadSchema = z.object({
   /** Secuencia propia de este resultado. */
   reveal: revealSchema.optional(),
   facts: z.array(factSchema).optional(),
+  /** Fondo animado del campo de este resultado (solo existe en el resultado final, tras completar). */
+  visual: z.object({ key: fieldVisualKeySchema, fieldName: z.string() }).optional(),
   /** Solo si el quiz tiene `showBreakdown`: porcentaje de cada resultado alcanzado (suma 100). */
   distribution: z
     .array(

@@ -7,13 +7,18 @@
  *
  * Qué prepara, en el libro publicado de mayor orden (el de la portada):
  *   fondo del sitio y 6 imágenes del encabezado · fecha de salida a 30 días · carpetas de lugares (3 tipos) ·
- *   5 fan arts · 5 reseñas.
+ *   5 fan arts · 5 reseñas · 6 campos de poder con su fondo animado · un quiz cuyos resultados pertenecen a esos campos.
  */
 import { parseEnv } from '../src/config/env.js';
 import { connectDb, disconnectDb } from '../src/db/connect.js';
+import { canonicalJson } from '../src/lib/canonicalJson.js';
+import { sha256Hex } from '../src/lib/crypto.js';
 import { escapeRegex, letterOf, normalizeName } from '../src/lib/text.js';
+import { resultsFor, simpleStage } from '../src/seed/quizBuilders.js';
 import { Book } from '../src/models/Book.js';
 import { FanArt } from '../src/models/FanArt.js';
+import { Quiz } from '../src/models/Quiz.js';
+import { QuizVersion } from '../src/models/QuizVersion.js';
 import { Review } from '../src/models/Review.js';
 import { SiteSettings } from '../src/models/SiteSettings.js';
 import { User } from '../src/models/User.js';
@@ -53,6 +58,12 @@ try {
     const arts = await FanArt.deleteMany({ title: marked });
     const reviews = await Review.deleteMany({ authorName: marked });
     const places = await WikiEntry.deleteMany({ name: marked });
+    const demoQuizzes = await Quiz.find({ title: marked }).select('_id').lean();
+    // Las versiones publicadas son inmutables para la aplicación: este script de desarrollo las borra directo de la colección.
+    await QuizVersion.collection.deleteMany({
+      quizId: { $in: demoQuizzes.map((quiz) => quiz._id) },
+    });
+    await Quiz.deleteMany({ title: marked });
     // Solo se quita lo que esta herramienta puso: las imágenes marcadas con `[PRUEBA]` en el texto alternativo.
     const settings = await SiteSettings.findOne({ key: 'site' });
     const unset: Record<string, 1> = {};
@@ -64,8 +75,9 @@ try {
     if (Object.keys(unset).length > 0)
       await SiteSettings.updateOne({ key: 'site' }, { $unset: unset });
     console.log(
-      `Retirado: ${arts.deletedCount} fan arts, ${reviews.deletedCount} reseñas, ${places.deletedCount} lugares` +
-        `${Object.keys(unset).length > 0 ? ' y las imágenes del sitio' : ''}. La fecha de salida del libro no se toca.`,
+      `Retirado: ${arts.deletedCount} fan arts, ${reviews.deletedCount} reseñas, ${places.deletedCount} entradas de la wiki` +
+        `${Object.keys(unset).length > 0 ? ' y las imágenes del sitio' : ''}` +
+        `${demoQuizzes.length > 0 ? ', y el quiz de los campos' : ''}. La fecha de salida del libro no se toca.`,
     );
   } else {
     const admin = await User.findOne({ role: 'ADMIN', status: 'active' }).sort({ createdAt: 1 });
@@ -151,6 +163,100 @@ try {
       createdPlaces += 1;
     }
     if (createdPlaces > 0) report.push(`${createdPlaces} lugares en 3 carpetas`);
+
+    // Campos de poder con su fondo animado, y un quiz cuyos resultados pertenecen a cada campo.
+    if (!sections.some((section) => section.kind === 'power_field' && section.enabled !== false)) {
+      book.wikiSections = [
+        ...((book.wikiSections ?? []) as unknown[]),
+        {
+          kind: 'power_field',
+          title: 'Poderes',
+          order: (book.wikiSections ?? []).length + 1,
+          enabled: true,
+        },
+      ];
+      book.markModified('wikiSections');
+      await book.save();
+    }
+    const powerFields: [
+      string,
+      string,
+      'rain' | 'neural' | 'constellation' | 'gradient' | 'field' | 'neon',
+    ][] = [
+      ['Agitación', 'agitacion', 'rain'],
+      ['Mente', 'mente', 'neural'],
+      ['Intelectual', 'intelectual', 'constellation'],
+      ['Transformación', 'transformacion', 'gradient'],
+      ['Naturaleza', 'naturaleza', 'field'],
+      ['Virtud', 'virtud', 'neon'],
+    ];
+    let createdFields = 0;
+    for (const [index, [name, slug, visualKey]] of powerFields.entries()) {
+      const title = `${MARK} ${name}`;
+      if (await WikiEntry.exists({ bookId: book._id, kind: 'power_field', name: title })) continue;
+      await WikiEntry.create({
+        bookId: book._id,
+        kind: 'power_field',
+        slug: `prueba-${slug}`,
+        name: title,
+        nameNormalized: normalizeName(title),
+        letter: letterOf(title),
+        summary: 'Campo de ejemplo para probar el fondo animado.',
+        bodyHtml: '<p>[PLACEHOLDER] Descripción del campo y de sus poderes.</p>',
+        visualKey,
+        order: 100 + index,
+        status: 'published',
+      });
+      createdFields += 1;
+    }
+    if (createdFields > 0) report.push(`${createdFields} campos de poder con fondo animado`);
+
+    if (!(await Quiz.exists({ bookId: book._id, title: marked }))) {
+      const keys = powerFields.map(([, slug]) => `prueba-${slug}`);
+      const results = resultsFor('etapa-1', keys).map((result, index) => ({
+        ...result,
+        title: `${MARK} Eres del campo ${powerFields[index]?.[0] ?? ''}`,
+        fieldSlug: keys[index] as string,
+      }));
+      const content = {
+        title: `${MARK} Quiz de los campos`,
+        instructionsHtml:
+          '<p>[PLACEHOLDER] Elige cualquier respuesta: cada una te lleva a un campo distinto.</p>',
+        settings: { allowRetake: true, showBreakdown: false },
+        stages: [simpleStage('etapa-1', keys, { questions: 2 })],
+        results,
+      };
+      const last = await Quiz.findOne({ bookId: book._id })
+        .sort({ order: -1 })
+        .select('order')
+        .lean();
+      const quiz = await Quiz.create({
+        bookId: book._id,
+        slug: 'prueba-campos',
+        order: (last?.order ?? 0) + 1,
+        title: content.title,
+        instructionsHtml: content.instructionsHtml,
+        settings: content.settings,
+        draft: { stages: content.stages, results: content.results },
+        status: 'published',
+        currentVersion: 1,
+        lastPublishedAt: new Date(),
+      });
+      await QuizVersion.create({
+        quizId: quiz._id,
+        bookId: book._id,
+        version: 1,
+        title: content.title,
+        instructionsHtml: content.instructionsHtml,
+        settings: content.settings,
+        stages: content.stages,
+        results: content.results,
+        publishedAt: new Date(),
+        publishedBy: admin._id,
+        contentHash: `sha256:${sha256Hex(canonicalJson(content))}`,
+      });
+      report.push('quiz de los campos (el último del libro, antes del juego)');
+    }
 
     // Fan arts (con permiso confirmado) y reseñas.
     if (!(await FanArt.exists({ title: marked }))) {

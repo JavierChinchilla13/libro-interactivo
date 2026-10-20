@@ -61,6 +61,7 @@ function toLeaf(entry: EntryLean): PublicWikiLeaf & { locked: false } {
     ...(entry.summary ? { summary: entry.summary } : {}),
     ...(entry.image ? { image: entry.image as ImageRef } : {}),
     ...(entry.group ? { group: entry.group } : {}),
+    ...(entry.kind === 'power_field' && entry.visualKey ? { visualKey: entry.visualKey } : {}),
     order: entry.order,
   };
 }
@@ -281,6 +282,7 @@ export function createPublicWikiService() {
         ...(found.bodyHtml ? { bodyHtml: found.bodyHtml } : {}),
         ...(found.image ? { image: found.image as ImageRef } : {}),
         ...(found.group ? { group: found.group } : {}),
+        ...(found.kind === 'power_field' && found.visualKey ? { visualKey: found.visualKey } : {}),
         fields: (found.fields ?? []).map((field) => ({
           label: field.label ?? '',
           value: field.value ?? '',

@@ -38,6 +38,7 @@ function toResponse(entry: EntryLean): WikiEntryResponse {
       value: field.value ?? '',
     })),
     ...(entry.parentId ? { parentId: entry.parentId.toString() } : {}),
+    ...(entry.visualKey ? { visualKey: entry.visualKey } : {}),
     links: (entry.links ?? []).map((id) => id.toString()),
     ...(entry.unlockAfter ? { unlockAfter: entry.unlockAfter as UnlockRule } : {}),
     lockedDisplay: entry.lockedDisplay,
@@ -73,6 +74,9 @@ export function createWikiService() {
   async function assertIntegrity(input: WikiEntryInput, selfId?: string) {
     if (input.bookId && !(await Book.exists({ _id: input.bookId }))) {
       throw new AppError('NOT_FOUND', 'No encontramos ese libro');
+    }
+    if (input.visualKey && input.kind !== 'power_field') {
+      throw new AppError('VALIDATION', 'Solo un campo de poder lleva fondo animado');
     }
     if (input.kind === 'power') {
       if (!input.parentId)
@@ -121,6 +125,7 @@ export function createWikiService() {
       group: input.group,
       fields: input.fields,
       parentId: input.parentId,
+      visualKey: input.visualKey,
       links: [...new Set(input.links)],
       unlockAfter: input.unlockAfter,
       lockedDisplay: input.lockedDisplay,
