@@ -27,6 +27,8 @@ export const universeSettingsSchema = z.object({
   headline: z.string().trim().max(200).optional(),
   /** HTML: se sanea en el servidor al guardar. */
   introHtml: z.string().max(20_000),
+  /** Pintura de fondo de todo el sitio (imagen de Cloudinary; sin ella se ve el color liso). */
+  background: imageRefSchema.optional(),
 });
 export type UniverseSettings = z.infer<typeof universeSettingsSchema>;
 

@@ -15,7 +15,7 @@ function renderApp(path = '/') {
 function mockFetch(response: Response | Error) {
   const fn = vi.fn(async () => {
     if (response instanceof Error) throw response;
-    return response;
+    return response.clone();
   });
   vi.stubGlobal('fetch', fn);
   return fn;

@@ -3,6 +3,7 @@ import { homeFor, isStaff, useLogout, useSession } from '../../features/auth/ses
 import { WelcomeModal } from '../../features/reader/WelcomeModal';
 import { Button } from '../../shared/ui/controls';
 import { Brand } from '../../shared/ui/Brand';
+import { PageBackground } from '../../shared/ui/PageBackground';
 import { bottomTab, MAIN_ID, navTab, SkipLink } from '../../shared/ui/nav';
 
 const ITEMS = [
@@ -29,6 +30,7 @@ export function PanelLayout() {
   return (
     <div className={`flex min-h-dvh flex-col ${immersive ? '' : 'pb-16 sm:pb-0'}`}>
       <SkipLink />
+      <PageBackground />
       <header className="site-header sticky top-3 z-40 px-3">
         <div className="nav-pill mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-4 py-1.5 pl-5 pr-2">
           <Brand to="/panel" />
