@@ -74,7 +74,8 @@ test.describe('wiki: lugares en carpetas (celular y escritorio)', () => {
       const ciudad = page.getByRole('button', { name: /Ciudad/ });
       await expect(laboratorio).toHaveAttribute('aria-expanded', 'true');
       await expect(page.getByRole('link', { name: /Sala de pruebas/ })).toBeVisible();
-      await page.waitForTimeout(400);
+      // La hoja abre con un fundido corto: se espera a que termine para la captura.
+      await expect(page.locator('.glass-folder-sheet')).toHaveCSS('opacity', '1');
       await page.screenshot({ path: process.env['FOLDERS_SHOT'] ?? 'test-results/folders.png' });
 
       // Con teclado: foco en la carpeta, Enter la abre y cierra la anterior.
