@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TiltedGrid } from './TiltedGrid';
 
 const images = (n: number) =>
@@ -14,10 +14,37 @@ const images = (n: number) =>
     deliveryType: 'upload' as const,
   }));
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe('TiltedGrid', () => {
-  it('no se muestra con menos de 5 imágenes ni sin imágenes', () => {
-    expect(render(<TiltedGrid images={undefined} />).container).toBeEmptyDOMElement();
-    expect(render(<TiltedGrid images={images(4)} />).container).toBeEmptyDOMElement();
+  it('en producción, con menos de 5 imágenes (o ninguna) no pinta nada', () => {
+    vi.stubEnv('DEV', false);
+    for (const list of [undefined, images(4)]) {
+      const { container, unmount } = render(<TiltedGrid images={list} />);
+      expect(container).toBeEmptyDOMElement();
+      unmount();
+    }
+  });
+
+  it('en producción, con 5 imágenes sí se pinta', () => {
+    vi.stubEnv('DEV', false);
+    const { container } = render(<TiltedGrid images={images(5)} />);
+    expect(container.querySelector('.tilted-grid')).not.toBeNull();
+  });
+
+  it('en desarrollo, con menos de 5 imágenes (o ninguna) muestra marcadores de color decorativos, sin imágenes', () => {
+    for (const list of [undefined, images(4)]) {
+      const { container, unmount } = render(<TiltedGrid images={list} />);
+      expect(container.querySelector('.tilted-grid')).not.toBeNull();
+      expect(container.querySelectorAll('img')).toHaveLength(0);
+      const placeholders = container.querySelectorAll('.tilted-tile-placeholder');
+      expect(placeholders.length).toBeGreaterThanOrEqual(6);
+      for (const tile of Array.from(placeholders))
+        expect(tile).toHaveAttribute('aria-hidden', 'true');
+      unmount();
+    }
   });
 
   it('muestra cada imagen una vez para lectores de pantalla (la copia del bucle va oculta) y se puede pausar', async () => {
