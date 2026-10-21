@@ -21,8 +21,18 @@ const WIDTHS = [828, 1080, 1280] as const;
  * pintura del sitio, un fondo de color reemplaza `--token-bg` y su color primario reemplaza `--token-primary`. Cada
  * color solo se aplica si mantiene el contraste (ver `shared/lib/color.ts`); si no, se ignora y el sitio queda con la
  * paleta de siempre. La imagen no se pide hasta saber qué libro está activo, para no descargar dos.
+ *
+ * Con `stable` (la portada) el tema del libro no toca el fondo: ni su imagen ni su color de fondo, solo su acento. Así
+ * el fondo de la portada no cambia de tono según el libro activo ni al terminar de cargar los libros.
  */
-export function PageBackground({ fallback }: { fallback?: BookFallback }) {
+export function PageBackground({
+  fallback,
+  stable = false,
+}: {
+  fallback?: BookFallback;
+  /** Con `stable` el fondo es siempre la pintura del sitio: el tema del libro solo cambia el acento (portada). */
+  stable?: boolean;
+}) {
   const { pathname } = useLocation();
   const site = useQuery({ queryKey: publicKeys.site, queryFn: publicApi.site, retry: false });
   const books = useQuery({ queryKey: readerKeys.books, queryFn: booksApi.list, staleTime: 60_000 });
@@ -30,14 +40,14 @@ export function PageBackground({ fallback }: { fallback?: BookFallback }) {
   // En la portada manda el libro destacado; en la wiki y el panel, el primero (como `useSelectedBook`).
   const rule: BookFallback = fallback ?? (pathname.startsWith('/wiki') ? 'first' : 'featured');
   const theme = pickBook(books.data?.books ?? [], chosen, rule)?.theme;
-  const themeBackground = theme?.background;
+  const themeBackground = stable ? undefined : theme?.background;
   const themeColor =
     themeBackground?.type === 'color' && isUsableBackground(themeBackground.color)
       ? themeBackground.color
       : undefined;
   const themeImage = themeBackground?.type === 'image' ? themeBackground.image : undefined;
   // Un fondo de color del libro, o su imagen, tiene prioridad sobre la pintura del sitio.
-  const decided = books.isFetched || books.isError;
+  const decided = stable || books.isFetched || books.isError;
   const image = !decided
     ? undefined
     : (themeImage ?? (themeColor ? undefined : site.data?.universe.background));

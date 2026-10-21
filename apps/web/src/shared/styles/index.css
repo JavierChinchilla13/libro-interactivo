@@ -88,6 +88,7 @@
   --spacing-section-tight: var(--token-section-tight);
   --spacing-section-regular: var(--token-section-regular);
   --spacing-section-loose: var(--token-section-loose);
+  --spacing-section-gap: var(--token-section-gap);
   --ease-token-out: var(--token-ease-out);
   --ease-token-in-out: var(--token-ease-in-out);
 }
@@ -196,7 +197,7 @@
 }
 /* Estado por defecto (sin soporte o con «reducir movimiento»): visible y completo. */
 .statement-band {
-  padding-block: var(--token-section-loose);
+  padding-top: var(--token-section-gap);
 }
 .statement {
   margin: 0;
@@ -247,15 +248,7 @@
   }
 }
 
-/* M6 · Transición entre páginas (View Transitions): la cabecera se queda y el contenido se funde. */
-@keyframes mesh-drift {
-  from {
-    transform: translate3d(-3%, -2%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(3%, 3%, 0) scale(1.08);
-  }
-}
+/* Entrada de las acciones del héroe (el titular y el subtexto no se animan: son el LCP). */
 @keyframes hero-enter {
   from {
     opacity: 0;
@@ -267,14 +260,12 @@
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .hero-mesh::before {
-    animation: mesh-drift 40s ease-in-out infinite alternate;
-  }
   .hero-enter {
     animation: hero-enter 420ms var(--token-ease-out) 80ms both;
   }
 }
 
+/* M6 · Transición entre páginas (View Transitions): la cabecera se queda y el contenido se funde. */
 @supports (view-transition-name: none) {
   .site-header {
     view-transition-name: site-header;
@@ -1394,24 +1385,6 @@
       backdrop-filter: none;
       background: var(--token-surface);
     }
-  }
-  /* Degradado del inicio: dos manchas (cian y lavanda) que se desplazan muy despacio; solo transform. */
-  .hero-mesh {
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: min(95dvh, 52rem);
-    overflow: clip;
-    pointer-events: none;
-    z-index: 0;
-  }
-  .hero-mesh::before {
-    content: '';
-    position: absolute;
-    inset: -20% -20%;
-    background:
-      radial-gradient(38% 45% at 22% 32%, rgb(63 216 255 / 0.2), transparent 70%),
-      radial-gradient(42% 50% at 78% 38%, rgb(168 155 255 / 0.24), transparent 70%),
-      radial-gradient(36% 38% at 50% 68%, rgb(66 120 176 / 0.28), transparent 70%);
   }
   /* Marco de imágenes (portadas, avatar, resultado): un contorno de 1 px, sin resplandor. */
   .img-frame {

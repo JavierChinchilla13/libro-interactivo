@@ -75,7 +75,7 @@ export function Hero({
     <section
       aria-labelledby="hero-title"
       aria-busy={status === 'loading' || undefined}
-      className="relative z-10 mx-auto flex max-w-4xl flex-col items-center gap-7 min-h-[calc(100svh-5rem)] justify-center py-10 text-center md:py-16"
+      className="relative z-10 mx-auto flex max-w-4xl flex-col items-center gap-7 min-h-[calc(100svh-4rem)] justify-center py-8 text-center md:py-12"
     >
       {status === 'loading' ? (
         <>
@@ -144,10 +144,7 @@ export function ClosingBand({
   sessionReady: boolean;
 }) {
   return (
-    <section
-      aria-labelledby="cierre-title"
-      className="section-band-raised flex min-h-[min(70dvh,40rem)] flex-col justify-center py-section-loose"
-    >
+    <section aria-labelledby="cierre-title" className="flex flex-col justify-center py-section-gap">
       <div className="flex flex-col items-center gap-4 text-center">
         <h2 id="cierre-title" className="section-title">
           Empieza con tu <span className="emph">libro</span>
@@ -179,7 +176,7 @@ export function SectionsSkeleton() {
     <div
       role="status"
       aria-label="Cargando el contenido"
-      className="flex min-h-[70dvh] flex-col gap-6 py-section-regular"
+      className="flex min-h-[50dvh] flex-col gap-6 pt-section-gap"
     >
       {[0, 1, 2].map((index) => (
         <div
@@ -261,7 +258,7 @@ export function WikiPreview({
   // El texto general de bloqueo se dice una sola vez; cada pestaña solo repite el suyo si la autora le puso uno propio.
   const needsGeneral = tabs.some((tab) => tab.locked && !tab.lockedMessage);
   return (
-    <Section id="wiki" title="Wiki del universo" tone="raised" space="regular" align="center">
+    <Section id="wiki" title="Wiki del universo" space="regular" align="center">
       <ul className="reveal-children divide-y divide-line border-y border-line">
         {tabs.map((tab) => (
           <li key={tab.kind} className="py-6">
@@ -317,9 +314,7 @@ export function Experiences({
       title="Vive una experiencia inmersiva"
       emphasis="inmersiva"
       align="center"
-      tone="sunken"
       space="loose"
-      tall
     >
       <ThreadList className="mx-auto max-w-xl">
         {experiences.map((experience) => {
@@ -444,7 +439,7 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
     </>
   );
   return (
-    <Section id="resenas" title="Reseñas de lectores" tone="raised" align="center">
+    <Section id="resenas" title="Reseñas de lectores" align="center">
       <ul className="flex flex-col gap-8">
         {lead ? (
           <li className="review-frame review-frame-lead max-w-3xl">
@@ -544,7 +539,7 @@ export function SagaSection({ books }: { books: PublicBookSummary[] }) {
   // Un solo libro no es una secuencia: ya tiene su propia sección.
   if (books.length < 2) return null;
   return (
-    <Section id="saga" title="Secuencia de publicación" tone="sunken" align="center">
+    <Section id="saga" title="Secuencia de publicación" align="center">
       <ul
         aria-label="Libros de la saga"
         className="-mx-4 flex scroll-px-4 snap-x gap-5 overflow-x-auto px-4 pb-4"
@@ -618,7 +613,7 @@ export function BuySection({ links }: { links: PurchaseLink[] }) {
     .filter((group) => group.items.length > 0);
   const two = groups.length > 1;
   return (
-    <Section id="comprar" title="Cómo comprar el libro" tone="sunken" space="loose" align="center">
+    <Section id="comprar" title="Cómo comprar el libro" space="loose" align="center">
       {groups.length === 0 ? (
         <p className="text-center text-muted">
           [PLACEHOLDER] Pronto publicaremos dónde conseguir el libro.

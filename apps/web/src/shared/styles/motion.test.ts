@@ -23,6 +23,13 @@ function reducedMotionBlock(): string {
   throw new Error('Bloque de «reducir movimiento» sin cerrar');
 }
 
+describe('fondo estable de la portada', () => {
+  it('no queda deriva de color ni la malla animada del héroe', () => {
+    expect(css).not.toContain('mesh-drift');
+    expect(css).not.toContain('hero-mesh');
+  });
+});
+
 describe('«reducir movimiento»', () => {
   it('solo apaga movimiento: ninguna regla cambia el aspecto de los elementos', () => {
     const declarations = [...reducedMotionBlock().matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]);
