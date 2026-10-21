@@ -15,17 +15,18 @@ function reducedMotion(): boolean {
 
 function Cell({ label, value, vapor }: { label: string; value: string; vapor: boolean }) {
   const digits = useRef<HTMLSpanElement>(null);
-  const [ready, setReady] = useState(false);
-  const onReady = useCallback(() => setReady(true), []);
+  // El número real se oculta solo mientras el lienzo anima el cambio; en reposo se ve el texto nítido.
+  const [animating, setAnimating] = useState(false);
+  const onActive = useCallback((active: boolean) => setAnimating(active), []);
   return (
-    <div className="countdown-cell" data-vapor={(vapor && ready) || undefined}>
+    <div className="countdown-cell" data-vapor={(vapor && animating) || undefined}>
       <span className="countdown-box">
         <span ref={digits} className="countdown-digits">
           {value}
         </span>
         {vapor ? (
           <Suspense fallback={null}>
-            <VaporCell value={value} reference={digits} onReady={onReady} />
+            <VaporCell value={value} reference={digits} onActive={onActive} />
           </Suspense>
         ) : null}
       </span>

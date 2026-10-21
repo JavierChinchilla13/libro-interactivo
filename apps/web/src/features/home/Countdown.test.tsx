@@ -59,6 +59,23 @@ describe('Countdown', () => {
     expect(seconds()).toBe('03');
   });
 
+  it('la frase para lectores de pantalla cambia cada minuto, no cada segundo', () => {
+    // 2 días, 3 h, 4 min y 5 s: a las 00:00:00 faltan «2 días, 3 horas, 4 minutos».
+    render(<Countdown target={target} dateLabel="x" />);
+    act(() => notify([{ isIntersecting: true }]));
+    expect(screen.getByText('Faltan 2 días, 3 horas, 4 minutos.')).toBeInTheDocument();
+    // 30 segundos después sigue siendo la misma frase (el número visible sí cuenta).
+    act(() => {
+      vi.advanceTimersByTime(30_000);
+    });
+    expect(screen.getByText('Faltan 2 días, 3 horas, 4 minutos.')).toBeInTheDocument();
+    // Pasado el minuto cambia.
+    act(() => {
+      vi.advanceTimersByTime(40_000);
+    });
+    expect(screen.getByText('Faltan 2 días, 3 horas, 3 minutos.')).toBeInTheDocument();
+  });
+
   it('desaparece al llegar la fecha', () => {
     const { container } = render(
       <Countdown target={new Date('2027-01-01T00:00:01.000Z')} dateLabel="x" />,
