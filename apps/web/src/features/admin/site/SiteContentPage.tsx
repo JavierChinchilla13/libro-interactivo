@@ -75,8 +75,8 @@ function HeaderImagesField({
     <fieldset className="flex flex-col gap-3">
       <legend className="text-sm font-medium">Imágenes del encabezado (5 a 9)</legend>
       <p className="text-xs text-muted">
-        Se ven en una rejilla inclinada bajo la frase principal. Sin imágenes, la rejilla no se
-        muestra.
+        Se ven en una rejilla inclinada bajo la frase principal. Mientras no haya al menos 5, la
+        rejilla no aparece en el sitio.
       </p>
       {value.map((image, index) => (
         <div

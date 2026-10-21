@@ -1101,6 +1101,16 @@
     border-radius: var(--token-radius-xs);
     background: var(--token-surface-alt);
   }
+  .tilted-tile-placeholder {
+    border: 1px solid var(--token-line);
+    background: linear-gradient(160deg, rgb(168 155 255 / 0.32), rgb(18 48 87 / 0.7));
+  }
+  .tilted-tile-placeholder[data-tone='1'] {
+    background: linear-gradient(160deg, rgb(63 216 255 / 0.28), rgb(18 48 87 / 0.7));
+  }
+  .tilted-tile-placeholder[data-tone='2'] {
+    background: linear-gradient(160deg, rgb(99 150 214 / 0.35), rgb(11 33 66 / 0.8));
+  }
   .tilted-tile img {
     border-radius: var(--token-radius-xs);
   }

@@ -4,6 +4,15 @@ import { thumbUrl } from '../../shared/lib/cloudinary';
 
 type HeaderImage = NonNullable<PublicSiteResponse['universe']['headerImages']>[number];
 
+const PLACEHOLDERS = [0, 1, 2, 3, 4, 5];
+
+/** Marcador de color (decorativo): nada que leer ni ninguna imagen que cargar. */
+function Placeholder({ index }: { index: number }) {
+  return (
+    <li aria-hidden="true" className="tilted-tile tilted-tile-placeholder" data-tone={index % 3} />
+  );
+}
+
 function Tile({ image, hidden }: { image: HeaderImage; hidden?: boolean }) {
   // Una imagen que no carga deja un hueco liso del mismo tamaño (sin icono roto ni texto alternativo desbordado).
   const [failed, setFailed] = useState(false);
@@ -27,11 +36,15 @@ function Tile({ image, hidden }: { image: HeaderImage; hidden?: boolean }) {
 /**
  * Rejilla inclinada bajo el titular: una hilera de imágenes que se curva hacia quien mira y se desvanece en los
  * bordes. Solo anima `transform` (marquesina lenta, solo en pantallas anchas y sin «reducir movimiento»); en el
- * celular y con movimiento reducido queda quieta. La animación se puede pausar (y se detiene al pasar el cursor).
+ * celular y con movimiento reducido queda quieta. Con menos de 5 imágenes propias, en desarrollo
+ * muestra marcadores de color (para ver la composición) y en producción no se pinta nada: unos cuadros de color no son
+ * contenido para el lector. La animación se puede pausar (y se detiene al pasar el cursor).
  */
 export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefined }) {
   const [paused, setPaused] = useState(false);
-  if (!images || images.length < 5) return null;
+  const real = images && images.length >= 5 ? images : undefined;
+  // Sin imágenes reales (la autora aún no las sube): marcadores solo al desarrollar; en producción, nada.
+  if (!real && !import.meta.env.DEV) return null;
   return (
     <section
       aria-label="Imágenes del universo"
@@ -40,12 +53,14 @@ export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefi
     >
       <div className="tilted-stage">
         <ul className="tilted-track">
-          {images.map((image, index) => (
-            <Tile key={`${image.publicId}-${index}`} image={image} />
-          ))}
-          {images.map((image, index) => (
-            <Tile key={`${image.publicId}-${index}-copy`} image={image} hidden />
-          ))}
+          {real
+            ? real.map((image, index) => <Tile key={`${image.publicId}-${index}`} image={image} />)
+            : PLACEHOLDERS.map((index) => <Placeholder key={index} index={index} />)}
+          {real
+            ? real.map((image, index) => (
+                <Tile key={`${image.publicId}-${index}-copy`} image={image} hidden />
+              ))
+            : PLACEHOLDERS.map((index) => <Placeholder key={`${index}-copy`} index={index} />)}
         </ul>
       </div>
       <button
