@@ -17,6 +17,7 @@ function summaryOf(book: ReturnType<typeof toBookResponse>): PublicBookSummary {
     order: book.order,
     status: book.status === 'upcoming' ? 'upcoming' : 'published',
     ...(book.releaseDate ? { releaseDate: book.releaseDate } : {}),
+    ...(book.theme ? { theme: book.theme } : {}),
   };
 }
 
@@ -48,7 +49,6 @@ export function createPublicBookService() {
       ...(full.minAge !== undefined ? { minAge: full.minAge } : {}),
       ...(full.isbn ? { isbn: full.isbn } : {}),
       purchaseLinks: full.purchaseLinks,
-      ...(full.theme ? { theme: full.theme } : {}),
       // Solo el rótulo de cada pestaña y si está bloqueada: el contenido y el quiz que la abre no salen de aquí.
       wikiTabs: [...full.wikiSections]
         .filter((section) => section.enabled)

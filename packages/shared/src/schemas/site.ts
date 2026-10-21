@@ -125,6 +125,8 @@ export const publicBookSummarySchema = z.object({
   /** `upcoming` = «Próximamente». */
   status: bookStatusSchema.extract(['published', 'upcoming']),
   releaseDate: z.string().optional(),
+  /** Color primario y fondo del libro (la web los aplica solo si mantienen el contraste). */
+  theme: bookThemeSchema.optional(),
 });
 export type PublicBookSummary = z.infer<typeof publicBookSummarySchema>;
 
@@ -137,7 +139,6 @@ export const publicBookDetailSchema = publicBookSummarySchema.extend({
   minAge: z.number().int().optional(),
   isbn: z.string().optional(),
   purchaseLinks: z.array(purchaseLinkSchema),
-  theme: bookThemeSchema.optional(),
   /**
    * Pestañas de la wiki activas. `locked` = la autora la bloqueó hasta cierto avance: se ve «bloqueada» con su
    * mensaje y **sin contenido**. El contenido real de las abiertas se pide aparte (wiki pública).

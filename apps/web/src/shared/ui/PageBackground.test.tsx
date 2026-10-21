@@ -41,7 +41,7 @@ describe('PageBackground', () => {
     expect(layer).toHaveAttribute('aria-hidden', 'true');
     const img = layer.querySelector('img') as HTMLImageElement;
     expect(img.getAttribute('srcset')).toContain('w_828');
-    expect(img.getAttribute('srcset')).toContain('w_1920');
+    expect(img.getAttribute('srcset')).toContain('w_1280');
     expect(img.getAttribute('fetchpriority')).toBe('low');
     expect(img.getAttribute('alt')).toBe('');
     // Mientras la pintura no carga, las bandas no cambian; al cargar, se aclaran.
