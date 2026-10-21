@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
 import { Alert, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
+import { Coverflow } from '../../shared/ui/Coverflow';
 import { Lightbox } from '../posts/templates/Lightbox';
 import { booksApi, readerKeys } from '../reader/api';
 import { communityApi, communityKeys } from './api';
@@ -15,6 +16,8 @@ import { communityApi, communityKeys } from './api';
 export function FanArtsPage() {
   const [bookId, setBookId] = useState<string | undefined>(undefined);
   const [open, setOpen] = useState<number | null>(null);
+  // Carrusel por defecto; con pocas obras (o si se prefiere) la cuadrícula.
+  const [view, setView] = useState<'carrusel' | 'cuadricula' | null>(null);
   const books = useQuery({ queryKey: readerKeys.books, queryFn: booksApi.list, staleTime: 60_000 });
   const query = useQuery({
     queryKey: communityKeys.fanArts(bookId),
@@ -23,6 +26,7 @@ export function FanArtsPage() {
   });
   const published = (books.data?.books ?? []).filter((book) => book.status === 'published');
   const arts = query.data?.fanArts ?? [];
+  const mode = view ?? (arts.length >= 3 ? 'carrusel' : 'cuadricula');
 
   return (
     <div className="flex flex-col gap-5">
@@ -49,7 +53,41 @@ export function FanArtsPage() {
       {query.isSuccess && arts.length === 0 ? (
         <EmptyState title="Todavía no hay fan arts publicados." />
       ) : null}
-      {arts.length > 0 ? (
+      {arts.length >= 3 ? (
+        <div role="group" aria-label="Forma de verlos" className="flex flex-wrap gap-2">
+          {(['carrusel', 'cuadricula'] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={mode === option}
+              onClick={() => setView(option)}
+              className="chip"
+            >
+              {option === 'carrusel' ? 'Carrusel' : 'Cuadrícula'}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {arts.length > 0 && mode === 'carrusel' ? (
+        <Coverflow
+          label="Fan arts"
+          onOpen={setOpen}
+          items={arts.map((art) => ({
+            id: art.id,
+            image: art.image,
+            label: `Ampliar el fan art ${art.title ?? `de ${art.artistName}`}`,
+            caption: (
+              <>
+                {art.title ? <p className="font-semibold">{art.title}</p> : null}
+                <p className="text-sm text-muted">Por {art.artistName}</p>
+              </>
+            ),
+          }))}
+        />
+      ) : null}
+
+      {arts.length > 0 && mode === 'cuadricula' ? (
         <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {arts.map((art, index) => (
             <li key={art.id}>

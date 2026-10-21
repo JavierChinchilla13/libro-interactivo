@@ -4,6 +4,7 @@ import {
   type QuizContent,
   type QuizIntroResponse,
   type QuizResultsResponse,
+  type ResultPayload,
   type ResultsListResponse,
   type SubmitAnswersRequest,
 } from '@libro/shared';
@@ -28,6 +29,7 @@ import {
   type RandomInt,
 } from './quiz-engine.js';
 import { isStaff, type Actor, type ProgressService } from './progress.service.js';
+import { findPublishedFields } from './wikiField.js';
 
 /** Los intentos sin terminar caducan (TTL) a los 7 días de su última actividad. */
 export const IN_PROGRESS_TTL_DAYS = 7;
@@ -176,6 +178,26 @@ export function createQuizService(deps: QuizServiceDeps) {
   }
 
   /**
+   * Fondo animado del campo del resultado. Solo se arma sobre un resultado FINAL ya calculado (nunca antes), y solo sale
+   * la clave visual y el nombre del campo: el `fieldSlug` del contenido del quiz no viaja al lector.
+   *
+   * Decisión (20-oct-2026): quien terminó el quiz ve el nombre y el fondo del campo de SU resultado aunque la ficha de
+   * ese campo siga bloqueada en la wiki. Es lo mismo que ya sabe por el título de su resultado; el cuerpo de la ficha
+   * sigue bloqueado y no sale de aquí.
+   */
+  async function withVisual(
+    payload: ResultPayload,
+    content: QuizContent,
+    bookId: Types.ObjectId | string,
+  ): Promise<ResultPayload> {
+    const fieldSlug = findResult(content, payload.key)?.fieldSlug;
+    if (!fieldSlug) return payload;
+    const field = (await findPublishedFields(bookId, [fieldSlug])).get(fieldSlug);
+    if (!field?.visualKey) return payload;
+    return { ...payload, visual: { key: field.visualKey, fieldName: field.name } };
+  }
+
+  /**
    * Recibe las respuestas de la etapa en curso. El servidor valida que sean exactamente las preguntas de la
    * etapa, cuenta, resuelve empates al azar y devuelve la etapa siguiente o, al terminar, el resultado.
    */
@@ -260,7 +282,11 @@ export function createQuizService(deps: QuizServiceDeps) {
       return {
         attemptId: done._id.toString(),
         status: 'completed',
-        result: toResultPayload(content, winner.resultKey, distribution),
+        result: await withVisual(
+          toResultPayload(content, winner.resultKey, distribution),
+          content,
+          attempt.bookId,
+        ),
       };
     }
 
@@ -360,10 +386,14 @@ export function createQuizService(deps: QuizServiceDeps) {
       current: {
         attemptId: current._id.toString(),
         completedAt: current.completedAt.toISOString(),
-        result: toResultPayload(
+        result: await withVisual(
+          toResultPayload(
+            currentContent,
+            current.finalResultKey,
+            current.distribution ?? undefined,
+          ),
           currentContent,
-          current.finalResultKey,
-          current.distribution ?? undefined,
+          current.bookId,
         ),
       },
       history: attempts.flatMap((attempt) => {

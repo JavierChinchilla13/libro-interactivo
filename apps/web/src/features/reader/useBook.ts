@@ -1,21 +1,30 @@
 import type { PublicBookSummary } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 import { booksApi, readerKeys } from './api';
-
-const STORAGE_KEY = 'libro_selected_book';
-
-function remembered(): string | null {
-  try {
-    return localStorage.getItem(STORAGE_KEY);
-  } catch {
-    return null; // sin almacenamiento (modo privado): se usa el primer libro
-  }
-}
+import { setSelectedBookId, useSelectedBookId } from './bookSelection';
 
 /** Libros con contenido para jugar: los publicados (los «próximamente» todavía no tienen nada). */
 export function playable(books: readonly PublicBookSummary[]): PublicBookSummary[] {
   return books.filter((book) => book.status === 'published');
+}
+
+/**
+ * Qué libro se usa cuando la persona no ha elegido uno: `first` (el de menor orden: el del panel y la wiki) o
+ * `featured` (el de mayor orden: el destacado de la portada).
+ */
+export type BookFallback = 'first' | 'featured';
+
+/** Un único criterio de «libro activo»: el elegido en este navegador (si sigue publicado) y, si no, el de respaldo. */
+export function pickBook(
+  books: readonly PublicBookSummary[],
+  chosen: string | null,
+  fallback: BookFallback,
+): PublicBookSummary | undefined {
+  const list = playable(books);
+  const ordered = [...list].sort((a, b) =>
+    fallback === 'featured' ? b.order - a.order : a.order - b.order,
+  );
+  return list.find((book) => book.id === chosen) ?? ordered[0];
 }
 
 /**
@@ -24,18 +33,14 @@ export function playable(books: readonly PublicBookSummary[]): PublicBookSummary
  */
 export function useSelectedBook() {
   const books = useQuery({ queryKey: readerKeys.books, queryFn: booksApi.list, staleTime: 60_000 });
-  const [chosen, setChosen] = useState<string | null>(remembered);
+  const chosen = useSelectedBookId();
   const list = playable(books.data?.books ?? []);
-  const book = list.find((candidate) => candidate.id === chosen) ?? list[0];
-
-  function select(id: string) {
-    setChosen(id);
-    try {
-      localStorage.setItem(STORAGE_KEY, id);
-    } catch {
-      /* no se pudo recordar: no pasa nada */
-    }
-  }
-
-  return { books: list, book, select, isPending: books.isPending, error: books.error };
+  const book = pickBook(list, chosen, 'first');
+  return {
+    books: list,
+    book,
+    select: setSelectedBookId,
+    isPending: books.isPending,
+    error: books.error,
+  };
 }

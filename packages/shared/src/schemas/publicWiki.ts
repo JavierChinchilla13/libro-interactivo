@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { wikiSectionKindSchema } from './book.js';
 import { imageRefSchema, objectIdSchema } from './common.js';
-import { wikiKindSchema } from './wiki.js';
+import { fieldVisualKeySchema, wikiKindSchema } from './wiki.js';
 
 /**
  * Wiki pública (fase 9). El servidor decide **en cada petición** qué está abierto, bloqueado u oculto para quien
@@ -46,6 +46,8 @@ const openLeafSchema = z.object({
   summary: z.string().optional(),
   image: imageRefSchema.optional(),
   group: z.string().optional(),
+  /** Solo un campo de poder abierto. */
+  visualKey: fieldVisualKeySchema.optional(),
   order: z.number().int(),
 });
 
@@ -90,6 +92,7 @@ export const publicWikiEntryResponseSchema = z.object({
     bodyHtml: z.string().optional(),
     image: imageRefSchema.optional(),
     group: z.string().optional(),
+    visualKey: fieldVisualKeySchema.optional(),
     fields: z.array(z.object({ label: z.string(), value: z.string() })),
   }),
   /** Entradas enlazadas: las bloqueadas llegan como tarjeta bloqueada y las ocultas no llegan. */

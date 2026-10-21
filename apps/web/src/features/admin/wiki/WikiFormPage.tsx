@@ -1,4 +1,11 @@
-import { wikiEntryInputSchema, WIKI_KINDS, type WikiKind } from '@libro/shared';
+import {
+  FIELD_VISUAL_KEYS,
+  FIELD_VISUAL_LABELS,
+  wikiEntryInputSchema,
+  WIKI_KINDS,
+  type FieldVisualKey,
+  type WikiKind,
+} from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
@@ -177,6 +184,20 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
                 label: field.name,
               }))}
               onChange={(event) => set('parentId', event.target.value)}
+            />
+          ) : null}
+
+          {kind === 'power_field' ? (
+            <SelectField
+              label="Fondo animado del campo"
+              value={form.visualKey}
+              placeholder="Sin animación"
+              hint="Se ve en la ficha del campo y en el resultado del quiz de quien pertenece a este campo."
+              options={FIELD_VISUAL_KEYS.map((key) => ({
+                value: key,
+                label: FIELD_VISUAL_LABELS[key],
+              }))}
+              onChange={(event) => set('visualKey', event.target.value as FieldVisualKey | '')}
             />
           ) : null}
 

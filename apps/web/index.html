@@ -26,6 +26,9 @@
         }
         request('/site');
         request('/books');
+        // Una ficha de la wiki abierta directo: su dato sale junto con el código de la página.
+        var entry = /^\/wiki\/entrada\/([0-9a-f]{24})\/?$/i.exec(location.pathname);
+        if (entry) request('/wiki/entries/' + entry[1]);
       })();
     </script>
   </head>

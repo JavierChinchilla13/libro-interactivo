@@ -9,6 +9,7 @@ import {
 } from '@libro/shared';
 import { Link } from 'react-router';
 import { thumbUrl } from '../../shared/lib/cloudinary';
+import { releaseTarget } from '../../shared/lib/countdown';
 import { formatDate, formatShortDate } from '../../shared/lib/dates';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Badge } from '../../shared/ui/layout';
@@ -16,6 +17,7 @@ import { Plate, PortraitPlate } from '../../shared/ui/Plate';
 import { Section } from '../../shared/ui/Section';
 import { ThreadItem, ThreadList } from '../../shared/ui/ThreadList';
 import { ArrowUpRightIcon, LockIcon } from '../../shared/ui/icons';
+import { Countdown } from './Countdown';
 
 const buttonLink = 'btn';
 const primaryLink = `${buttonLink} btn-primary`;
@@ -73,7 +75,7 @@ export function Hero({
     <section
       aria-labelledby="hero-title"
       aria-busy={status === 'loading' || undefined}
-      className="relative z-10 mx-auto flex max-w-4xl flex-col items-center gap-7 py-10 text-center md:min-h-[min(72dvh,42rem)] md:justify-center md:py-16"
+      className="relative z-10 mx-auto flex max-w-4xl flex-col items-center gap-7 min-h-[calc(100svh-5rem)] justify-center py-10 text-center md:py-16"
     >
       {status === 'loading' ? (
         <>
@@ -195,6 +197,7 @@ export function SectionsSkeleton() {
  * lema, los géneros en una línea, la sinopsis, la advertencia de contenido, la edad y el ISBN.
  */
 export function BookSection({ book }: { book: PublicBookDetail }) {
+  const releaseAt = releaseTarget(book.releaseDate);
   return (
     <Section
       id="libro"
@@ -222,6 +225,9 @@ export function BookSection({ book }: { book: PublicBookDetail }) {
           </ul>
         ) : null}
         {book.synopsis ? <SafeHtml html={book.synopsis} /> : null}
+        {releaseAt && book.releaseDate ? (
+          <Countdown target={releaseAt} dateLabel={formatDate(book.releaseDate)} />
+        ) : null}
         {book.contentWarning || book.minAge !== undefined ? (
           <aside
             aria-label="Advertencia de contenido sensible"
@@ -439,24 +445,30 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
   );
   return (
     <Section id="resenas" title="Reseñas de lectores" tone="raised" align="center">
-      <ul className="flex flex-col gap-10">
+      <ul className="flex flex-col gap-8">
         {lead ? (
-          <li className="max-w-3xl border-l-2 border-border pl-6">
-            <blockquote className="font-read text-2xl leading-snug sm:text-3xl">
-              “{lead.text}”
-            </blockquote>
-            <div className="mt-4 flex flex-col gap-1">{attribution(lead)}</div>
+          <li className="review-frame review-frame-lead max-w-3xl">
+            <figure className="review-card">
+              <blockquote className="font-read text-2xl leading-snug [overflow-wrap:anywhere] sm:text-3xl">
+                “{lead.text}”
+              </blockquote>
+              <figcaption className="mt-auto flex flex-col gap-1">{attribution(lead)}</figcaption>
+            </figure>
           </li>
         ) : null}
         {rest.length > 0 ? (
           <li className="list-none">
-            <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {rest.map((review) => (
-                <li key={review.id} className="border-l border-line pl-4">
-                  <blockquote className="font-read text-lg leading-relaxed">
-                    “{review.text}”
-                  </blockquote>
-                  <div className="mt-3 flex flex-col gap-1">{attribution(review)}</div>
+                <li key={review.id} className="review-frame">
+                  <figure className="review-card">
+                    <blockquote className="font-read text-lg leading-relaxed [overflow-wrap:anywhere]">
+                      “{review.text}”
+                    </blockquote>
+                    <figcaption className="mt-auto flex flex-col gap-1">
+                      {attribution(review)}
+                    </figcaption>
+                  </figure>
                 </li>
               ))}
             </ul>
