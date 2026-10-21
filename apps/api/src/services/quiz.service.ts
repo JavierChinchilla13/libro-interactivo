@@ -1,7 +1,6 @@
 import {
   quizContentSchema,
   type AttemptResponse,
-  fieldVisualKeySchema,
   type QuizContent,
   type QuizIntroResponse,
   type QuizResultsResponse,
@@ -16,7 +15,6 @@ import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { Quiz } from '../models/Quiz.js';
 import { QuizAttempt, type QuizAttemptAttrs } from '../models/QuizAttempt.js';
 import { QuizVersion } from '../models/QuizVersion.js';
-import { WikiEntry } from '../models/WikiEntry.js';
 import {
   computeDistribution,
   findResult,
@@ -31,6 +29,7 @@ import {
   type RandomInt,
 } from './quiz-engine.js';
 import { isStaff, type Actor, type ProgressService } from './progress.service.js';
+import { findPublishedFields } from './wikiField.js';
 
 /** Los intentos sin terminar caducan (TTL) a los 7 días de su última actividad. */
 export const IN_PROGRESS_TTL_DAYS = 7;
@@ -179,34 +178,29 @@ export function createQuizService(deps: QuizServiceDeps) {
   }
 
   /**
-   * Recibe las respuestas de la etapa en curso. El servidor valida que sean exactamente las preguntas de la
-   * etapa, cuenta, resuelve empates al azar y devuelve la etapa siguiente o, al terminar, el resultado.
-   */
-  /**
    * Fondo animado del campo del resultado. Solo se arma sobre un resultado FINAL ya calculado (nunca antes), y solo sale
    * la clave visual y el nombre del campo: el `fieldSlug` del contenido del quiz no viaja al lector.
+   *
+   * Decisión (20-oct-2026): quien terminó el quiz ve el nombre y el fondo del campo de SU resultado aunque la ficha de
+   * ese campo siga bloqueada en la wiki. Es lo mismo que ya sabe por el título de su resultado; el cuerpo de la ficha
+   * sigue bloqueado y no sale de aquí.
    */
   async function withVisual(
     payload: ResultPayload,
     content: QuizContent,
-    quizId: string,
+    bookId: Types.ObjectId | string,
   ): Promise<ResultPayload> {
     const fieldSlug = findResult(content, payload.key)?.fieldSlug;
     if (!fieldSlug) return payload;
-    const quiz = await Quiz.findById(quizId).select('bookId').lean();
-    const field = await WikiEntry.findOne({
-      kind: 'power_field',
-      slug: fieldSlug,
-      status: 'published',
-      $or: [{ bookId: quiz?.bookId }, { bookId: { $exists: false } }],
-    })
-      .select('name visualKey')
-      .lean();
-    const key = fieldVisualKeySchema.safeParse(field?.visualKey);
-    if (!field || !key.success) return payload;
-    return { ...payload, visual: { key: key.data, fieldName: field.name } };
+    const field = (await findPublishedFields(bookId, [fieldSlug])).get(fieldSlug);
+    if (!field?.visualKey) return payload;
+    return { ...payload, visual: { key: field.visualKey, fieldName: field.name } };
   }
 
+  /**
+   * Recibe las respuestas de la etapa en curso. El servidor valida que sean exactamente las preguntas de la
+   * etapa, cuenta, resuelve empates al azar y devuelve la etapa siguiente o, al terminar, el resultado.
+   */
   async function submitAnswers(
     actor: Actor,
     attemptId: string,
@@ -291,7 +285,7 @@ export function createQuizService(deps: QuizServiceDeps) {
         result: await withVisual(
           toResultPayload(content, winner.resultKey, distribution),
           content,
-          attempt.quizId.toString(),
+          attempt.bookId,
         ),
       };
     }
@@ -399,7 +393,7 @@ export function createQuizService(deps: QuizServiceDeps) {
             current.distribution ?? undefined,
           ),
           currentContent,
-          quizId,
+          current.bookId,
         ),
       },
       history: attempts.flatMap((attempt) => {

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { slugSchema } from './book.js';
 import { imageRefSchema, objectIdSchema } from './common.js';
 import { factSchema, mediaSchema, quizIdSchema, quizSettingsSchema, revealSchema } from './quiz.js';
+import { fieldSlugSchema } from './wiki.js';
 
 /**
  * Edición de quizzes (panel). El BORRADOR admite contenido incompleto (textos vacíos, preguntas sin
@@ -42,11 +43,7 @@ const draftResultSchema = z.object({
   reveal: revealSchema.optional(),
   facts: z.array(factSchema).max(12).optional(),
   /** Campo de poder (`slug` de la wiki) del resultado: da el fondo animado al terminar el quiz. */
-  fieldSlug: z
-    .string()
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
-    .max(80)
-    .optional(),
+  fieldSlug: fieldSlugSchema.optional(),
 });
 
 /** Contenido que guarda el editor (reemplaza el borrador completo). */

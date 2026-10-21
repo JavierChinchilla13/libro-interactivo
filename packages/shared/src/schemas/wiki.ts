@@ -31,6 +31,12 @@ export const FIELD_VISUAL_LABELS: Record<FieldVisualKey, string> = {
   neon: 'Trazos de neón (Virtud)',
 };
 
+/** `slug` de un campo de poder de la wiki (el que enlaza un resultado de quiz con su campo). */
+export const fieldSlugSchema = z
+  .string()
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  .max(80);
+
 export const WIKI_STATUSES = ['draft', 'published', 'archived'] as const;
 export const wikiStatusSchema = z.enum(WIKI_STATUSES);
 

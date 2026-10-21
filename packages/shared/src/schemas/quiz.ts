@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { imageRefSchema, objectIdSchema } from './common.js';
-import { fieldVisualKeySchema } from './wiki.js';
+import { fieldSlugSchema, fieldVisualKeySchema } from './wiki.js';
 
 /**
  * Contratos de los quizzes.
@@ -97,11 +97,7 @@ export const resultDefSchema = z.object({
   reveal: revealSchema.optional(),
   facts: z.array(factSchema).max(12).optional(),
   /** Campo de poder (`slug` en la wiki) al que pertenece este resultado: da el fondo animado al terminar. */
-  fieldSlug: z
-    .string()
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
-    .max(80)
-    .optional(),
+  fieldSlug: fieldSlugSchema.optional(),
 });
 export type ResultDef = z.infer<typeof resultDefSchema>;
 
