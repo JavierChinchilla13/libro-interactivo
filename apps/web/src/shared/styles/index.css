@@ -721,6 +721,19 @@
       animation: smoke-b 46s ease-in-out infinite alternate;
     }
   }
+  /* En el celular el humo queda quieto, más chico y sin máscara: nada se recalcula bajo el vidrio de la tarjeta. */
+  @media (max-width: 639px) {
+    .auth-smoke {
+      mask-image: none;
+      -webkit-mask-image: none;
+    }
+    .auth-smoke::before,
+    .auth-smoke::after {
+      width: 20rem;
+      height: 20rem;
+      animation: none;
+    }
+  }
   @keyframes smoke-a {
     to {
       transform: translate(8rem, 5rem) scale(1.25);
@@ -1367,6 +1380,20 @@
     background: var(--token-glass);
     -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
+  }
+  /* En el celular el desenfoque es más corto (cuesta menos por fotograma) y sin transparencia pasa a color sólido. */
+  @media (max-width: 639px) {
+    .auth-card {
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .auth-card {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background: var(--token-surface);
+    }
   }
   /* Degradado del inicio: dos manchas (cian y lavanda) que se desplazan muy despacio; solo transform. */
   .hero-mesh {
