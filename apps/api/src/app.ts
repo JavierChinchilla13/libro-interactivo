@@ -4,7 +4,7 @@ import express, { type Express } from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import type { Env } from './config/env.js';
-import { DEFAULT_LIMITS, scaleLimits, type Limits } from './config/limits.js';
+import { DEFAULT_LIMITS, limitFactor, scaleLimits, type Limits } from './config/limits.js';
 import { createBackgroundTasks, type BackgroundTasks } from './lib/background.js';
 import { systemClock, type Clock } from './lib/clock.js';
 import type { Logger } from './lib/logger.js';
@@ -230,10 +230,7 @@ export function createApp(
       clock,
       requireUnlocked,
       guards,
-      limits: scaleLimits(
-        { ...DEFAULT_LIMITS, ...deps.limits },
-        deps.env.RATE_LIMIT_MULTIPLIER ?? 1,
-      ),
+      limits: scaleLimits({ ...DEFAULT_LIMITS, ...deps.limits }, limitFactor(deps.env)),
     }),
   );
   configure?.(app, { guards, auth });
