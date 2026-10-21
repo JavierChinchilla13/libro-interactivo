@@ -230,6 +230,8 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
   }) => {
     await page.goto('/ingresar');
     await page.getByRole('link', { name: '¿Olvidaste tu contraseña?' }).click();
+    // La pantalla se descarga al entrar: hasta que cambia, «Correo» sigue siendo el campo de la pantalla de ingreso.
+    await expect(page.getByRole('heading', { name: 'Recupera tu contraseña' })).toBeVisible();
     await page.getByLabel(/^Correo/).fill('nadie@ejemplo.com');
     await page.getByRole('button', { name: 'Enviar enlace' }).click();
     await expect(

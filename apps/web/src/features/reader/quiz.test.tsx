@@ -89,6 +89,38 @@ describe('quiz: introducción', () => {
     expect(called(`POST /api/quizzes/${QUIZ}/attempts`)).toHaveLength(0);
   });
 
+  it('la portada del quiz lleva el título centrado sobre la imagen del quiz', async () => {
+    mockApi({
+      [`GET /api/quizzes/${QUIZ}`]: intro({
+        image: {
+          provider: 'cloudinary',
+          publicId: 'libro/quiz',
+          url: 'https://res.cloudinary.com/demo/image/upload/libro/quiz',
+          width: 1200,
+          height: 800,
+          alt: '[PLACEHOLDER] Arte del quiz',
+          deliveryType: 'upload',
+        },
+      }),
+    });
+    const { container } = renderAt(`/panel/quiz/${QUIZ}`);
+    const heading = await screen.findByRole('heading', { name: '[PLACEHOLDER] Quiz 2' });
+    const hero = container.querySelector('.quiz-hero');
+    expect(hero).not.toBeNull();
+    expect(hero?.contains(heading)).toBe(true);
+    const image = screen.getByRole('img', { name: '[PLACEHOLDER] Arte del quiz' });
+    expect(image).toHaveClass('quiz-hero-img');
+    expect(image.getAttribute('src')).toContain('w_1200');
+  });
+
+  it('sin imagen la portada del quiz sigue con título (nebulosa de CSS) y sin imágenes rotas', async () => {
+    mockApi({ [`GET /api/quizzes/${QUIZ}`]: intro() });
+    const { container } = renderAt(`/panel/quiz/${QUIZ}`);
+    const heading = await screen.findByRole('heading', { name: '[PLACEHOLDER] Quiz 2' });
+    expect(container.querySelector('.quiz-hero')?.contains(heading)).toBe(true);
+    expect(container.querySelector('.quiz-hero img')).toBeNull();
+  });
+
   it('un quiz de una sola vez lo avisa ANTES de empezar; ya completado no ofrece empezar', async () => {
     mockApi({
       [`GET /api/quizzes/${QUIZ}`]: intro({

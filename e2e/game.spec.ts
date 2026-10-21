@@ -79,11 +79,16 @@ test.describe('juego (celular y escritorio)', () => {
     await page.getByLabel(/^Contraseña/).fill(PASSWORD);
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
     await expect(page.getByText('¡Desbloqueado!')).toBeVisible();
+    // La bienvenida es un ajuste global de la base de pruebas: se espera la respuesta del servidor que dice si toca
+    // mostrarla y, solo entonces, se cierra (sin pausas ni errores tragados).
+    const welcome = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/me/welcome') && response.request().method() === 'GET',
+    );
     await page.getByRole('link', { name: 'Ir a mi panel' }).click();
-    // La bienvenida es un ajuste global de la base de pruebas: si está activa, se cierra.
-    const welcome = page.getByRole('button', { name: '¡A la aventura!' });
+    const { show } = (await (await welcome).json()) as { show: boolean };
     await expect(page.getByRole('heading', { name: /^Hola, / })).toBeVisible();
-    if (await welcome.isVisible()) await welcome.click();
+    if (show) await page.getByRole('button', { name: '¡A la aventura!' }).click();
     await page.getByRole('link', { name: /^Jugar/ }).click();
 
     // 2) Mala decisión: final fallido y botón para intentarlo de nuevo.

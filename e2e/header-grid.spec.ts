@@ -11,8 +11,9 @@ const demo = (publicId: string) => ({
 });
 
 test.describe('rejilla inclinada del encabezado', () => {
-  test('con 5 imágenes aparece bajo el titular y al quitarlas desaparece', async ({
+  test('con 5 imágenes aparece bajo el titular y al quitarlas quedan marcadores de color', async ({
     page,
+    browser,
     playwright,
     baseURL,
     isMobile,
@@ -38,7 +39,8 @@ test.describe('rejilla inclinada del encabezado', () => {
       await expect(grid).toBeVisible();
       await expect(grid.getByRole('img')).toHaveCount(5);
       await grid.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(1500);
+      // La captura es solo de apoyo para revisar a ojo: se toma cuando la página terminó de cargar.
+      await page.waitForLoadState('load');
       await page.screenshot({ path: process.env['GRID_SHOT'] ?? 'test-results/grid.png' });
       // El titular sigue siendo lo primero de la página.
       const heading = page.getByRole('heading', { level: 1 });
@@ -47,7 +49,19 @@ test.describe('rejilla inclinada del encabezado', () => {
     } finally {
       expect((await save([])).status()).toBe(200);
     }
-    await page.reload();
-    await expect(page.getByRole('region', { name: 'Imágenes del universo' })).toHaveCount(0);
+    // `GET /api/site` se guarda 60 s en la caché del navegador: se mira desde un contexto nuevo (sin esa caché).
+    const freshContext = await browser.newContext();
+    try {
+      const fresh = await freshContext.newPage();
+      await fresh.goto(`${baseURL}/`);
+      // Sin imágenes propias: en desarrollo quedan los marcadores de color (la rejilla sin ninguna imagen). En el
+      // sitio publicado no se pinta nada; esta suite corre contra el servidor de desarrollo.
+      const empty = fresh.getByRole('region', { name: 'Imágenes del universo' });
+      await expect(empty).toBeVisible();
+      await expect(empty.getByRole('img')).toHaveCount(0);
+    } finally {
+      await freshContext.close();
+      await admin.dispose();
+    }
   });
 });
