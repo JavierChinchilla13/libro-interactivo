@@ -34,12 +34,12 @@ const book = (theme: unknown, over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-const render = (books: unknown[], siteBackground?: unknown) => {
+const render = (books: unknown[], siteBackground?: unknown, path = '/contacto') => {
   mockApi({
     'GET /api/site': () => json(site(siteBackground)),
     'GET /api/books': () => json({ books }),
   });
-  return renderAt('/contacto');
+  return renderAt(path);
 };
 
 const root = () => document.documentElement.style;
@@ -73,6 +73,29 @@ describe('tema por libro', () => {
     view.unmount();
     expect(root().getPropertyValue('--token-bg')).toBe('');
     expect(root().getPropertyValue('--token-primary')).toBe('');
+  });
+
+  it('en la portada el tema del libro no cambia el fondo ni la pintura: solo el acento', async () => {
+    const { container } = render(
+      [
+        book({
+          primaryColor: '#7fe0ff',
+          background: { type: 'image', image: image('libro/tema') },
+        }),
+      ],
+      image('libro/sitio'),
+      '/',
+    );
+    await waitFor(() => expect(container.querySelector('.page-bg img')).not.toBeNull());
+    expect(container.querySelector('.page-bg img')?.getAttribute('src')).toContain('libro/sitio');
+    await waitFor(() => expect(root().getPropertyValue('--token-primary')).toBe('#7fe0ff'));
+    expect(root().getPropertyValue('--token-bg')).toBe('');
+  });
+
+  it('un fondo de color del libro tampoco toca el fondo de la portada', async () => {
+    render([book({ background: { type: 'color', color: '#101a3a' } })], image('libro/sitio'), '/');
+    await waitFor(() => expect(document.querySelector('.page-bg img')).not.toBeNull());
+    expect(root().getPropertyValue('--token-bg')).toBe('');
   });
 
   it('un fondo claro o un primario con poco contraste se ignoran: el sitio conserva su paleta', async () => {

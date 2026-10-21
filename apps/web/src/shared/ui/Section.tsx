@@ -1,18 +1,15 @@
 import type { ReactNode } from 'react';
 
-type Tone = 'base' | 'sunken' | 'raised';
 type Space = 'tight' | 'regular' | 'loose';
 
-/** Aire dentro de la sección, arriba y abajo. Tres pasos para que la página no sea monótona. */
+/**
+ * Aire de la sección: solo arriba (el de abajo lo pone la siguiente), en tres pasos sobre un mismo token para que la
+ * página no sea monótona ni se sumen dos rellenos entre secciones.
+ */
 const inside: Record<Space, string> = {
-  tight: 'py-section-tight',
-  regular: 'py-section-regular',
-  loose: 'py-section-loose',
-};
-const bands: Record<Tone, string> = {
-  base: '',
-  sunken: 'section-band',
-  raised: 'section-band-raised',
+  tight: 'pt-[calc(var(--token-section-gap)*0.7)]',
+  regular: 'pt-section-gap',
+  loose: 'pt-[calc(var(--token-section-gap)*1.25)]',
 };
 
 /** El titular con una palabra de énfasis: sube de peso dentro de Cinzel (no cambia de color), si aparece en él. */
@@ -30,9 +27,8 @@ function Emphasized({ text, word }: { text: string; word?: string | undefined })
 
 /**
  * Sección de página con título (h2) y, si se quiere, una frase de introducción.
- * - `tone`: `sunken` (banda más oscura) o `raised` (banda más clara), a sangre de pantalla; `base` va sobre el fondo.
- * - `space`: cuánto aire lleva (tight / regular / loose).
- * - `tall`: una idea por pantalla: la sección ocupa buena parte del alto y centra su contenido.
+ * Todas las secciones se asientan sobre el mismo fondo (la pintura del sitio): no hay bandas de color.
+ * - `space`: cuánto aire lleva arriba (tight / regular / loose).
  * - `emphasis`: una palabra del título que sube de peso.
  * - `split`: composición editorial (escritorio): un filete fino arriba, el título pegajoso a la izquierda y el
  *   contenido a la derecha. En el celular todo va en una columna bajo el mismo filete.
@@ -45,9 +41,7 @@ export function Section({
   id,
   title,
   intro,
-  tone = 'base',
   space = 'regular',
-  tall = false,
   emphasis,
   split = false,
   aside,
@@ -58,9 +52,7 @@ export function Section({
   id: string;
   title: string;
   intro?: string;
-  tone?: Tone;
   space?: Space;
-  tall?: boolean;
   emphasis?: string;
   split?: boolean;
   aside?: ReactNode;
@@ -119,9 +111,7 @@ export function Section({
     <section
       id={id}
       aria-labelledby={`${id}-title`}
-      className={`relative scroll-mt-24 ${inside[space]} ${bands[tone]} ${
-        tall ? 'flex min-h-[min(70dvh,40rem)] flex-col justify-center' : ''
-      } ${className}`}
+      className={`relative scroll-mt-24 ${inside[space]} ${className}`}
     >
       {layout}
     </section>

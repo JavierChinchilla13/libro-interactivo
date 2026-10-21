@@ -83,6 +83,8 @@
   --token-section-tight: clamp(2rem, 1.2rem + 2.4vw, 3rem);
   --token-section-regular: clamp(3rem, 1.8rem + 3.6vw, 5rem);
   --token-section-loose: clamp(4rem, 2.4rem + 5.2vw, 8rem);
+  /* Aire entre secciones de la portada: solo el de arriba de cada una (no se suma al de abajo de la anterior). */
+  --token-section-gap: clamp(3rem, 1.6rem + 4vw, 5.5rem);
 
   /* ---- Movimiento ---- */
   /* Pulsado, respuesta (hover, color), transición de página y estado lento. Solo transform y opacity. */
