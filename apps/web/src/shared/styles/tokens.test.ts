@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { PALETTE } from '../lib/color';
 
 // Se ejecuta desde `apps/web` (npm test -w apps/web) o desde la raíz del monorepo.
 const file = ['src/shared/styles/tokens.css', 'apps/web/src/shared/styles/tokens.css']
@@ -66,5 +67,68 @@ describe('contraste de la paleta (WCAG AA)', () => {
     for (const surface of surfaces) {
       expect(contrast(token('primary'), token(surface)), surface).toBeGreaterThanOrEqual(3);
     }
+  });
+});
+
+/**
+ * Pintura de fondo, velo y vidrio: el texto sigue leyéndose con el peor caso razonable. La pintura del diseñador es
+ * muy oscura (el punto más claro medido es ~#0b2b6c); aquí se usa un azul bastante más claro, `#143a85`, como peor caso.
+ */
+const indexCss = readFileSync(resolve(file, '../index.css'), 'utf8');
+const toRgb = (hex: string): [number, number, number] => [
+  parseInt(hex.slice(1, 3), 16),
+  parseInt(hex.slice(3, 5), 16),
+  parseInt(hex.slice(5, 7), 16),
+];
+const toHex = (rgb: number[]) =>
+  `#${rgb.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
+/** `top` encima de `base` con opacidad `alpha` (0 a 1). */
+const over = (top: string, base: string, alpha: number) => {
+  const [t, b] = [toRgb(top), toRgb(base)];
+  return toHex(t.map((value, i) => value * alpha + (b[i] as number) * (1 - alpha)));
+};
+/** Porcentaje más bajo de `--token-bg` en el velo de la pintura (`.page-bg::after`): el que menos protege. */
+const weakestVeil = (): number => {
+  const block = /\.page-bg::after\s*\{[^}]*\}/.exec(indexCss)?.[0] ?? '';
+  const values = [...block.matchAll(/--token-bg\) (\d+)%/g)].map((m) => Number(m[1]));
+  if (values.length === 0) throw new Error('No se encontró el velo de .page-bg::after');
+  return Math.min(...values) / 100;
+};
+const PAINT_WORST = '#143a85';
+
+describe('contraste sobre la pintura, el velo y el vidrio', () => {
+  it('el texto y el texto atenuado se leen sobre la pintura más clara con el velo más débil', () => {
+    const veiled = over(token('bg'), PAINT_WORST, weakestVeil());
+    expect(contrast(token('text'), veiled), 'text').toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token('muted'), veiled), 'muted').toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('el texto se lee sobre una carpeta de vidrio puesta sobre esa pintura con velo', () => {
+    const veiled = over(token('bg'), PAINT_WORST, weakestVeil());
+    const folder = over(token('surface-alt'), veiled, 0.58);
+    expect(contrast(token('text'), folder), 'text').toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token('muted'), folder), 'muted').toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('el velo de la pintura y los tokens nuevos de vidrio y brillo existen', () => {
+    expect(css).toMatch(/--token-glass-folder:/);
+    expect(css).toMatch(/--token-field-glow:/);
+    expect(weakestVeil()).toBeGreaterThan(0);
+  });
+
+  it('el texto del título de un campo se lee sobre el velo inferior más fuerte del escenario', () => {
+    const base = '#143a85';
+    const veiled = over(token('sunken'), base, 0.8);
+    expect(contrast(token('text'), veiled)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe('la paleta de comprobación del tema por libro', () => {
+  it('coincide con los tokens reales (si cambia un token, también cambia shared/lib/color.ts)', () => {
+    expect(PALETTE.bg).toBe(token('bg'));
+    expect(PALETTE.surface).toBe(token('surface'));
+    expect(PALETTE.text).toBe(token('text'));
+    expect(PALETTE.muted).toBe(token('muted'));
+    expect(PALETTE.primaryContrast).toBe(token('primary-contrast'));
   });
 });

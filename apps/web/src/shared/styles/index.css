@@ -1153,7 +1153,12 @@
   /* Pintura de fondo del sitio: capa fija detrás de todo; el velo oscuro mantiene el contraste AA del texto. */
   .page-bg {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: 0;
+    left: 0;
+    /* `lvh`: no se redimensiona (ni se vuelve a pintar) cuando la barra de direcciones del celular sube y baja. */
+    height: 100%;
+    height: 100lvh;
     z-index: -1;
     overflow: hidden;
     pointer-events: none;
