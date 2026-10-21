@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
 import { ApiClientError } from '../../shared/api/client';
 import { errorMessage } from '../../shared/api/messages';
@@ -30,6 +30,9 @@ export function WikiEntryPage() {
     queryKey: wikiKeys.entry(viewer, entryId),
     queryFn: () => wikiApi.entry(entryId),
     retry: false,
+    // Al conocerse la sesión la clave cambia (de visitante a la persona): se sigue mostrando la ficha mientras se
+    // vuelve a pedir, en vez de volver a «Cargando».
+    placeholderData: keepPreviousData,
   });
 
   if (query.isPending) return <Loading />;
@@ -57,10 +60,12 @@ export function WikiEntryPage() {
 
   const image = entry.image ? (
     <img
-      src={thumbUrl(entry.image.url, 900)}
+      src={thumbUrl(entry.image.url, entry.visualKey ? 640 : 900)}
       alt={entry.image.alt}
       width={entry.image.width}
       height={entry.image.height}
+      // Con el escenario animado arriba, la imagen queda debajo y no compite con el título.
+      loading={entry.visualKey ? 'lazy' : undefined}
       className="img-frame h-auto max-h-96 w-auto max-w-full self-start rounded-token-md"
     />
   ) : null;

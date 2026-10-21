@@ -32,7 +32,7 @@ describe('estado del servicio', () => {
     );
     renderApp('/estado');
 
-    expect(screen.getByRole('heading', { name: 'Estado del sistema' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Estado del sistema' })).toBeInTheDocument();
     expect(await screen.findByText('Todo funciona correctamente.')).toBeInTheDocument();
     expect(screen.getByTestId('server-status')).toHaveTextContent('en línea');
     expect(screen.getByTestId('db-status')).toHaveTextContent('conectada');
@@ -65,7 +65,7 @@ describe('navegación', () => {
       new Response(JSON.stringify({ status: 'ok', db: 'up', uptimeSeconds: 1 }), { status: 200 }),
     );
     renderApp('/estado');
-    expect(screen.getByRole('heading', { name: 'Estado del sistema' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Estado del sistema' })).toBeInTheDocument();
   });
 
   it('muestra "Página no encontrada" en rutas inexistentes', () => {
