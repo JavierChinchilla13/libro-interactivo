@@ -39,10 +39,44 @@ function preloadFirstPaintFonts(): Plugin {
   };
 }
 
+/**
+ * Quien abre directo una ficha de la wiki descargaba el código de esa página solo después de ejecutar el paquete inicial
+ * (un salto más de red). Aquí se agrega a `index.html` una precarga que solo actúa en esas direcciones: el código de la
+ * ficha viaja en paralelo con el paquete inicial, sin cargar nada extra en la portada ni en las demás páginas.
+ */
+function preloadWikiEntryChunk(): Plugin {
+  return {
+    name: 'preload-wiki-entry-chunk',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(_html, ctx) {
+        const file = Object.keys(ctx.bundle ?? {}).find((name) =>
+          /WikiEntryPage-[^/]*\.js$/.test(name),
+        );
+        if (!file) {
+          // Sin el aviso, un cambio de nombre o de agrupación de la ficha quitaría la precarga sin que nadie lo note.
+          console.warn(
+            '[preload-wiki-entry-chunk] No se encontró el archivo de WikiEntryPage: la ficha de la wiki no se precarga.',
+          );
+          return [];
+        }
+        return [
+          {
+            tag: 'script',
+            children: `if(location.pathname.indexOf('/wiki/entrada/')===0){var l=document.createElement('link');l.rel='modulepreload';l.href='/${file}';document.head.appendChild(l);}`,
+            injectTo: 'head' as const,
+          },
+        ];
+      },
+    },
+  };
+}
+
 const API_TARGET = process.env['VITE_API_PROXY_TARGET'] ?? 'http://localhost:3000';
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), preloadFirstPaintFonts()],
+  plugins: [react(), tailwindcss(), preloadFirstPaintFonts(), preloadWikiEntryChunk()],
   server: {
     port: 5173,
     // En desarrollo el navegador habla con el mismo origen (:5173); Vite reenvía /api al backend.

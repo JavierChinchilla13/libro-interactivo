@@ -28,7 +28,10 @@ export function PublicLayout() {
   const user = session.data;
   const [open, setOpen] = useState(false);
   // La portada no se anima al entrar: lo primero que se ve (titular) es lo que mide el LCP.
-  const isHome = useLocation().pathname === '/';
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+  // El fundido de entrada solo al navegar dentro de la app: en una carga directa el título se pinta ya visible.
+  const firstLoad = location.key === 'default';
   const site = useQuery({ queryKey: publicKeys.site, queryFn: publicApi.site, retry: false });
   const social = site.data?.social ?? [];
   return (
@@ -102,7 +105,7 @@ export function PublicLayout() {
         tabIndex={-1}
         className="relative z-10 mx-auto w-full max-w-[var(--token-page-max)] flex-1 px-4 py-8 focus:outline-none sm:py-12"
       >
-        <div className={isHome ? undefined : 'fade-up'}>
+        <div className={isHome || firstLoad ? undefined : 'fade-up'}>
           <Outlet />
         </div>
       </main>
