@@ -10,6 +10,7 @@ import { TextField } from '../../shared/ui/controls';
 import { Alert, EmptyState, Loading } from '../../shared/ui/layout';
 import { useSession } from '../auth/session';
 import { wikiApi, wikiKeys } from './api';
+import { GlassFolders, type Folder } from './GlassFolders';
 import { LockedCard, LockedNotice } from './LockedNotice';
 import type { SectionKind } from './sections';
 import { LockIcon } from '../../shared/ui/icons';
@@ -165,18 +166,67 @@ export function PowersView({ bookId, section }: { bookId: string; section: Publi
   );
 }
 
-/** Lugares: mensaje de la autora, mapa, filtro por tipo y la lista. */
+const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+
+/**
+ * Carpetas por tipo: una por cada `group`, una «Otros lugares» para lo abierto sin tipo y «Por descubrir» para lo
+ * bloqueado (solo cuántos hay: sin nombre ni tipo, como siempre).
+ */
+function placeFolders(entries: readonly PublicWikiLeaf[]): Folder[] {
+  const byGroup = new Map<string, Open<PublicWikiLeaf>[]>();
+  const loose: Open<PublicWikiLeaf>[] = [];
+  const locked: PublicWikiLeaf[] = [];
+  for (const entry of entries) {
+    if (entry.locked) locked.push(entry);
+    else if (entry.group) byGroup.set(entry.group, [...(byGroup.get(entry.group) ?? []), entry]);
+    else loose.push(entry);
+  }
+  const cards = (items: readonly Open<PublicWikiLeaf>[]) => (
+    <ul className={gridClass}>
+      {items.map((entry) => (
+        <EntryCard key={entry.id} entry={entry} />
+      ))}
+    </ul>
+  );
+  const folders: Folder[] = [...byGroup].map(([group, items]) => ({
+    id: `grupo-${group}`,
+    label: group,
+    summary: plural(items.length, 'lugar', 'lugares'),
+    content: cards(items),
+  }));
+  if (loose.length > 0) {
+    folders.push({
+      id: 'otros',
+      label: 'Otros lugares',
+      summary: plural(loose.length, 'lugar', 'lugares'),
+      content: cards(loose),
+    });
+  }
+  if (locked.length > 0) {
+    folders.push({
+      id: 'por-descubrir',
+      label: 'Por descubrir',
+      summary: plural(locked.length, 'lugar bloqueado', 'lugares bloqueados'),
+      content: (
+        <ul className={gridClass}>
+          {locked.map((entry) => (
+            <LockedCard key={entry.id} />
+          ))}
+        </ul>
+      ),
+    });
+  }
+  return folders;
+}
+
+/** Lugares: mensaje de la autora, mapa y carpetas por tipo (sin tipos, una lista simple). */
 export function PlacesView({ bookId, section }: { bookId: string; section: PublicWikiSection }) {
   const query = useEntries(bookId, 'place');
-  const [group, setGroup] = useState<string | null>(null);
   const gate = useGate(query, section);
   if (gate) return gate;
   const entries = query.data?.entries ?? [];
-  const groups = [
-    ...new Set(entries.flatMap((entry) => (!entry.locked && entry.group ? [entry.group] : []))),
-  ];
-  // Filtrar por tipo oculta las tarjetas bloqueadas: no tienen tipo que mostrar.
-  const shown = group ? entries.filter((entry) => !entry.locked && entry.group === group) : entries;
+  const hasGroups = entries.some((entry) => !entry.locked && entry.group);
+  const folders = hasGroups ? placeFolders(entries) : [];
   return (
     <div className="flex flex-col gap-4">
       {section.introHtml ? <SafeHtml html={section.introHtml} /> : null}
@@ -189,22 +239,11 @@ export function PlacesView({ bookId, section }: { bookId: string; section: Publi
           className="img-frame h-auto max-w-full rounded-token-md"
         />
       ) : null}
-      {groups.length > 0 ? (
-        <div role="group" aria-label="Filtrar por tipo" className="flex flex-wrap gap-2">
-          {[null, ...groups].map((option) => (
-            <button
-              key={option ?? 'todos'}
-              type="button"
-              aria-pressed={group === option}
-              onClick={() => setGroup(option)}
-              className="chip"
-            >
-              {option ?? 'Todos'}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      <Cards entries={shown} empty="Todavía no hay lugares publicados." />
+      {folders.length > 0 ? (
+        <GlassFolders folders={folders} label="Carpetas de lugares" initialOpen={folders[0]?.id} />
+      ) : (
+        <Cards entries={entries} empty="Todavía no hay lugares publicados." />
+      )}
     </div>
   );
 }

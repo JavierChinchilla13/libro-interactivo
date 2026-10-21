@@ -681,6 +681,542 @@
     }
   }
 
+  /* Humo del ingreso: dos manchas suaves (lavanda y cian) que derivan muy despacio detrás de la tarjeta; solo transform. */
+  .auth-smoke {
+    position: absolute;
+    top: -3rem;
+    bottom: -3rem;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
+    z-index: -1;
+    overflow: clip;
+    pointer-events: none;
+    mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  }
+  .auth-smoke::before,
+  .auth-smoke::after {
+    content: '';
+    position: absolute;
+    width: 30rem;
+    height: 30rem;
+    border-radius: 50%;
+  }
+  .auth-smoke::before {
+    left: 6%;
+    top: 4%;
+    background: radial-gradient(closest-side, rgb(168 155 255 / 0.28), transparent);
+  }
+  .auth-smoke::after {
+    right: 6%;
+    bottom: 4%;
+    background: radial-gradient(closest-side, rgb(63 216 255 / 0.2), transparent);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .auth-smoke::before {
+      animation: smoke-a 38s ease-in-out infinite alternate;
+    }
+    .auth-smoke::after {
+      animation: smoke-b 46s ease-in-out infinite alternate;
+    }
+  }
+  /* En el celular el humo queda quieto, más chico y sin máscara: nada se recalcula bajo el vidrio de la tarjeta. */
+  @media (max-width: 639px) {
+    .auth-smoke {
+      mask-image: none;
+      -webkit-mask-image: none;
+    }
+    .auth-smoke::before,
+    .auth-smoke::after {
+      width: 20rem;
+      height: 20rem;
+      animation: none;
+    }
+  }
+  @keyframes smoke-a {
+    to {
+      transform: translate(8rem, 5rem) scale(1.25);
+    }
+  }
+  @keyframes smoke-b {
+    to {
+      transform: translate(-7rem, -4rem) scale(1.2);
+    }
+  }
+
+  /* Portada de un quiz: la imagen del quiz (o un fondo de nebulosa) con el título centrado encima. */
+  .quiz-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-xl);
+    background:
+      radial-gradient(90% 120% at 15% 0%, rgb(168 155 255 / 0.28), transparent 60%),
+      radial-gradient(80% 100% at 90% 100%, rgb(63 216 255 / 0.18), transparent 60%),
+      var(--token-surface);
+  }
+  .quiz-hero-img {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .quiz-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--token-sunken) 82%, transparent),
+      color-mix(in srgb, var(--token-sunken) 40%, transparent) 60%,
+      color-mix(in srgb, var(--token-sunken) 25%, transparent)
+    );
+  }
+  .quiz-hero-content {
+    display: flex;
+    min-height: 13rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: clamp(1.25rem, 4vw, 2rem);
+    text-align: center;
+  }
+
+  /* Escenario de un campo de poder: degradado propio de cada campo, lienzo animado encima y un velo para el texto. */
+  .field-stage {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-xl);
+    box-shadow: var(--token-field-glow);
+    background: radial-gradient(120% 120% at 20% 10%, #123057, var(--token-sunken));
+  }
+  .field-stage[data-key='rain'] {
+    background: radial-gradient(120% 120% at 70% 0%, #0b3a4f, var(--token-sunken));
+  }
+  .field-stage[data-key='neural'] {
+    background: radial-gradient(120% 120% at 20% 20%, #17306b, var(--token-sunken));
+  }
+  .field-stage[data-key='constellation'] {
+    background: radial-gradient(120% 120% at 50% 0%, #2a2766, var(--token-sunken));
+  }
+  .field-stage[data-key='gradient'] {
+    background: linear-gradient(135deg, #123057, #2a2766 60%, #0e4a5c);
+  }
+  .field-stage[data-key='field'] {
+    background: radial-gradient(120% 120% at 30% 100%, #0e4a4a, var(--token-sunken));
+  }
+  .field-stage[data-key='neon'] {
+    background: radial-gradient(120% 120% at 50% 50%, #1d1a4d, var(--token-sunken));
+  }
+  .field-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--token-dur-slow) var(--token-ease-out);
+  }
+  .field-stage[data-ready] .field-canvas {
+    opacity: 1;
+  }
+  .field-stage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--token-sunken) 80%, transparent),
+      color-mix(in srgb, var(--token-sunken) 45%, transparent) 40%,
+      transparent 75%
+    );
+  }
+  .field-stage-content {
+    display: flex;
+    min-height: 16rem;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: clamp(1.25rem, 4vw, 2.25rem);
+  }
+  /* La información va debajo, sobre un color sólido. */
+  .field-sheet {
+    margin-top: -1px;
+    border: 1px solid var(--token-line);
+    border-top: 0;
+    border-radius: 0 0 var(--token-radius-xl) var(--token-radius-xl);
+    background: var(--token-surface);
+    padding: clamp(1.25rem, 4vw, 2rem);
+  }
+
+  /* Reseñas: un marco exterior de 1 px con la tarjeta dentro; radios concéntricos (radio exterior = interior + relleno). */
+  .review-frame {
+    --review-radius: var(--token-radius-lg);
+    --review-gap: 0.375rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--review-radius);
+    padding: var(--review-gap);
+    text-align: left;
+  }
+  .review-frame-lead {
+    --review-radius: var(--token-radius-xl);
+  }
+  .review-card {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin: 0;
+    border-radius: calc(var(--review-radius) - var(--review-gap));
+    background: var(--token-surface-alt);
+    padding: 1.5rem;
+  }
+
+  /* Coverflow: desplazamiento nativo con ajuste al centro; la inclinación la dibuja la línea de tiempo de desplazamiento. */
+  .coverflow {
+    --cf-w: clamp(11rem, 58vw, 17rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .coverflow-track {
+    display: flex;
+    gap: 1rem;
+    margin: 0;
+    padding: 1.5rem calc(50% - var(--cf-w) / 2);
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .coverflow-track::-webkit-scrollbar {
+    display: none;
+  }
+  .coverflow-item {
+    flex: none;
+    width: var(--cf-w);
+    scroll-snap-align: center;
+    /* La perspectiva va en cada elemento: solo alcanza a sus hijos directos. */
+    perspective: 900px;
+  }
+  .coverflow-card {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: var(--token-radius-md);
+    background: var(--token-surface-alt);
+    cursor: pointer;
+  }
+  .coverflow-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    user-select: none;
+  }
+  .coverflow-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .coverflow-nav {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+  .coverflow-caption {
+    min-height: 3rem;
+    flex: 1;
+    text-align: center;
+  }
+  @supports (animation-timeline: view(inline)) {
+    @media (prefers-reduced-motion: no-preference) {
+      .coverflow-card {
+        animation: coverflow-depth linear both;
+        animation-timeline: view(inline);
+      }
+    }
+  }
+  @keyframes coverflow-depth {
+    0% {
+      transform: rotateY(-50deg) scale(0.8);
+      opacity: 0.55;
+    }
+    50% {
+      transform: none;
+      opacity: 1;
+    }
+    100% {
+      transform: rotateY(50deg) scale(0.8);
+      opacity: 0.55;
+    }
+  }
+
+  /* Carpetas de la wiki: vidrio solo aquí (con alternativa sólida), pestaña arriba, un borde que se enciende al abrir. */
+  .glass-folder {
+    position: relative;
+    display: flex;
+    min-height: 7.5rem;
+    width: 100%;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-md);
+    background: var(--token-glass-folder);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    padding: 1.25rem;
+    text-align: left;
+    cursor: pointer;
+    transition-property: border-color, background-color, transform;
+    transition-duration: var(--token-dur-fast);
+    transition-timing-function: var(--token-ease-out);
+  }
+  .glass-folder::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: -0.7rem;
+    width: 5rem;
+    height: 0.8rem;
+    border: 1px solid var(--token-line);
+    border-bottom: 0;
+    border-radius: var(--token-radius-xs) var(--token-radius-xs) 0 0;
+    background: var(--token-glass-folder);
+    transition: border-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .glass-folder:active {
+    transform: scale(0.98);
+  }
+  .glass-folder[aria-expanded='true'] {
+    border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
+    background: color-mix(in srgb, var(--token-surface-alt) 78%, transparent);
+  }
+  .glass-folder[aria-expanded='true']::before {
+    border-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .glass-folder:hover {
+      border-color: color-mix(in srgb, var(--token-primary) 45%, var(--token-line));
+    }
+  }
+  .glass-folder-sheet {
+    border-top: 1px solid var(--token-line);
+    padding-top: 1.5rem;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .glass-folder-sheet {
+      animation: folder-open 200ms var(--token-ease-out) both;
+    }
+  }
+  @keyframes folder-open {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .glass-folder,
+    .glass-folder::before {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background: var(--token-surface);
+    }
+  }
+
+  /* Cronómetro de la ficha del libro: el número real está siempre; el lienzo de partículas lo cubre si hay movimiento. */
+  .countdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .countdown-row {
+    display: flex;
+    gap: clamp(0.75rem, 3vw, 1.75rem);
+  }
+  .countdown-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .countdown-box {
+    position: relative;
+    display: block;
+  }
+  .countdown-digits {
+    display: block;
+    min-width: 2ch;
+    text-align: center;
+    font-family: var(--token-font-display);
+    font-size: clamp(2rem, 9vw, 3.5rem);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+  }
+  .countdown-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .countdown-cell[data-vapor] .countdown-digits {
+    opacity: 0;
+  }
+
+  /* Rejilla inclinada del encabezado: hilera curva de imágenes; solo `transform` y una máscara estática. */
+  .tilted-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1.5rem;
+    overflow: clip;
+  }
+  .tilted-stage {
+    width: 100%;
+  }
+  .tilted-stage {
+    perspective: 1100px;
+    mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+  }
+  .tilted-track {
+    display: flex;
+    width: max-content;
+    gap: 1rem;
+    margin: 0;
+    /* El relleno final iguala el hueco entre imágenes: el bucle al -50 % cae exacto, sin salto. */
+    padding: 2rem 1rem 3rem 0;
+    list-style: none;
+    transform: rotateX(14deg) rotateZ(-2.5deg);
+    transform-origin: 50% 100%;
+  }
+  .tilted-tile {
+    flex: none;
+    width: 8.5rem;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: var(--token-radius-xs);
+    background: var(--token-surface-alt);
+  }
+  .tilted-tile-placeholder {
+    border: 1px solid var(--token-line);
+    background: linear-gradient(160deg, rgb(168 155 255 / 0.32), rgb(18 48 87 / 0.7));
+  }
+  .tilted-tile-placeholder[data-tone='1'] {
+    background: linear-gradient(160deg, rgb(63 216 255 / 0.28), rgb(18 48 87 / 0.7));
+  }
+  .tilted-tile-placeholder[data-tone='2'] {
+    background: linear-gradient(160deg, rgb(99 150 214 / 0.35), rgb(11 33 66 / 0.8));
+  }
+  .tilted-tile img {
+    border-radius: var(--token-radius-xs);
+  }
+  /* En el celular y sin marquesina, solo se ven las imágenes originales y la hilera queda centrada. */
+  .tilted-track {
+    margin-inline: auto;
+  }
+  .tilted-track .tilted-tile[aria-hidden='true'] {
+    display: none;
+  }
+  .tilted-pause {
+    display: none;
+  }
+  @media (min-width: 48rem) {
+    .tilted-tile {
+      width: 12rem;
+    }
+    .tilted-pause {
+      display: none;
+    }
+  }
+  @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) {
+    .tilted-track {
+      margin-inline: 0;
+      animation: tilted-flow 60s linear infinite;
+    }
+    .tilted-track .tilted-tile[aria-hidden='true'] {
+      display: block;
+    }
+    .tilted-grid[data-paused] .tilted-track {
+      animation-play-state: paused;
+    }
+    .tilted-pause {
+      display: inline-flex;
+      min-height: 2.75rem;
+      margin-top: 0.25rem;
+    }
+  }
+  @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+    .tilted-grid:hover .tilted-track {
+      animation-play-state: paused;
+    }
+  }
+  @keyframes tilted-flow {
+    to {
+      transform: rotateX(14deg) rotateZ(-2.5deg) translateX(-50%);
+    }
+  }
+
+  /* Pintura de fondo del sitio: capa fija detrás de todo; el velo oscuro mantiene el contraste AA del texto. */
+  .page-bg {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    /* `lvh`: no se redimensiona (ni se vuelve a pintar) cuando la barra de direcciones del celular sube y baja. */
+    height: 100%;
+    height: 100lvh;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--token-dur-slow) var(--token-ease-out);
+  }
+  .page-bg[data-loaded] {
+    opacity: 1;
+  }
+  .page-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    user-select: none;
+  }
+  .page-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--token-bg) 28%, transparent),
+      color-mix(in srgb, var(--token-bg) 52%, transparent)
+    );
+  }
+  /* Con pintura de fondo, las bandas dejan ver algo de ella (siguen siendo lo bastante sólidas para leer). */
+  html[data-page-bg] .section-band {
+    background: color-mix(in srgb, var(--token-sunken) 82%, transparent);
+    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--token-sunken) 82%, transparent);
+  }
+  html[data-page-bg] .section-band-raised {
+    background: color-mix(in srgb, var(--token-surface) 82%, transparent);
+    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--token-surface) 82%, transparent);
+  }
+
   /* Banda a sangre de pantalla: fondo hundido que se extiende a los lados sin salirse del contenedor. */
   .section-band {
     background: var(--token-sunken);
@@ -844,6 +1380,20 @@
     background: var(--token-glass);
     -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
+  }
+  /* En el celular el desenfoque es más corto (cuesta menos por fotograma) y sin transparencia pasa a color sólido. */
+  @media (max-width: 639px) {
+    .auth-card {
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .auth-card {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background: var(--token-surface);
+    }
   }
   /* Degradado del inicio: dos manchas (cian y lavanda) que se desplazan muy despacio; solo transform. */
   .hero-mesh {

@@ -1,14 +1,6 @@
 import type { ComponentType } from 'react';
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from 'react-router';
-import { RedeemPage } from '../features/access/RedeemPage';
-import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
-import { LoginPage } from '../features/auth/LoginPage';
-import { RegisterPage } from '../features/auth/RegisterPage';
-import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
-import { ContactPage } from '../features/contact/ContactPage';
-import { HealthPage } from '../features/health/HealthPage';
 import { HomePage } from '../features/home/HomePage';
-import { PostsPage } from '../features/posts/PostsPage';
 import { RequireAuth, RequireRole } from './guards';
 import { PublicLayout } from './layouts/PublicLayout';
 import { NotFoundPage } from './NotFoundPage';
@@ -33,8 +25,11 @@ export const routes: RouteObject[] = [
     element: <PublicLayout />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: 'estado', element: <HealthPage /> },
-      { path: 'actualizaciones', element: <PostsPage /> },
+      { path: 'estado', ...page(() => import('../features/health/HealthPage'), 'HealthPage') },
+      {
+        path: 'actualizaciones',
+        ...page(() => import('../features/posts/PostsPage'), 'PostsPage'),
+      },
       {
         path: 'actualizaciones/:slug',
         ...page(() => import('../features/posts/PostPage'), 'PostPage'),
@@ -43,18 +38,29 @@ export const routes: RouteObject[] = [
         path: 'fan-arts',
         ...page(() => import('../features/community/FanArtsPage'), 'FanArtsPage'),
       },
-      { path: 'contacto', element: <ContactPage /> },
+      {
+        path: 'contacto',
+        ...page(() => import('../features/contact/ContactPage'), 'ContactPage'),
+      },
       { path: 'wiki', ...page(() => import('../features/wiki/WikiPage'), 'WikiPage') },
+      // Carga diferida como el resto; quien llega directo a una ficha recibe su código por una precarga que añade el
+      // build a `index.html` (plugin `preloadWikiEntryChunk` de vite.config.ts).
       {
         path: 'wiki/entrada/:entryId',
         ...page(() => import('../features/wiki/WikiEntryPage'), 'WikiEntryPage'),
       },
       { path: 'wiki/:section', ...page(() => import('../features/wiki/WikiPage'), 'WikiPage') },
-      { path: 'ingresar', element: <LoginPage /> },
-      { path: 'registro', element: <RegisterPage /> },
-      { path: 'olvide-mi-contrasena', element: <ForgotPasswordPage /> },
-      { path: 'restablecer/:token', element: <ResetPasswordPage /> },
-      { path: 'u/:token', element: <RedeemPage /> },
+      { path: 'ingresar', ...page(() => import('../features/auth/LoginPage'), 'LoginPage') },
+      { path: 'registro', ...page(() => import('../features/auth/RegisterPage'), 'RegisterPage') },
+      {
+        path: 'olvide-mi-contrasena',
+        ...page(() => import('../features/auth/ForgotPasswordPage'), 'ForgotPasswordPage'),
+      },
+      {
+        path: 'restablecer/:token',
+        ...page(() => import('../features/auth/ResetPasswordPage'), 'ResetPasswordPage'),
+      },
+      { path: 'u/:token', ...page(() => import('../features/access/RedeemPage'), 'RedeemPage') },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

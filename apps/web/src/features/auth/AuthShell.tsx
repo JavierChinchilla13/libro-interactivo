@@ -17,7 +17,8 @@ export function AuthShell({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center py-4 sm:py-10">
+    <div className="relative isolate mx-auto flex w-full max-w-md flex-col items-center py-4 sm:py-10">
+      <div aria-hidden="true" className="auth-smoke" />
       <div className="auth-card w-full px-5 py-8 text-center sm:px-8">
         <h1 className="page-title">{title}</h1>
         {tagline ? <p className="mx-auto mt-3 max-w-xs text-muted">{tagline}</p> : null}

@@ -7,6 +7,36 @@ export const WIKI_KINDS = ['character', 'power_field', 'power', 'place', 'term']
 export const wikiKindSchema = z.enum(WIKI_KINDS);
 export type WikiKind = z.infer<typeof wikiKindSchema>;
 
+/**
+ * Fondo animado de un campo de poder (lista cerrada: la autora elige, nunca escribe código). Cada clave la dibuja la web
+ * con un lienzo propio; `none` o ausente = sin animación.
+ */
+export const FIELD_VISUAL_KEYS = [
+  'rain',
+  'neural',
+  'constellation',
+  'gradient',
+  'field',
+  'neon',
+] as const;
+export const fieldVisualKeySchema = z.enum(FIELD_VISUAL_KEYS);
+export type FieldVisualKey = z.infer<typeof fieldVisualKeySchema>;
+/** Nombre que ve la autora en el selector del panel. */
+export const FIELD_VISUAL_LABELS: Record<FieldVisualKey, string> = {
+  rain: 'Lluvia de datos (Agitación)',
+  neural: 'Ruido neuronal (Mente)',
+  constellation: 'Constelaciones (Intelectual)',
+  gradient: 'Degradado en movimiento (Transformación)',
+  field: 'Campo de flujo (Naturaleza)',
+  neon: 'Trazos de neón (Virtud)',
+};
+
+/** `slug` de un campo de poder de la wiki (el que enlaza un resultado de quiz con su campo). */
+export const fieldSlugSchema = z
+  .string()
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  .max(80);
+
 export const WIKI_STATUSES = ['draft', 'published', 'archived'] as const;
 export const wikiStatusSchema = z.enum(WIKI_STATUSES);
 
@@ -29,6 +59,8 @@ export const wikiEntryInputSchema = z.object({
     .default([]),
   /** Un poder cuelga de su campo (`power_field`). */
   parentId: objectIdSchema.optional(),
+  /** Solo en un campo de poder: su fondo animado (ficha y resultado de quiz). */
+  visualKey: fieldVisualKeySchema.optional(),
   /** Enlaces entre entradas (p. ej. un lugar → los personajes que lo usan). */
   links: z.array(objectIdSchema).max(50).default([]),
   unlockAfter: unlockRuleSchema.optional(),
@@ -53,6 +85,7 @@ export const wikiEntryResponseSchema = z.object({
   group: z.string().optional(),
   fields: z.array(z.object({ label: z.string(), value: z.string() })),
   parentId: objectIdSchema.optional(),
+  visualKey: fieldVisualKeySchema.optional(),
   links: z.array(objectIdSchema),
   unlockAfter: unlockRuleSchema.optional(),
   lockedDisplay: z.enum(['show', 'hide']),

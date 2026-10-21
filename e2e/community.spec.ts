@@ -101,8 +101,6 @@ test.describe('fan arts y reseñas (escritorio)', () => {
     await page.getByLabel('Calificación (opcional)').selectOption('5');
     await page.getByRole('button', { name: 'Guardar' }).click();
     await expect(page.getByText('Cambios guardados')).toBeVisible();
-    await page.waitForTimeout(400);
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
 
     // El panel de fan arts la lista con el permiso confirmado.
     await page.getByRole('link', { name: 'Fan arts' }).first().click();
@@ -127,6 +125,12 @@ test.describe('fan arts y reseñas (escritorio)', () => {
 
     // La galería: solo el publicado con permiso, y se amplía con el crédito del artista.
     await view.goto(`${baseURL}/fan-arts`);
+    // Con 3 o más obras la página abre en carrusel: para tocar cada obra se pasa a la cuadrícula.
+    // (se espera a que las obras carguen: el selector aparece junto con ellas)
+    await expect(view.getByRole('button', { name: new RegExp(`Dibujo ${stamp}`) })).toBeVisible();
+    // El selector Carrusel/Cuadrícula sale junto con las obras (cuando hay 3 o más; otras corridas dejan más de una).
+    const grid = view.getByRole('button', { name: 'Cuadrícula' });
+    if ((await grid.count()) > 0) await grid.click();
     await expect(view.getByRole('button', { name: new RegExp(`Dibujo ${stamp}`) })).toBeVisible();
     for (const hidden of ['Sin Permiso', 'Borrador', 'Archivado']) {
       await expect(

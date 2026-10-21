@@ -214,7 +214,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           <StagesTab draft={draft} onChange={setDraft} />
         </TabPanel>
         <TabPanel id="resultados" active={tab}>
-          <ResultsTab draft={draft} onChange={setDraft} />
+          <ResultsTab draft={draft} bookId={quiz.bookId} onChange={setDraft} />
         </TabPanel>
       </fieldset>
       <TabPanel id="versiones" active={tab}>

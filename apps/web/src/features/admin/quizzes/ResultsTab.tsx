@@ -1,5 +1,7 @@
-import { Button, TextField } from '../../../shared/ui/controls';
+import { useQuery } from '@tanstack/react-query';
+import { Button, SelectField, TextField } from '../../../shared/ui/controls';
 import { Card, EmptyState } from '../../../shared/ui/layout';
+import { keys, wikiApi } from '../api';
 import { MediaField } from '../components/MediaFields';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { StringListEditor } from '../components/StringListEditor';
@@ -8,11 +10,17 @@ import { addResult, removeResult, updateResult, type Draft, type DraftResult } f
 /** Pestaña «Resultados»: título, descripción, secuencia de revelado, datos e imagen o video corto. */
 export function ResultsTab({
   draft,
+  bookId,
   onChange,
 }: {
   draft: Draft;
+  bookId: string;
   onChange: (draft: Draft) => void;
 }) {
+  const fields = useQuery({
+    queryKey: [...keys.wiki, 'power_field', bookId],
+    queryFn: () => wikiApi.list({ kind: 'power_field', bookId }),
+  });
   if (draft.stages.length === 0) {
     return (
       <EmptyState title="Primero agrega una etapa">
@@ -35,7 +43,13 @@ export function ResultsTab({
               Resultados de «{stage.title?.trim() || stage.id}»
             </h2>
             {results.map((result) => (
-              <ResultEditor key={result.key} draft={draft} result={result} onChange={onChange} />
+              <ResultEditor
+                key={result.key}
+                draft={draft}
+                result={result}
+                fields={fields.data?.entries ?? []}
+                onChange={onChange}
+              />
             ))}
             <Button
               variant="secondary"
@@ -54,10 +68,12 @@ export function ResultsTab({
 function ResultEditor({
   draft,
   result,
+  fields,
   onChange,
 }: {
   draft: Draft;
   result: DraftResult;
+  fields: readonly { slug: string; name: string }[];
   onChange: (draft: Draft) => void;
 }) {
   const set = (patch: Partial<DraftResult>) => onChange(updateResult(draft, result.key, patch));
@@ -94,6 +110,26 @@ function ResultEditor({
             ...draft,
             results: draft.results.map((current) =>
               current.key === result.key ? (media ? { ...rest, media } : rest) : current,
+            ),
+          });
+        }}
+      />
+      <SelectField
+        label="Campo de poder de este resultado"
+        value={result.fieldSlug ?? ''}
+        placeholder="Ninguno (sin fondo animado)"
+        hint="Al terminar el quiz, quien obtiene este resultado ve el fondo animado del campo. Se elige el fondo en la wiki."
+        options={fields.map((field) => ({ value: field.slug, label: field.name }))}
+        onChange={(event) => {
+          const { fieldSlug: _removed, ...rest } = result;
+          onChange({
+            ...draft,
+            results: draft.results.map((current) =>
+              current.key === result.key
+                ? event.target.value
+                  ? { ...rest, fieldSlug: event.target.value }
+                  : rest
+                : current,
             ),
           });
         }}

@@ -27,6 +27,14 @@ export const universeSettingsSchema = z.object({
   headline: z.string().trim().max(200).optional(),
   /** HTML: se sanea en el servidor al guardar. */
   introHtml: z.string().max(20_000),
+  /** Pintura de fondo de todo el sitio (imagen de Cloudinary; sin ella se ve el color liso). */
+  background: imageRefSchema.optional(),
+  /** Imágenes de la rejilla inclinada bajo el titular: ninguna (no se muestra) o entre 5 y 9. */
+  headerImages: z
+    .array(imageRefSchema)
+    .max(9, 'Máximo 9 imágenes')
+    .refine((list) => list.length === 0 || list.length >= 5, 'Sube entre 5 y 9 imágenes, o ninguna')
+    .optional(),
 });
 export type UniverseSettings = z.infer<typeof universeSettingsSchema>;
 
@@ -117,6 +125,8 @@ export const publicBookSummarySchema = z.object({
   /** `upcoming` = «Próximamente». */
   status: bookStatusSchema.extract(['published', 'upcoming']),
   releaseDate: z.string().optional(),
+  /** Color primario y fondo del libro (la web los aplica solo si mantienen el contraste). */
+  theme: bookThemeSchema.optional(),
 });
 export type PublicBookSummary = z.infer<typeof publicBookSummarySchema>;
 
@@ -129,7 +139,6 @@ export const publicBookDetailSchema = publicBookSummarySchema.extend({
   minAge: z.number().int().optional(),
   isbn: z.string().optional(),
   purchaseLinks: z.array(purchaseLinkSchema),
-  theme: bookThemeSchema.optional(),
   /**
    * Pestañas de la wiki activas. `locked` = la autora la bloqueó hasta cierto avance: se ve «bloqueada» con su
    * mensaje y **sin contenido**. El contenido real de las abiertas se pide aparte (wiki pública).

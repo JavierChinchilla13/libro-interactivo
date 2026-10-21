@@ -1,6 +1,7 @@
 import type { ResultPayload } from '@libro/shared';
 import { useEffect, useRef } from 'react';
 import { thumbUrl } from '../../shared/lib/cloudinary';
+import { FieldStage } from '../../shared/ui/FieldStage';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 
 /** Cada bloque entra un poco después del anterior (se apaga con «reducir movimiento»). */
@@ -28,12 +29,24 @@ export function ResultView({
   const Heading = asPage ? 'h1' : 'h2';
   return (
     <article className="flex flex-col gap-5" aria-label="Tu resultado">
-      <div className="fade-up" style={step(0)}>
-        <p className="eyebrow text-accent">Tu resultado</p>
-        <Heading ref={heading} tabIndex={-1} className="page-title mt-1 focus:outline-none">
-          {result.title}
-        </Heading>
-      </div>
+      {result.visual ? (
+        <div className="fade-up" style={step(0)}>
+          <FieldStage visualKey={result.visual.key}>
+            <p className="eyebrow text-accent">Tu resultado</p>
+            <Heading ref={heading} tabIndex={-1} className="page-title mt-1 focus:outline-none">
+              {result.title}
+            </Heading>
+            <p className="text-sm text-muted">Campo: {result.visual.fieldName}</p>
+          </FieldStage>
+        </div>
+      ) : (
+        <div className="fade-up" style={step(0)}>
+          <p className="eyebrow text-accent">Tu resultado</p>
+          <Heading ref={heading} tabIndex={-1} className="page-title mt-1 focus:outline-none">
+            {result.title}
+          </Heading>
+        </div>
+      )}
 
       {media?.kind === 'image' ? (
         <img

@@ -6,6 +6,7 @@ import {
   type QuizIssue,
   type QuizValidationResponse,
 } from '@libro/shared';
+import type { Types } from 'mongoose';
 import { canonicalJson } from '../lib/canonicalJson.js';
 import type { Clock } from '../lib/clock.js';
 import { AppError } from '../lib/errors.js';
@@ -17,6 +18,7 @@ import type { Actor } from './progress.service.js';
 import type { QuizService } from './quiz.service.js';
 import { validateQuizContent } from './quiz-engine.js';
 import { sanitizeQuizHtml } from './quizContent.js';
+import { findPublishedFields } from './wikiField.js';
 
 /** Hash (SHA-256) del contenido canónico: detecta publicar sin cambios y borradores distintos de lo publicado. */
 export function hashQuizContent(content: QuizContent): string {
@@ -56,6 +58,41 @@ export interface QuizPublishDeps {
  * apuntan a ella. Los intentos anteriores siguen apuntando a la suya.
  */
 export function createQuizPublishService(deps: QuizPublishDeps) {
+  /**
+   * Avisos (no errores) sobre el campo de poder de cada resultado: si no existe, no está publicado o no es de este
+   * libro, el resultado simplemente no llevará fondo animado. Publicar sigue siendo posible.
+   */
+  async function fieldWarnings(bookId: Types.ObjectId, content: QuizContent): Promise<QuizIssue[]> {
+    const slugs = [
+      ...new Set(content.results.flatMap((result) => (result.fieldSlug ? [result.fieldSlug] : []))),
+    ];
+    if (slugs.length === 0) return [];
+    const bySlug = await findPublishedFields(bookId, slugs);
+    return content.results.flatMap((result, index): QuizIssue[] => {
+      if (!result.fieldSlug) return [];
+      const field = bySlug.get(result.fieldSlug);
+      const path = `results.${index}.fieldSlug`;
+      if (!field) {
+        return [
+          {
+            code: 'FIELD_NOT_FOUND',
+            path,
+            message: `El campo «${result.fieldSlug}» no existe, no está publicado o no es de este libro: el resultado «${result.title}» no tendrá fondo animado.`,
+          },
+        ];
+      }
+      return field.visualKey
+        ? []
+        : [
+            {
+              code: 'FIELD_WITHOUT_VISUAL',
+              path,
+              message: `El campo «${result.fieldSlug}» no tiene fondo animado: elige uno en la wiki para que el resultado «${result.title}» lo muestre.`,
+            },
+          ];
+    });
+  }
+
   async function check(quizId: string) {
     const quiz = await Quiz.findById(quizId).lean();
     if (!quiz) throw new AppError('NOT_FOUND', 'No encontramos ese quiz');
@@ -71,6 +108,7 @@ export function createQuizPublishService(deps: QuizPublishDeps) {
     // El HTML ya se sanea al guardar el borrador; se vuelve a sanear al publicar por si el borrador vino de otra vía (seed).
     const content = sanitizeQuizHtml(parsed.data);
     const { errors, warnings } = validateQuizContent(content);
+    warnings.push(...(await fieldWarnings(quiz.bookId, content)));
     const checked: Checked =
       errors.length > 0 ? { ok: false, errors, warnings } : { ok: true, content, warnings };
     return { quiz, checked };

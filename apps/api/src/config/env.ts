@@ -47,6 +47,11 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().min(8).optional(),
   /** ID de cliente OAuth de Google (público). Sin él, «Continuar con Google» no está disponible. */
   GOOGLE_CLIENT_ID: z.string().min(10).optional(),
+  /**
+   * Multiplica los límites de intentos por IP (ingreso, registro…). Por defecto 1: no cambia nada. Solo para pruebas de
+   * extremo a extremo, donde una sola máquina hace muchos ingresos seguidos.
+   */
+  RATE_LIMIT_MULTIPLIER: z.coerce.number().int().min(1).max(100).default(1),
   /** Cloudinary (subida firmada de imágenes y videos desde el panel). Las tres juntas o ninguna. */
   CLOUDINARY_CLOUD_NAME: z.string().min(1).optional(),
   CLOUDINARY_API_KEY: z.string().min(1).optional(),
