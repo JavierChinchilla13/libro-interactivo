@@ -9,6 +9,7 @@ import {
 } from '@libro/shared';
 import { Link } from 'react-router';
 import { thumbUrl } from '../../shared/lib/cloudinary';
+import { useScrollable } from '../../shared/lib/useScrollable';
 import { releaseTarget } from '../../shared/lib/countdown';
 import { formatDate, formatShortDate } from '../../shared/lib/dates';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
@@ -397,6 +398,7 @@ export function Experiences({
   lockMessage: string;
   signedIn: boolean;
 }) {
+  const [listRef, scrollable] = useScrollable<HTMLUListElement>();
   if (experiences.length === 0) return null;
   const first = Math.min(...experiences.map((experience) => experience.order));
   return (
@@ -407,9 +409,10 @@ export function Experiences({
       space="loose"
     >
       <ul
+        ref={listRef}
         className="exp-grid reveal-children"
         aria-label="Experiencias del libro"
-        tabIndex={0}
+        tabIndex={scrollable ? 0 : undefined}
         style={{
           // La primera ocupa hasta 2 filas; el resto (si pasan de 3) se reparte en hasta 3 por fila debajo.
           ['--first-rows' as string]: Math.min(2, Math.max(1, experiences.length - 1)),
@@ -531,6 +534,7 @@ export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
  * desliza). Son texto plano: React lo escapa, nunca se interpreta como HTML.
  */
 export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }) {
+  const [listRef, scrollable] = useScrollable<HTMLUListElement>();
   const shown = reviews.slice(0, 3);
   if (shown.length === 0) return null;
   const [lead, ...rest] = shown;
@@ -548,9 +552,10 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
   return (
     <Section id="resenas" title="Reseñas de lectores" space="regular">
       <ul
+        ref={listRef}
         className="reviews-grid"
         aria-label="Reseñas"
-        tabIndex={0}
+        tabIndex={scrollable ? 0 : undefined}
         style={{ ['--rest' as string]: Math.max(1, rest.length) }}
       >
         {lead ? (
@@ -643,14 +648,16 @@ export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }
 
 /** Secuencia de publicación: las portadas de la saga, cada una enlazada a su libro; los que vienen se marcan «Próximamente». */
 export function SagaSection({ books }: { books: PublicBookSummary[] }) {
+  const [listRef, scrollable] = useScrollable<HTMLUListElement>();
   // Un solo libro no es una secuencia: ya tiene su propia sección.
   if (books.length < 2) return null;
   return (
     <Section id="saga" title="Secuencia de publicación">
       <ul
+        ref={listRef}
         aria-label="Libros de la saga"
         className="-mx-4 flex scroll-px-4 snap-x gap-5 overflow-x-auto px-4 pb-4"
-        tabIndex={0}
+        tabIndex={scrollable ? 0 : undefined}
       >
         {books.map((book) => (
           <li key={book.id} className="w-44 shrink-0 snap-start sm:w-52">

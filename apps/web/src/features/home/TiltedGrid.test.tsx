@@ -151,6 +151,10 @@ describe('movimiento reducido', () => {
     expect(track.dataset['copies']).toBe('1');
     expect(track.querySelectorAll(':scope > li')).toHaveLength(5);
     expect(container.querySelectorAll('li[aria-hidden="true"]')).toHaveLength(0);
+    // La hilera se desliza: se puede recorrer con el teclado.
+    const stage = container.querySelector('.tilted-stage')!;
+    expect(stage).toHaveAttribute('tabindex', '0');
+    expect(stage).toHaveAttribute('role', 'group');
   });
 });
 
