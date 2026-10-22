@@ -44,30 +44,35 @@ function preloadFirstPaintFonts(): Plugin {
  * (un salto más de red). Aquí se agrega a `index.html` una precarga que solo actúa en esas direcciones: el código de la
  * ficha viaja en paralelo con el paquete inicial, sin cargar nada extra en la portada ni en las demás páginas.
  */
-function preloadWikiEntryChunk(): Plugin {
+function preloadDirectPageChunks(): Plugin {
+  // Páginas que suelen abrirse directo desde un enlace: su código se precarga solo en esas direcciones.
+  const pages = [
+    { file: /WikiEntryPage-[^/]*\.js$/, prefix: '/wiki/entrada/', name: 'la ficha de la wiki' },
+    { file: /BookPage-[^/]*\.js$/, prefix: '/libros/', name: 'la página del libro' },
+  ];
   return {
-    name: 'preload-wiki-entry-chunk',
+    name: 'preload-direct-page-chunks',
     apply: 'build',
     transformIndexHtml: {
       order: 'post',
       handler(_html, ctx) {
-        const file = Object.keys(ctx.bundle ?? {}).find((name) =>
-          /WikiEntryPage-[^/]*\.js$/.test(name),
-        );
-        if (!file) {
-          // Sin el aviso, un cambio de nombre o de agrupación de la ficha quitaría la precarga sin que nadie lo note.
-          console.warn(
-            '[preload-wiki-entry-chunk] No se encontró el archivo de WikiEntryPage: la ficha de la wiki no se precarga.',
-          );
-          return [];
-        }
-        return [
-          {
-            tag: 'script',
-            children: `if(location.pathname.indexOf('/wiki/entrada/')===0){var l=document.createElement('link');l.rel='modulepreload';l.href='/${file}';document.head.appendChild(l);}`,
-            injectTo: 'head' as const,
-          },
-        ];
+        return pages.flatMap((page) => {
+          const file = Object.keys(ctx.bundle ?? {}).find((name) => page.file.test(name));
+          if (!file) {
+            // Sin el aviso, un cambio de nombre o de agrupación quitaría la precarga sin que nadie lo note.
+            console.warn(
+              `[preload-direct-page-chunks] No se encontró el archivo de ${page.name}: no se precarga.`,
+            );
+            return [];
+          }
+          return [
+            {
+              tag: 'script',
+              children: `if(location.pathname.indexOf('${page.prefix}')===0){var l=document.createElement('link');l.rel='modulepreload';l.href='/${file}';document.head.appendChild(l);}`,
+              injectTo: 'head' as const,
+            },
+          ];
+        });
       },
     },
   };
@@ -76,7 +81,7 @@ function preloadWikiEntryChunk(): Plugin {
 const API_TARGET = process.env['VITE_API_PROXY_TARGET'] ?? 'http://localhost:3000';
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), preloadFirstPaintFonts(), preloadWikiEntryChunk()],
+  plugins: [react(), tailwindcss(), preloadFirstPaintFonts(), preloadDirectPageChunks()],
   server: {
     port: 5173,
     // En desarrollo el navegador habla con el mismo origen (:5173); Vite reenvía /api al backend.

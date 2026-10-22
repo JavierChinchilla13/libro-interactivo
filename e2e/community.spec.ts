@@ -10,8 +10,11 @@ const image = (name: string) => ({
   alt: `Dibujo ${name}`,
 });
 
-/** Las reseñas de corridas anteriores se ocultan: la landing solo muestra las primeras por orden. */
-async function hidePreviousE2eReviews(api: APIRequestContext) {
+/**
+ * Se ocultan TODAS las reseñas visibles de la base de pruebas (`libro-e2e`, nunca una base real): la landing solo muestra
+ * las tres primeras por orden y la que crea esta prueba debe verse.
+ */
+async function hidePreviousReviews(api: APIRequestContext) {
   const { reviews } = await (await api.get('/api/admin/reviews')).json();
   for (const review of reviews as {
     id: string;
@@ -19,7 +22,6 @@ async function hidePreviousE2eReviews(api: APIRequestContext) {
     authorName: string;
     order: number;
   }[]) {
-    if (!review.authorName.startsWith('Lector E2E')) continue;
     await api.put(`/api/admin/reviews/${review.id}`, {
       data: {
         text: review.text,
@@ -49,7 +51,7 @@ test.describe('fan arts y reseñas (escritorio)', () => {
         })
       ).status(),
     ).toBe(200);
-    await hidePreviousE2eReviews(api);
+    await hidePreviousReviews(api);
 
     // Fan arts por API (subir imágenes necesita Cloudinary): uno visible y tres que NO deben verse.
     const art = (artistName: string, over: object) =>

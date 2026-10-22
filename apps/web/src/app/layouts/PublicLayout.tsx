@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
-import { homeFor, useSession } from '../../features/auth/session';
+import { homeFor, isStaff, useSession } from '../../features/auth/session';
 import { publicApi, publicKeys } from '../../features/home/api';
 import { Brand } from '../../shared/ui/Brand';
 import { PageBackground } from '../../shared/ui/PageBackground';
 import { MAIN_ID, navTabLg, SkipLink } from '../../shared/ui/nav';
+import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
 
 const ctaClass = () => 'btn btn-primary btn-compact';
 
@@ -35,10 +36,9 @@ export function PublicLayout() {
   const site = useQuery({ queryKey: publicKeys.site, queryFn: publicApi.site, retry: false });
   const social = site.data?.social ?? [];
   return (
-    <div className="relative flex min-h-dvh flex-col">
+    <div className="relative flex min-h-dvh flex-col overflow-x-clip">
       <SkipLink />
-      <PageBackground />
-      {isHome ? <div aria-hidden="true" className="hero-mesh" /> : null}
+      <PageBackground stable={isHome} />
       <header className="site-header sticky top-3 z-40 px-3">
         <div className="nav-pill mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-3 py-1.5 pl-5 pr-2 xl:pl-7">
           <Brand />
@@ -83,9 +83,13 @@ export function PublicLayout() {
             <span aria-hidden="true" className="mx-3 hidden h-6 w-px bg-line xl:block" />
             <div className="flex flex-col gap-1 xl:flex-row xl:items-center">
               {user ? (
-                <NavLink to={homeFor(user)} className={ctaClass}>
-                  Mi panel
-                </NavLink>
+                isStaff(user) ? (
+                  <StaffSwitcher />
+                ) : (
+                  <NavLink to={homeFor(user)} className={ctaClass}>
+                    Mi panel
+                  </NavLink>
+                )
               ) : (
                 <>
                   <NavLink to="/ingresar" viewTransition className={navTabLg}>
@@ -103,7 +107,9 @@ export function PublicLayout() {
       <main
         id={MAIN_ID}
         tabIndex={-1}
-        className="relative z-10 mx-auto w-full max-w-[var(--token-page-max)] flex-1 px-4 py-8 focus:outline-none sm:py-12"
+        className={`relative z-10 mx-auto w-full max-w-[var(--token-page-max)] flex-1 px-4 focus:outline-none ${
+          isHome ? 'pb-8 sm:pb-12' : 'py-8 sm:py-12'
+        }`}
       >
         <div className={isHome || firstLoad ? undefined : 'fade-up'}>
           <Outlet />

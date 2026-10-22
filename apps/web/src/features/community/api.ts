@@ -11,4 +11,5 @@ export const communityApi = {
 export const communityKeys = {
   fanArts: (bookId: string | undefined) => ['community', 'fan-arts', bookId ?? 'todos'] as const,
   reviews: ['community', 'reviews'] as const,
+  reviewsAll: ['community', 'reviews', 'todas'] as const,
 };

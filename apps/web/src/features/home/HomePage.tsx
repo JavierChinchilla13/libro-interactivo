@@ -4,29 +4,26 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
 import { Button } from '../../shared/ui/controls';
 import { Alert } from '../../shared/ui/layout';
-import { Statement } from '../../shared/ui/Statement';
 import { useSession } from '../auth/session';
 import { communityApi, communityKeys } from '../community/api';
 import { postKeys, postsApi } from '../posts/api';
 import { booksApi, readerKeys } from '../reader/api';
+import { hasPurchaseLinks } from '../book/PurchaseList';
 import { publicApi, publicKeys } from './api';
-import { TiltedGrid } from './TiltedGrid';
 import {
   AuthorSection,
-  BookSection,
   BuySection,
   ClosingBand,
   Experiences,
+  FeaturedBookCard,
   FeaturedPosts,
   Hero,
+  Manifesto,
   ReviewsSection,
   SagaSection,
   SectionsSkeleton,
   WikiPreview,
 } from './LandingSections';
-
-/** Enunciado de gran escala (texto que ya existe en el pie del sitio). */
-const STATEMENT = 'Una saga que se lee, se descubre y se juega.';
 
 /** El libro que se destaca: el publicado más reciente de la saga (el de mayor posición). */
 function pickFeatured(books: readonly PublicBookSummary[]): PublicBookSummary | undefined {
@@ -113,8 +110,8 @@ export function HomePage() {
       <Hero
         site={site.data}
         signedIn={Boolean(session.data)}
-        sessionReady={!session.isPending}
         status={heroStatus}
+        canBuy={hasPurchaseLinks(book?.purchaseLinks ?? []) || import.meta.env.DEV}
       />
       {failed.length > 0 && !sectionsLoading ? (
         <div className="mt-6">
@@ -134,9 +131,12 @@ export function HomePage() {
         <SectionsSkeleton />
       ) : (
         <>
-          <TiltedGrid images={site.data?.universe.headerImages} />
-          <Statement text={STATEMENT} />
-          {book && showBook ? <BookSection book={book} /> : null}
+          <Manifesto
+            hasBook={Boolean(book && showBook)}
+            hasExperiences={(book?.experiences.length ?? 0) > 0}
+          />
+          {book && showBook ? <FeaturedBookCard book={book} /> : null}
+          <BuySection links={book?.purchaseLinks ?? []} />
           {book ? (
             <Experiences
               experiences={book.experiences}
@@ -145,10 +145,9 @@ export function HomePage() {
             />
           ) : null}
           {book ? <WikiPreview tabs={book.wikiTabs} lockMessage={lockMessage} /> : null}
+          <ReviewsSection reviews={reviews.data?.reviews ?? []} />
           <FeaturedPosts posts={featuredPosts.data?.posts ?? []} />
           <SagaSection books={books.data?.books ?? []} />
-          <ReviewsSection reviews={reviews.data?.reviews ?? []} />
-          <BuySection links={book?.purchaseLinks ?? []} />
           {heroStatus === 'loading' ? null : <AuthorSection site={site.data} />}
         </>
       )}
