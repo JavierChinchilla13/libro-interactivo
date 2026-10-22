@@ -281,7 +281,14 @@ export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefi
       data-offscreen={offscreen || undefined}
       data-hidden={hidden || undefined}
     >
-      <div ref={stage} className="tilted-stage">
+      <div
+        ref={stage}
+        className="tilted-stage"
+        // Cuando la hilera se desliza (celular o movimiento reducido) se puede recorrer con el teclado.
+        tabIndex={narrow || reduced ? 0 : undefined}
+        role={narrow || reduced ? 'group' : undefined}
+        aria-label={narrow || reduced ? 'Imágenes del encabezado, se desplazan' : undefined}
+      >
         <ul
           ref={track}
           className="tilted-track"
