@@ -22,6 +22,7 @@ export interface BookForm {
   isbn: string;
   status: BookStatus;
   releaseDate: string;
+  showInReaderPanel: boolean;
   cover: ImageRefInput | undefined;
   order: string;
   purchaseLinks: PurchaseLink[];
@@ -60,6 +61,7 @@ export function emptyBookForm(nextOrder = 1): BookForm {
     isbn: '',
     status: 'draft',
     releaseDate: '',
+    showInReaderPanel: false,
     cover: undefined,
     order: String(nextOrder),
     purchaseLinks: [],
@@ -88,6 +90,7 @@ export function formFromBook(book: BookResponse): BookForm {
     isbn: book.isbn ?? '',
     status: book.status,
     releaseDate: book.releaseDate ?? '',
+    showInReaderPanel: book.showInReaderPanel,
     cover: book.cover,
     order: String(book.order),
     purchaseLinks: book.purchaseLinks,
@@ -139,6 +142,7 @@ export function payloadFromForm(form: BookForm): BookInputPayload {
     order: Number(form.order),
     status: form.status,
     ...(releaseDate ? { releaseDate } : {}),
+    showInReaderPanel: form.status === 'upcoming' && form.showInReaderPanel,
     purchaseLinks: form.purchaseLinks,
     wikiSections: form.wikiSections,
     // El tema exige fondo: si solo hay color principal, el fondo por defecto es el color neutro.

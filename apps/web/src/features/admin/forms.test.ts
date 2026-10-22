@@ -88,6 +88,14 @@ describe('formulario de libro', () => {
     expect(payload).not.toHaveProperty('isbn');
     expect(payload).not.toHaveProperty('theme');
     expect(payload).not.toHaveProperty('releaseDate');
+    expect(payload.showInReaderPanel).toBe(false);
+  });
+
+  it('«mostrar en el panel» solo cuenta si el libro está en «próximamente»', () => {
+    const base = { ...emptyBookForm(), title: 'T', slug: 't', showInReaderPanel: true };
+    expect(bookPayload({ ...base, status: 'upcoming' }).showInReaderPanel).toBe(true);
+    expect(bookPayload({ ...base, status: 'published' }).showInReaderPanel).toBe(false);
+    expect(bookPayload({ ...base, status: 'draft' }).showInReaderPanel).toBe(false);
   });
 
   it('el tema solo se manda si hay color o fondo, y el fondo de imagen exige la imagen', () => {
@@ -120,6 +128,7 @@ describe('formulario de libro', () => {
       genres: ['a'],
       order: 3,
       status: 'draft',
+      showInReaderPanel: false,
       purchaseLinks: [{ region: 'CR', kind: 'store', label: 'Compras presenciales' }],
       wikiSections: [{ kind: 'term', title: 'Glosario', order: 4, enabled: true }],
       createdAt: '2026-10-06T00:00:00.000Z',

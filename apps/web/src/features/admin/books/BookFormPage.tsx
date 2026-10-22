@@ -223,6 +223,14 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
               error={err('releaseDate')}
               onChange={(event) => set('releaseDate', event.target.value)}
             />
+            {form.status === 'upcoming' ? (
+              <CheckField
+                label="Mostrar en el panel de lectoras como «próximamente»"
+                hint="Apagado por defecto. Si lo enciendes, las lectoras con sesión lo ven en «Tus libros» (con cuenta atrás si hay fecha, o con «Próximamente»), solo con portada y título."
+                checked={form.showInReaderPanel}
+                onChange={(value) => set('showInReaderPanel', value)}
+              />
+            ) : null}
             <TextField
               label="Posición en la saga"
               type="number"
