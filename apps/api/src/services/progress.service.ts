@@ -112,6 +112,40 @@ export function createProgressService(deps: ProgressDeps) {
     return story;
   }
 
+  /**
+   * Qué libros publicados tiene «abiertos» la persona: canjeó el QR de su primer quiz (o ya completó alguno). El personal
+   * del sitio los tiene todos abiertos, y sin exigencia de QR no hay nada que canjear. Solo ids: ningún contenido.
+   */
+  async function openedBooks(actor: Actor, bookIds: string[]): Promise<Set<string>> {
+    if (isStaff(actor.role) || !deps.requireQrUnlock) return new Set(bookIds);
+    if (bookIds.length === 0) return new Set();
+    const [firstQuizzes, progress] = await Promise.all([
+      Quiz.find({ bookId: { $in: bookIds }, status: 'published', currentVersion: { $gte: 1 } })
+        .sort({ order: 1 })
+        .select('bookId')
+        .lean(),
+      UserProgress.find({ userId: actor.userId, bookId: { $in: bookIds } })
+        .select('bookId completed unlocked')
+        .lean(),
+    ]);
+    const first = new Map<string, string>();
+    for (const quiz of firstQuizzes) {
+      const key = quiz.bookId.toString();
+      if (!first.has(key)) first.set(key, quiz._id.toString());
+    }
+    const opened = new Set<string>();
+    for (const doc of progress) {
+      const key = doc.bookId.toString();
+      const firstId = first.get(key);
+      const anyDone = (doc.completed ?? []).some((c) => c.kind === 'quiz');
+      const firstUnlocked = (doc.unlocked ?? []).some(
+        (u) => u.kind === 'quiz' && u.refId.toString() === firstId,
+      );
+      if (anyDone || firstUnlocked) opened.add(key);
+    }
+    return opened;
+  }
+
   /** Estado de cada quiz del libro para el dashboard (solo nombres y orden: nada de contenido). */
   async function getProgress(userId: string, bookId: string): Promise<ProgressResponse> {
     const book = await Book.findById(bookId).select('status').lean();
@@ -408,6 +442,7 @@ export function createProgressService(deps: ProgressDeps) {
     assertQuizAccess,
     assertGameAccess,
     getProgress,
+    openedBooks,
     recordQuizCompletion,
     recordGameCompletion,
     unlock,

@@ -22,6 +22,7 @@ import type { MailProvider } from './providers/mail/MailProvider.js';
 import { createMailProvider } from './providers/mail/createMailProvider.js';
 import { createApiRouter } from './routes/index.js';
 import { createAccessService } from './services/access.service.js';
+import { createLibraryService } from './services/library.service.js';
 import { createPublicBookService } from './services/publicBook.service.js';
 import { createAdminMetricsService } from './services/adminMetrics.service.js';
 import { createAdminUsersService } from './services/adminUsers.service.js';
@@ -151,6 +152,7 @@ export function createApp(
 
   const progress = createProgressService({ requireQrUnlock: deps.env.REQUIRE_QR_UNLOCK });
   const quizzes = createQuizService({ progress, clock, random: deps.random ?? cryptoRandomInt });
+  const library = createLibraryService({ progress, quizzes });
   const game = createGameService({ progress, clock });
   const quizPublisher = createQuizPublishService({ clock, quizzes });
   const requireUnlocked = createRequireUnlocked(progress);
@@ -220,6 +222,7 @@ export function createApp(
       extras,
       welcome,
       publicBooks,
+      library,
       publicWiki,
       posts,
       fanArts,

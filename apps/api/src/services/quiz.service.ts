@@ -185,16 +185,61 @@ export function createQuizService(deps: QuizServiceDeps) {
    * ese campo siga bloqueada en la wiki. Es lo mismo que ya sabe por el título de su resultado; el cuerpo de la ficha
    * sigue bloqueado y no sale de aquí.
    */
+  async function visualOfResult(
+    content: QuizContent,
+    resultKey: string,
+    bookId: Types.ObjectId | string,
+  ): Promise<NonNullable<ResultPayload['visual']> | undefined> {
+    const fieldSlug = findResult(content, resultKey)?.fieldSlug;
+    if (!fieldSlug) return undefined;
+    const field = (await findPublishedFields(bookId, [fieldSlug])).get(fieldSlug);
+    return field?.visualKey ? { key: field.visualKey, fieldName: field.name } : undefined;
+  }
+
   async function withVisual(
     payload: ResultPayload,
     content: QuizContent,
     bookId: Types.ObjectId | string,
   ): Promise<ResultPayload> {
-    const fieldSlug = findResult(content, payload.key)?.fieldSlug;
-    if (!fieldSlug) return payload;
-    const field = (await findPublishedFields(bookId, [fieldSlug])).get(fieldSlug);
-    if (!field?.visualKey) return payload;
-    return { ...payload, visual: { key: field.visualKey, fieldName: field.name } };
+    const visual = await visualOfResult(content, payload.key, bookId);
+    return visual ? { ...payload, visual } : payload;
+  }
+
+  /**
+   * «Tu campo» más reciente por libro: el del último intento completado (no de prueba) cuyo resultado tiene campo con
+   * fondo. Solo clave visual y nombre; nunca el `fieldSlug` ni la `resultKey`.
+   */
+  async function latestFields(
+    userId: string,
+    bookIds: string[],
+  ): Promise<Map<string, NonNullable<ResultPayload['visual']>>> {
+    const found = new Map<string, NonNullable<ResultPayload['visual']>>();
+    if (bookIds.length === 0) return found;
+    const attempts = await QuizAttempt.find({
+      userId,
+      bookId: { $in: bookIds },
+      status: 'completed',
+      isTest: false,
+    })
+      .sort({ completedAt: -1 })
+      .lean();
+    const versions = new Map<string, QuizContent>();
+    const wanted = [...new Set(attempts.map((a) => a.quizVersionId.toString()))];
+    if (wanted.length > 0) {
+      for (const version of await QuizVersion.find({ _id: { $in: wanted } }).lean()) {
+        versions.set(version._id.toString(), contentOf(version));
+      }
+    }
+    for (const attempt of attempts) {
+      const bookId = attempt.bookId.toString();
+      if (found.has(bookId) || !attempt.finalResultKey) continue;
+      const content = versions.get(attempt.quizVersionId.toString());
+      const visual = content
+        ? await visualOfResult(content, attempt.finalResultKey, bookId)
+        : undefined;
+      if (visual) found.set(bookId, visual);
+    }
+    return found;
   }
 
   /**
@@ -335,24 +380,32 @@ export function createQuizService(deps: QuizServiceDeps) {
     const orderOf = new Map(quizzes.map((quiz) => [quiz._id.toString(), quiz.order]));
     const contentOfVersion = new Map(versions.map((v) => [v._id.toString(), contentOf(v)]));
 
-    const results = [...latest.values()].flatMap((attempt) => {
-      const content = contentOfVersion.get(attempt.quizVersionId.toString());
-      const result =
-        content && attempt.finalResultKey ? findResult(content, attempt.finalResultKey) : undefined;
-      if (!content || !result || !attempt.completedAt) return [];
-      const quizId = attempt.quizId.toString();
-      return [
-        {
-          quizId,
-          title: content.title,
-          order: orderOf.get(quizId) ?? 0,
-          attemptsCompleted: counts.get(quizId) ?? 1,
-          completedAt: attempt.completedAt.toISOString(),
-          resultTitle: result.title,
-          ...(result.media ? { media: result.media } : {}),
-        },
-      ];
-    });
+    const results = (
+      await Promise.all(
+        [...latest.values()].map(async (attempt) => {
+          const content = contentOfVersion.get(attempt.quizVersionId.toString());
+          const result =
+            content && attempt.finalResultKey
+              ? findResult(content, attempt.finalResultKey)
+              : undefined;
+          if (!content || !result || !attempt.completedAt || !attempt.finalResultKey) return [];
+          const quizId = attempt.quizId.toString();
+          const visual = await visualOfResult(content, attempt.finalResultKey, bookId);
+          return [
+            {
+              quizId,
+              title: content.title,
+              order: orderOf.get(quizId) ?? 0,
+              attemptsCompleted: counts.get(quizId) ?? 1,
+              completedAt: attempt.completedAt.toISOString(),
+              resultTitle: result.title,
+              ...(result.media ? { media: result.media } : {}),
+              ...(visual ? { visual } : {}),
+            },
+          ];
+        }),
+      )
+    ).flat();
     return { results: results.sort((a, b) => a.order - b.order) };
   }
 
@@ -416,7 +469,7 @@ export function createQuizService(deps: QuizServiceDeps) {
     };
   }
 
-  return { getIntro, startAttempt, submitAnswers, listResults, getQuizResults };
+  return { getIntro, startAttempt, submitAnswers, listResults, getQuizResults, latestFields };
 }
 
 export type QuizService = ReturnType<typeof createQuizService>;

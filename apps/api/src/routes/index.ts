@@ -41,6 +41,7 @@ import {
 } from '../controllers/site.controller.js';
 import type { Clock } from '../lib/clock.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
+import type { LibraryService } from '../services/library.service.js';
 import type { PublicBookService } from '../services/publicBook.service.js';
 import type { FanArtService, ReviewService } from '../services/community.service.js';
 import type { AdminMetricsService } from '../services/adminMetrics.service.js';
@@ -113,6 +114,7 @@ export interface RouteDeps {
   contact: ContactService;
   quizzes: QuizService;
   progress: ProgressService;
+  library: LibraryService;
   quizPublisher: QuizPublishService;
   quizAdmin: QuizAdminService;
   books: BookService;
@@ -141,7 +143,7 @@ export interface RouteDeps {
 /** Router raíz de `/api`. Cada módulo (auth, quizzes, …) monta aquí su propio router. */
 export function createApiRouter(deps: RouteDeps): Router {
   const accountController = createAccountController(deps.account, deps.env);
-  const quizController = createQuizController(deps.quizzes, deps.progress);
+  const quizController = createQuizController(deps.quizzes, deps.progress, deps.library);
   const router = Router();
   router.use('/health', createHealthRouter(deps.isDbUp));
   router.use(
