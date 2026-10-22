@@ -1613,6 +1613,120 @@
     }
   }
 
+  /* Panel con todas las reseñas: hoja que sube desde abajo en el celular y panel lateral desde la derecha en escritorio.
+     Vidrio solo por token (`--token-glass`); sin transparencia se vuelve sólido. */
+  .reviews-panel {
+    inset: auto 0 0 0;
+    width: 100%;
+    max-width: none;
+    height: 92dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-lg) var(--token-radius-lg) 0 0;
+    color: var(--token-text);
+    background: var(--token-glass);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    backdrop-filter: blur(16px) saturate(1.3);
+  }
+  .reviews-panel[open] {
+    display: flex;
+  }
+  .reviews-panel::backdrop {
+    background: rgb(2 9 22 / 0.62);
+  }
+  .reviews-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--token-line);
+  }
+  .reviews-panel-body {
+    flex: 1;
+    min-height: 0;
+    padding: 1rem 1.25rem 2rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .reviews-panel-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  body:has(dialog[open]) {
+    overflow: hidden;
+  }
+  @media (min-width: 48rem) {
+    .reviews-panel {
+      inset: 0 0 0 auto;
+      width: min(60rem, 92vw);
+      height: 100dvh;
+      border-width: 0 0 0 1px;
+      border-radius: 0;
+    }
+    .reviews-panel-head {
+      padding: 1.25rem 1.75rem;
+    }
+    .reviews-panel-body {
+      padding: 1.5rem 1.75rem 2.5rem;
+    }
+    .reviews-panel-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.25rem;
+      align-items: start;
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .reviews-panel {
+      background: var(--token-surface);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+  /* Entrada y salida solo con transform y opacidad; con «reducir movimiento», ninguna. */
+  @media (prefers-reduced-motion: no-preference) {
+    .reviews-panel[open] {
+      transition: transform 300ms var(--token-ease-out);
+    }
+    .reviews-panel[open]::backdrop {
+      transition: opacity 300ms var(--token-ease-out);
+    }
+    .reviews-panel[data-closing] {
+      transform: translateY(100%);
+      transition-duration: 220ms;
+      transition-timing-function: var(--token-ease-in-out);
+    }
+    .reviews-panel[data-closing]::backdrop {
+      opacity: 0;
+    }
+    @starting-style {
+      .reviews-panel[open] {
+        transform: translateY(100%);
+      }
+      .reviews-panel[open]::backdrop {
+        opacity: 0;
+      }
+    }
+    @media (min-width: 48rem) {
+      .reviews-panel[data-closing] {
+        transform: translateX(100%);
+      }
+      @starting-style {
+        .reviews-panel[open] {
+          transform: translateX(100%);
+        }
+      }
+    }
+  }
+
   /* Pintura de fondo del sitio: capa fija detrás de todo; el velo oscuro mantiene el contraste AA del texto. */
   .page-bg {
     position: fixed;
