@@ -157,8 +157,11 @@ describe('landing: el héroe lleva al libro en la mano', () => {
       'href',
       '/ingresar',
     );
-    // El héroe es solo titular, presentación y dos acciones: nada de frases ni enlaces sueltos.
-    expect(within(hero).getAllByRole('link')).toHaveLength(2);
+    // Titular, presentación, dos acciones y la salida para quien aún no tiene el libro: nada más.
+    expect(within(hero).getAllByRole('link')).toHaveLength(3);
+    expect(
+      within(hero).getByRole('link', { name: 'Aún no lo tengo: dónde conseguirlo' }),
+    ).toHaveAttribute('href', '#comprar');
     expect(within(hero).queryByText(/Escanea el código QR/)).not.toBeInTheDocument();
     const header = screen.getByRole('banner');
     expect(within(header).getByRole('link', { name: 'Comprar' })).toHaveAttribute(
@@ -658,6 +661,8 @@ describe('landing: composición nueva', () => {
     expect(screen.queryByText(/\[PLACEHOLDER\] ¿Qué es/)).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Conoce a la autora' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Cómo comprar el libro' })).not.toBeInTheDocument();
+    // Sin franja de compra no hay salida «Aún no lo tengo» que lleve a una sección inexistente.
+    expect(screen.queryByRole('link', { name: /Aún no lo tengo/ })).not.toBeInTheDocument();
     vi.unstubAllEnvs();
   });
 });

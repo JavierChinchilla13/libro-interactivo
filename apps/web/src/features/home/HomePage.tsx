@@ -8,6 +8,7 @@ import { useSession } from '../auth/session';
 import { communityApi, communityKeys } from '../community/api';
 import { postKeys, postsApi } from '../posts/api';
 import { booksApi, readerKeys } from '../reader/api';
+import { hasPurchaseLinks } from '../book/PurchaseList';
 import { publicApi, publicKeys } from './api';
 import {
   AuthorSection,
@@ -106,7 +107,12 @@ export function HomePage() {
 
   return (
     <div className="flex flex-col">
-      <Hero site={site.data} signedIn={Boolean(session.data)} status={heroStatus} />
+      <Hero
+        site={site.data}
+        signedIn={Boolean(session.data)}
+        status={heroStatus}
+        canBuy={hasPurchaseLinks(book?.purchaseLinks ?? []) || import.meta.env.DEV}
+      />
       {failed.length > 0 && !sectionsLoading ? (
         <div className="mt-6">
           <Alert tone="warning" title="No pudimos cargar todo el contenido">

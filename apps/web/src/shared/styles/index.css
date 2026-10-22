@@ -1097,10 +1097,25 @@
     padding-block: 2rem;
   }
   .hero-copy {
+    position: relative;
+    isolation: isolate;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
+  }
+  /* Velo estático tras el texto: el texto pequeño no queda sobre el tramo más claro de la pintura. */
+  .hero-copy::before {
+    content: '';
+    position: absolute;
+    inset: -2rem -3rem -1rem -2rem;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse at 30% 45%,
+      color-mix(in srgb, var(--token-bg) 62%, transparent),
+      transparent 72%
+    );
   }
   /* El tamaño del titular baja según el largo de la frase: la real manda el tope (dos líneas como máximo). */
   .hero-title {
@@ -1141,6 +1156,8 @@
   @media (min-width: 40rem) {
     .hero-actions {
       flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
       width: auto;
     }
   }

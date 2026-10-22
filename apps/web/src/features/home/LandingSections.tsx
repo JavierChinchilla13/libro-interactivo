@@ -67,10 +67,13 @@ export function Hero({
   site,
   signedIn,
   status,
+  canBuy = false,
 }: {
   site: PublicSiteResponse | undefined;
   signedIn: boolean;
   status: HeroStatus;
+  /** Hay franja de compra en la página: se ofrece la salida «Aún no lo tengo». */
+  canBuy?: boolean;
 }) {
   const headline =
     status === 'error'
@@ -134,6 +137,11 @@ export function Hero({
               <Link to="/ingresar" className={`${secondaryLink} ${cta}`}>
                 Ya tengo cuenta
               </Link>
+              {canBuy ? (
+                <a href="#comprar" className="link-slide inline-flex min-h-11 items-center">
+                  Aún no lo tengo: dónde conseguirlo
+                </a>
+              ) : null}
             </>
           )}
         </div>
