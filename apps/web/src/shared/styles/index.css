@@ -1038,6 +1038,7 @@
   }
   .countdown-row {
     display: flex;
+    flex-wrap: wrap;
     gap: clamp(0.75rem, 3vw, 1.75rem);
   }
   .countdown-cell {
@@ -1339,7 +1340,8 @@
   .book-card-synopsis > div > :nth-child(n + 2) {
     display: none;
   }
-  @media (min-width: 48rem) {
+  /* Dos columnas solo desde 1024 px: antes, el cronómetro y los textos largos no caben junto a la portada. */
+  @media (min-width: 64rem) {
     .book-card {
       grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
       gap: 2.5rem;
@@ -1546,29 +1548,6 @@
       color-mix(in srgb, var(--token-bg) 52%, transparent)
     );
   }
-  /* Con pintura de fondo, las bandas dejan ver algo de ella (siguen siendo lo bastante sólidas para leer). */
-  html[data-page-bg] .section-band {
-    background: color-mix(in srgb, var(--token-sunken) 82%, transparent);
-    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--token-sunken) 82%, transparent);
-  }
-  html[data-page-bg] .section-band-raised {
-    background: color-mix(in srgb, var(--token-surface) 82%, transparent);
-    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--token-surface) 82%, transparent);
-  }
-
-  /* Banda a sangre de pantalla: fondo hundido que se extiende a los lados sin salirse del contenedor. */
-  .section-band {
-    background: var(--token-sunken);
-    box-shadow: 0 0 0 100vmax var(--token-sunken);
-    clip-path: inset(0 -100vmax);
-  }
-  /* Banda elevada: más clara que el fondo; alterna con la hundida para dar ritmo por bandas. */
-  .section-band-raised {
-    background: var(--token-surface);
-    box-shadow: 0 0 0 100vmax var(--token-surface);
-    clip-path: inset(0 -100vmax);
-  }
-
   /* Superficie elevada: tono sólido con un filete fino y sombra tintada de azul (sin vidrio ni desenfoque). */
   .surface {
     background: var(--token-surface);
