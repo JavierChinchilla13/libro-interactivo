@@ -125,7 +125,10 @@ export function HomePage() {
         <SectionsSkeleton />
       ) : (
         <>
-          <Manifesto />
+          <Manifesto
+            hasBook={Boolean(book && showBook)}
+            hasExperiences={(book?.experiences.length ?? 0) > 0}
+          />
           {book && showBook ? <FeaturedBookCard book={book} /> : null}
           <BuySection links={book?.purchaseLinks ?? []} />
           {book ? (

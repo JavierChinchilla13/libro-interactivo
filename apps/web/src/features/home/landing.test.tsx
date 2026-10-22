@@ -580,6 +580,36 @@ describe('landing: composición nueva', () => {
     expect(cards[1]).toHaveAttribute('data-state', 'locked');
   });
 
+  it('sin opciones de compra no hay botón «Dónde conseguirlo» (en producción) y sin libro «Qué es» no enlaza a él', async () => {
+    vi.stubEnv('DEV', false);
+    mockApi(
+      {
+        'GET /api/site': () => json(site),
+        'GET /api/books': () => json({ books: [] }),
+      },
+      NO_SESSION,
+    );
+    renderAt('/');
+    const about = await screen.findByRole('region', { name: 'Qué es Universo Memorias' });
+    expect(within(about).queryByRole('link', { name: /Se lee/ })).not.toBeInTheDocument();
+    expect(within(about).getByText('Se lee')).toBeInTheDocument();
+    vi.unstubAllEnvs();
+    vi.stubEnv('DEV', false);
+    mockApi(
+      {
+        'GET /api/site': () => json(site),
+        'GET /api/books': () => json(books),
+        'GET /api/books/libro-1': () => json({ ...detail, purchaseLinks: [] }),
+      },
+      NO_SESSION,
+    );
+    renderAt('/');
+    const book = await screen.findAllByRole('region', { name: '[PLACEHOLDER] Libro 1' });
+    expect(within(book.at(-1)!).getByRole('link', { name: 'Ver el libro' })).toBeInTheDocument();
+    expect(within(book.at(-1)!).queryByRole('link', { name: 'Dónde conseguirlo' })).toBeNull();
+    vi.unstubAllEnvs();
+  });
+
   it('en producción no se pintan los marcadores [PLACEHOLDER] ni las secciones vacías', async () => {
     vi.stubEnv('DEV', false);
     mockApi(
