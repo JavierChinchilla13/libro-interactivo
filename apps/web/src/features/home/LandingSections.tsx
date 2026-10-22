@@ -18,6 +18,7 @@ import { Plate, PortraitPlate } from '../../shared/ui/Plate';
 import { Section } from '../../shared/ui/Section';
 import { LockIcon } from '../../shared/ui/icons';
 import { Statement } from '../../shared/ui/Statement';
+import { BookFacts, BookGenres } from '../book/BookFacts';
 import { hasPurchaseLinks, PurchaseList } from '../book/PurchaseList';
 import { Countdown } from './Countdown';
 import { hasGrid, TiltedGrid } from './TiltedGrid';
@@ -283,15 +284,7 @@ export function FeaturedBookCard({ book }: { book: PublicBookDetail }) {
           />
         </div>
         <div className="book-card-body">
-          {book.genres.length > 0 ? (
-            <ul aria-label="Géneros" className="flex flex-wrap gap-x-6 gap-y-1">
-              {book.genres.map((genre) => (
-                <li key={genre} className="label">
-                  {genre}
-                </li>
-              ))}
-            </ul>
-          ) : null}
+          <BookGenres genres={book.genres} />
           <h2 id="libro-title" className="section-title">
             {book.title}
           </h2>
@@ -304,19 +297,7 @@ export function FeaturedBookCard({ book }: { book: PublicBookDetail }) {
           {releaseAt && book.releaseDate ? (
             <Countdown target={releaseAt} dateLabel={formatDate(book.releaseDate)} />
           ) : null}
-          {book.contentWarning || book.minAge !== undefined ? (
-            <aside
-              aria-label="Advertencia de contenido sensible"
-              className="border-l-2 border-warning pl-4 text-sm"
-            >
-              <p className="font-semibold text-warning">Advertencia de contenido sensible</p>
-              {book.contentWarning ? <SafeHtml html={book.contentWarning} /> : null}
-              {book.minAge !== undefined ? (
-                <p className="mt-1">Recomendado para mayores de {book.minAge} años.</p>
-              ) : null}
-            </aside>
-          ) : null}
-          {book.isbn ? <p className="text-sm text-muted">ISBN: {book.isbn}</p> : null}
+          <BookFacts book={book} />
           <div className="flex flex-wrap gap-3 pt-1">
             <Link to={`/libros/${book.slug}`} className={`${primaryLink} btn-lg`}>
               Ver el libro

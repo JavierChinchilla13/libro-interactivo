@@ -7,10 +7,13 @@ import { formatDate } from '../../shared/lib/dates';
 import { Plate } from '../../shared/ui/Plate';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Alert } from '../../shared/ui/layout';
+import { Button } from '../../shared/ui/controls';
+import { useSession } from '../auth/session';
 import { NotFoundPage } from '../../app/NotFoundPage';
 import { Countdown } from '../home/Countdown';
 import { publicKeys } from '../home/api';
 import { booksApi } from '../reader/api';
+import { BookFacts, BookGenres } from './BookFacts';
 import { hasPurchaseLinks, PurchaseList } from './PurchaseList';
 
 /**
@@ -24,6 +27,7 @@ export function BookPage() {
     queryFn: () => booksApi.get(slug),
     retry: false,
   });
+  const session = useSession();
   const title = book.data?.title;
   useEffect(() => {
     if (!title) return;
@@ -41,6 +45,11 @@ export function BookPage() {
     ) : (
       <Alert tone="warning" title="No pudimos cargar el libro">
         Inténtalo de nuevo en un momento.
+        <div className="mt-2">
+          <Button variant="secondary" onClick={() => void book.refetch()}>
+            Reintentar
+          </Button>
+        </div>
       </Alert>
     );
   }
@@ -68,7 +77,7 @@ export function BookPage() {
   const releaseAt = releaseTarget(data.releaseDate);
   return (
     <article aria-labelledby="libro-pagina-title" className="mx-auto flex max-w-5xl flex-col gap-8">
-      <Link to="/" className="link-slide self-start">
+      <Link to="/" className="link-slide inline-flex min-h-11 items-center self-start">
         Volver al inicio
       </Link>
       <div className="grid gap-8 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-12">
@@ -88,7 +97,9 @@ export function BookPage() {
               <p className="mt-3 font-read text-xl text-muted">{data.tagline}</p>
             ) : null}
           </div>
+          <BookGenres genres={data.genres} />
           {data.synopsis ? <SafeHtml html={data.synopsis} /> : null}
+          <BookFacts book={data} />
           {releaseAt && data.releaseDate ? (
             <Countdown target={releaseAt} dateLabel={formatDate(data.releaseDate)} />
           ) : null}
@@ -100,6 +111,17 @@ export function BookPage() {
               <PurchaseList links={data.purchaseLinks} />
             </section>
           ) : null}
+          <div className="pt-2">
+            {session.data ? (
+              <Link to="/panel" className="btn btn-primary btn-lg">
+                Continuar mi lectura
+              </Link>
+            ) : (
+              <Link to="/registro" className="btn btn-primary btn-lg">
+                Tengo el libro: crear mi cuenta
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </article>

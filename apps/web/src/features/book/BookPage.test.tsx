@@ -1,4 +1,5 @@
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { apiError, json, mockApi, renderAt } from '../../test/mockApi';
 
@@ -20,7 +21,9 @@ const detail = {
   status: 'published',
   cover,
   synopsis: '<p>[PLACEHOLDER] Sinopsis completa</p><p>Segundo párrafo</p>',
-  genres: [],
+  genres: ['Distopía'],
+  contentWarning: '<p>[PLACEHOLDER] Violencia</p>',
+  minAge: 16,
   isbn: '978-0-00',
   purchaseLinks: [
     { region: 'INTL', kind: 'amazon', label: 'Comprar en Amazon', url: 'https://amazon.com/x' },
@@ -46,6 +49,49 @@ describe('/libros/:slug (página mínima del libro)', () => {
       'https://amazon.com/x',
     );
     expect(screen.getByRole('link', { name: 'Volver al inicio' })).toHaveAttribute('href', '/');
+  });
+
+  it('conserva la advertencia de contenido, la edad, el ISBN y los géneros de la tarjeta', async () => {
+    mockApi({ 'GET /api/books/libro-1': () => json(detail) }, { session: null });
+    renderAt('/libros/libro-1');
+    const warning = await screen.findByLabelText('Advertencia de contenido sensible');
+    expect(warning).toHaveTextContent('[PLACEHOLDER] Violencia');
+    expect(warning).toHaveTextContent('Recomendado para mayores de 16 años.');
+    expect(screen.getByText('ISBN: 978-0-00')).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Géneros' })).toHaveTextContent('Distopía');
+  });
+
+  it('ofrece crear la cuenta (o continuar la lectura si ya hay sesión)', async () => {
+    mockApi({ 'GET /api/books/libro-1': () => json(detail) }, { session: null });
+    const visitor = renderAt('/libros/libro-1');
+    expect(
+      await screen.findByRole('link', { name: 'Tengo el libro: crear mi cuenta' }),
+    ).toHaveAttribute('href', '/registro');
+    visitor.unmount();
+    mockApi({ 'GET /api/books/libro-1': () => json(detail) });
+    renderAt('/libros/libro-1');
+    expect(await screen.findByRole('link', { name: 'Continuar mi lectura' })).toHaveAttribute(
+      'href',
+      '/panel',
+    );
+  });
+
+  it('si el libro no carga ofrece reintentar', async () => {
+    let calls = 0;
+    mockApi(
+      {
+        'GET /api/books/libro-1': () => {
+          calls += 1;
+          return calls === 1 ? apiError('INTERNAL', 'Error', 500) : json(detail);
+        },
+      },
+      { session: null },
+    );
+    renderAt('/libros/libro-1');
+    await userEvent.click(await screen.findByRole('button', { name: 'Reintentar' }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '[PLACEHOLDER] Libro 1' }),
+    ).toBeInTheDocument();
   });
 
   it('un libro que no existe da la página de «no encontrada»', async () => {
