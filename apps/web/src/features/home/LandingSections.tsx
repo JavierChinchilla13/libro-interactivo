@@ -207,11 +207,22 @@ export const STATEMENT = 'Una saga que se lee, se descubre y se juega.';
  * Qué es Universo Memorias: el enunciado a gran escala y, al lado, cada verbo enlazado con lo que ya existe en el
  * sitio (el libro, los quizzes y la wiki, el juego). Solo etiquetas, ningún texto nuevo del libro.
  */
-export function Manifesto() {
+export function Manifesto({
+  hasBook = true,
+  hasExperiences = true,
+}: {
+  /** Si no hay ficha del libro o experiencias en la página, el renglón no enlaza a una sección que no existe. */
+  hasBook?: boolean;
+  hasExperiences?: boolean;
+}) {
   const items = [
-    { verb: 'Se lee', what: 'el libro', to: '#libro' },
-    { verb: 'Se descubre', what: 'los quizzes y la wiki', to: '#experiencias' },
-    { verb: 'Se juega', what: 'el juego', to: '#experiencias' },
+    { verb: 'Se lee', what: 'el libro', to: hasBook ? '#libro' : undefined },
+    {
+      verb: 'Se descubre',
+      what: 'los quizzes y la wiki',
+      to: hasExperiences ? '#experiencias' : undefined,
+    },
+    { verb: 'Se juega', what: 'el juego', to: hasExperiences ? '#experiencias' : undefined },
   ] as const;
   return (
     <section id="que-es" aria-labelledby="que-es-title" className="manifesto pt-section-gap">
@@ -223,10 +234,17 @@ export function Manifesto() {
         <ul className="manifesto-list">
           {items.map((item) => (
             <li key={item.verb}>
-              <a href={item.to} className="manifesto-item">
-                <span className="manifesto-verb">{item.verb}</span>
-                <span className="manifesto-what">{item.what}</span>
-              </a>
+              {item.to ? (
+                <a href={item.to} className="manifesto-item">
+                  <span className="manifesto-verb">{item.verb}</span>
+                  <span className="manifesto-what">{item.what}</span>
+                </a>
+              ) : (
+                <div className="manifesto-item">
+                  <span className="manifesto-verb">{item.verb}</span>
+                  <span className="manifesto-what">{item.what}</span>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -241,6 +259,8 @@ export function Manifesto() {
  * a su página, y «Dónde conseguirlo»). Recibe un libro cualquiera: con más libros, cada uno usa la misma tarjeta.
  */
 export function FeaturedBookCard({ book }: { book: PublicBookDetail }) {
+  // «Dónde conseguirlo» baja a la franja de compra, que en producción solo existe si hay opciones.
+  const canBuy = hasPurchaseLinks(book.purchaseLinks) || import.meta.env.DEV;
   const releaseAt = releaseTarget(book.releaseDate);
   return (
     <section id="libro" aria-labelledby="libro-title" className="scroll-mt-24 pt-section-gap">
@@ -248,9 +268,9 @@ export function FeaturedBookCard({ book }: { book: PublicBookDetail }) {
         <div className="book-card-cover">
           <Plate
             cover={book.cover}
-            className="mx-auto w-3/5 max-w-60 md:w-full md:max-w-none"
-            landscapeClassName="mx-auto w-full max-w-md md:max-w-none"
-            sizes="(min-width: 768px) 380px, 60vw"
+            className="mx-auto w-3/5 max-w-60 lg:w-full lg:max-w-none"
+            landscapeClassName="mx-auto w-full max-w-md lg:max-w-none"
+            sizes="(min-width: 1024px) 380px, 60vw"
           />
         </div>
         <div className="book-card-body">
@@ -292,9 +312,11 @@ export function FeaturedBookCard({ book }: { book: PublicBookDetail }) {
             <Link to={`/libros/${book.slug}`} className={`${primaryLink} btn-lg`}>
               Ver el libro
             </Link>
-            <a href="#comprar" className={`${secondaryLink} btn-lg`}>
-              Dónde conseguirlo
-            </a>
+            {canBuy ? (
+              <a href="#comprar" className={`${secondaryLink} btn-lg`}>
+                Dónde conseguirlo
+              </a>
+            ) : null}
           </div>
         </div>
       </article>
