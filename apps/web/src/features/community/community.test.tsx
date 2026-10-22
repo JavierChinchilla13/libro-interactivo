@@ -148,9 +148,9 @@ describe('reseñas en la landing', () => {
     expect(await within(section).findByText(/Reseña número 1/)).toBeInTheDocument();
     expect(within(section).getByText(/Lector 1/)).toBeInTheDocument();
     expect(within(section).getByText(/Goodreads/)).toBeInTheDocument();
-    expect(within(section).getByText('Valoración: 4 de 5')).toBeInTheDocument();
+    expect(within(section).getByText('4 de 5 estrellas')).toBeInTheDocument();
     // La segunda no trae calificación ni fuente.
-    expect(within(section).getAllByText(/Valoración:/)).toHaveLength(1);
+    expect(within(section).getAllByText(/de 5 estrellas/)).toHaveLength(1);
   });
 
   it('es texto plano: el HTML de una reseña se muestra como texto, nunca se ejecuta', async () => {

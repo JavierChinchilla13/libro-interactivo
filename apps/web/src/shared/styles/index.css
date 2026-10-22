@@ -88,6 +88,7 @@
   --spacing-section-tight: var(--token-section-tight);
   --spacing-section-regular: var(--token-section-regular);
   --spacing-section-loose: var(--token-section-loose);
+  --spacing-section-gap: var(--token-section-gap);
   --ease-token-out: var(--token-ease-out);
   --ease-token-in-out: var(--token-ease-in-out);
 }
@@ -196,7 +197,11 @@
 }
 /* Estado por defecto (sin soporte o con «reducir movimiento»): visible y completo. */
 .statement-band {
-  padding-block: var(--token-section-loose);
+  padding-top: var(--token-section-gap);
+}
+/* Fuera de toda capa, igual que la regla de arriba: dentro de `@layer` perdería y el aire se sumaría al de la sección. */
+.manifesto .statement-band {
+  padding-top: 0;
 }
 .statement {
   margin: 0;
@@ -247,15 +252,7 @@
   }
 }
 
-/* M6 · Transición entre páginas (View Transitions): la cabecera se queda y el contenido se funde. */
-@keyframes mesh-drift {
-  from {
-    transform: translate3d(-3%, -2%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(3%, 3%, 0) scale(1.08);
-  }
-}
+/* Entrada de las acciones del héroe (el titular y el subtexto no se animan: son el LCP). */
 @keyframes hero-enter {
   from {
     opacity: 0;
@@ -267,14 +264,12 @@
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .hero-mesh::before {
-    animation: mesh-drift 40s ease-in-out infinite alternate;
-  }
   .hero-enter {
     animation: hero-enter 420ms var(--token-ease-out) 80ms both;
   }
 }
 
+/* M6 · Transición entre páginas (View Transitions): la cabecera se queda y el contenido se funde. */
 @supports (view-transition-name: none) {
   .site-header {
     view-transition-name: site-header;
@@ -864,7 +859,7 @@
   .review-frame {
     --review-radius: var(--token-radius-lg);
     --review-gap: 0.375rem;
-    border: 1px solid var(--token-line);
+    border: 1px solid color-mix(in srgb, var(--token-accent) 30%, var(--token-line));
     border-radius: var(--review-radius);
     padding: var(--review-gap);
     text-align: left;
@@ -879,8 +874,13 @@
     gap: 1.25rem;
     margin: 0;
     border-radius: calc(var(--review-radius) - var(--review-gap));
-    background: var(--token-surface-alt);
+    background:
+      linear-gradient(160deg, color-mix(in srgb, var(--token-accent) 11%, transparent), transparent 55%),
+      var(--token-surface-alt);
     padding: 1.5rem;
+  }
+  .review-card blockquote::first-letter {
+    color: var(--token-accent);
   }
 
   /* Coverflow: desplazamiento nativo con ajuste al centro; la inclinación la dibuja la línea de tiempo de desplazamiento. */
@@ -1047,6 +1047,7 @@
   }
   .countdown-row {
     display: flex;
+    flex-wrap: wrap;
     gap: clamp(0.75rem, 3vw, 1.75rem);
   }
   .countdown-cell {
@@ -1079,37 +1080,147 @@
     opacity: 0;
   }
 
-  /* Rejilla inclinada del encabezado: hilera curva de imágenes; solo `transform` y una máscara estática. */
-  .tilted-grid {
+  /* Héroe: frase y acciones a la izquierda y, pegada debajo, la rejilla inclinada a sangre; juntas llenan la primera
+     pantalla en pantallas anchas (en el celular la rejilla va justo debajo y se asoma la sección siguiente). */
+  .hero {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    margin-top: 1.5rem;
-    overflow: clip;
+    gap: 1.25rem;
+    /* La píldora de la cabecera queda 12 px por debajo de su caja (sticky): el aire de arriba la compensa y deja un
+       respiro claro antes del titular. */
+    padding-top: 3.25rem;
   }
-  .tilted-stage {
+  @media (min-width: 48rem) {
+    .hero {
+      gap: 1.5rem;
+      padding-top: 4rem;
+    }
+  }
+  .hero--solo {
+    min-height: 70svh;
+    justify-content: center;
+    padding-block: 2rem;
+  }
+  .hero-copy {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  /* Velo estático tras el texto: el texto pequeño no queda sobre el tramo más claro de la pintura. */
+  .hero-copy::before {
+    content: '';
+    position: absolute;
+    inset: -2rem -3rem -1rem -2rem;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse at 30% 45%,
+      color-mix(in srgb, var(--token-bg) 62%, transparent),
+      transparent 72%
+    );
+  }
+  /* El tamaño del titular baja según el largo de la frase: la real manda el tope (dos líneas como máximo). */
+  .hero-title {
     width: 100%;
+    text-align: left;
+  }
+  /* En el celular el titular corto es grande a propósito: su área supera a la de cualquier baldosa y el LCP sigue
+     siendo el texto (no una imagen). */
+  .hero-title[data-size='short'] {
+    font-size: clamp(3.25rem, 0.8rem + 7.2vw, 5.75rem);
+  }
+  .hero-title[data-size='medium'] {
+    font-size: clamp(2.25rem, 0.9rem + 5vw, 4.25rem);
+  }
+  .hero-title[data-size='long'] {
+    font-size: clamp(2rem, 0.9rem + 3.6vw, 3.25rem);
+  }
+  /* La presentación es breve (hasta ~20 palabras): si la autora escribe más, se recorta a 4 líneas para que la rejilla
+     siga a la vista en la primera pantalla. */
+  .hero-intro {
+    max-width: 38rem;
+    max-height: calc(1.6em * 4);
+    overflow: hidden;
+    font-size: 1.125rem;
+    color: var(--token-muted);
+  }
+  .hero-intro > div > p,
+  .hero-intro > p {
+    margin: 0;
+  }
+  .hero-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    margin-top: 0.25rem;
+  }
+  @media (min-width: 40rem) {
+    .hero-actions {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      width: auto;
+    }
+  }
+
+  /* Rejilla inclinada: hilera a sangre de altura fija; cada imagen conserva su proporción (ancho automático). */
+  .tilted-grid {
+    /* En el celular las baldosas son chicas a propósito: ninguna pasa en área al titular, así el LCP sigue siendo el
+       texto y no una imagen (la rejilla va en la primera pantalla). */
+    --tile-h: clamp(7.5rem, 17svh, 8.5rem);
+    position: relative;
+    margin-top: 0;
+    /* A sangre de pantalla: se sale del contenedor; el recorte horizontal lo hace el marco de la página. */
+    margin-inline: calc(50% - 50vw);
+    width: 100vw;
+    /* Solo se recorta a los lados: la inclinación sube o baja las puntas de la hilera y no deben cortarse arriba ni abajo. */
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+  @media (min-width: 48rem) {
+    .tilted-grid {
+      /* Con el titular, la presentación y los botones, la hilera (con su relleno de 3,5 rem) cabe completa en la
+         primera pantalla desde 700 px de alto. */
+      --tile-h: clamp(11rem, 38svh, 20rem);
+    }
   }
   .tilted-stage {
     perspective: 1100px;
-    mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
-    -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+    padding-inline-start: 1rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
   }
+  .tilted-stage::-webkit-scrollbar {
+    display: none;
+  }
+  /* La pista lleva N copias idénticas de la hilera (`--copies`): cada imagen deja su hueco a la derecha (margen), así
+     una vuelta mide exactamente `ancho de la pista / copias` y el bucle cae justo, sin saltos. */
   .tilted-track {
     display: flex;
     width: max-content;
-    gap: 1rem;
     margin: 0;
-    /* El relleno final iguala el hueco entre imágenes: el bucle al -50 % cae exacto, sin salto. */
-    padding: 2rem 1rem 3rem 0;
+    /* Abajo queda sitio para el botón de pausa, que va bajo la hilera. */
+    padding: 1rem 0 3.5rem;
     list-style: none;
-    transform: rotateX(14deg) rotateZ(-2.5deg);
+    /* En el celular solo la perspectiva: sin giro, la hilera no baja ni sube y el botón de pausa no la toca. */
+    transform: rotateX(14deg);
     transform-origin: 50% 100%;
+  }
+  @media (min-width: 48rem) {
+    .tilted-track {
+      transform: rotateX(14deg) rotateZ(-2.5deg);
+    }
   }
   .tilted-tile {
     flex: none;
-    width: 8.5rem;
-    aspect-ratio: 4 / 5;
+    height: var(--tile-h);
+    margin-right: 1rem;
     overflow: hidden;
     border-radius: var(--token-radius-xs);
     background: var(--token-surface-alt);
@@ -1127,39 +1238,78 @@
   .tilted-tile img {
     border-radius: var(--token-radius-xs);
   }
-  /* En el celular y sin marquesina, solo se ven las imágenes originales y la hilera queda centrada. */
-  .tilted-track {
-    margin-inline: auto;
-  }
-  .tilted-track .tilted-tile[aria-hidden='true'] {
-    display: none;
-  }
-  .tilted-pause {
-    display: none;
-  }
-  @media (min-width: 48rem) {
+  /* Entrada: cada imagen aparece cuando termina de cargar, con un pequeño escalón de 60 ms entre una y otra. */
+  @media (prefers-reduced-motion: no-preference) {
     .tilted-tile {
-      width: 12rem;
+      transition:
+        opacity 500ms var(--token-ease-out) calc(var(--i, 0) * 60ms),
+        transform 500ms var(--token-ease-out) calc(var(--i, 0) * 60ms);
     }
+    .tilted-tile[data-pending] {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+  }
+  /* Con «reducir movimiento» la hilera queda quieta: solo se ven las imágenes originales y se desliza con el dedo. */
+  @media (prefers-reduced-motion: reduce) {
+    .tilted-track .tilted-tile[aria-hidden='true']:not(.tilted-tile-placeholder) {
+      display: none;
+    }
+    .tilted-stage {
+      scroll-snap-type: x proximity;
+    }
+    .tilted-tile {
+      scroll-snap-align: start;
+    }
+  }
+  /* Botón de pausa (WCAG 2.2.2): oculto a la vista y disponible para lectores de pantalla; con el foco del teclado
+     aparece bajo la hilera. Con «reducir movimiento» no hace falta (la hilera está quieta). */
+  .tilted-pause {
+    position: absolute;
+    bottom: 0.5rem;
+    right: max(1rem, calc(50vw - 36rem));
+    z-index: 2;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .tilted-pause:focus-visible {
+    width: auto;
+    height: auto;
+    min-height: 2.75rem;
+    padding: revert-layer;
+    overflow: visible;
+    clip-path: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
     .tilted-pause {
       display: none;
     }
   }
+  /* Pantallas anchas: marquesina de CSS, una vuelta (1 / copias de la pista) cada 45 s. */
   @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) {
+    .tilted-stage {
+      overflow-x: clip;
+      overflow-y: visible;
+      /* La caja (y su máscara) se agranda arriba y abajo sin mover el diseño: la inclinación no recorta las puntas. */
+      padding-block: 4rem;
+      margin-block: -4rem;
+    }
     .tilted-track {
-      margin-inline: 0;
-      animation: tilted-flow 60s linear infinite;
+      /* El giro es sobre el centro de la pantalla (no sobre el de la pista, que mide miles de píxeles): a 2560 px la
+         hilera sube a un lado y baja al otro la misma distancia, sin salirse. */
+      transform-origin: calc(50vw - 1rem) 100%;
+      animation: tilted-flow 45s linear infinite;
     }
-    .tilted-track .tilted-tile[aria-hidden='true'] {
-      display: block;
-    }
-    .tilted-grid[data-paused] .tilted-track {
+    .tilted-grid:focus-within .tilted-track,
+    .tilted-grid[data-paused] .tilted-track,
+    .tilted-grid[data-offscreen] .tilted-track,
+    .tilted-grid[data-hidden] .tilted-track {
       animation-play-state: paused;
-    }
-    .tilted-pause {
-      display: inline-flex;
-      min-height: 2.75rem;
-      margin-top: 0.25rem;
     }
   }
   @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
@@ -1169,7 +1319,395 @@
   }
   @keyframes tilted-flow {
     to {
-      transform: rotateX(14deg) rotateZ(-2.5deg) translateX(-50%);
+      transform: rotateX(14deg) rotateZ(-2.5deg) translateX(calc(-100% / var(--copies, 4)));
+    }
+  }
+
+  /* Selector de zona para administradoras y editoras (sitio, panel, administración): un control segmentado. */
+  .staff-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    padding: 0.125rem;
+    border: 1px solid var(--token-line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--token-bg) 60%, transparent);
+  }
+  .staff-switcher-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    padding-inline: 0.75rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--token-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      background-color var(--token-dur-fast) var(--token-ease-out),
+      color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .staff-switcher-link[data-active] {
+    background: color-mix(in srgb, var(--token-primary) 18%, transparent);
+    color: var(--token-text);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .staff-switcher-link:hover {
+      color: var(--token-text);
+    }
+  }
+
+  /* Qué es: el enunciado a gran escala y, al lado, cada verbo enlazado con lo que ya existe en el sitio. */
+  .manifesto-grid {
+    display: grid;
+    gap: 2.5rem;
+  }
+  .manifesto-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-bottom: 1px solid var(--token-line);
+  }
+  .manifesto-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 1.1rem;
+    border-top: 1px solid var(--token-line);
+    color: inherit;
+    text-decoration: none;
+    transition:
+      transform var(--token-dur-fast) var(--token-ease-out),
+      border-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .manifesto-verb {
+    font-family: var(--token-font-display);
+    font-size: clamp(1.5rem, 1rem + 1.6vw, 2.25rem);
+    font-weight: 500;
+  }
+  .manifesto-what {
+    color: var(--token-muted);
+    text-align: right;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .manifesto-item:hover {
+      transform: translateX(4px);
+      border-top-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
+    }
+  }
+  @media (min-width: 64rem) {
+    .manifesto-grid {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      align-items: end;
+      gap: 4rem;
+    }
+  }
+
+  /* El libro destacado: una tarjeta de objeto (sin vidrio): portada a la izquierda, datos y acciones a la derecha. */
+  .book-card {
+    display: grid;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-lg);
+    background: color-mix(in srgb, var(--token-surface) 72%, transparent);
+  }
+  .book-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    min-width: 0;
+  }
+  /* Adelanto de la sinopsis: solo el primer párrafo, a 5 líneas; la sinopsis completa vive en la página del libro. */
+  .book-card-synopsis > div > p {
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .book-card-synopsis > div > :nth-child(n + 2) {
+    display: none;
+  }
+  /* Dos columnas solo desde 1024 px: antes, el cronómetro y los textos largos no caben junto a la portada. */
+  @media (min-width: 64rem) {
+    .book-card {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: 2.5rem;
+      padding: 2.5rem;
+      align-items: center;
+    }
+  }
+
+  /* Cómo comprar: opciones como botones, agrupadas por región. */
+  .purchase {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem 4rem;
+  }
+  .purchase-title {
+    margin: 0 0 0.75rem;
+    font-family: var(--token-font-display);
+    font-size: 1.25rem;
+    font-weight: 500;
+  }
+  .purchase-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .purchase-static {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+  .purchase-note {
+    margin: 0.4rem 0 0;
+    font-size: 0.875rem;
+    color: var(--token-muted);
+  }
+
+  /* Experiencias: mosaico asimétrico (la primera, grande, y las demás a su lado); en el celular, apiladas. */
+  .exp-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .exp-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 7rem;
+    padding: 1.25rem 1.25rem 1.25rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-lg);
+    background:
+      radial-gradient(
+        120% 90% at 0% 0%,
+        color-mix(in srgb, var(--token-primary) 14%, transparent),
+        transparent 62%
+      ),
+      color-mix(in srgb, var(--token-surface) 62%, transparent);
+  }
+  .exp-card[data-state='lit'] {
+    border-color: color-mix(in srgb, var(--token-primary) 55%, var(--token-line));
+  }
+  .exp-title {
+    margin: 0;
+    font-family: var(--token-font-display);
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  @media (min-width: 48rem) {
+    .exp-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      margin: 0;
+      padding: 0;
+      overflow: visible;
+      scroll-snap-type: none;
+    }
+    .exp-card {
+      flex: none;
+      grid-column: span 5;
+    }
+    .exp-card:first-child {
+      grid-column: span 7;
+      grid-row: span var(--first-rows, 1);
+      padding: 2rem;
+    }
+    /* Desde la cuarta, en filas completas debajo (12 / n columnas): nunca queda una celda a medias. */
+    .exp-card:nth-child(n + 4) {
+      grid-column: span calc(12 / var(--rest, 1));
+    }
+    .exp-grid[data-count='1'] .exp-card:first-child {
+      grid-column: span 12;
+    }
+    .exp-card:first-child .exp-title {
+      font-size: clamp(1.75rem, 1rem + 2vw, 2.75rem);
+    }
+  }
+
+  /* Wiki: índice tipográfico, un renglón grande por pestaña. */
+  .wiki-index {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-bottom: 1px solid var(--token-line);
+  }
+  .wiki-index > li {
+    border-top: 1px solid var(--token-line);
+  }
+  .wiki-index-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 2.75rem;
+    padding-block: 1.25rem;
+    color: inherit;
+    text-decoration: none;
+    transition: transform var(--token-dur-fast) var(--token-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .wiki-index-row:hover {
+      transform: translateX(4px);
+    }
+  }
+  /* Más chico que el título de la sección (3 rem): el índice se lee como entradas de la wiki, no como otro título. */
+  .wiki-index-name {
+    font-family: var(--token-font-display);
+    font-size: clamp(1.5rem, 1rem + 2vw, 2.25rem);
+    font-weight: 500;
+    line-height: 1.1;
+  }
+
+  /* Reseñas: una destacada y dos a su lado; en el celular, una lista vertical. */
+  .reviews-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 64rem) {
+    .reviews-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: 1.5rem;
+      margin: 0;
+      padding: 0;
+    }
+    .reviews-lead {
+      grid-row: span var(--rest, 1);
+    }
+    .reviews-grid:has(> li:only-child) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* Panel con todas las reseñas: hoja que sube desde abajo en el celular y panel lateral desde la derecha en escritorio.
+     Vidrio solo por token (`--token-glass`); sin transparencia se vuelve sólido. */
+  .reviews-panel {
+    inset: auto 0 0 0;
+    width: 100%;
+    max-width: none;
+    height: 92dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-lg) var(--token-radius-lg) 0 0;
+    color: var(--token-text);
+    background: var(--token-glass);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    backdrop-filter: blur(16px) saturate(1.3);
+  }
+  .reviews-panel[open] {
+    display: flex;
+  }
+  .reviews-panel::backdrop {
+    background: rgb(2 9 22 / 0.62);
+  }
+  .reviews-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--token-line);
+  }
+  .reviews-panel-body {
+    flex: 1;
+    min-height: 0;
+    padding: 1rem 1.25rem 2rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .reviews-panel-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  body:has(dialog[open]) {
+    overflow: hidden;
+  }
+  @media (min-width: 48rem) {
+    .reviews-panel {
+      inset: 0 0 0 auto;
+      width: min(60rem, 92vw);
+      height: 100dvh;
+      border-width: 0 0 0 1px;
+      border-radius: 0;
+    }
+    .reviews-panel-head {
+      padding: 1.25rem 1.75rem;
+    }
+    .reviews-panel-body {
+      padding: 1.5rem 1.75rem 2.5rem;
+    }
+    .reviews-panel-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.25rem;
+      align-items: start;
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .reviews-panel {
+      background: var(--token-surface);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+  /* Entrada y salida solo con transform y opacidad; con «reducir movimiento», ninguna. */
+  @media (prefers-reduced-motion: no-preference) {
+    .reviews-panel[open] {
+      transition: transform 300ms var(--token-ease-out);
+    }
+    .reviews-panel[open]::backdrop {
+      transition: opacity 300ms var(--token-ease-out);
+    }
+    .reviews-panel[data-closing] {
+      transform: translateY(100%);
+      transition-duration: 220ms;
+      transition-timing-function: var(--token-ease-in-out);
+    }
+    .reviews-panel[data-closing]::backdrop {
+      opacity: 0;
+    }
+    @starting-style {
+      .reviews-panel[open] {
+        transform: translateY(100%);
+      }
+      .reviews-panel[open]::backdrop {
+        opacity: 0;
+      }
+    }
+    @media (min-width: 48rem) {
+      .reviews-panel[data-closing] {
+        transform: translateX(100%);
+      }
+      @starting-style {
+        .reviews-panel[open] {
+          transform: translateX(100%);
+        }
+      }
     }
   }
 
@@ -1207,29 +1745,6 @@
       color-mix(in srgb, var(--token-bg) 52%, transparent)
     );
   }
-  /* Con pintura de fondo, las bandas dejan ver algo de ella (siguen siendo lo bastante sólidas para leer). */
-  html[data-page-bg] .section-band {
-    background: color-mix(in srgb, var(--token-sunken) 82%, transparent);
-    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--token-sunken) 82%, transparent);
-  }
-  html[data-page-bg] .section-band-raised {
-    background: color-mix(in srgb, var(--token-surface) 82%, transparent);
-    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--token-surface) 82%, transparent);
-  }
-
-  /* Banda a sangre de pantalla: fondo hundido que se extiende a los lados sin salirse del contenedor. */
-  .section-band {
-    background: var(--token-sunken);
-    box-shadow: 0 0 0 100vmax var(--token-sunken);
-    clip-path: inset(0 -100vmax);
-  }
-  /* Banda elevada: más clara que el fondo; alterna con la hundida para dar ritmo por bandas. */
-  .section-band-raised {
-    background: var(--token-surface);
-    box-shadow: 0 0 0 100vmax var(--token-surface);
-    clip-path: inset(0 -100vmax);
-  }
-
   /* Superficie elevada: tono sólido con un filete fino y sombra tintada de azul (sin vidrio ni desenfoque). */
   .surface {
     background: var(--token-surface);
@@ -1394,24 +1909,6 @@
       backdrop-filter: none;
       background: var(--token-surface);
     }
-  }
-  /* Degradado del inicio: dos manchas (cian y lavanda) que se desplazan muy despacio; solo transform. */
-  .hero-mesh {
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: min(95dvh, 52rem);
-    overflow: clip;
-    pointer-events: none;
-    z-index: 0;
-  }
-  .hero-mesh::before {
-    content: '';
-    position: absolute;
-    inset: -20% -20%;
-    background:
-      radial-gradient(38% 45% at 22% 32%, rgb(63 216 255 / 0.2), transparent 70%),
-      radial-gradient(42% 50% at 78% 38%, rgb(168 155 255 / 0.24), transparent 70%),
-      radial-gradient(36% 38% at 50% 68%, rgb(66 120 176 / 0.28), transparent 70%);
   }
   /* Marco de imágenes (portadas, avatar, resultado): un contorno de 1 px, sin resplandor. */
   .img-frame {

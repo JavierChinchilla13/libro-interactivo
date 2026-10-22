@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router';
+import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useLogout, useSession } from '../../features/auth/session';
 import { Button } from '../../shared/ui/controls';
 import { Brand } from '../../shared/ui/Brand';
 import { MAIN_ID, sideLink, SkipLink } from '../../shared/ui/nav';
+import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
 
 /** Secciones del menú: contenido (editoras y administradoras) y las solo de administradoras. */
 const CONTENT = [
@@ -56,19 +57,15 @@ export function AdminLayout() {
           className={`${open ? 'flex' : 'hidden'} flex-col gap-1 px-3 pb-4 lg:flex`}
           onClick={() => setOpen(false)}
         >
-          <p className="px-3 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
-            Atajos
-          </p>
-          <NavLink to="/" end className={sideLink}>
-            Ver sitio
-          </NavLink>
-          <NavLink to="/panel" end className={sideLink}>
-            Mi panel
-          </NavLink>
           {isAdmin ? (
-            <NavLink to="/admin/usuarios" className={sideLink}>
-              Usuarios
-            </NavLink>
+            <>
+              <p className="px-3 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                Atajos
+              </p>
+              <NavLink to="/admin/usuarios" className={sideLink}>
+                Usuarios
+              </NavLink>
+            </>
           ) : null}
           <p className="px-3 pt-4 text-xs font-semibold uppercase tracking-wide text-muted">
             Contenido
@@ -99,12 +96,7 @@ export function AdminLayout() {
             {user?.name} · {isAdmin ? 'Administradora' : 'Editora'}
           </p>
           <div className="flex items-center gap-2">
-            <Link to="/" className="link-slide inline-flex min-h-11 items-center text-sm">
-              Ver sitio
-            </Link>
-            <Link to="/panel" className="link-slide inline-flex min-h-11 items-center text-sm">
-              Mi panel
-            </Link>
+            <StaffSwitcher />
             <Button
               variant="secondary"
               loading={logout.isPending}

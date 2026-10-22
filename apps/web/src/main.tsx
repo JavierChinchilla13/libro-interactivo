@@ -32,6 +32,24 @@ async function start(container: HTMLElement) {
       ]),
       new Promise((resolve) => setTimeout(resolve, 400)),
     ]);
+  } else if (/^\/libros\/[^/]+\/?$/.test(window.location.pathname)) {
+    // La página de un libro abierta directo: su dato se espera un instante, así el primer pintado ya trae la portada.
+    let slug = '';
+    try {
+      slug = decodeURIComponent(window.location.pathname.split('/')[2] ?? '');
+    } catch {
+      // Una dirección mal formada (p. ej. `%E0%A4%A`): sin precarga; el router mostrará «no encontrada».
+    }
+    if (slug) {
+      await Promise.race([
+        client.prefetchQuery({
+          queryKey: publicKeys.book(slug),
+          queryFn: () => booksApi.get(slug),
+          retry: false,
+        }),
+        new Promise((resolve) => setTimeout(resolve, 400)),
+      ]);
+    }
   } else if (window.location.pathname === '/') {
     await Promise.race([
       Promise.allSettled([
