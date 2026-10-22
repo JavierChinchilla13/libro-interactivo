@@ -610,6 +610,30 @@ describe('landing: composición nueva', () => {
     vi.unstubAllEnvs();
   });
 
+  it('el mosaico limita la tarjeta grande a 2 filas y reparte el resto en filas completas', async () => {
+    const experiences = Array.from({ length: 5 }, (_, i) => ({
+      kind: i === 4 ? 'game' : 'quiz',
+      id: `67000000000000000000002${i}`,
+      order: i + 1,
+      title: `[PLACEHOLDER] Experiencia ${i + 1}`,
+    }));
+    mockApi(
+      {
+        'GET /api/site': () => json(site),
+        'GET /api/books': () => json(books),
+        'GET /api/books/libro-1': () => json({ ...detail, experiences }),
+      },
+      NO_SESSION,
+    );
+    renderAt('/');
+    const section = await screen.findByRole('region', { name: /experiencia inmersiva/ });
+    const grid = section.querySelector<HTMLElement>('.exp-grid')!;
+    expect(grid.style.getPropertyValue('--first-rows')).toBe('2');
+    // 5 experiencias: la grande y 2 a su lado; las 2 restantes llenan una fila (12 / 2 columnas).
+    expect(grid.style.getPropertyValue('--rest')).toBe('2');
+    expect(section.querySelectorAll('.exp-card')).toHaveLength(5);
+  });
+
   it('en producción no se pintan los marcadores [PLACEHOLDER] ni las secciones vacías', async () => {
     vi.stubEnv('DEV', false);
     mockApi(

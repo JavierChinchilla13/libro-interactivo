@@ -402,7 +402,11 @@ export function Experiences({
         className="exp-grid reveal-children"
         aria-label="Experiencias del libro"
         tabIndex={0}
-        style={{ ['--rows' as string]: Math.max(1, experiences.length - 1) }}
+        style={{
+          // La primera ocupa hasta 2 filas; el resto (si pasan de 3) se reparte en hasta 3 por fila debajo.
+          ['--first-rows' as string]: Math.min(2, Math.max(1, experiences.length - 1)),
+          ['--rest' as string]: Math.max(1, Math.min(3, experiences.length - 3)),
+        }}
         data-count={experiences.length}
       >
         {experiences.map((experience) => {

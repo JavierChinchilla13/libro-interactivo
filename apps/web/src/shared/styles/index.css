@@ -1403,7 +1403,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    min-height: 12rem;
+    min-height: 9rem;
     padding: 1.5rem;
     border: 1px solid var(--token-line);
     border-radius: var(--token-radius-lg);
@@ -1440,8 +1440,12 @@
     }
     .exp-card:first-child {
       grid-column: span 7;
-      grid-row: span var(--rows, 1);
+      grid-row: span var(--first-rows, 1);
       padding: 2rem;
+    }
+    /* Desde la cuarta, en filas completas debajo (12 / n columnas): nunca queda una celda a medias. */
+    .exp-card:nth-child(n + 4) {
+      grid-column: span calc(12 / var(--rest, 1));
     }
     .exp-grid[data-count='1'] .exp-card:first-child {
       grid-column: span 12;
