@@ -106,9 +106,31 @@ function afterLoad(task: () => void): () => void {
   };
 }
 
-const reducedMotion = () =>
-  typeof window.matchMedia === 'function' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+/**
+ * Lo que mide una vuelta (de una imagen a la misma imagen de la copia siguiente). Se mide por posiciones (`offsetLeft`
+ * no cambia con las transformaciones de la animación) y no dividiendo el ancho de la pista entre las copias, que
+ * dependería de un valor que React aún no ha actualizado. Sin copias a la vista (movimiento reducido), mide la pista.
+ */
+function periodOf(strip: HTMLElement, setSize: number): number {
+  const first = strip.children[0] as HTMLElement | undefined;
+  const second = strip.children[setSize] as HTMLElement | undefined;
+  if (first && second && second.offsetParent !== null) return second.offsetLeft - first.offsetLeft;
+  return strip.offsetWidth;
+}
+
+/** Sigue un `matchMedia` y vuelve a pintar cuando cambia. */
+function useMedia(query: string): boolean {
+  const read = () => typeof window.matchMedia === 'function' && window.matchMedia(query).matches;
+  const [matches, setMatches] = useState(read);
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const list = window.matchMedia(query);
+    const onChange = () => setMatches(list.matches);
+    list.addEventListener('change', onChange);
+    return () => list.removeEventListener('change', onChange);
+  }, [query]);
+  return matches;
+}
 
 /**
  * Rejilla inclinada del encabezado: una hilera de imágenes a sangre, de altura fija y con la proporción propia de cada
@@ -120,23 +142,29 @@ const reducedMotion = () =>
  * entran por el otro sin huecos ni saltos. Las copias van ocultas a los lectores de pantalla. En pantallas anchas la
  * marquesina es solo `transform` (CSS, 45 s por vuelta); en el celular la hilera avanza sola, más despacio, y se
  * puede deslizar con el dedo (al tocar se detiene y sigue unos segundos después). Se pausa con el botón, con el cursor
- * encima, fuera de pantalla y con la pestaña oculta; con «reducir movimiento» queda quieta y solo se desliza.
- * Con menos de 5 imágenes propias, en desarrollo muestra marcadores de color y en producción no se pinta nada.
+ * encima, fuera de pantalla y con la pestaña oculta; con «reducir movimiento» queda quieta (sin copias) y solo se
+ * desliza. Con menos de 5 imágenes propias, en desarrollo muestra marcadores de color y en producción no se pinta nada.
  */
 export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefined }) {
+  const reduced = useMedia('(prefers-reduced-motion: reduce)');
+  const narrow = useMedia('(max-width: 47.99rem)');
   const [paused, setPaused] = useState(false);
   const [offscreen, setOffscreen] = useState(false);
   const [hidden, setHidden] = useState(false);
-  const [copies, setCopies] = useState(DEFAULT_COPIES);
+  // Antes de medir: 2 copias bastan en un celular y 4 cubren hasta ~2500 px.
+  const [measured, setMeasured] = useState(() => (narrow ? 2 : DEFAULT_COPIES));
   const root = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLUListElement>(null);
-  // El bucle del celular lee estos valores en cada cuadro sin volver a montarse.
-  const live = useRef({ copies: DEFAULT_COPIES, paused: false, offscreen: false, hidden: false });
-  useEffect(() => {
-    live.current = { copies, paused, offscreen, hidden };
-  });
   const real = images && images.length >= 5 ? images : undefined;
+  const setSize = real ? real.length : PLACEHOLDERS.length;
+  // Con movimiento reducido no hay copias: la hilera queda quieta.
+  const copies = reduced ? 1 : measured;
+  // Lo que leen los observadores y el bucle del celular sin volver a montarse.
+  const live = useRef({ copies, setSize });
+  useEffect(() => {
+    live.current = { copies, setSize };
+  });
 
   // Fuera de pantalla y con la pestaña oculta la hilera se detiene (no gasta cuadros en algo que nadie ve).
   useEffect(() => {
@@ -161,11 +189,10 @@ export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefi
   useEffect(() => {
     const frame = stage.current;
     const strip = track.current;
-    if (!frame || !strip || typeof ResizeObserver === 'undefined') return;
+    if (reduced || !frame || !strip || typeof ResizeObserver === 'undefined') return;
     const measure = () => {
-      const period = strip.offsetWidth / live.current.copies;
-      const needed = copiesFor(frame.clientWidth, period);
-      if (needed !== live.current.copies) setCopies(needed);
+      const needed = copiesFor(frame.clientWidth, periodOf(strip, live.current.setSize));
+      if (needed !== live.current.copies) setMeasured(needed);
     };
     let observer: ResizeObserver | undefined;
     const cancel = afterLoad(() => {
@@ -178,20 +205,20 @@ export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefi
       cancel();
       observer?.disconnect();
     };
-  }, []);
+  }, [reduced]);
 
-  // Celular: la hilera avanza sola (scroll horizontal) y se puede deslizar con el dedo. En pantallas anchas lo hace el CSS.
+  // Celular: la hilera avanza sola (scroll horizontal) y se puede deslizar con el dedo. En pantallas anchas lo hace el
+  // CSS. El bucle solo corre mientras hace falta: en el celular, sin pausa, a la vista y con la pestaña visible.
   useEffect(() => {
     const frame = stage.current;
     const strip = track.current;
-    if (!frame || !strip || typeof window.matchMedia !== 'function' || reducedMotion()) return;
-    const narrow = window.matchMedia('(max-width: 47.99rem)');
+    if (!frame || !strip || !narrow || reduced || paused || offscreen || hidden) return;
     let raf = 0;
     let last = 0;
-    let pos = 0;
+    let pos = frame.scrollLeft;
     let touching = false;
     let resumeAt = 0;
-    const period = () => strip.offsetWidth / live.current.copies;
+    const period = () => periodOf(strip, live.current.setSize);
     const hold = () => {
       touching = true;
     };
@@ -216,14 +243,12 @@ export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefi
       raf = requestAnimationFrame(tick);
       const dt = Math.min(64, now - last);
       last = now;
-      const state = live.current;
-      if (!narrow.matches || state.paused || state.offscreen || state.hidden) {
-        pos = frame.scrollLeft;
-        return;
-      }
       if (touching || performance.now() < resumeAt) return;
       pos += (PHONE_SPEED * dt) / 1000;
-      frame.scrollLeft = pos;
+      // Solo se escribe cuando el avance ya vale al menos un píxel físico (a 14 px/s son 0,23 px por cuadro).
+      if (Math.abs(pos - frame.scrollLeft) >= 1 / (window.devicePixelRatio || 1)) {
+        frame.scrollLeft = pos;
+      }
     };
     frame.addEventListener('scroll', onScroll, { passive: true });
     frame.addEventListener('touchstart', hold, { passive: true });
@@ -243,7 +268,7 @@ export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefi
       frame.removeEventListener('touchend', release);
       frame.removeEventListener('touchcancel', release);
     };
-  }, []);
+  }, [narrow, reduced, paused, offscreen, hidden]);
 
   if (!real && !import.meta.env.DEV) return null;
   const copyIndexes = Array.from({ length: copies }, (_, copy) => copy);
