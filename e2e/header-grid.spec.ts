@@ -27,25 +27,27 @@ test.describe('rejilla inclinada del encabezado', () => {
     const current = (await (await admin.get('/api/admin/site-settings')).json()) as {
       universe: { introHtml: string; headline?: string };
     };
-    const save = (headerImages: unknown[]) =>
+    // Con una frase corta (como la real) el titular cabe en una línea; al final se restaura la que había.
+    const save = (headerImages: unknown[], headline = current.universe.headline) =>
       admin.patch('/api/admin/site-settings', {
-        data: { universe: { ...current.universe, headerImages } },
+        data: { universe: { ...current.universe, headerImages, headline } },
       });
     try {
       const ids = ['sample', 'cld-sample', 'cld-sample-2', 'cld-sample-3', 'cld-sample-4'];
-      expect((await save(ids.map(demo))).status()).toBe(200);
+      expect((await save(ids.map(demo), 'Universo Memorias')).status()).toBe(200);
       await page.goto('/');
       const grid = page.getByRole('region', { name: 'Imágenes del universo' });
       await expect(grid).toBeVisible();
       await expect(grid.getByRole('img')).toHaveCount(5);
-      await grid.scrollIntoViewIfNeeded();
+      // El titular sigue siendo lo primero de la página y, con la rejilla, llena la primera pantalla (sin scroll).
+      const heading = page.getByRole('heading', { level: 1 });
+      const [h, g] = await Promise.all([heading.boundingBox(), grid.boundingBox()]);
+      const viewport = page.viewportSize();
+      expect(h && g && h.y < g.y).toBe(true);
+      expect(h && g && viewport && h.y + h.height < g.y && g.y < viewport.height - 100).toBe(true);
       // La captura es solo de apoyo para revisar a ojo: se toma cuando la página terminó de cargar.
       await page.waitForLoadState('load');
       await page.screenshot({ path: process.env['GRID_SHOT'] ?? 'test-results/grid.png' });
-      // El titular sigue siendo lo primero de la página.
-      const heading = page.getByRole('heading', { level: 1 });
-      const [h, g] = await Promise.all([heading.boundingBox(), grid.boundingBox()]);
-      expect(h && g && h.y < g.y).toBe(true);
     } finally {
       expect((await save([])).status()).toBe(200);
     }

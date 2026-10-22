@@ -35,7 +35,7 @@ export function PublicLayout() {
   const site = useQuery({ queryKey: publicKeys.site, queryFn: publicApi.site, retry: false });
   const social = site.data?.social ?? [];
   return (
-    <div className="relative flex min-h-dvh flex-col">
+    <div className="relative flex min-h-dvh flex-col overflow-x-clip">
       <SkipLink />
       <PageBackground stable={isHome} />
       <header className="site-header sticky top-3 z-40 px-3">

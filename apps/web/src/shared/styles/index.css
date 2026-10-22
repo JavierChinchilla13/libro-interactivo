@@ -1070,21 +1070,105 @@
     opacity: 0;
   }
 
-  /* Rejilla inclinada del encabezado: hilera curva de imágenes; solo `transform` y una máscara estática. */
-  .tilted-grid {
+  /* Héroe: frase y acciones a la izquierda y, pegada debajo, la rejilla inclinada a sangre; juntas llenan la primera
+     pantalla en pantallas anchas (en el celular la rejilla va justo debajo y se asoma la sección siguiente). */
+  .hero {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    margin-top: 1.5rem;
+    gap: 1.25rem;
+    /* La píldora de la cabecera queda 12 px por debajo de su caja (sticky): el aire de arriba la compensa y deja un
+       respiro claro antes del titular. */
+    padding-top: 3.25rem;
+  }
+  @media (min-width: 48rem) {
+    .hero {
+      gap: 1.5rem;
+      padding-top: 4rem;
+    }
+  }
+  .hero--solo {
+    min-height: 70svh;
+    justify-content: center;
+    padding-block: 2rem;
+  }
+  .hero-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  /* El tamaño del titular baja según el largo de la frase: la real manda el tope (dos líneas como máximo). */
+  .hero-title {
+    width: 100%;
+    text-align: left;
+  }
+  /* En el celular el titular corto es grande a propósito: su área supera a la de cualquier baldosa y el LCP sigue
+     siendo el texto (no una imagen). */
+  .hero-title[data-size='short'] {
+    font-size: clamp(3.25rem, 0.8rem + 7.2vw, 5.75rem);
+  }
+  .hero-title[data-size='medium'] {
+    font-size: clamp(2.25rem, 0.9rem + 5vw, 4.25rem);
+  }
+  .hero-title[data-size='long'] {
+    font-size: clamp(2rem, 0.9rem + 3.6vw, 3.25rem);
+  }
+  /* La presentación es breve (hasta ~20 palabras): si la autora escribe más, se recorta a 4 líneas para que la rejilla
+     siga a la vista en la primera pantalla. */
+  .hero-intro {
+    max-width: 38rem;
+    max-height: calc(1.6em * 4);
+    overflow: hidden;
+    font-size: 1.125rem;
+    color: var(--token-muted);
+  }
+  .hero-intro > div > p,
+  .hero-intro > p {
+    margin: 0;
+  }
+  .hero-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    margin-top: 0.25rem;
+  }
+  @media (min-width: 40rem) {
+    .hero-actions {
+      flex-direction: row;
+      width: auto;
+    }
+  }
+
+  /* Rejilla inclinada: hilera a sangre de altura fija; cada imagen conserva su proporción (ancho automático). */
+  .tilted-grid {
+    /* En el celular las baldosas son chicas a propósito: ninguna pasa en área al titular, así el LCP sigue siendo el
+       texto y no una imagen (la rejilla va en la primera pantalla). */
+    --tile-h: clamp(7.5rem, 17svh, 8.5rem);
+    position: relative;
+    margin-top: 0;
+    /* A sangre de pantalla: se sale del contenedor; el recorte horizontal lo hace el marco de la página. */
+    margin-inline: calc(50% - 50vw);
+    width: 100vw;
     overflow: clip;
   }
-  .tilted-stage {
-    width: 100%;
+  @media (min-width: 48rem) {
+    .tilted-grid {
+      /* Con el titular, la presentación y los botones, la hilera (con su relleno de 3,5 rem) cabe completa en la
+         primera pantalla desde 700 px de alto. */
+      --tile-h: clamp(11rem, 38svh, 20rem);
+    }
   }
   .tilted-stage {
     perspective: 1100px;
-    mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
-    -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  }
+  .tilted-stage::-webkit-scrollbar {
+    display: none;
   }
   .tilted-track {
     display: flex;
@@ -1092,18 +1176,18 @@
     gap: 1rem;
     margin: 0;
     /* El relleno final iguala el hueco entre imágenes: el bucle al -50 % cae exacto, sin salto. */
-    padding: 2rem 1rem 3rem 0;
+    padding: 1.5rem 1rem 2rem 1rem;
     list-style: none;
     transform: rotateX(14deg) rotateZ(-2.5deg);
     transform-origin: 50% 100%;
   }
   .tilted-tile {
     flex: none;
-    width: 8.5rem;
-    aspect-ratio: 4 / 5;
+    height: var(--tile-h);
     overflow: hidden;
     border-radius: var(--token-radius-xs);
     background: var(--token-surface-alt);
+    scroll-snap-align: start;
   }
   .tilted-tile-placeholder {
     border: 1px solid var(--token-line);
@@ -1118,39 +1202,45 @@
   .tilted-tile img {
     border-radius: var(--token-radius-xs);
   }
-  /* En el celular y sin marquesina, solo se ven las imágenes originales y la hilera queda centrada. */
-  .tilted-track {
-    margin-inline: auto;
+  /* Entrada: cada imagen aparece cuando termina de cargar, con un pequeño escalón de 60 ms entre una y otra. */
+  @media (prefers-reduced-motion: no-preference) {
+    .tilted-tile {
+      transition:
+        opacity 500ms var(--token-ease-out) calc(var(--i, 0) * 60ms),
+        transform 500ms var(--token-ease-out) calc(var(--i, 0) * 60ms);
+    }
+    .tilted-tile[data-pending] {
+      opacity: 0;
+      transform: translateY(12px);
+    }
   }
-  .tilted-track .tilted-tile[aria-hidden='true'] {
+  /* Sin marquesina solo se ven las imágenes originales (las copias del bucle se ocultan) y la hilera se desliza. */
+  .tilted-track .tilted-tile[aria-hidden='true']:not(.tilted-tile-placeholder) {
     display: none;
   }
   .tilted-pause {
     display: none;
   }
-  @media (min-width: 48rem) {
-    .tilted-tile {
-      width: 12rem;
-    }
-    .tilted-pause {
-      display: none;
-    }
-  }
   @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) {
+    .tilted-stage {
+      overflow: clip;
+    }
     .tilted-track {
-      margin-inline: 0;
-      animation: tilted-flow 60s linear infinite;
+      animation: tilted-flow 70s linear infinite;
     }
     .tilted-track .tilted-tile[aria-hidden='true'] {
       display: block;
     }
-    .tilted-grid[data-paused] .tilted-track {
+    .tilted-grid[data-paused] .tilted-track,
+    .tilted-grid[data-offscreen] .tilted-track {
       animation-play-state: paused;
     }
     .tilted-pause {
       display: inline-flex;
+      position: absolute;
+      top: 0;
+      right: max(1rem, calc(50vw - 36rem));
       min-height: 2.75rem;
-      margin-top: 0.25rem;
     }
   }
   @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
