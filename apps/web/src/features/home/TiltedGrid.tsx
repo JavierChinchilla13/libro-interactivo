@@ -60,32 +60,193 @@ function Tile({ image, index, hidden }: { image: HeaderImage; index: number; hid
   );
 }
 
+/** Copias de la hilera que se pintan antes de medir (cubren hasta ~2500 px con una vuelta de ~1000 px). */
+const DEFAULT_COPIES = 4;
+const MIN_COPIES = 2;
+const MAX_COPIES = 10;
+/** Velocidad de la deriva sola en el celular (px/s): más lenta que la marquesina de escritorio. */
+const PHONE_SPEED = 14;
+/** Tras tocar o deslizar con el dedo, la deriva espera este tiempo antes de seguir. */
+const PHONE_RESUME_MS = 3000;
+/** Margen de seguridad (px) sobre el ancho: cubre el escorzo de la inclinación y el relleno de la hilera. */
+const SAFETY_PX = 64;
+
+/**
+ * Cuántas copias de la hilera hacen falta para que nunca quede un hueco: la pista avanza una vuelta (`period`) y, en
+ * ese momento, su borde derecho debe seguir pasado el borde derecho de la ventana: `(copias - 1) × vuelta ≥ ancho`.
+ */
+export function copiesFor(viewport: number, period: number): number {
+  if (!(period > 0) || !(viewport > 0)) return DEFAULT_COPIES;
+  return Math.min(MAX_COPIES, Math.max(MIN_COPIES, Math.ceil((viewport + SAFETY_PX) / period) + 1));
+}
+
+/**
+ * Ejecuta `task` cuando la página ya cargó y el navegador está libre: ni la medida de las copias ni la deriva del
+ * celular compiten con el primer pintado. Devuelve cómo cancelarla.
+ */
+function afterLoad(task: () => void): () => void {
+  let cancelled = false;
+  let cancelIdle = () => {};
+  const run = () => {
+    if (cancelled) return;
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(task, { timeout: 2000 });
+      cancelIdle = () => window.cancelIdleCallback(id);
+    } else {
+      const id = window.setTimeout(task, 300);
+      cancelIdle = () => window.clearTimeout(id);
+    }
+  };
+  if (document.readyState === 'complete') run();
+  else window.addEventListener('load', run, { once: true });
+  return () => {
+    cancelled = true;
+    window.removeEventListener('load', run);
+    cancelIdle();
+  };
+}
+
+const reducedMotion = () =>
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 /**
  * Rejilla inclinada del encabezado: una hilera de imágenes a sangre, de altura fija y con la proporción propia de cada
  * una (sin deformarlas), que se curva hacia quien mira y se desvanece en los bordes. Va al pie del héroe, bajo la
- * frase principal. Solo anima `transform`: en pantallas anchas es una marquesina lenta (se pausa con el botón, con el
- * cursor encima, fuera de pantalla y con la pestaña oculta); en el celular y con «reducir movimiento» queda quieta y se
- * desliza con el dedo. Cada imagen entra con un fundido corto cuando termina de cargar.
+ * frase principal.
+ *
+ * Es un bucle continuo: la hilera se repite las veces que hagan falta para cubrir cualquier ancho (`copiesFor`, se
+ * recalcula al cambiar el tamaño) y avanza exactamente una vuelta por ciclo, así las imágenes salen por un lado y
+ * entran por el otro sin huecos ni saltos. Las copias van ocultas a los lectores de pantalla. En pantallas anchas la
+ * marquesina es solo `transform` (CSS, 45 s por vuelta); en el celular la hilera avanza sola, más despacio, y se
+ * puede deslizar con el dedo (al tocar se detiene y sigue unos segundos después). Se pausa con el botón, con el cursor
+ * encima, fuera de pantalla y con la pestaña oculta; con «reducir movimiento» queda quieta y solo se desliza.
  * Con menos de 5 imágenes propias, en desarrollo muestra marcadores de color y en producción no se pinta nada.
  */
 export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefined }) {
   const [paused, setPaused] = useState(false);
   const [offscreen, setOffscreen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [copies, setCopies] = useState(DEFAULT_COPIES);
   const root = useRef<HTMLElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const track = useRef<HTMLUListElement>(null);
+  // El bucle del celular lee estos valores en cada cuadro sin volver a montarse.
+  const live = useRef({ copies: DEFAULT_COPIES, paused: false, offscreen: false, hidden: false });
+  useEffect(() => {
+    live.current = { copies, paused, offscreen, hidden };
+  });
   const real = images && images.length >= 5 ? images : undefined;
 
-  // Fuera de pantalla la marquesina se detiene (no gasta cuadros en algo que nadie ve).
+  // Fuera de pantalla y con la pestaña oculta la hilera se detiene (no gasta cuadros en algo que nadie ve).
   useEffect(() => {
     const element = root.current;
-    if (!element || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry) setOffscreen(!entry.isIntersecting);
+    const onVisibility = () => setHidden(document.hidden);
+    document.addEventListener('visibilitychange', onVisibility);
+    onVisibility();
+    let observer: IntersectionObserver | undefined;
+    if (element && typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(([entry]) => {
+        if (entry) setOffscreen(!entry.isIntersecting);
+      });
+      observer.observe(element);
+    }
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      observer?.disconnect();
+    };
+  }, []);
+
+  // Copias necesarias según el ancho de la ventana y lo que mide una vuelta (que cambia con el alto de la pantalla).
+  useEffect(() => {
+    const frame = stage.current;
+    const strip = track.current;
+    if (!frame || !strip || typeof ResizeObserver === 'undefined') return;
+    const measure = () => {
+      const period = strip.offsetWidth / live.current.copies;
+      const needed = copiesFor(frame.clientWidth, period);
+      if (needed !== live.current.copies) setCopies(needed);
+    };
+    let observer: ResizeObserver | undefined;
+    const cancel = afterLoad(() => {
+      observer = new ResizeObserver(measure);
+      observer.observe(frame);
+      observer.observe(strip);
+      measure();
     });
-    observer.observe(element);
-    return () => observer.disconnect();
+    return () => {
+      cancel();
+      observer?.disconnect();
+    };
+  }, []);
+
+  // Celular: la hilera avanza sola (scroll horizontal) y se puede deslizar con el dedo. En pantallas anchas lo hace el CSS.
+  useEffect(() => {
+    const frame = stage.current;
+    const strip = track.current;
+    if (!frame || !strip || typeof window.matchMedia !== 'function' || reducedMotion()) return;
+    const narrow = window.matchMedia('(max-width: 47.99rem)');
+    let raf = 0;
+    let last = 0;
+    let pos = 0;
+    let touching = false;
+    let resumeAt = 0;
+    const period = () => strip.offsetWidth / live.current.copies;
+    const hold = () => {
+      touching = true;
+    };
+    const release = () => {
+      touching = false;
+      resumeAt = performance.now() + PHONE_RESUME_MS;
+    };
+    const onScroll = () => {
+      const p = period();
+      // El dedo (o la inercia) movió la hilera: se toma esa posición y se espera antes de seguir.
+      if (Math.abs(frame.scrollLeft - pos) > 1.5) {
+        pos = frame.scrollLeft;
+        resumeAt = performance.now() + PHONE_RESUME_MS;
+      }
+      // Bucle: pasada una vuelta se vuelve al principio (las copias son idénticas, no se nota).
+      if (p > 0 && frame.scrollLeft >= p) {
+        frame.scrollLeft -= p;
+        pos = frame.scrollLeft;
+      }
+    };
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      const dt = Math.min(64, now - last);
+      last = now;
+      const state = live.current;
+      if (!narrow.matches || state.paused || state.offscreen || state.hidden) {
+        pos = frame.scrollLeft;
+        return;
+      }
+      if (touching || performance.now() < resumeAt) return;
+      pos += (PHONE_SPEED * dt) / 1000;
+      frame.scrollLeft = pos;
+    };
+    frame.addEventListener('scroll', onScroll, { passive: true });
+    frame.addEventListener('touchstart', hold, { passive: true });
+    frame.addEventListener('touchend', release, { passive: true });
+    frame.addEventListener('touchcancel', release, { passive: true });
+    const cancelStart = afterLoad(() => {
+      raf = requestAnimationFrame((now) => {
+        last = now;
+        raf = requestAnimationFrame(tick);
+      });
+    });
+    return () => {
+      cancelStart();
+      cancelAnimationFrame(raf);
+      frame.removeEventListener('scroll', onScroll);
+      frame.removeEventListener('touchstart', hold);
+      frame.removeEventListener('touchend', release);
+      frame.removeEventListener('touchcancel', release);
+    };
   }, []);
 
   if (!real && !import.meta.env.DEV) return null;
+  const copyIndexes = Array.from({ length: copies }, (_, copy) => copy);
   return (
     <section
       ref={root}
@@ -93,23 +254,29 @@ export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefi
       className="tilted-grid"
       data-paused={paused || undefined}
       data-offscreen={offscreen || undefined}
+      data-hidden={hidden || undefined}
     >
-      <div className="tilted-stage">
-        <ul className="tilted-track">
-          {real
-            ? real.map((image, index) => (
-                <Tile key={`${image.publicId}-${index}`} image={image} index={index} />
-              ))
-            : PLACEHOLDERS.map((ratio, index) => (
-                <Placeholder key={index} index={index} ratio={ratio} />
-              ))}
-          {real
-            ? real.map((image, index) => (
-                <Tile key={`${image.publicId}-${index}-copy`} image={image} index={index} hidden />
-              ))
-            : PLACEHOLDERS.map((ratio, index) => (
-                <Placeholder key={`${index}-copy`} index={index} ratio={ratio} />
-              ))}
+      <div ref={stage} className="tilted-stage">
+        <ul
+          ref={track}
+          className="tilted-track"
+          style={{ ['--copies' as string]: copies }}
+          data-copies={copies}
+        >
+          {copyIndexes.flatMap((copy) =>
+            real
+              ? real.map((image, index) => (
+                  <Tile
+                    key={`${copy}-${image.publicId}-${index}`}
+                    image={image}
+                    index={index}
+                    hidden={copy > 0}
+                  />
+                ))
+              : PLACEHOLDERS.map((ratio, index) => (
+                  <Placeholder key={`${copy}-${index}`} index={index} ratio={ratio} />
+                )),
+          )}
         </ul>
       </div>
       <button

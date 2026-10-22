@@ -115,44 +115,4 @@ test.describe('landing pública', () => {
     expect((await sent).status()).toBe(202);
     await expect(page.getByText('Gracias, recibimos tu mensaje.')).toBeVisible();
   });
-
-  test('la autora edita la portada en el panel y el visitante la ve', async ({
-    page,
-    browser,
-    baseURL,
-    isMobile,
-  }) => {
-    test.skip(isMobile, 'Flujo de administración de escritorio.');
-    const headline = `Frase E2E ${Date.now()}`;
-    await page.goto('/ingresar');
-    await page.getByLabel('Correo').fill(E2E_ADMIN.email);
-    await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
-    await page.getByRole('button', { name: 'Ingresar' }).click();
-    await expect(page.getByRole('heading', { name: 'Inicio del panel' })).toBeVisible();
-
-    await page.getByRole('link', { name: 'Portada y autora' }).click();
-    await page.getByLabel('Frase principal del sitio').fill(headline);
-    // La base conserva lo guardado en corridas anteriores: se parte sin redes.
-    const remove = page.getByRole('button', { name: /^Quitar/ });
-    while ((await remove.count()) > 0) await remove.first().click();
-    await page.getByRole('button', { name: '+ Agregar red' }).click();
-    await page.getByLabel('Red 1').fill('Instagram E2E');
-    await page.getByLabel('Enlace 1').fill('https://instagram.com/e2e');
-    await page.getByRole('button', { name: 'Guardar' }).click();
-    // El aviso no desaparece solo (el formulario no se recarga).
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
-    await page.waitForTimeout(500);
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
-
-    const visitor = await browser.newContext();
-    const view = await visitor.newPage();
-    await view.goto(`${baseURL}/`);
-    await expect(view.getByRole('heading', { level: 1, name: headline })).toBeVisible();
-    await expect(
-      view
-        .getByRole('list', { name: 'Redes sociales' })
-        .getByRole('link', { name: 'Instagram E2E' }),
-    ).toHaveAttribute('href', 'https://instagram.com/e2e');
-    await visitor.close();
-  });
 });

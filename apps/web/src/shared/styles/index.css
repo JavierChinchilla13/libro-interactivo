@@ -1161,8 +1161,8 @@
   }
   .tilted-stage {
     perspective: 1100px;
+    padding-inline-start: 1rem;
     overflow-x: auto;
-    scroll-snap-type: x proximity;
     scrollbar-width: none;
     mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
     -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
@@ -1170,13 +1170,13 @@
   .tilted-stage::-webkit-scrollbar {
     display: none;
   }
+  /* La pista lleva N copias idénticas de la hilera (`--copies`): cada imagen deja su hueco a la derecha (margen), así
+     una vuelta mide exactamente `ancho de la pista / copias` y el bucle cae justo, sin saltos. */
   .tilted-track {
     display: flex;
     width: max-content;
-    gap: 1rem;
     margin: 0;
-    /* El relleno final iguala el hueco entre imágenes: el bucle al -50 % cae exacto, sin salto. */
-    padding: 1.5rem 1rem 2rem 1rem;
+    padding: 1.5rem 0 2rem;
     list-style: none;
     transform: rotateX(14deg) rotateZ(-2.5deg);
     transform-origin: 50% 100%;
@@ -1184,10 +1184,10 @@
   .tilted-tile {
     flex: none;
     height: var(--tile-h);
+    margin-right: 1rem;
     overflow: hidden;
     border-radius: var(--token-radius-xs);
     background: var(--token-surface-alt);
-    scroll-snap-align: start;
   }
   .tilted-tile-placeholder {
     border: 1px solid var(--token-line);
@@ -1214,33 +1214,42 @@
       transform: translateY(12px);
     }
   }
-  /* Sin marquesina solo se ven las imágenes originales (las copias del bucle se ocultan) y la hilera se desliza. */
-  .tilted-track .tilted-tile[aria-hidden='true']:not(.tilted-tile-placeholder) {
-    display: none;
+  /* Con «reducir movimiento» la hilera queda quieta: solo se ven las imágenes originales y se desliza con el dedo. */
+  @media (prefers-reduced-motion: reduce) {
+    .tilted-track .tilted-tile[aria-hidden='true']:not(.tilted-tile-placeholder) {
+      display: none;
+    }
+    .tilted-stage {
+      scroll-snap-type: x proximity;
+    }
+    .tilted-tile {
+      scroll-snap-align: start;
+    }
   }
   .tilted-pause {
     display: none;
   }
-  @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) {
-    .tilted-stage {
-      overflow: clip;
-    }
-    .tilted-track {
-      animation: tilted-flow 70s linear infinite;
-    }
-    .tilted-track .tilted-tile[aria-hidden='true'] {
-      display: block;
-    }
-    .tilted-grid[data-paused] .tilted-track,
-    .tilted-grid[data-offscreen] .tilted-track {
-      animation-play-state: paused;
-    }
+  @media (prefers-reduced-motion: no-preference) {
     .tilted-pause {
       display: inline-flex;
       position: absolute;
       top: 0;
       right: max(1rem, calc(50vw - 36rem));
       min-height: 2.75rem;
+    }
+  }
+  /* Pantallas anchas: marquesina de CSS, una vuelta (1 / copias de la pista) cada 45 s. */
+  @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) {
+    .tilted-stage {
+      overflow: clip;
+    }
+    .tilted-track {
+      animation: tilted-flow 45s linear infinite;
+    }
+    .tilted-grid[data-paused] .tilted-track,
+    .tilted-grid[data-offscreen] .tilted-track,
+    .tilted-grid[data-hidden] .tilted-track {
+      animation-play-state: paused;
     }
   }
   @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
@@ -1250,7 +1259,7 @@
   }
   @keyframes tilted-flow {
     to {
-      transform: rotateX(14deg) rotateZ(-2.5deg) translateX(-50%);
+      transform: rotateX(14deg) rotateZ(-2.5deg) translateX(calc(-100% / var(--copies, 4)));
     }
   }
 

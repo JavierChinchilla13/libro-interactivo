@@ -1,7 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { hasGrid, TiltedGrid } from './TiltedGrid';
+import { copiesFor, hasGrid, TiltedGrid } from './TiltedGrid';
 
 const images = (n: number) =>
   Array.from({ length: n }, (_, i) => ({
@@ -50,10 +50,15 @@ describe('TiltedGrid', () => {
   it('muestra cada imagen una vez para lectores de pantalla (la copia del bucle va oculta) y se puede pausar', async () => {
     const { container } = render(<TiltedGrid images={images(5)} />);
     expect(screen.getAllByRole('img')).toHaveLength(5);
-    expect(container.querySelectorAll('li[aria-hidden="true"]')).toHaveLength(5);
+    // Las copias del bucle (3 más de 5 imágenes mientras no se mide) van ocultas y sin texto alternativo.
+    const hiddenTiles = container.querySelectorAll('li[aria-hidden="true"]');
+    expect(hiddenTiles).toHaveLength(15);
+    for (const tile of Array.from(hiddenTiles)) {
+      expect(tile.querySelector('img')).toHaveAttribute('alt', '');
+    }
     // Las tres primeras se piden ya (se ven en la primera pantalla); las demás, al acercarse.
     expect(container.querySelectorAll('img[loading="eager"]')).toHaveLength(3);
-    expect(container.querySelectorAll('img[loading="lazy"]')).toHaveLength(7);
+    expect(container.querySelectorAll('img[loading="lazy"]')).toHaveLength(17);
     const pause = screen.getByRole('button', { name: 'Pausar animación' });
     await userEvent.click(pause);
     expect(screen.getByRole('button', { name: 'Reanudar animación' })).toHaveAttribute(
@@ -104,5 +109,59 @@ describe('hasGrid', () => {
     expect(hasGrid(images(5))).toBe(true);
     vi.stubEnv('DEV', true);
     expect(hasGrid(undefined)).toBe(true);
+  });
+});
+
+describe('bucle continuo', () => {
+  it('la pista declara cuántas copias lleva (para desplazar exactamente una vuelta)', () => {
+    const { container } = render(<TiltedGrid images={images(5)} />);
+    const track = container.querySelector<HTMLElement>('.tilted-track')!;
+    expect(track.dataset['copies']).toBe('4');
+    expect(track.style.getPropertyValue('--copies')).toBe('4');
+    expect(track.querySelectorAll(':scope > li')).toHaveLength(20);
+  });
+
+  it('con la pestaña oculta la hilera se marca para detenerse y al volver se reanuda', () => {
+    const { container } = render(<TiltedGrid images={images(5)} />);
+    const grid = container.querySelector('.tilted-grid')!;
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(grid).toHaveAttribute('data-hidden');
+    Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(grid).not.toHaveAttribute('data-hidden');
+  });
+});
+
+describe('copiesFor: nunca queda un hueco durante el ciclo', () => {
+  // La pista avanza una vuelta (`period`); entonces su borde derecho (`copias × vuelta - avance`) debe seguir
+  // cubriendo todo el ancho de la ventana: (copias - 1) × vuelta >= ancho.
+  const viewports = [1280, 1920, 2560];
+  const periods = [320, 500, 700, 1000, 1300, 1950, 2600, 4000];
+  it.each(viewports)('a %i px, con cualquier vuelta razonable', (viewport) => {
+    for (const period of periods) {
+      const copies = copiesFor(viewport, period);
+      expect(copies).toBeGreaterThanOrEqual(2);
+      expect((copies - 1) * period).toBeGreaterThanOrEqual(viewport);
+      // Y en cada punto del ciclo (la pista avanzó `offset` px) el borde derecho sigue más allá de la ventana.
+      for (let offset = 0; offset <= period; offset += period / 8) {
+        expect(copies * period - offset).toBeGreaterThanOrEqual(viewport);
+      }
+    }
+  });
+
+  it('con la vuelta de ~1000 px de un celular grande y de un monitor 4K', () => {
+    expect(copiesFor(1280, 1000)).toBe(3);
+    expect(copiesFor(1920, 1000)).toBe(3);
+    expect(copiesFor(2560, 1000)).toBe(4);
+  });
+
+  it('sin medidas usa el valor por defecto', () => {
+    expect(copiesFor(0, 0)).toBe(4);
+    expect(copiesFor(1280, Number.NaN)).toBe(4);
   });
 });
