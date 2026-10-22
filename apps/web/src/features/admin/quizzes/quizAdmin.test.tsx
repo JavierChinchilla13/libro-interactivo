@@ -24,6 +24,7 @@ const book = (over: object = {}) => ({
   order: 1,
   status: 'published',
   purchaseLinks: [],
+  showInReaderPanel: false,
   wikiSections: [],
   createdAt: stamp,
   updatedAt: stamp,
