@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Universo Memorias: la plataforma interactiva de la saga." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://res.cloudinary.com" />
     <meta name="theme-color" content="#06142b" />
     <title>Universo Memorias</title>
     <!--
@@ -29,6 +30,44 @@
         // Una ficha de la wiki abierta directo: su dato sale junto con el código de la página.
         var entry = /^\/wiki\/entrada\/([0-9a-f]{24})\/?$/i.exec(location.pathname);
         if (entry) request('/wiki/entries/' + entry[1]);
+        // La página de un libro abierta directo: igual, su dato sale junto con el código de la página.
+        var book = /^\/libros\/([^/]+)\/?$/.exec(location.pathname);
+        if (book) {
+          try {
+            // Misma dirección que pide la app (`encodeURIComponent` del identificador) para reutilizar la respuesta.
+            request('/books/' + encodeURIComponent(decodeURIComponent(book[1])))
+              .then(function (response) {
+                return response && response.ok ? response.clone().json() : null;
+              })
+              .then(function (data) {
+                // Precarga de la portada con el mismo `srcset` y `sizes` que pinta `Plate` (si no coinciden se
+                // descargaría dos veces): `COVER_WIDTHS` y `thumbUrl` de la app, y los `sizes` de `BookPage`.
+                var url = data && data.cover && data.cover.url;
+                if (!url || url.indexOf('/upload/') < 0) return;
+                var thumb = function (w) {
+                  return url.replace('/upload/', '/upload/f_auto,q_auto,w_' + w + '/');
+                };
+                var link = document.createElement('link');
+                link.rel = 'preload';
+                link.as = 'image';
+                link.href = thumb(640);
+                link.setAttribute(
+                  'imagesrcset',
+                  [320, 480, 640, 720, 960]
+                    .map(function (w) {
+                      return thumb(w) + ' ' + w + 'w';
+                    })
+                    .join(', '),
+                );
+                link.setAttribute('imagesizes', '(min-width: 768px) 440px, 60vw');
+                link.setAttribute('fetchpriority', 'high');
+                document.head.appendChild(link);
+              })
+              .catch(function () {});
+          } catch (error) {
+            // Dirección mal formada: la app resuelve el 404.
+          }
+        }
       })();
     </script>
   </head>

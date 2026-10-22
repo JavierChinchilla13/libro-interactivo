@@ -45,7 +45,24 @@ export function BookPage() {
     );
   }
   if (!book.data) {
-    return <p role="status">Cargando el libro…</p>;
+    // Esqueleto con la forma y el alto de la página: al llegar el libro nada se mueve.
+    return (
+      <div
+        role="status"
+        aria-label="Cargando el libro"
+        className="mx-auto flex max-w-5xl flex-col gap-8"
+      >
+        <div className="h-6 w-36 rounded-full bg-surface-alt/70 motion-safe:animate-pulse" />
+        <div className="grid gap-8 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-12">
+          <div className="mx-auto aspect-[2/3] w-3/5 max-w-72 rounded-token-xs bg-surface-alt/70 motion-safe:animate-pulse md:w-full md:max-w-none" />
+          <div className="flex flex-col gap-4">
+            <div className="h-12 w-3/4 rounded-token-xs bg-surface-alt/70 motion-safe:animate-pulse" />
+            <div className="h-5 w-full rounded-full bg-surface-alt/70 motion-safe:animate-pulse" />
+            <div className="h-5 w-5/6 rounded-full bg-surface-alt/70 motion-safe:animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
   }
   const data = book.data;
   const releaseAt = releaseTarget(data.releaseDate);
