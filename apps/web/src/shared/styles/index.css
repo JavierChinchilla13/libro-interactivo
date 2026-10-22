@@ -1172,7 +1172,9 @@
     /* A sangre de pantalla: se sale del contenedor; el recorte horizontal lo hace el marco de la página. */
     margin-inline: calc(50% - 50vw);
     width: 100vw;
-    overflow: clip;
+    /* Solo se recorta a los lados: la inclinación sube o baja las puntas de la hilera y no deben cortarse arriba ni abajo. */
+    overflow-x: clip;
+    overflow-y: visible;
   }
   @media (min-width: 48rem) {
     .tilted-grid {
@@ -1198,10 +1200,17 @@
     display: flex;
     width: max-content;
     margin: 0;
-    padding: 1.5rem 0 2rem;
+    /* Abajo queda sitio para el botón de pausa, que va bajo la hilera. */
+    padding: 1rem 0 3.5rem;
     list-style: none;
-    transform: rotateX(14deg) rotateZ(-2.5deg);
+    /* En el celular solo la perspectiva: sin giro, la hilera no baja ni sube y el botón de pausa no la toca. */
+    transform: rotateX(14deg);
     transform-origin: 50% 100%;
+  }
+  @media (min-width: 48rem) {
+    .tilted-track {
+      transform: rotateX(14deg) rotateZ(-2.5deg);
+    }
   }
   .tilted-tile {
     flex: none;
@@ -1255,7 +1264,7 @@
     .tilted-pause {
       display: inline-flex;
       position: absolute;
-      top: 0;
+      bottom: 0.5rem;
       right: max(1rem, calc(50vw - 36rem));
       min-height: 2.75rem;
     }
@@ -1263,9 +1272,16 @@
   /* Pantallas anchas: marquesina de CSS, una vuelta (1 / copias de la pista) cada 45 s. */
   @media (min-width: 48rem) and (prefers-reduced-motion: no-preference) {
     .tilted-stage {
-      overflow: clip;
+      overflow-x: clip;
+      overflow-y: visible;
+      /* La caja (y su máscara) se agranda arriba y abajo sin mover el diseño: la inclinación no recorta las puntas. */
+      padding-block: 4rem;
+      margin-block: -4rem;
     }
     .tilted-track {
+      /* El giro es sobre el centro de la pantalla (no sobre el de la pista, que mide miles de píxeles): a 2560 px la
+         hilera sube a un lado y baja al otro la misma distancia, sin salirse. */
+      transform-origin: calc(50vw - 1rem) 100%;
       animation: tilted-flow 45s linear infinite;
     }
     .tilted-grid[data-paused] .tilted-track,

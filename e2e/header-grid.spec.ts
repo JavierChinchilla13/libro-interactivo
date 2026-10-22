@@ -93,6 +93,9 @@ interface Sample {
   /** Posición de la primera imagen original y de la primera de la segunda copia (una vuelta más allá). */
   first: number;
   second: number;
+  /** Hay una imagen realmente a la vista (no recortada) cerca de cada borde de la ventana. */
+  visibleLeft: boolean;
+  visibleRight: boolean;
 }
 
 /** Detiene la marquesina y mide la hilera en varios puntos del ciclo (0 = inicio, ~1 = justo antes de repetirse). */
@@ -108,6 +111,14 @@ async function sampleCycle(page: Page) {
     for (const f of [0, 0.125, 0.25, 0.5, 0.75, 0.875, 0.999, 0.9999]) {
       animation.currentTime = f * duration;
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      // `elementFromPoint` respeta los recortes: una imagen fuera de la caja visible no cuenta.
+      const grid = document.querySelector('.tilted-grid')!.getBoundingClientRect();
+      const hit = (x: number) => {
+        for (let y = grid.top - 80; y < grid.bottom + 80; y += 8) {
+          if (document.elementFromPoint(x, y)?.closest('.tilted-tile')) return true;
+        }
+        return false;
+      };
       const rects = [...document.querySelectorAll('.tilted-track > li')].map((li) =>
         li.getBoundingClientRect(),
       );
@@ -117,6 +128,8 @@ async function sampleCycle(page: Page) {
         right: Math.max(...rects.map((rect) => rect.right)),
         first: rects[0]!.left,
         second: rects[5]!.left,
+        visibleLeft: hit(40),
+        visibleRight: hit(window.innerWidth - 40),
       });
     }
     return { duration, width: window.innerWidth, samples };
@@ -180,6 +193,15 @@ test.describe('rejilla del encabezado: bucle continuo', () => {
             width,
           );
           expect(sample.left, `izquierda a ${width} px, f=${sample.f}`).toBeLessThanOrEqual(40);
+          // Y sin recortes: la inclinación no esconde las puntas arriba ni abajo (se veía a 2560 px).
+          expect(
+            sample.visibleRight,
+            `imagen visible a la derecha, ${width} px, f=${sample.f}`,
+          ).toBe(true);
+          expect(
+            sample.visibleLeft,
+            `imagen visible a la izquierda, ${width} px, f=${sample.f}`,
+          ).toBe(true);
         }
         // Sin salto al cerrar la vuelta: al final del ciclo la segunda copia está donde estaba la primera al inicio.
         const first = samples[0]!;
