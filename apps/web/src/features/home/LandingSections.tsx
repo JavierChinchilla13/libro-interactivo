@@ -460,7 +460,7 @@ export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
   if (posts.length === 0) return null;
   const [lead, ...rest] = posts;
   return (
-    <Section id="actualizaciones" title="Actualizaciones" align="center">
+    <Section id="actualizaciones" title="Actualizaciones">
       <div
         className={`grid gap-10 ${rest.length > 0 ? 'lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16' : ''}`}
       >
@@ -505,7 +505,7 @@ export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
           </ul>
         ) : null}
       </div>
-      <div className="mt-8 text-center">
+      <div className="mt-8">
         <Link to="/actualizaciones" className={secondaryLink}>
           Ver todas las actualizaciones
         </Link>
@@ -634,18 +634,18 @@ export function SagaSection({ books }: { books: PublicBookSummary[] }) {
   // Un solo libro no es una secuencia: ya tiene su propia sección.
   if (books.length < 2) return null;
   return (
-    <Section id="saga" title="Secuencia de publicación" align="center">
+    <Section id="saga" title="Secuencia de publicación">
       <ul
         aria-label="Libros de la saga"
         className="-mx-4 flex scroll-px-4 snap-x gap-5 overflow-x-auto px-4 pb-4"
         tabIndex={0}
       >
         {books.map((book) => (
-          <li key={book.id} className="w-40 shrink-0 snap-start">
+          <li key={book.id} className="w-44 shrink-0 snap-start sm:w-52">
             <Link to={`/libros/${book.slug}`} className="group block">
               {book.cover ? (
                 <img
-                  src={thumbUrl(book.cover.url, 320)}
+                  src={thumbUrl(book.cover.url, 480)}
                   alt={book.cover.alt}
                   width={book.cover.width}
                   height={book.cover.height}

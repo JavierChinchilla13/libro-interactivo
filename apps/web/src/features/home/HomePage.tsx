@@ -139,9 +139,9 @@ export function HomePage() {
             />
           ) : null}
           {book ? <WikiPreview tabs={book.wikiTabs} lockMessage={lockMessage} /> : null}
+          <ReviewsSection reviews={reviews.data?.reviews ?? []} />
           <FeaturedPosts posts={featuredPosts.data?.posts ?? []} />
           <SagaSection books={books.data?.books ?? []} />
-          <ReviewsSection reviews={reviews.data?.reviews ?? []} />
           {heroStatus === 'loading' ? null : <AuthorSection site={site.data} />}
         </>
       )}

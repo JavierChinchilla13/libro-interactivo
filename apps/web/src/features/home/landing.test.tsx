@@ -637,3 +637,29 @@ describe('landing: composición nueva', () => {
     vi.unstubAllEnvs();
   });
 });
+
+describe('landing: orden de las secciones', () => {
+  it('las reseñas van antes de la secuencia de publicación', async () => {
+    mockApi(
+      {
+        ...full,
+        'GET /api/reviews?limit=6': () =>
+          json({
+            reviews: [
+              {
+                id: '670000000000000000000051',
+                text: '[PLACEHOLDER] Reseña',
+                authorName: 'Lectora',
+                order: 1,
+              },
+            ],
+          }),
+      },
+      NO_SESSION,
+    );
+    renderAt('/');
+    const reviews = await screen.findByRole('region', { name: 'Reseñas de lectores' });
+    const saga = await screen.findByRole('region', { name: 'Secuencia de publicación' });
+    expect(reviews.compareDocumentPosition(saga) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
