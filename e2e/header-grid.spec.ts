@@ -221,16 +221,34 @@ test.describe('rejilla del encabezado: bucle continuo', () => {
         await context.close();
       }
 
-      // Pausas en escritorio: botón y cursor encima.
+      // Pausas en escritorio: cursor encima, foco de teclado en la hilera y botón (oculto hasta recibir el foco).
       const desktop = await browser.newContext({ viewport: { width: 1280, height: 800 } });
       const page = await desktop.newPage();
       await page.goto('/');
       const track = page.locator('.tilted-track');
       const state = () => track.evaluate((element) => getComputedStyle(element).animationPlayState);
+      const pause = page.getByRole('button', { name: 'Pausar animación' });
       await expect.poll(state).toBe('running');
-      await page.getByRole('button', { name: 'Pausar animación' }).click();
+      // El botón no se ve: mide 1 px hasta que recibe el foco con Tab.
+      expect((await pause.boundingBox())!.width).toBeLessThanOrEqual(2);
+      await pause.focus();
       await expect.poll(state).toBe('paused');
-      await page.getByRole('button', { name: 'Reanudar animación' }).click();
+      expect((await pause.boundingBox())!.width).toBeGreaterThan(40);
+      await pause.press('Enter');
+      await expect(page.getByRole('button', { name: 'Reanudar animación' })).toBeVisible();
+      await page.locator('h1').click();
+      // Pausada a propósito: sigue detenida aunque el foco se haya ido.
+      await expect.poll(state).toBe('paused');
+      await page.getByRole('button', { name: 'Reanudar animación' }).focus();
+      await page.keyboard.press('Enter');
+      await page.locator('h1').click();
+      await expect.poll(state).toBe('running');
+      // Foco en la hilera: se detiene; al salir, sigue.
+      await page.locator('.tilted-stage').focus();
+      await expect.poll(state).toBe('paused');
+      await page.locator('h1').click();
+      await expect.poll(state).toBe('running');
+      // Cursor encima.
       await page.mouse.move(640, 500);
       await page.locator('.tilted-grid').hover();
       await expect.poll(state).toBe('paused');
@@ -269,12 +287,16 @@ test.describe('rejilla del encabezado: bucle continuo', () => {
       await expect.poll(left, { timeout: 15_000 }).toBeGreaterThan(8);
       const settle = (ms: number) =>
         mobile.evaluate((time) => new Promise((resolve) => setTimeout(resolve, time)), ms);
-      await mobile.getByRole('button', { name: 'Pausar animación' }).click();
+      // El botón de pausa se alcanza con el teclado (en el celular, de una pantalla con teclado externo).
+      await mobile.getByRole('button', { name: 'Pausar animación' }).focus();
+      await mobile.keyboard.press('Enter');
       await settle(300);
       const stopped = await left();
       await settle(900);
       expect(Math.abs((await left()) - stopped)).toBeLessThanOrEqual(1);
-      await mobile.getByRole('button', { name: 'Reanudar animación' }).click();
+      await mobile.getByRole('button', { name: 'Reanudar animación' }).focus();
+      await mobile.keyboard.press('Enter');
+      await mobile.locator('h1').click();
       await expect.poll(left, { timeout: 15_000 }).toBeGreaterThan(stopped + 4);
       // Al tocar se detiene (mientras el dedo está apoyado no avanza).
       await stage.dispatchEvent('touchstart');

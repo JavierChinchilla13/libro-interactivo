@@ -23,6 +23,16 @@ function reducedMotionBlock(): string {
   throw new Error('Bloque de «reducir movimiento» sin cerrar');
 }
 
+describe('botón de pausa de la hilera', () => {
+  it('está recortado a la vista y solo aparece con el foco; con movimiento reducido no existe', () => {
+    const start = css.indexOf('.tilted-pause {');
+    const block = css.slice(start, start + 900);
+    expect(block).toContain('clip-path: inset(50%)');
+    expect(css).toContain('.tilted-pause:focus-visible');
+    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{\s*\.tilted-pause \{\s*display: none/);
+  });
+});
+
 describe('fondo estable de la portada', () => {
   it('«Qué es» no suma aire doble: la regla que anula el de la banda va fuera de toda capa', () => {
     const rule = css.indexOf('.manifesto .statement-band');

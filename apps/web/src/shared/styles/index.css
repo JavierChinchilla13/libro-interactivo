@@ -1257,16 +1257,32 @@
       scroll-snap-align: start;
     }
   }
+  /* Botón de pausa (WCAG 2.2.2): oculto a la vista y disponible para lectores de pantalla; con el foco del teclado
+     aparece bajo la hilera. Con «reducir movimiento» no hace falta (la hilera está quieta). */
   .tilted-pause {
-    display: none;
+    position: absolute;
+    bottom: 0.5rem;
+    right: max(1rem, calc(50vw - 36rem));
+    z-index: 2;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
-  @media (prefers-reduced-motion: no-preference) {
+  .tilted-pause:focus-visible {
+    width: auto;
+    height: auto;
+    min-height: 2.75rem;
+    padding: revert-layer;
+    overflow: visible;
+    clip-path: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
     .tilted-pause {
-      display: inline-flex;
-      position: absolute;
-      bottom: 0.5rem;
-      right: max(1rem, calc(50vw - 36rem));
-      min-height: 2.75rem;
+      display: none;
     }
   }
   /* Pantallas anchas: marquesina de CSS, una vuelta (1 / copias de la pista) cada 45 s. */
@@ -1284,6 +1300,7 @@
       transform-origin: calc(50vw - 1rem) 100%;
       animation: tilted-flow 45s linear infinite;
     }
+    .tilted-grid:focus-within .tilted-track,
     .tilted-grid[data-paused] .tilted-track,
     .tilted-grid[data-offscreen] .tilted-track,
     .tilted-grid[data-hidden] .tilted-track {

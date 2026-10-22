@@ -158,6 +158,24 @@ describe('movimiento reducido', () => {
   });
 });
 
+describe('pausa sin botón visible (WCAG 2.2.2)', () => {
+  it('el foco dentro de la rejilla la detiene y al salir sigue', () => {
+    const { container } = render(<TiltedGrid images={images(5)} />);
+    const grid = container.querySelector('.tilted-grid')!;
+    const stage = container.querySelector<HTMLElement>('.tilted-stage')!;
+    expect(stage).toHaveAttribute('tabindex', '0');
+    act(() => stage.focus());
+    expect(grid).toHaveAttribute('data-paused');
+    act(() => stage.blur());
+    expect(grid).not.toHaveAttribute('data-paused');
+  });
+
+  it('el botón de pausa existe para el teclado y lectores de pantalla (oculto a la vista)', () => {
+    render(<TiltedGrid images={images(5)} />);
+    expect(screen.getByRole('button', { name: 'Pausar animación' })).toHaveClass('tilted-pause');
+  });
+});
+
 describe('copiesFor: nunca queda un hueco durante el ciclo', () => {
   // La pista avanza una vuelta (`period`); entonces su borde derecho (`copias × vuelta - avance`) debe seguir
   // cubriendo todo el ancho de la ventana: (copias - 1) × vuelta >= ancho.

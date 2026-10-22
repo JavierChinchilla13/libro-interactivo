@@ -149,6 +149,9 @@ export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefi
   const reduced = useMedia('(prefers-reduced-motion: reduce)');
   const narrow = useMedia('(max-width: 47.99rem)');
   const [paused, setPaused] = useState(false);
+  // Con el foco del teclado dentro de la rejilla (en la hilera o en el botón de pausa) también se detiene.
+  const [focused, setFocused] = useState(false);
+  const halted = paused || focused;
   const [offscreen, setOffscreen] = useState(false);
   const [hidden, setHidden] = useState(false);
   // Antes de medir: 2 copias bastan en un celular y 4 cubren hasta ~2500 px.
@@ -212,7 +215,7 @@ export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefi
   useEffect(() => {
     const frame = stage.current;
     const strip = track.current;
-    if (!frame || !strip || !narrow || reduced || paused || offscreen || hidden) return;
+    if (!frame || !strip || !narrow || reduced || halted || offscreen || hidden) return;
     let raf = 0;
     let last = 0;
     let pos = frame.scrollLeft;
@@ -268,7 +271,7 @@ export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefi
       frame.removeEventListener('touchend', release);
       frame.removeEventListener('touchcancel', release);
     };
-  }, [narrow, reduced, paused, offscreen, hidden]);
+  }, [narrow, reduced, halted, offscreen, hidden]);
 
   if (!real && !import.meta.env.DEV) return null;
   const copyIndexes = Array.from({ length: copies }, (_, copy) => copy);
@@ -277,17 +280,29 @@ export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefi
       ref={root}
       aria-label="Imágenes del universo"
       className="tilted-grid"
-      data-paused={paused || undefined}
+      data-paused={halted || undefined}
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
+      }}
       data-offscreen={offscreen || undefined}
       data-hidden={hidden || undefined}
     >
+      <button
+        type="button"
+        className="btn btn-secondary btn-compact tilted-pause"
+        aria-pressed={paused}
+        onClick={() => setPaused((value) => !value)}
+      >
+        {paused ? 'Reanudar animación' : 'Pausar animación'}
+      </button>
       <div
         ref={stage}
         className="tilted-stage"
-        // Cuando la hilera se desliza (celular o movimiento reducido) se puede recorrer con el teclado.
-        tabIndex={narrow || reduced ? 0 : undefined}
-        role={narrow || reduced ? 'group' : undefined}
-        aria-label={narrow || reduced ? 'Imágenes del encabezado, se desplazan' : undefined}
+        // Una sola parada de Tab para la hilera: con el foco ahí se detiene (y, si se desliza, se recorre con flechas).
+        tabIndex={0}
+        role="group"
+        aria-label="Imágenes del encabezado"
       >
         <ul
           ref={track}
@@ -311,14 +326,6 @@ export function TiltedGrid({ images }: { images: readonly HeaderImage[] | undefi
           )}
         </ul>
       </div>
-      <button
-        type="button"
-        className="btn btn-secondary btn-compact tilted-pause"
-        aria-pressed={paused}
-        onClick={() => setPaused((value) => !value)}
-      >
-        {paused ? 'Reanudar animación' : 'Pausar animación'}
-      </button>
     </section>
   );
 }
