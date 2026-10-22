@@ -1,10 +1,11 @@
-import { Link, NavLink, Outlet, useMatch, useNavigate } from 'react-router';
-import { homeFor, isStaff, useLogout, useSession } from '../../features/auth/session';
+import { NavLink, Outlet, useMatch, useNavigate } from 'react-router';
+import { useLogout } from '../../features/auth/session';
 import { WelcomeModal } from '../../features/reader/WelcomeModal';
 import { Button } from '../../shared/ui/controls';
 import { Brand } from '../../shared/ui/Brand';
 import { PageBackground } from '../../shared/ui/PageBackground';
 import { bottomTab, MAIN_ID, navTab, SkipLink } from '../../shared/ui/nav';
+import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
 
 const ITEMS = [
   { to: '/panel', label: 'Panel', end: true },
@@ -18,10 +19,8 @@ const ITEMS = [
  * Aquí aparece el mensaje de bienvenida cuando el servidor dice que toca.
  */
 export function PanelLayout() {
-  const session = useSession();
   const logout = useLogout();
   const navigate = useNavigate();
-  const user = session.data;
   // En el quiz solo queda la marca: sin «Salir» ni pestañas que cierren la sesión o abandonen sin querer.
   const inQuiz = useMatch('/panel/quiz/:quizId') !== null;
   const inGame = useMatch('/panel/juego/:bookId') !== null;
@@ -50,11 +49,7 @@ export function PanelLayout() {
                 ))}
               </nav>
               <div className="flex items-center gap-2">
-                {isStaff(user) ? (
-                  <Link to={homeFor(user)} className="text-sm underline">
-                    Administración
-                  </Link>
-                ) : null}
+                <StaffSwitcher className="hidden sm:inline-flex" />
                 <Button
                   variant="secondary"
                   loading={logout.isPending}
@@ -71,6 +66,12 @@ export function PanelLayout() {
           )}
         </div>
       </header>
+      {immersive ? null : (
+        // En el celular el selector va bajo la cabecera (en el mismo sitio que en las otras dos zonas: arriba, a la derecha).
+        <div className="flex justify-end px-3 pt-2 sm:hidden">
+          <StaffSwitcher />
+        </div>
+      )}
       <main
         id={MAIN_ID}
         tabIndex={-1}
