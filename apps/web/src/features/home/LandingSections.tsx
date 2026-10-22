@@ -17,7 +17,7 @@ import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Badge } from '../../shared/ui/layout';
 import { Plate, PortraitPlate } from '../../shared/ui/Plate';
 import { Section } from '../../shared/ui/Section';
-import { LockIcon } from '../../shared/ui/icons';
+import { LockIcon, StarRating } from '../../shared/ui/icons';
 import { Statement } from '../../shared/ui/Statement';
 import { BookFacts, BookGenres } from '../book/BookFacts';
 import { SECTION_SLUGS } from '../wiki/sections';
@@ -530,9 +530,7 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
         {review.authorName}
         {review.source ? <span className="font-normal text-muted"> · {review.source}</span> : null}
       </p>
-      {review.rating ? (
-        <p className="text-sm tabular-nums text-muted">Valoración: {review.rating} de 5</p>
-      ) : null}
+      {review.rating ? <StarRating rating={review.rating} /> : null}
     </>
   );
   return (

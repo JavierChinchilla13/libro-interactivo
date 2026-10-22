@@ -1,6 +1,7 @@
 import type { PublicReview } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
+import { StarRating } from '../../shared/ui/icons';
 import { communityApi, communityKeys } from '../community/api';
 
 /** Lo que dura la salida del panel (CSS, ver `.reviews-panel[data-closing]`). Sin movimiento no hay salida animada. */
@@ -21,9 +22,7 @@ function PanelReview({ review }: { review: PublicReview }) {
               <span className="font-normal text-muted"> · {review.source}</span>
             ) : null}
           </p>
-          {review.rating ? (
-            <p className="text-sm tabular-nums text-muted">Valoración: {review.rating} de 5</p>
-          ) : null}
+          {review.rating ? <StarRating rating={review.rating} /> : null}
         </figcaption>
       </figure>
     </li>
