@@ -92,6 +92,16 @@ test.describe('landing pública', () => {
     );
     expect(overflow).toBe(false);
 
+    // «Ver el libro» lleva a su página (mínima) y «Volver al inicio» regresa.
+    await page
+      .getByRole('region', { name: bookTitle })
+      .getByRole('link', { name: 'Ver el libro' })
+      .click();
+    await expect(page).toHaveURL(/\/libros\/libro-qr-\d+$/);
+    await expect(page.getByRole('heading', { level: 1, name: bookTitle })).toBeVisible();
+    await page.getByRole('link', { name: 'Volver al inicio' }).click();
+    await expect(page).toHaveURL(/\/$/);
+
     // Contacto: la portada no lleva el formulario, solo la invitación; el servidor responde 202 y la pantalla confirma.
     const author = page.getByRole('region', { name: 'Conoce a la autora' });
     await expect(author.getByLabel(/Nombre completo/)).toHaveCount(0);

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
 import { Button } from '../../shared/ui/controls';
 import { Alert } from '../../shared/ui/layout';
-import { Statement } from '../../shared/ui/Statement';
 import { useSession } from '../auth/session';
 import { communityApi, communityKeys } from '../community/api';
 import { postKeys, postsApi } from '../posts/api';
@@ -12,20 +11,18 @@ import { booksApi, readerKeys } from '../reader/api';
 import { publicApi, publicKeys } from './api';
 import {
   AuthorSection,
-  BookSection,
   BuySection,
   ClosingBand,
   Experiences,
+  FeaturedBookCard,
   FeaturedPosts,
   Hero,
+  Manifesto,
   ReviewsSection,
   SagaSection,
   SectionsSkeleton,
   WikiPreview,
 } from './LandingSections';
-
-/** Enunciado de gran escala (texto que ya existe en el pie del sitio). */
-const STATEMENT = 'Una saga que se lee, se descubre y se juega.';
 
 /** El libro que se destaca: el publicado más reciente de la saga (el de mayor posición). */
 function pickFeatured(books: readonly PublicBookSummary[]): PublicBookSummary | undefined {
@@ -128,8 +125,9 @@ export function HomePage() {
         <SectionsSkeleton />
       ) : (
         <>
-          <Statement text={STATEMENT} />
-          {book && showBook ? <BookSection book={book} /> : null}
+          <Manifesto />
+          {book && showBook ? <FeaturedBookCard book={book} /> : null}
+          <BuySection links={book?.purchaseLinks ?? []} />
           {book ? (
             <Experiences
               experiences={book.experiences}
@@ -141,7 +139,6 @@ export function HomePage() {
           <FeaturedPosts posts={featuredPosts.data?.posts ?? []} />
           <SagaSection books={books.data?.books ?? []} />
           <ReviewsSection reviews={reviews.data?.reviews ?? []} />
-          <BuySection links={book?.purchaseLinks ?? []} />
           {heroStatus === 'loading' ? null : <AuthorSection site={site.data} />}
         </>
       )}

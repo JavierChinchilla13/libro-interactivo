@@ -15,8 +15,9 @@ import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Badge } from '../../shared/ui/layout';
 import { Plate, PortraitPlate } from '../../shared/ui/Plate';
 import { Section } from '../../shared/ui/Section';
-import { ThreadItem, ThreadList } from '../../shared/ui/ThreadList';
-import { ArrowUpRightIcon, LockIcon } from '../../shared/ui/icons';
+import { LockIcon } from '../../shared/ui/icons';
+import { Statement } from '../../shared/ui/Statement';
+import { hasPurchaseLinks, PurchaseList } from '../book/PurchaseList';
 import { Countdown } from './Countdown';
 import { hasGrid, TiltedGrid } from './TiltedGrid';
 
@@ -171,7 +172,7 @@ export function ClosingBand({
             </Link>
           ) : (
             <Link to="/registro" className={`${primaryLink} btn-lg`}>
-              Crear mi cuenta
+              Tengo el libro: crear mi cuenta
             </Link>
           )
         ) : null}
@@ -199,63 +200,112 @@ export function SectionsSkeleton() {
   );
 }
 
+/** Enunciado de gran escala (texto que ya existe en el pie del sitio). */
+export const STATEMENT = 'Una saga que se lee, se descubre y se juega.';
+
 /**
- * Ficha del libro destacado: la portada pegajosa a la izquierda (si el libro la tiene) y, a su derecha, el título, el
- * lema, los géneros en una línea, la sinopsis, la advertencia de contenido, la edad y el ISBN.
+ * Qué es Universo Memorias: el enunciado a gran escala y, al lado, cada verbo enlazado con lo que ya existe en el
+ * sitio (el libro, los quizzes y la wiki, el juego). Solo etiquetas, ningún texto nuevo del libro.
  */
-export function BookSection({ book }: { book: PublicBookDetail }) {
-  const releaseAt = releaseTarget(book.releaseDate);
+export function Manifesto() {
+  const items = [
+    { verb: 'Se lee', what: 'el libro', to: '#libro' },
+    { verb: 'Se descubre', what: 'los quizzes y la wiki', to: '#experiencias' },
+    { verb: 'Se juega', what: 'el juego', to: '#experiencias' },
+  ] as const;
   return (
-    <Section
-      id="libro"
-      title={book.title}
-      intro={book.tagline}
-      aside={
-        book.cover ? (
-          <Plate
-            cover={book.cover}
-            className="mx-auto w-3/5 max-w-72 lg:w-full lg:max-w-none"
-            landscapeClassName="mx-auto w-full max-w-xl lg:max-w-none"
-            sizes="(min-width: 1024px) 440px, 90vw"
-          />
-        ) : undefined
-      }
-    >
-      <div className="flex flex-col gap-6">
-        {book.genres.length > 0 ? (
-          <ul aria-label="Géneros" className="flex flex-wrap gap-x-6 gap-y-1">
-            {book.genres.map((genre) => (
-              <li key={genre} className="label">
-                {genre}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {book.synopsis ? <SafeHtml html={book.synopsis} /> : null}
-        {releaseAt && book.releaseDate ? (
-          <Countdown target={releaseAt} dateLabel={formatDate(book.releaseDate)} />
-        ) : null}
-        {book.contentWarning || book.minAge !== undefined ? (
-          <aside
-            aria-label="Advertencia de contenido sensible"
-            className="border-l-2 border-warning pl-4 text-sm"
-          >
-            <p className="font-semibold text-warning">Advertencia de contenido sensible</p>
-            {book.contentWarning ? <SafeHtml html={book.contentWarning} /> : null}
-            {book.minAge !== undefined ? (
-              <p className="mt-1">Recomendado para mayores de {book.minAge} años.</p>
-            ) : null}
-          </aside>
-        ) : null}
-        {book.isbn ? <p className="text-sm text-muted">ISBN: {book.isbn}</p> : null}
+    <section id="que-es" aria-labelledby="que-es-title" className="manifesto pt-section-gap">
+      <h2 id="que-es-title" className="sr-only">
+        Qué es Universo Memorias
+      </h2>
+      <div className="manifesto-grid">
+        <Statement text={STATEMENT} />
+        <ul className="manifesto-list">
+          {items.map((item) => (
+            <li key={item.verb}>
+              <a href={item.to} className="manifesto-item">
+                <span className="manifesto-verb">{item.verb}</span>
+                <span className="manifesto-what">{item.what}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
-    </Section>
+    </section>
   );
 }
 
 /**
- * Vista previa de la wiki, como un índice. Una pestaña con regla se ve «bloqueada» con el mensaje de la autora y
- * **nada más**: el contenido real lo entrega el servidor solo a quien ya avanzó.
+ * El libro destacado: una tarjeta con la portada a la izquierda y, a su derecha, los géneros, el título, el lema, un
+ * adelanto de la sinopsis, la cuenta atrás, la advertencia de contenido y las dos acciones («Ver el libro», que lleva
+ * a su página, y «Dónde conseguirlo»). Recibe un libro cualquiera: con más libros, cada uno usa la misma tarjeta.
+ */
+export function FeaturedBookCard({ book }: { book: PublicBookDetail }) {
+  const releaseAt = releaseTarget(book.releaseDate);
+  return (
+    <section id="libro" aria-labelledby="libro-title" className="scroll-mt-24 pt-section-gap">
+      <article className="book-card reveal">
+        <div className="book-card-cover">
+          <Plate
+            cover={book.cover}
+            className="mx-auto w-3/5 max-w-60 md:w-full md:max-w-none"
+            landscapeClassName="mx-auto w-full max-w-md md:max-w-none"
+            sizes="(min-width: 768px) 380px, 60vw"
+          />
+        </div>
+        <div className="book-card-body">
+          {book.genres.length > 0 ? (
+            <ul aria-label="Géneros" className="flex flex-wrap gap-x-6 gap-y-1">
+              {book.genres.map((genre) => (
+                <li key={genre} className="label">
+                  {genre}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <h2 id="libro-title" className="section-title">
+            {book.title}
+          </h2>
+          {book.tagline ? <p className="font-read text-xl text-muted">{book.tagline}</p> : null}
+          {book.synopsis ? (
+            <div className="book-card-synopsis">
+              <SafeHtml html={book.synopsis} />
+            </div>
+          ) : null}
+          {releaseAt && book.releaseDate ? (
+            <Countdown target={releaseAt} dateLabel={formatDate(book.releaseDate)} />
+          ) : null}
+          {book.contentWarning || book.minAge !== undefined ? (
+            <aside
+              aria-label="Advertencia de contenido sensible"
+              className="border-l-2 border-warning pl-4 text-sm"
+            >
+              <p className="font-semibold text-warning">Advertencia de contenido sensible</p>
+              {book.contentWarning ? <SafeHtml html={book.contentWarning} /> : null}
+              {book.minAge !== undefined ? (
+                <p className="mt-1">Recomendado para mayores de {book.minAge} años.</p>
+              ) : null}
+            </aside>
+          ) : null}
+          {book.isbn ? <p className="text-sm text-muted">ISBN: {book.isbn}</p> : null}
+          <div className="flex flex-wrap gap-3 pt-1">
+            <Link to={`/libros/${book.slug}`} className={`${primaryLink} btn-lg`}>
+              Ver el libro
+            </Link>
+            <a href="#comprar" className={`${secondaryLink} btn-lg`}>
+              Dónde conseguirlo
+            </a>
+          </div>
+        </div>
+      </article>
+    </section>
+  );
+}
+
+/**
+ * Vista previa de la wiki, como un índice tipográfico: cada pestaña es un renglón de letra grande con su estado a la
+ * derecha. Una pestaña con regla se ve «bloqueada» con el mensaje de la autora y **nada más**: el contenido real lo
+ * entrega el servidor solo a quien ya avanzó.
  */
 export function WikiPreview({
   tabs,
@@ -268,32 +318,32 @@ export function WikiPreview({
   // El texto general de bloqueo se dice una sola vez; cada pestaña solo repite el suyo si la autora le puso uno propio.
   const needsGeneral = tabs.some((tab) => tab.locked && !tab.lockedMessage);
   return (
-    <Section id="wiki" title="Wiki del universo" space="regular" align="center">
-      <ul className="reveal-children divide-y divide-line border-y border-line">
+    <Section id="wiki" title="Wiki del universo" space="regular">
+      <ul className="wiki-index reveal-children">
         {tabs.map((tab) => (
-          <li key={tab.kind} className="py-6">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <p className="font-display text-2xl font-medium sm:text-[1.75rem]">{tab.title}</p>
+          <li key={tab.kind}>
+            <div className="wiki-index-row">
+              <p className="wiki-index-name">{tab.title}</p>
               {tab.locked ? (
-                <p className="flex items-center gap-1.5 text-sm text-muted">
+                <p className="flex shrink-0 items-center gap-1.5 text-sm text-muted">
                   <LockIcon className="size-4" />
                   Bloqueado
                 </p>
               ) : (
-                <p className="flex items-center gap-1.5 text-sm text-primary">
+                <p className="flex shrink-0 items-center gap-1.5 text-sm text-primary">
                   <LockIcon open className="size-4" />
                   Abierto para todos
                 </p>
               )}
             </div>
             {tab.locked && tab.lockedMessage ? (
-              <p className="mt-2 text-muted">{tab.lockedMessage}</p>
+              <p className="pb-4 text-muted">{tab.lockedMessage}</p>
             ) : null}
           </li>
         ))}
       </ul>
       {needsGeneral ? <p className="mt-5 text-muted">{lockMessage}</p> : null}
-      <div className="mt-8 text-center">
+      <div className="mt-8">
         <Link to="/wiki" className={primaryLink}>
           Entrar a la wiki
         </Link>
@@ -303,9 +353,10 @@ export function WikiPreview({
 }
 
 /**
- * Las experiencias del libro como pasos de un mismo hilo. A un visitante se le dice qué falta para abrir cada una:
+ * Las experiencias del libro como un mosaico asimétrico: la primera (la que se abre con el QR) ocupa más espacio y
+ * las demás se apilan a su lado (N experiencias, N celdas). A un visitante se le dice qué falta para abrir cada una:
  * la primera se abre con el QR del libro y las demás al completar la anterior; el texto de bloqueo de la autora se
- * dice una sola vez.
+ * dice una sola vez. En el celular es una tira que se desliza.
  */
 export function Experiences({
   experiences,
@@ -323,22 +374,30 @@ export function Experiences({
       id="experiencias"
       title="Vive una experiencia inmersiva"
       emphasis="inmersiva"
-      align="center"
       space="loose"
     >
-      <ThreadList className="mx-auto max-w-xl">
+      <ul
+        className="exp-grid reveal-children"
+        aria-label="Experiencias del libro"
+        tabIndex={0}
+        style={{ ['--rows' as string]: Math.max(1, experiences.length - 1) }}
+        data-count={experiences.length}
+      >
         {experiences.map((experience) => {
           const opensFirst = !signedIn && experience.order === first;
           return (
-            <ThreadItem
+            <li
               key={experience.id}
-              state={signedIn ? 'neutral' : opensFirst ? 'lit' : 'unlit'}
+              className="exp-card"
+              data-state={signedIn ? 'neutral' : opensFirst ? 'lit' : 'locked'}
             >
-              <p className="label tabular-nums">Quiz {experience.order}</p>
-              <p className="text-xl font-semibold sm:text-2xl">{experience.title}</p>
+              <p className="label tabular-nums">
+                {experience.kind === 'game' ? 'Juego' : `Quiz ${experience.order}`}
+              </p>
+              <p className="exp-title">{experience.title}</p>
               {signedIn ? null : (
                 <p
-                  className={`mt-2 flex items-center gap-2 text-sm ${opensFirst ? 'text-primary' : 'text-muted'}`}
+                  className={`mt-auto flex items-center gap-2 pt-4 text-sm ${opensFirst ? 'text-primary' : 'text-muted'}`}
                 >
                   <LockIcon open={opensFirst} className="size-4" />
                   {opensFirst
@@ -346,10 +405,10 @@ export function Experiences({
                     : `Antes, completa el Quiz ${experience.order - 1}`}
                 </p>
               )}
-            </ThreadItem>
+            </li>
           );
         })}
-      </ThreadList>
+      </ul>
       <p className="mt-6 text-sm text-muted">
         {signedIn ? 'Cada experiencia se abre a medida que avanzas en tu lectura.' : lockMessage}
       </p>
@@ -433,10 +492,14 @@ export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
   );
 }
 
-/** Reseñas que la autora eligió mostrar. Son texto plano: React lo escapa, nunca se interpreta como HTML. */
+/**
+ * Reseñas que la autora eligió mostrar (hasta tres: una destacada y dos a su lado; en el celular, una tira que se
+ * desliza). Son texto plano: React lo escapa, nunca se interpreta como HTML.
+ */
 export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }) {
-  if (reviews.length === 0) return null;
-  const [lead, ...rest] = reviews;
+  const shown = reviews.slice(0, 3);
+  if (shown.length === 0) return null;
+  const [lead, ...rest] = shown;
   const attribution = (review: PublicReview) => (
     <>
       <p className="text-sm font-medium">
@@ -449,36 +512,33 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
     </>
   );
   return (
-    <Section id="resenas" title="Reseñas de lectores" align="center">
-      <ul className="flex flex-col gap-8">
+    <Section id="resenas" title="Reseñas de lectores" space="regular">
+      <ul
+        className="reviews-grid"
+        aria-label="Reseñas"
+        tabIndex={0}
+        style={{ ['--rest' as string]: Math.max(1, rest.length) }}
+      >
         {lead ? (
-          <li className="review-frame review-frame-lead max-w-3xl">
+          <li className="review-frame review-frame-lead reviews-lead">
             <figure className="review-card">
-              <blockquote className="font-read text-2xl leading-snug [overflow-wrap:anywhere] sm:text-3xl">
+              <blockquote className="font-read text-2xl leading-snug [overflow-wrap:anywhere] sm:text-3xl lg:text-[2.5rem] lg:leading-tight">
                 “{lead.text}”
               </blockquote>
               <figcaption className="mt-auto flex flex-col gap-1">{attribution(lead)}</figcaption>
             </figure>
           </li>
         ) : null}
-        {rest.length > 0 ? (
-          <li className="list-none">
-            <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {rest.map((review) => (
-                <li key={review.id} className="review-frame">
-                  <figure className="review-card">
-                    <blockquote className="font-read text-lg leading-relaxed [overflow-wrap:anywhere]">
-                      “{review.text}”
-                    </blockquote>
-                    <figcaption className="mt-auto flex flex-col gap-1">
-                      {attribution(review)}
-                    </figcaption>
-                  </figure>
-                </li>
-              ))}
-            </ul>
+        {rest.map((review) => (
+          <li key={review.id} className="review-frame">
+            <figure className="review-card">
+              <blockquote className="font-read text-lg leading-relaxed [overflow-wrap:anywhere]">
+                “{review.text}”
+              </blockquote>
+              <figcaption className="mt-auto flex flex-col gap-1">{attribution(review)}</figcaption>
+            </figure>
           </li>
-        ) : null}
+        ))}
       </ul>
     </Section>
   );
@@ -486,10 +546,13 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
 
 /**
  * «Conoce a la autora»: el retrato (su foto o, sin ella, una placa con su inicial) a la izquierda y, a su derecha, el
- * nombre en Cinzel, la biografía, sus enlaces y la invitación a escribirle (el formulario vive en `/contacto`).
+ * nombre en Cinzel, la biografía, sus enlaces y la invitación a escribirle (el formulario vive en `/contacto`). Sin
+ * ningún dato de la autora, en producción la sección no se pinta (en desarrollo, con marcadores).
  */
 export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }) {
   const author = site?.author;
+  const hasAuthor = Boolean(author?.name || author?.bioHtml || author?.photo);
+  if (!hasAuthor && !import.meta.env.DEV) return null;
   const name = author?.name ?? '[PLACEHOLDER] Nombre de la autora';
   return (
     <Section
@@ -499,19 +562,19 @@ export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }
         <PortraitPlate
           photo={author?.photo}
           name={name}
-          className="mx-auto w-3/5 max-w-72 lg:w-full lg:max-w-none"
+          className="mx-auto w-3/5 max-w-60 lg:w-full lg:max-w-72"
         />
       }
     >
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
         <h3 className="font-display text-3xl font-medium sm:text-4xl">{name}</h3>
         {author?.bioHtml ? (
           <SafeHtml html={author.bioHtml} />
-        ) : (
+        ) : import.meta.env.DEV ? (
           <p className="max-w-[var(--token-measure)] font-read text-[1.1875rem] text-muted">
             [PLACEHOLDER] Biografía de la autora.
           </p>
-        )}
+        ) : null}
         <ul className="flex flex-wrap gap-x-6 gap-y-1">
           {author?.publicEmail ? (
             <li>
@@ -544,7 +607,7 @@ export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }
   );
 }
 
-/** Secuencia de publicación: las portadas de la saga; los libros que vienen se marcan «Próximamente». */
+/** Secuencia de publicación: las portadas de la saga, cada una enlazada a su libro; los que vienen se marcan «Próximamente». */
 export function SagaSection({ books }: { books: PublicBookSummary[] }) {
   // Un solo libro no es una secuencia: ya tiene su propia sección.
   if (books.length < 2) return null;
@@ -557,17 +620,19 @@ export function SagaSection({ books }: { books: PublicBookSummary[] }) {
       >
         {books.map((book) => (
           <li key={book.id} className="w-40 shrink-0 snap-start">
-            {book.cover ? (
-              <img
-                src={thumbUrl(book.cover.url, 320)}
-                alt={book.cover.alt}
-                width={book.cover.width}
-                height={book.cover.height}
-                loading="lazy"
-                className="img-frame aspect-[2/3] h-auto w-full rounded-token object-cover"
-              />
-            ) : null}
-            <p className="mt-3 font-semibold">{book.title}</p>
+            <Link to={`/libros/${book.slug}`} className="group block">
+              {book.cover ? (
+                <img
+                  src={thumbUrl(book.cover.url, 320)}
+                  alt={book.cover.alt}
+                  width={book.cover.width}
+                  height={book.cover.height}
+                  loading="lazy"
+                  className="img-frame aspect-[2/3] h-auto w-full rounded-token object-cover"
+                />
+              ) : null}
+              <p className="mt-3 font-semibold group-hover:underline">{book.title}</p>
+            </Link>
             {book.status === 'upcoming' ? (
               <>
                 <Badge tone="warning">Próximamente</Badge>
@@ -585,69 +650,19 @@ export function SagaSection({ books }: { books: PublicBookSummary[] }) {
   );
 }
 
-/** Una opción de compra: la fila entera es el enlace (flecha de «sale del sitio»); las notas van debajo. */
-function PurchaseItem({ link }: { link: PurchaseLink }) {
-  return (
-    <li className="border-t border-line">
-      {link.url ? (
-        <a
-          href={link.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex min-h-[4.5rem] items-center justify-between gap-4 py-4 text-xl font-semibold sm:text-2xl"
-        >
-          <span className="group-hover:underline">{link.label}</span>
-          <ArrowUpRightIcon className="size-6 text-primary transition-transform duration-(--token-dur-fast) ease-token-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-        </a>
-      ) : (
-        <p className="flex min-h-[4.5rem] items-center py-4 text-xl font-semibold sm:text-2xl">
-          {link.label}
-        </p>
-      )}
-      {link.notes ? <p className="-mt-2 pb-4 text-muted">{link.notes}</p> : null}
-    </li>
-  );
-}
-
 /**
- * Cómo comprar: Costa Rica (envíos y compras presenciales) e internacional (Amazon). Todo sale del libro. El
- * encabezado va centrado y cada región llena su mitad con filas grandes: no es un botón perdido en una banda vacía.
+ * Cómo comprar: una franja con las opciones del libro (Costa Rica e internacional) como botones. Va justo después del
+ * libro. Sin opciones, en producción no se pinta (en desarrollo, un marcador).
  */
 export function BuySection({ links }: { links: PurchaseLink[] }) {
-  const regions = [
-    { region: 'CR', title: 'Costa Rica' },
-    { region: 'INTL', title: 'Internacional' },
-  ] as const;
-  const groups = regions
-    .map((group) => ({ ...group, items: links.filter((link) => link.region === group.region) }))
-    .filter((group) => group.items.length > 0);
-  const two = groups.length > 1;
+  const has = hasPurchaseLinks(links);
+  if (!has && !import.meta.env.DEV) return null;
   return (
-    <Section id="comprar" title="Cómo comprar el libro" space="loose" align="center">
-      {groups.length === 0 ? (
-        <p className="text-center text-muted">
-          [PLACEHOLDER] Pronto publicaremos dónde conseguir el libro.
-        </p>
+    <Section id="comprar" title="Cómo comprar el libro" space="regular">
+      {has ? (
+        <PurchaseList links={links} />
       ) : (
-        <div className={`mx-auto grid gap-12 ${two ? 'md:grid-cols-2 md:gap-0' : 'max-w-xl'}`}>
-          {groups.map((group, index) => (
-            <div
-              key={group.region}
-              className={
-                two ? (index > 0 ? 'md:border-l md:border-line md:pl-12' : 'md:pr-12') : ''
-              }
-            >
-              <h3 className="mb-6 font-display text-2xl font-medium sm:text-[1.75rem]">
-                {group.title}
-              </h3>
-              <ul className="border-b border-line">
-                {group.items.map((link, i) => (
-                  <PurchaseItem key={`${link.label}-${i}`} link={link} />
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+        <p className="text-muted">[PLACEHOLDER] Pronto publicaremos dónde conseguir el libro.</p>
       )}
     </Section>
   );

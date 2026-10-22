@@ -1254,6 +1254,255 @@
     }
   }
 
+  /* Qué es: el enunciado a gran escala y, al lado, cada verbo enlazado con lo que ya existe en el sitio. */
+  .manifesto-grid {
+    display: grid;
+    gap: 2.5rem;
+  }
+  .manifesto .statement-band {
+    padding-top: 0;
+  }
+  .manifesto-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-bottom: 1px solid var(--token-line);
+  }
+  .manifesto-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 1.1rem;
+    border-top: 1px solid var(--token-line);
+    color: inherit;
+    text-decoration: none;
+    transition:
+      transform var(--token-dur-fast) var(--token-ease-out),
+      border-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .manifesto-verb {
+    font-family: var(--token-font-display);
+    font-size: clamp(1.5rem, 1rem + 1.6vw, 2.25rem);
+    font-weight: 500;
+  }
+  .manifesto-what {
+    color: var(--token-muted);
+    text-align: right;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .manifesto-item:hover {
+      transform: translateX(4px);
+      border-top-color: color-mix(in srgb, var(--token-primary) 60%, var(--token-line));
+    }
+  }
+  @media (min-width: 64rem) {
+    .manifesto-grid {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      align-items: end;
+      gap: 4rem;
+    }
+  }
+
+  /* El libro destacado: una tarjeta de objeto (sin vidrio): portada a la izquierda, datos y acciones a la derecha. */
+  .book-card {
+    display: grid;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-lg);
+    background: color-mix(in srgb, var(--token-surface) 72%, transparent);
+  }
+  .book-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    min-width: 0;
+  }
+  /* Adelanto de la sinopsis: solo el primer párrafo, a 5 líneas; la sinopsis completa vive en la página del libro. */
+  .book-card-synopsis > div > p {
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .book-card-synopsis > div > :nth-child(n + 2) {
+    display: none;
+  }
+  @media (min-width: 48rem) {
+    .book-card {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: 2.5rem;
+      padding: 2.5rem;
+      align-items: center;
+    }
+  }
+
+  /* Cómo comprar: opciones como botones, agrupadas por región. */
+  .purchase {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem 4rem;
+  }
+  .purchase-title {
+    margin: 0 0 0.75rem;
+    font-family: var(--token-font-display);
+    font-size: 1.25rem;
+    font-weight: 500;
+  }
+  .purchase-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .purchase-static {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+  .purchase-note {
+    margin: 0.4rem 0 0;
+    font-size: 0.875rem;
+    color: var(--token-muted);
+  }
+
+  /* Experiencias: mosaico asimétrico (la primera, grande, y las demás a su lado); en el celular, una tira. */
+  .exp-grid {
+    display: flex;
+    gap: 1rem;
+    margin: 0 -1rem;
+    padding: 0 1rem 0.5rem;
+    list-style: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .exp-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .exp-card {
+    flex: 0 0 78%;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 12rem;
+    padding: 1.5rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-lg);
+    background:
+      radial-gradient(
+        120% 90% at 0% 0%,
+        color-mix(in srgb, var(--token-primary) 14%, transparent),
+        transparent 62%
+      ),
+      color-mix(in srgb, var(--token-surface) 62%, transparent);
+  }
+  .exp-card[data-state='lit'] {
+    border-color: color-mix(in srgb, var(--token-primary) 55%, var(--token-line));
+  }
+  .exp-title {
+    margin: 0;
+    font-family: var(--token-font-display);
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  @media (min-width: 48rem) {
+    .exp-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      margin: 0;
+      padding: 0;
+      overflow: visible;
+      scroll-snap-type: none;
+    }
+    .exp-card {
+      flex: none;
+      grid-column: span 5;
+    }
+    .exp-card:first-child {
+      grid-column: span 7;
+      grid-row: span var(--rows, 1);
+      padding: 2rem;
+    }
+    .exp-grid[data-count='1'] .exp-card:first-child {
+      grid-column: span 12;
+    }
+    .exp-card:first-child .exp-title {
+      font-size: clamp(1.75rem, 1rem + 2vw, 2.75rem);
+    }
+  }
+
+  /* Wiki: índice tipográfico, un renglón grande por pestaña. */
+  .wiki-index {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-bottom: 1px solid var(--token-line);
+  }
+  .wiki-index > li {
+    border-top: 1px solid var(--token-line);
+  }
+  .wiki-index-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 1.25rem;
+  }
+  .wiki-index-name {
+    margin: 0;
+    font-family: var(--token-font-display);
+    font-size: clamp(1.75rem, 1rem + 2.8vw, 3rem);
+    font-weight: 500;
+    line-height: 1.1;
+  }
+
+  /* Reseñas: una destacada y dos a su lado; en el celular, una tira que se desliza. */
+  .reviews-grid {
+    display: flex;
+    gap: 1rem;
+    margin: 0 -1rem;
+    padding: 0 1rem 0.5rem;
+    list-style: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .reviews-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .reviews-grid > li {
+    flex: 0 0 85%;
+    scroll-snap-align: start;
+  }
+  @media (min-width: 64rem) {
+    .reviews-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: 1.5rem;
+      margin: 0;
+      padding: 0;
+      overflow: visible;
+      scroll-snap-type: none;
+    }
+    .reviews-grid > li {
+      flex: none;
+    }
+    .reviews-lead {
+      grid-row: span var(--rest, 1);
+    }
+    .reviews-grid:has(> li:only-child) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   /* Pintura de fondo del sitio: capa fija detrás de todo; el velo oscuro mantiene el contraste AA del texto. */
   .page-bg {
     position: fixed;
