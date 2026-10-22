@@ -61,4 +61,11 @@ describe('ReviewsSection', () => {
       expect(quote.className).toContain('overflow-wrap:anywhere');
     }
   });
+
+  it('las citas llevan un tope de líneas para que una reseña larga no desequilibre el diseño', () => {
+    const { container } = renderSection([review({ id: '1' }), review({ id: '2' })]);
+    const quotes = container.querySelectorAll('blockquote');
+    expect(quotes[0]?.className).toContain('line-clamp-8');
+    expect(quotes[1]?.className).toContain('line-clamp-6');
+  });
 });

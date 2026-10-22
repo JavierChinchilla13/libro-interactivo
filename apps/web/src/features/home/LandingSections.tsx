@@ -543,7 +543,7 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
         {lead ? (
           <li className="review-frame review-frame-lead reviews-lead">
             <figure className="review-card">
-              <blockquote className="font-read text-2xl leading-snug [overflow-wrap:anywhere] sm:text-3xl lg:text-[2.5rem] lg:leading-tight">
+              <blockquote className="line-clamp-8 font-read text-2xl leading-snug [overflow-wrap:anywhere] sm:text-3xl lg:text-[2.5rem] lg:leading-tight">
                 “{lead.text}”
               </blockquote>
               <figcaption className="mt-auto flex flex-col gap-1">{attribution(lead)}</figcaption>
@@ -553,7 +553,7 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
         {rest.map((review) => (
           <li key={review.id} className="review-frame">
             <figure className="review-card">
-              <blockquote className="font-read text-lg leading-relaxed [overflow-wrap:anywhere]">
+              <blockquote className="line-clamp-6 font-read text-lg leading-relaxed [overflow-wrap:anywhere]">
                 “{review.text}”
               </blockquote>
               <figcaption className="mt-auto flex flex-col gap-1">{attribution(review)}</figcaption>
