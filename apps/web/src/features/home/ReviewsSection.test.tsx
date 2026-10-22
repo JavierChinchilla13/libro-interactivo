@@ -44,7 +44,7 @@ describe('ReviewsSection', () => {
       expect(card?.querySelector('blockquote')).not.toBeNull();
       expect(card?.querySelector('figcaption')).not.toBeNull();
     }
-    expect(screen.getByText('Valoración: 5 de 5')).toBeInTheDocument();
+    expect(screen.getByText('5 de 5 estrellas')).toBeInTheDocument();
     expect(within(frames[1] as HTMLElement).getByText(/Blog/)).toBeInTheDocument();
   });
 

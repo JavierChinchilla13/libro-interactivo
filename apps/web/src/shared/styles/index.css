@@ -859,7 +859,7 @@
   .review-frame {
     --review-radius: var(--token-radius-lg);
     --review-gap: 0.375rem;
-    border: 1px solid var(--token-line);
+    border: 1px solid color-mix(in srgb, var(--token-accent) 30%, var(--token-line));
     border-radius: var(--review-radius);
     padding: var(--review-gap);
     text-align: left;
@@ -874,8 +874,13 @@
     gap: 1.25rem;
     margin: 0;
     border-radius: calc(var(--review-radius) - var(--review-gap));
-    background: var(--token-surface-alt);
+    background:
+      linear-gradient(160deg, color-mix(in srgb, var(--token-accent) 11%, transparent), transparent 55%),
+      var(--token-surface-alt);
     padding: 1.5rem;
+  }
+  .review-card blockquote::first-letter {
+    color: var(--token-accent);
   }
 
   /* Coverflow: desplazamiento nativo con ajuste al centro; la inclinación la dibuja la línea de tiempo de desplazamiento. */
