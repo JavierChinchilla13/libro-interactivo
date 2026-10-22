@@ -50,6 +50,7 @@ export function createLearningRouter(controller: QuizController, guards: Guards)
   const router = Router();
   router.use(guards.requireAuth);
   router.get('/progress', validate({ query: progressQuerySchema }), controller.getProgress);
+  router.get('/library', controller.getLibrary);
   router.get('/results', validate({ query: resultsListQuerySchema }), controller.listResults);
   router.get('/results/:quizId', validate({ params: quizParamsSchema }), controller.getQuizResults);
   return router;
