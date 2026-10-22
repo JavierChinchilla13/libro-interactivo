@@ -10,7 +10,10 @@ const image = (name: string) => ({
   alt: `Dibujo ${name}`,
 });
 
-/** Se ocultan las reseñas anteriores de la base de pruebas: la landing solo muestra las tres primeras por orden. */
+/**
+ * Se ocultan TODAS las reseñas visibles de la base de pruebas (`libro-e2e`, nunca una base real): la landing solo muestra
+ * las tres primeras por orden y la que crea esta prueba debe verse.
+ */
 async function hidePreviousReviews(api: APIRequestContext) {
   const { reviews } = await (await api.get('/api/admin/reviews')).json();
   for (const review of reviews as {

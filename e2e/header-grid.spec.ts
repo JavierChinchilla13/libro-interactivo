@@ -231,6 +231,9 @@ test.describe('rejilla del encabezado: bucle continuo', () => {
           (items) => items.filter((item) => getComputedStyle(item).display !== 'none').length,
         );
       expect(shown).toBe(5);
+      // Sin copias en el DOM (no solo ocultas): una sola vuelta de la hilera.
+      await expect(still.locator('.tilted-track')).toHaveAttribute('data-copies', '1');
+      expect(await still.locator('.tilted-track > li').count()).toBe(5);
       await reduced.close();
 
       // Celular: avanza sola, se puede deslizar con el dedo, se detiene con el botón y al tocar.
@@ -281,30 +284,40 @@ test.describe('portada: edición en el panel', () => {
     await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
     await page.getByRole('button', { name: 'Ingresar' }).click();
     await expect(page.getByRole('heading', { name: 'Inicio del panel' })).toBeVisible();
+    // Se guarda el ajuste actual para devolverlo al terminar (la base es compartida con otras pruebas).
+    const before = (await (await page.request.get('/api/admin/site-settings')).json()) as {
+      universe: unknown;
+      social: unknown;
+    };
+    try {
+      await page.getByRole('link', { name: 'Portada y autora' }).click();
+      await page.getByLabel('Frase principal del sitio').fill(headline);
+      // La base conserva lo guardado en corridas anteriores: se parte sin redes.
+      const remove = page.getByRole('button', { name: /^Quitar/ });
+      while ((await remove.count()) > 0) await remove.first().click();
+      await page.getByRole('button', { name: '+ Agregar red' }).click();
+      await page.getByLabel('Red 1').fill('Instagram E2E');
+      await page.getByLabel('Enlace 1').fill('https://instagram.com/e2e');
+      await page.getByRole('button', { name: 'Guardar' }).click();
+      // El aviso no desaparece solo (el formulario no se recarga).
+      await expect(page.getByText('Cambios guardados')).toBeVisible();
+      await page.waitForTimeout(500);
+      await expect(page.getByText('Cambios guardados')).toBeVisible();
 
-    await page.getByRole('link', { name: 'Portada y autora' }).click();
-    await page.getByLabel('Frase principal del sitio').fill(headline);
-    // La base conserva lo guardado en corridas anteriores: se parte sin redes.
-    const remove = page.getByRole('button', { name: /^Quitar/ });
-    while ((await remove.count()) > 0) await remove.first().click();
-    await page.getByRole('button', { name: '+ Agregar red' }).click();
-    await page.getByLabel('Red 1').fill('Instagram E2E');
-    await page.getByLabel('Enlace 1').fill('https://instagram.com/e2e');
-    await page.getByRole('button', { name: 'Guardar' }).click();
-    // El aviso no desaparece solo (el formulario no se recarga).
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
-    await page.waitForTimeout(500);
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
-
-    const visitor = await browser.newContext();
-    const view = await visitor.newPage();
-    await view.goto(`${baseURL}/`);
-    await expect(view.getByRole('heading', { level: 1, name: headline })).toBeVisible();
-    await expect(
-      view
-        .getByRole('list', { name: 'Redes sociales' })
-        .getByRole('link', { name: 'Instagram E2E' }),
-    ).toHaveAttribute('href', 'https://instagram.com/e2e');
-    await visitor.close();
+      const visitor = await browser.newContext();
+      const view = await visitor.newPage();
+      await view.goto(`${baseURL}/`);
+      await expect(view.getByRole('heading', { level: 1, name: headline })).toBeVisible();
+      await expect(
+        view
+          .getByRole('list', { name: 'Redes sociales' })
+          .getByRole('link', { name: 'Instagram E2E' }),
+      ).toHaveAttribute('href', 'https://instagram.com/e2e');
+      await visitor.close();
+    } finally {
+      await page.request.patch('/api/admin/site-settings', {
+        data: { universe: before.universe, social: before.social },
+      });
+    }
   });
 });
