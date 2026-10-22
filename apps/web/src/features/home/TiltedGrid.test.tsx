@@ -137,6 +137,23 @@ describe('bucle continuo', () => {
   });
 });
 
+describe('movimiento reducido', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('no renderiza copias de la hilera: queda quieta y solo se ven las imágenes originales', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('prefers-reduced-motion'),
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    const { container } = render(<TiltedGrid images={images(5)} />);
+    const track = container.querySelector<HTMLElement>('.tilted-track')!;
+    expect(track.dataset['copies']).toBe('1');
+    expect(track.querySelectorAll(':scope > li')).toHaveLength(5);
+    expect(container.querySelectorAll('li[aria-hidden="true"]')).toHaveLength(0);
+  });
+});
+
 describe('copiesFor: nunca queda un hueco durante el ciclo', () => {
   // La pista avanza una vuelta (`period`); entonces su borde derecho (`copias × vuelta - avance`) debe seguir
   // cubriendo todo el ancho de la ventana: (copias - 1) × vuelta >= ancho.
