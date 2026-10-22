@@ -172,12 +172,13 @@ describe('landing: el héroe lleva al libro en la mano', () => {
     );
   });
 
-  it('el héroe va centrado y sin imagen; la portada vive en la ficha del libro', async () => {
+  it('el héroe va a la izquierda con la rejilla debajo; la portada vive en la ficha del libro', async () => {
     mockApi(full, NO_SESSION);
     renderAt('/');
     const hero = await screen.findByRole('region', { name: /Frase del universo/ });
     expect(within(hero).queryByRole('img', { name: /Portada/ })).not.toBeInTheDocument();
-    expect(hero.className).toContain('text-center');
+    expect(hero.className).not.toContain('text-center');
+    expect(hero.querySelector('.hero-copy h1')).not.toBeNull();
     const book = await screen.findByRole('region', { name: '[PLACEHOLDER] Libro 1' });
     expect(within(book).getByRole('img', { name: 'Portada del libro 1' })).toBeInTheDocument();
   });
@@ -195,7 +196,7 @@ describe('landing: el héroe lleva al libro en la mano', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('mientras se comprueba la sesión no ofrece crear cuenta a quien ya la tiene', async () => {
+  it('las acciones se ven de inmediato y pasan a «Continuar mi lectura» al saber que hay sesión', async () => {
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
@@ -209,12 +210,11 @@ describe('landing: el héroe lleva al libro en la mano', () => {
     });
     renderAt('/');
     const hero = await screen.findByRole('region', { name: /Frase del universo/ });
+    // Sin esperar a la sesión (en un servidor lento no se deja al visitante sin botones).
     expect(
-      within(hero).queryByRole('link', { name: 'Tengo el libro: crear mi cuenta' }),
-    ).not.toBeInTheDocument();
-    expect(
-      within(hero).queryByRole('link', { name: 'Continuar mi lectura' }),
-    ).not.toBeInTheDocument();
+      within(hero).getByRole('link', { name: 'Tengo el libro: crear mi cuenta' }),
+    ).toBeInTheDocument();
+    expect(within(hero).getByRole('link', { name: 'Ya tengo cuenta' })).toBeInTheDocument();
     release();
     expect(
       await within(hero).findByRole('link', { name: 'Continuar mi lectura' }),

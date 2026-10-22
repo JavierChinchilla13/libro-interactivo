@@ -18,6 +18,7 @@ import { Section } from '../../shared/ui/Section';
 import { ThreadItem, ThreadList } from '../../shared/ui/ThreadList';
 import { ArrowUpRightIcon, LockIcon } from '../../shared/ui/icons';
 import { Countdown } from './Countdown';
+import { hasGrid, TiltedGrid } from './TiltedGrid';
 
 const buttonLink = 'btn';
 const primaryLink = `${buttonLink} btn-primary`;
@@ -48,22 +49,26 @@ function Bar({ className }: { className: string }) {
   );
 }
 
+/** Tamaño del titular según su largo: una frase larga baja de escala para no pasar de dos líneas. */
+function titleSize(text: string): 'short' | 'medium' | 'long' {
+  const length = text.trim().length;
+  return length <= 24 ? 'short' : length <= 48 ? 'medium' : 'long';
+}
+
 /**
- * Frase principal y presentación del universo (editables por la autora en «Portada y autora»), todo centrado sobre
- * el degradado del inicio. Titular, presentación y dos acciones: los botones no dependen de ningún dato (el héroe se
- * pinta de inmediato y solo los textos esperan). La acción principal es entrar con el libro en la mano.
- * El titular y la presentación (lo que mide el LCP) se ven de inmediato; solo las acciones entran con un fundido corto
- * (CSS: GSAP retrasaba el LCP unos 0.4 s por su descarga).
+ * Frase principal y presentación del universo (editables por la autora en «Portada y autora») a la izquierda, con la
+ * rejilla inclinada de imágenes pegada debajo, a sangre: frase y rejilla llenan juntas la primera pantalla. Titular,
+ * presentación y dos acciones; las acciones no dependen de ningún dato ni de la sesión (se ven de inmediato como a un
+ * visitante y, si ya hay sesión, pasan a «Continuar mi lectura»). El titular y la presentación (lo que mide el LCP) no
+ * se animan; solo las acciones entran con un fundido corto (CSS).
  */
 export function Hero({
   site,
   signedIn,
-  sessionReady,
   status,
 }: {
   site: PublicSiteResponse | undefined;
   signedIn: boolean;
-  sessionReady: boolean;
   status: HeroStatus;
 }) {
   const headline =
@@ -71,63 +76,68 @@ export function Hero({
       ? 'Universo Memorias'
       : site?.universe.headline?.trim() || 'Universo Memorias';
   const cta = `${buttonLink} btn-lg w-full sm:w-auto`;
+  const images = site?.universe.headerImages;
+  const stage = hasGrid(images);
   return (
     <section
       aria-labelledby="hero-title"
       aria-busy={status === 'loading' || undefined}
-      className="relative z-10 mx-auto flex max-w-4xl flex-col items-center gap-7 min-h-[calc(100svh-4rem)] justify-center py-8 text-center md:py-12"
+      className={`hero ${stage ? 'hero--stage' : 'hero--solo'}`}
     >
-      {status === 'loading' ? (
-        <>
-          <h1 id="hero-title" className="sr-only">
-            Universo Memorias
-          </h1>
-          {/* Dos renglones con la altura real del titular (display): al llegar el texto, la página no se mueve. */}
-          <div className="flex w-full flex-col items-center gap-[calc(var(--token-text-display)*0.15)]">
-            <Bar className="h-[calc(var(--token-text-display)*0.95)] w-11/12" />
-            <Bar className="h-[calc(var(--token-text-display)*0.95)] w-2/3" />
-          </div>
-          <div className="flex w-full max-w-prose flex-col items-center gap-2.5">
-            <Bar className="h-4 w-full" />
-            <Bar className="h-4 w-10/12" />
-            <Bar className="h-4 w-7/12" />
-          </div>
-        </>
-      ) : (
-        <>
-          <h1 id="hero-title" className="display-title break-words">
-            <LastWordEmphasis text={headline} />
-          </h1>
-          <div className="mx-auto max-w-[var(--token-measure)] text-lg text-muted">
-            {site?.universe.introHtml ? (
-              <SafeHtml html={site.universe.introHtml} />
-            ) : status === 'ready' ? (
-              <p>[PLACEHOLDER] ¿Qué es el universo Memorias?</p>
-            ) : null}
-          </div>
-        </>
-      )}
-      <div className="hero-enter flex w-full flex-col items-center gap-3 pt-1 sm:w-auto sm:flex-row sm:justify-center">
-        {!sessionReady ? (
+      <div className="hero-copy">
+        {status === 'loading' ? (
           <>
-            <Bar className="h-12 w-full sm:w-72" />
-            <Bar className="h-12 w-full sm:w-44" />
+            <h1 id="hero-title" className="sr-only">
+              Universo Memorias
+            </h1>
+            {/* Dos renglones con la altura real del titular (display): al llegar el texto, la página no se mueve. */}
+            <div className="flex w-full flex-col gap-[calc(var(--token-text-display)*0.15)]">
+              <Bar className="h-[calc(var(--token-text-display)*0.95)] w-11/12" />
+              <Bar className="h-[calc(var(--token-text-display)*0.95)] w-2/3" />
+            </div>
+            <div className="flex w-full max-w-prose flex-col gap-2.5">
+              <Bar className="h-4 w-full" />
+              <Bar className="h-4 w-10/12" />
+            </div>
           </>
-        ) : signedIn ? (
-          <Link to="/panel" className={`${primaryLink} ${cta}`}>
-            Continuar mi lectura
-          </Link>
         ) : (
           <>
-            <Link to="/registro" className={`${primaryLink} ${cta}`}>
-              Tengo el libro: crear mi cuenta
-            </Link>
-            <Link to="/ingresar" className={`${secondaryLink} ${cta}`}>
-              Ya tengo cuenta
-            </Link>
+            <h1
+              id="hero-title"
+              className="display-title hero-title break-words"
+              data-size={titleSize(headline)}
+            >
+              <LastWordEmphasis text={headline} />
+            </h1>
+            {site?.universe.introHtml ? (
+              <div className="hero-intro">
+                <SafeHtml html={site.universe.introHtml} />
+              </div>
+            ) : import.meta.env.DEV && status === 'ready' ? (
+              <div className="hero-intro">
+                <p>[PLACEHOLDER] ¿Qué es el universo Memorias?</p>
+              </div>
+            ) : null}
           </>
         )}
+        <div className="hero-enter hero-actions">
+          {signedIn ? (
+            <Link to="/panel" className={`${primaryLink} ${cta}`}>
+              Continuar mi lectura
+            </Link>
+          ) : (
+            <>
+              <Link to="/registro" className={`${primaryLink} ${cta}`}>
+                Tengo el libro: crear mi cuenta
+              </Link>
+              <Link to="/ingresar" className={`${secondaryLink} ${cta}`}>
+                Ya tengo cuenta
+              </Link>
+            </>
+          )}
+        </div>
       </div>
+      {stage ? <TiltedGrid images={images} /> : null}
     </section>
   );
 }
