@@ -199,6 +199,10 @@
 .statement-band {
   padding-top: var(--token-section-gap);
 }
+/* Fuera de toda capa, igual que la regla de arriba: dentro de `@layer` perdería y el aire se sumaría al de la sección. */
+.manifesto .statement-band {
+  padding-top: 0;
+}
 .statement {
   margin: 0;
   max-width: 22ch;
@@ -1268,9 +1272,6 @@
   .manifesto-grid {
     display: grid;
     gap: 2.5rem;
-  }
-  .manifesto .statement-band {
-    padding-top: 0;
   }
   .manifesto-list {
     margin: 0;

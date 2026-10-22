@@ -24,6 +24,13 @@ function reducedMotionBlock(): string {
 }
 
 describe('fondo estable de la portada', () => {
+  it('«Qué es» no suma aire doble: la regla que anula el de la banda va fuera de toda capa', () => {
+    const rule = css.indexOf('.manifesto .statement-band');
+    expect(rule).toBeGreaterThan(-1);
+    // Dentro de una `@layer` perdería frente a `.statement-band` (que no tiene capa) y el aire se sumaría.
+    expect(rule).toBeLessThan(css.indexOf('@layer base'));
+  });
+
   it('no queda deriva de color ni la malla animada del héroe', () => {
     expect(css).not.toContain('mesh-drift');
     expect(css).not.toContain('hero-mesh');
