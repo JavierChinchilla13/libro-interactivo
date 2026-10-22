@@ -1487,12 +1487,21 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 1rem;
+    min-height: 2.75rem;
     padding-block: 1.25rem;
+    color: inherit;
+    text-decoration: none;
+    transition: transform var(--token-dur-fast) var(--token-ease-out);
   }
+  @media (hover: hover) and (pointer: fine) {
+    .wiki-index-row:hover {
+      transform: translateX(4px);
+    }
+  }
+  /* Más chico que el título de la sección (3 rem): el índice se lee como entradas de la wiki, no como otro título. */
   .wiki-index-name {
-    margin: 0;
     font-family: var(--token-font-display);
-    font-size: clamp(1.75rem, 1rem + 2.8vw, 3rem);
+    font-size: clamp(1.5rem, 1rem + 2vw, 2.25rem);
     font-weight: 500;
     line-height: 1.1;
   }

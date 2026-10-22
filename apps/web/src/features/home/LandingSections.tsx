@@ -19,6 +19,7 @@ import { Section } from '../../shared/ui/Section';
 import { LockIcon } from '../../shared/ui/icons';
 import { Statement } from '../../shared/ui/Statement';
 import { BookFacts, BookGenres } from '../book/BookFacts';
+import { SECTION_SLUGS } from '../wiki/sections';
 import { hasPurchaseLinks, PurchaseList } from '../book/PurchaseList';
 import { Countdown } from './Countdown';
 import { hasGrid, TiltedGrid } from './TiltedGrid';
@@ -334,20 +335,20 @@ export function WikiPreview({
       <ul className="wiki-index reveal-children">
         {tabs.map((tab) => (
           <li key={tab.kind}>
-            <div className="wiki-index-row">
-              <p className="wiki-index-name">{tab.title}</p>
+            <Link to={`/wiki/${SECTION_SLUGS[tab.kind]}`} className="wiki-index-row">
+              <span className="wiki-index-name">{tab.title}</span>
               {tab.locked ? (
-                <p className="flex shrink-0 items-center gap-1.5 text-sm text-muted">
+                <span className="flex shrink-0 items-center gap-1.5 text-sm text-muted">
                   <LockIcon className="size-4" />
                   Bloqueado
-                </p>
+                </span>
               ) : (
-                <p className="flex shrink-0 items-center gap-1.5 text-sm text-primary">
+                <span className="flex shrink-0 items-center gap-1.5 text-sm text-primary">
                   <LockIcon open className="size-4" />
                   Abierto para todos
-                </p>
+                </span>
               )}
-            </div>
+            </Link>
             {tab.locked && tab.lockedMessage ? (
               <p className="pb-4 text-muted">{tab.lockedMessage}</p>
             ) : null}

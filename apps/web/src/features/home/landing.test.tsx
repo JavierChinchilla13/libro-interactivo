@@ -289,6 +289,9 @@ describe('landing: con contenido', () => {
     const items = within(wiki).getAllByRole('listitem');
     expect(items).toHaveLength(3);
     expect(items[0]).toHaveTextContent('Personajes');
+    // Cada renglón del índice lleva a su pestaña de la wiki.
+    expect(within(items[0]!).getByRole('link')).toHaveAttribute('href', '/wiki/personajes');
+    expect(within(items[2]!).getByRole('link')).toHaveAttribute('href', '/wiki/glosario');
     expect(items[0]).toHaveTextContent('Bloqueado');
     expect(items[0]).toHaveTextContent('[PLACEHOLDER] Tras el Quiz 2');
     // Sin mensaje propio no repite el texto general en la tarjeta: se dice una sola vez bajo la lista.
