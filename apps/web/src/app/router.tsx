@@ -48,7 +48,7 @@ export const routes: RouteObject[] = [
       },
       { path: 'wiki', ...page(() => import('../features/wiki/WikiPage'), 'WikiPage') },
       // Carga diferida como el resto; quien llega directo a una ficha recibe su código por una precarga que añade el
-      // build a `index.html` (plugin `preloadWikiEntryChunk` de vite.config.ts).
+      // build a `index.html` (plugin `preloadDirectPageChunks` de vite.config.ts).
       {
         path: 'wiki/entrada/:entryId',
         ...page(() => import('../features/wiki/WikiEntryPage'), 'WikiEntryPage'),
