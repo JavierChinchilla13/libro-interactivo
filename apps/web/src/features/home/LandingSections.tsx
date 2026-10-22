@@ -7,6 +7,7 @@ import {
   type PublicSiteResponse,
   type PurchaseLink,
 } from '@libro/shared';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { thumbUrl } from '../../shared/lib/cloudinary';
 import { useScrollable } from '../../shared/lib/useScrollable';
@@ -22,6 +23,7 @@ import { BookFacts, BookGenres } from '../book/BookFacts';
 import { SECTION_SLUGS } from '../wiki/sections';
 import { hasPurchaseLinks, PurchaseList } from '../book/PurchaseList';
 import { Countdown } from './Countdown';
+import { ReviewsPanel } from './ReviewsPanel';
 import { hasGrid, TiltedGrid } from './TiltedGrid';
 
 const buttonLink = 'btn';
@@ -517,6 +519,8 @@ export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
  */
 export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }) {
   const [listRef, scrollable] = useScrollable<HTMLUListElement>();
+  const [panelOpen, setPanelOpen] = useState(false);
+  const opener = useRef<HTMLButtonElement>(null);
   const shown = reviews.slice(0, 3);
   if (shown.length === 0) return null;
   const [lead, ...rest] = shown;
@@ -561,6 +565,26 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
           </li>
         ))}
       </ul>
+      {reviews.length > 3 ? (
+        <div className="mt-6">
+          <button
+            ref={opener}
+            type="button"
+            className={`${secondaryLink} btn-lg`}
+            aria-haspopup="dialog"
+            onClick={() => setPanelOpen(true)}
+          >
+            Ver todas las reseñas
+          </button>
+          <ReviewsPanel
+            open={panelOpen}
+            onClose={() => {
+              setPanelOpen(false);
+              opener.current?.focus();
+            }}
+          />
+        </div>
+      ) : null}
     </Section>
   );
 }
