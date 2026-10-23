@@ -100,6 +100,18 @@ describe('GET /api/me/library', () => {
     });
   });
 
+  it('canjear el QR del juego también abre el libro', async () => {
+    const { agent, user } = await world();
+    const book = await addBook('libro-1', 1, 'published');
+    expect((await library(agent)).books[0]?.access).toBe('locked');
+    await UserProgress.create({
+      userId: user._id,
+      bookId: book._id,
+      unlocked: [{ kind: 'game', refId: book._id, at: new Date() }],
+    });
+    expect((await library(agent)).books[0]?.access).toBe('open');
+  });
+
   it('un libro bloqueado no entrega nada protegido: ni quizzes, ni claves de resultado, ni progreso', async () => {
     const { agent, admin } = await world();
     const book = await addBook('libro-1', 1, 'published');
