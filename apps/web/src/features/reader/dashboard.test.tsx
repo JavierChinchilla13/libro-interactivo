@@ -71,6 +71,19 @@ describe('entrada del panel del lector', { timeout: 30_000 }, () => {
     );
   });
 
+  it('«Tu campo» sale en la tarjeta del libro abierto cuando ya hay uno, y no en los demás', async () => {
+    mockApi({
+      ...library([{ ...open(1, 1, 2), field: { key: 'neon', fieldName: 'Virtud' } }, locked(2)]),
+      'GET /api/site': () => json(site),
+    });
+    renderAt('/panel');
+    const card = await screen.findByRole('article', { name: '[PLACEHOLDER] Libro 1' });
+    expect(within(card).getByText('Tu campo')).toBeInTheDocument();
+    expect(within(card).getByText('Virtud')).toBeInTheDocument();
+    const other = screen.getByRole('article', { name: '[PLACEHOLDER] Libro 2' });
+    expect(within(other).queryByText('Tu campo')).not.toBeInTheDocument();
+  });
+
   it('un libro sin abrir sale bloqueado: candado, indicación del QR, sin enlaces ni avance', async () => {
     mockApi({ ...library([locked(1)]), 'GET /api/site': () => json(site) });
     renderAt('/panel');
