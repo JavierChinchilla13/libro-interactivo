@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
+import { NotFoundPage } from '../../app/NotFoundPage';
 import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
 import { Alert, Card, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
@@ -12,7 +13,8 @@ const date = (iso: string) =>
 
 /** Mis resultados: el resultado vigente de cada quiz completado, sin repetirlos. */
 export function ResultsPage() {
-  const { book, isPending, error } = useSelectedBook();
+  const { slug } = useParams();
+  const { book, isPending, error } = useSelectedBook(slug);
   const bookId = book?.id ?? '';
   const results = useQuery({
     queryKey: readerKeys.results(bookId),
@@ -23,12 +25,13 @@ export function ResultsPage() {
 
   if (isPending || (bookId !== '' && results.isPending)) return <Loading />;
   if (error) return <Alert>{errorMessage(error)}</Alert>;
+  if (slug !== undefined && !book) return <NotFoundPage />;
   if (results.isError) return <Alert>{errorMessage(results.error)}</Alert>;
 
   const list = results.data?.results ?? [];
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Mis resultados" />
+      <PageHeader title="Mis resultados" subtitle={slug !== undefined ? book?.title : undefined} />
       {list.length === 0 ? (
         <EmptyState title="Todavía no tienes resultados">
           Cuando completes un quiz, aquí queda lo que descubriste.{' '}

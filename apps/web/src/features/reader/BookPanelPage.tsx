@@ -242,7 +242,10 @@ export function BookPanelPage() {
                     Cuando completes un quiz, tu resultado se queda aquí.
                   </p>
                 )}
-                <Link to="/panel/resultados" className={`${linkButton} btn-secondary self-start`}>
+                <Link
+                  to={`/panel/libros/${entry.book.slug}/resultados`}
+                  className={`${linkButton} btn-secondary self-start`}
+                >
                   Ver todos mis resultados
                 </Link>
               </section>
@@ -256,7 +259,10 @@ export function BookPanelPage() {
                     <p className="text-sm">
                       ¡Completaste todo el libro! Ya puedes abrir los capítulos extra.
                     </p>
-                    <Link to="/panel/extras" className={`${linkButton} btn-secondary self-start`}>
+                    <Link
+                      to={`/panel/libros/${entry.book.slug}/extras`}
+                      className={`${linkButton} btn-secondary self-start`}
+                    >
                       Ver los extras
                     </Link>
                   </>

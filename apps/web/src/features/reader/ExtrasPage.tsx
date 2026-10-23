@@ -2,6 +2,7 @@ import type { ExtraKind } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
+import { NotFoundPage } from '../../app/NotFoundPage';
 import { ApiClientError } from '../../shared/api/client';
 import { errorMessage } from '../../shared/api/messages';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
@@ -14,7 +15,8 @@ const KIND: Record<ExtraKind, string> = { pdf: 'PDF', text: 'Texto', image: 'Ima
 
 /** Capítulos extra: bloqueados hasta completar el libro, sin dar títulos ni cantidad. */
 export function ExtrasPage() {
-  const { book, isPending, error } = useSelectedBook();
+  const { slug } = useParams();
+  const { book, isPending, error } = useSelectedBook(slug);
   const bookId = book?.id ?? '';
   const extras = useQuery({
     queryKey: readerKeys.extras(bookId),
@@ -30,6 +32,7 @@ export function ExtrasPage() {
 
   if (isPending || (bookId !== '' && extras.isPending)) return <Loading />;
   if (error) return <Alert>{errorMessage(error)}</Alert>;
+  if (slug !== undefined && !book) return <NotFoundPage />;
   if (extras.isError) return <Alert>{errorMessage(extras.error)}</Alert>;
 
   const experiences = progress.data?.experiences ?? [];
@@ -37,7 +40,7 @@ export function ExtrasPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Capítulos extra" />
+      <PageHeader title="Capítulos extra" subtitle={slug !== undefined ? book?.title : undefined} />
       {extras.data?.locked !== false ? (
         <section className="flex flex-col gap-3 border-l-2 border-unlit pl-5">
           <h2 className="font-semibold">Aún están bloqueados</h2>

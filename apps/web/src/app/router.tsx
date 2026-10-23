@@ -85,6 +85,14 @@ export const routes: RouteObject[] = [
             ...page(() => import('../features/reader/BookPanelPage'), 'BookPanelPage'),
           },
           {
+            path: 'libros/:slug/resultados',
+            ...page(() => import('../features/reader/ResultsPage'), 'ResultsPage'),
+          },
+          {
+            path: 'libros/:slug/extras',
+            ...page(() => import('../features/reader/ExtrasPage'), 'ExtrasPage'),
+          },
+          {
             path: 'quiz/:quizId',
             ...page(() => import('../features/reader/QuizPage'), 'QuizPage'),
           },
@@ -93,14 +101,19 @@ export const routes: RouteObject[] = [
             ...page(() => import('../features/game/GamePage'), 'GamePage'),
           },
           {
+            // Antigua dirección: lleva a los resultados del libro activo.
             path: 'resultados',
-            ...page(() => import('../features/reader/ResultsPage'), 'ResultsPage'),
+            ...page(() => import('../features/reader/ScopedRedirect'), 'ResultsRedirect'),
           },
           {
             path: 'resultados/:quizId',
             ...page(() => import('../features/reader/ResultsPage'), 'ResultDetailPage'),
           },
-          { path: 'extras', ...page(() => import('../features/reader/ExtrasPage'), 'ExtrasPage') },
+          {
+            // Antigua dirección: lleva a los extras del libro activo.
+            path: 'extras',
+            ...page(() => import('../features/reader/ScopedRedirect'), 'ExtrasRedirect'),
+          },
           {
             path: 'extras/:extraId',
             ...page(() => import('../features/reader/ExtrasPage'), 'ExtraViewPage'),

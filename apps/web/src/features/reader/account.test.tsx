@@ -280,7 +280,7 @@ describe('extras del lector', () => {
       [extrasKey]: () => json({ locked: true }),
       [`GET /api/me/progress?bookId=${BOOK_ID}`]: progress,
     });
-    renderAt('/panel/extras');
+    renderAt('/panel/libros/libro-1/extras');
     expect(await screen.findByText('Aún están bloqueados')).toBeInTheDocument();
     expect(await screen.findByText('1 de 3')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Abrir/ })).not.toBeInTheDocument();
@@ -311,7 +311,7 @@ describe('extras del lector', () => {
         }),
       [`GET /api/me/progress?bookId=${BOOK_ID}`]: progress,
     });
-    renderAt('/panel/extras');
+    renderAt('/panel/libros/libro-1/extras');
     expect(
       await screen.findByRole('heading', { name: '[PLACEHOLDER] Capítulo extra 1' }),
     ).toBeInTheDocument();
@@ -391,7 +391,7 @@ describe('resultados del lector', () => {
           ],
         }),
     });
-    renderAt('/panel/resultados');
+    renderAt('/panel/libros/libro-1/resultados');
     expect(
       await screen.findByRole('heading', { name: '[PLACEHOLDER] Resultado B' }),
     ).toBeInTheDocument();
@@ -402,7 +402,7 @@ describe('resultados del lector', () => {
     );
     vi.unstubAllGlobals();
     mockApi({ [`GET /api/me/results?bookId=${BOOK_ID}`]: () => json({ results: [] }) });
-    renderAt('/panel/resultados');
+    renderAt('/panel/libros/libro-1/resultados');
     expect(await screen.findAllByText('Todavía no tienes resultados')).not.toHaveLength(0);
   });
 
