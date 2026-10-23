@@ -281,6 +281,7 @@ export function FeaturedBookCard({ book }: { book: PublicBookDetail }) {
         <div className="book-card-cover">
           <Plate
             cover={book.cover}
+            title={book.title}
             className="mx-auto w-3/5 max-w-60 lg:w-full lg:max-w-none"
             landscapeClassName="mx-auto w-full max-w-md lg:max-w-none"
             sizes="(min-width: 1024px) 380px, 60vw"
