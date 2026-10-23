@@ -30,6 +30,72 @@
         // Una ficha de la wiki abierta directo: su dato sale junto con el código de la página.
         var entry = /^\/wiki\/entrada\/([0-9a-f]{24})\/?$/i.exec(location.pathname);
         if (entry) request('/wiki/entries/' + entry[1]);
+        // El panel de la lectora (`/panel` y `/panel/libros/:slug`): sesión y «Tus libros» salen a la vez que el código, y
+        // se precarga la portada que encabeza la página (con el mismo `srcset` y `sizes` que pinta `Plate`).
+        var panel = /^\/panel(?:\/libros\/([^/]+))?\/?$/.exec(location.pathname);
+        if (panel) {
+          try {
+            request('/me');
+            request('/me/library')
+              .then(function (response) {
+                return response && response.ok ? response.clone().json() : null;
+              })
+              .then(function (data) {
+                var books = (data && data.books) || [];
+                var entry;
+                if (panel[1]) {
+                  var slug = decodeURIComponent(panel[1]);
+                  entry = books.filter(function (item) {
+                    return item.book.slug === slug;
+                  })[0];
+                } else {
+                  var rank = function (item) {
+                    return item.access === 'open'
+                      ? item.progress && item.progress.nextExperience
+                        ? 0
+                        : 1
+                      : item.access === 'locked'
+                        ? 2
+                        : 3;
+                  };
+                  var sorted = books.slice().sort(function (a, b) {
+                    return rank(a) - rank(b) || a.book.order - b.book.order;
+                  });
+                  // Solo la tarjeta grande (un libro, o el primero abierto) es la imagen principal.
+                  if (sorted.length === 1 || (sorted[0] && sorted[0].access === 'open'))
+                    entry = sorted[0];
+                }
+                var cover = entry && entry.book.cover;
+                var url = cover && cover.url;
+                if (!url || url.indexOf('/upload/') < 0) return;
+                var thumb = function (w) {
+                  return url.replace('/upload/', '/upload/f_auto,q_auto,w_' + w + '/');
+                };
+                var landscape = cover.width / cover.height > 1;
+                var link = document.createElement('link');
+                link.rel = 'preload';
+                link.as = 'image';
+                link.href = thumb(640);
+                link.setAttribute(
+                  'imagesrcset',
+                  [320, 480, 640, 720, 960]
+                    .map(function (w) {
+                      return thumb(w) + ' ' + w + 'w';
+                    })
+                    .join(', '),
+                );
+                link.setAttribute(
+                  'imagesizes',
+                  landscape ? '(min-width: 768px) 520px, 92vw' : '(min-width: 768px) 420px, 92vw',
+                );
+                link.setAttribute('fetchpriority', 'high');
+                document.head.appendChild(link);
+              })
+              .catch(function () {});
+          } catch (error) {
+            // Si algo falla, la app pide todo por su cuenta.
+          }
+        }
         // La página de un libro abierta directo: igual, su dato sale junto con el código de la página.
         var book = /^\/libros\/([^/]+)\/?$/.exec(location.pathname);
         if (book) {
