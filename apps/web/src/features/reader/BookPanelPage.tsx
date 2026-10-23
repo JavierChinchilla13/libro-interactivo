@@ -226,7 +226,7 @@ export function BookPanelPage() {
                       <li key={result.quizId}>
                         <Link
                           to={`/panel/resultados/${result.quizId}`}
-                          className="flex h-full flex-col gap-2 rounded-token-xl border border-line bg-surface p-4 hover:border-primary"
+                          className="flex h-full flex-col gap-2 rounded-token-xl border border-line bg-surface p-4 transition-colors hover:border-primary active:bg-surface-alt"
                         >
                           <span className="label">{result.title}</span>
                           <span className="font-semibold [overflow-wrap:anywhere]">

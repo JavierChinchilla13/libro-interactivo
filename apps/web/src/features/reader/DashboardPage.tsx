@@ -27,13 +27,13 @@ function GridSkeleton() {
   return (
     <div
       aria-hidden="true"
-      className="h-[27rem] animate-pulse rounded-token-xl border border-line bg-surface md:h-[19rem]"
+      className="h-[27rem] animate-pulse motion-reduce:animate-none rounded-token-xl border border-line bg-surface md:h-[19rem]"
     />
   );
 }
 
 const shortcut =
-  'flex items-center justify-between gap-4 border-t border-line py-4 first:border-t-0 hover:text-primary';
+  'flex items-center justify-between gap-4 border-t border-line py-4 transition-colors first:border-t-0 hover:text-primary active:bg-surface-alt/40';
 
 /**
  * Entrada del panel de la lectora: saludo con su avance, «Tus libros» (cada libro con el estado que decide el
