@@ -83,7 +83,11 @@ export function LibraryBookCard({
     <article
       aria-label={book.title}
       data-access={access}
-      className={`flex h-full gap-5 rounded-token-xl border border-line bg-surface p-4 sm:p-5 ${
+      className={`relative flex h-full gap-5 rounded-token-xl border border-line bg-surface p-4 sm:p-5 ${
+        access === 'open'
+          ? 'transition-colors hover:border-primary/60 hover:bg-surface-alt/40 active:bg-surface-alt has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-primary'
+          : ''
+      } ${
         featured
           ? 'flex-col md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:items-center md:gap-8 md:p-7'
           : 'flex-col'
@@ -97,7 +101,18 @@ export function LibraryBookCard({
         <h3
           className={`section-title [overflow-wrap:anywhere] ${featured ? 'text-3xl md:text-4xl' : 'text-xl'}`}
         >
-          {book.title}
+          {access === 'open' ? (
+            // Enlace extendido: el área del enlace cubre toda la tarjeta (un solo <a>, objetivo grande).
+            <Link
+              to={`/panel/libros/${book.slug}`}
+              className="after:absolute after:inset-0 after:rounded-token-xl focus-visible:outline-none"
+            >
+              {book.title}
+              <span className="sr-only">, ir al libro</span>
+            </Link>
+          ) : (
+            book.title
+          )}
         </h3>
         {book.tagline ? (
           <p className={`text-muted [overflow-wrap:anywhere] ${featured ? '' : 'text-sm'}`}>
@@ -109,10 +124,10 @@ export function LibraryBookCard({
           <>
             <Progress done={entry.progress.done} total={entry.progress.total} title={book.title} />
             {entry.field ? <FieldEmblem visual={entry.field} /> : null}
-            <Link to={`/panel/libros/${book.slug}`} className="btn btn-secondary mt-1 self-start">
-              {entry.progress.bookCompleted ? 'Volver al libro' : 'Entrar al libro'}
-              <span className="sr-only"> {book.title}</span>
-            </Link>
+            {/* Pista visual de que la tarjeta se abre; el enlace es el título. */}
+            <span aria-hidden="true" className="mt-1 text-sm font-medium text-primary">
+              Abrir libro →
+            </span>
           </>
         ) : null}
 

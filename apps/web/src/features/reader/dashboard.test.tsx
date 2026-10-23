@@ -65,10 +65,13 @@ describe('entrada del panel del lector', { timeout: 30_000 }, () => {
     const card = screen.getByRole('article', { name: '[PLACEHOLDER] Libro 1' });
     expect(card).toHaveAttribute('data-access', 'open');
     expect(within(card).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
-    expect(within(card).getByRole('link', { name: /Entrar al libro/ })).toHaveAttribute(
-      'href',
-      '/panel/libros/libro-1',
-    );
+    // La tarjeta entera es el enlace: uno solo, con el nombre del libro, y ya no hay botón «Entrar al libro».
+    const links = within(card).getAllByRole('link');
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveAccessibleName('[PLACEHOLDER] Libro 1, ir al libro');
+    expect(links[0]).toHaveAttribute('href', '/panel/libros/libro-1');
+    expect(within(card).queryByText('Entrar al libro')).not.toBeInTheDocument();
+    expect(within(card).queryByRole('button')).not.toBeInTheDocument();
   });
 
   it('«Tu campo» sale en la tarjeta del libro abierto cuando ya hay uno, y no en los demás', async () => {
