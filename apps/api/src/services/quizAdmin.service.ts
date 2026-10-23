@@ -90,7 +90,8 @@ export function createQuizAdminService(deps: QuizAdminDeps) {
       hasUnpublishedChanges =
         !strict.success || hashQuizContent(sanitizeQuizHtml(strict.data)) !== latest.contentHash;
     }
-    return { ...toSummary(quiz), draft, hasUnpublishedChanges };
+    // La apariencia en vivo (revisión y bloque) llega con el modelo, en el paso siguiente: por ahora, sin editar.
+    return { ...toSummary(quiz), draft, hasUnpublishedChanges, appearanceRev: 0 };
   }
 
   async function get(id: string): Promise<QuizDetailResponse> {

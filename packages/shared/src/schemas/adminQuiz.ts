@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { slugSchema } from './book.js';
 import { imageRefSchema, objectIdSchema } from './common.js';
 import { factSchema, mediaSchema, quizIdSchema, quizSettingsSchema, revealSchema } from './quiz.js';
+import { quizAppearanceSchema } from './quizAppearance.js';
 import { fieldSlugSchema } from './wiki.js';
 
 /**
@@ -101,6 +102,9 @@ export const quizDetailResponseSchema = quizSummarySchema.extend({
   draft: quizDraftSchema,
   /** `true` si el borrador difiere de la última versión publicada (o nunca se publicó). */
   hasUnpublishedChanges: z.boolean(),
+  /** Apariencia en vivo (fuera de las versiones) y su revisión, para cargar el editor sin otra llamada. */
+  appearance: quizAppearanceSchema.optional(),
+  appearanceRev: z.number().int().min(0).default(0),
 });
 export type QuizDetailResponse = z.infer<typeof quizDetailResponseSchema>;
 

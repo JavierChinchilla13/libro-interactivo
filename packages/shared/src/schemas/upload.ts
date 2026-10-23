@@ -1,12 +1,20 @@
 import { z } from 'zod';
 
 /** Para qué se sube un archivo (decide la carpeta de Cloudinary). */
-export const UPLOAD_PURPOSES = ['cover', 'quiz', 'wiki', 'theme', 'post', 'misc'] as const;
+export const UPLOAD_PURPOSES = [
+  'cover',
+  'quiz',
+  'quiz-bg',
+  'wiki',
+  'theme',
+  'post',
+  'misc',
+] as const;
 export const uploadPurposeSchema = z.enum(UPLOAD_PURPOSES);
 
 export const imageSignatureRequestSchema = z.object({
   purpose: uploadPurposeSchema,
-  /** `video` solo se admite para resultados de quiz. */
+  /** `video` solo se admite para resultados de quiz (`quiz`) y fondos de quiz (`quiz-bg`). */
   resource: z.enum(['image', 'video']).default('image'),
 });
 export type ImageSignatureRequest = z.input<typeof imageSignatureRequestSchema>;
