@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router';
 import { NotFoundPage } from '../../app/NotFoundPage';
 import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
+import { FieldEmblem } from '../../shared/ui/FieldEmblem';
 import { Alert, Card, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
 import { readerApi, readerKeys } from './api';
 import { ResultView } from './ResultView';
@@ -60,6 +61,7 @@ export function ResultsPage() {
                     {date(item.completedAt)}
                     {item.attemptsCompleted > 1 ? ` · ${item.attemptsCompleted} intentos` : ''}
                   </p>
+                  {item.visual ? <FieldEmblem visual={item.visual} className="mt-2" /> : null}
                 </div>
                 <Link to={`/panel/resultados/${item.quizId}`} className="underline">
                   Ver<span className="sr-only"> {item.resultTitle}</span>
