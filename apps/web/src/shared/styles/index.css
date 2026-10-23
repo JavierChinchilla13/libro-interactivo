@@ -811,48 +811,6 @@
   .field-stage[data-key='neon'] {
     background: radial-gradient(120% 120% at 50% 50%, #1d1a4d, var(--token-sunken));
   }
-  /* «Tu campo»: el mismo degradado de cada campo, pero estático y pequeño (sin lienzo, sin brillo). */
-  .field-emblem {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin: 0;
-  }
-  .field-emblem-orb {
-    flex: none;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 9999px;
-    border: 1px solid color-mix(in srgb, var(--token-accent) 55%, var(--token-line));
-    background: radial-gradient(120% 120% at 20% 10%, #123057, var(--token-sunken));
-  }
-  .field-emblem[data-key='rain'] .field-emblem-orb {
-    background: radial-gradient(120% 120% at 70% 0%, #0b3a4f, var(--token-sunken));
-  }
-  .field-emblem[data-key='neural'] .field-emblem-orb {
-    background: radial-gradient(120% 120% at 20% 20%, #17306b, var(--token-sunken));
-  }
-  .field-emblem[data-key='constellation'] .field-emblem-orb {
-    background: radial-gradient(120% 120% at 50% 0%, #2a2766, var(--token-sunken));
-  }
-  .field-emblem[data-key='gradient'] .field-emblem-orb {
-    background: linear-gradient(135deg, #123057, #2a2766 60%, #0e4a5c);
-  }
-  .field-emblem[data-key='field'] .field-emblem-orb {
-    background: radial-gradient(120% 120% at 30% 100%, #0e4a4a, var(--token-sunken));
-  }
-  .field-emblem[data-key='neon'] .field-emblem-orb {
-    background: radial-gradient(120% 120% at 50% 50%, #1d1a4d, var(--token-sunken));
-  }
-
-  /* Silueta de lo que sigue: barras apagadas donde irá el contenido; es solo forma, nunca contenido. */
-  .silhouette-bar {
-    display: block;
-    height: 0.625rem;
-    border-radius: 9999px;
-    background: color-mix(in srgb, var(--token-line) 70%, transparent);
-  }
-
   .field-canvas {
     position: absolute;
     inset: 0;

@@ -1,4 +1,5 @@
 import type { FieldVisualKey, ProgressResponse } from '@libro/shared';
+import '../../shared/ui/panelVisuals.css';
 import { Link } from 'react-router';
 import { ThreadItem } from '../../shared/ui/ThreadList';
 import { FieldEmblem } from '../../shared/ui/FieldEmblem';

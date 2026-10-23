@@ -12,10 +12,10 @@ import { Plate } from '../../shared/ui/Plate';
 import { ThreadList } from '../../shared/ui/ThreadList';
 import { Countdown } from '../home/Countdown';
 import { readerApi, readerKeys } from './api';
-import { setSelectedBookId } from './bookSelection';
 import { ExperienceStep } from './ExperienceStep';
 import { LOCKED_BOOK_TEXT, type LibraryEntry } from './LibraryBookCard';
 import { nextHref } from './nextStep';
+import { setSelectedBookId } from './useBook';
 import { useLibrary } from './useLibrary';
 
 const linkButton = 'btn';
