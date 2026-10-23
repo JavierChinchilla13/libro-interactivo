@@ -1,9 +1,11 @@
-import type { ProgressResponse } from '@libro/shared';
+import type { FieldVisualKey, ProgressResponse } from '@libro/shared';
 import { Link } from 'react-router';
 import { ThreadItem } from '../../shared/ui/ThreadList';
+import { FieldEmblem } from '../../shared/ui/FieldEmblem';
 import { LockIcon } from '../../shared/ui/icons';
 
 type Experience = ProgressResponse['experiences'][number];
+type FieldVisual = { key: FieldVisualKey; fieldName: string };
 
 /** Texto cuando algo está bloqueado: nunca revela contenido, solo qué falta. */
 export function lockedMessage(experience: Experience): string {
@@ -20,10 +22,13 @@ export function ExperienceStep({
   experience,
   primary,
   bookId,
+  field,
 }: {
   experience: Experience;
   primary: boolean;
   bookId: string;
+  /** «Tu campo» del resultado de este quiz, si lo tiene (solo tras completarlo). */
+  field?: FieldVisual | undefined;
 }) {
   const isGame = experience.kind === 'game';
   const playTo = isGame ? `/panel/juego/${bookId}` : `/panel/quiz/${experience.id}`;
@@ -42,10 +47,21 @@ export function ExperienceStep({
       </div>
 
       {experience.status === 'locked' ? (
-        <p className="mt-2 flex items-start gap-2 text-sm text-muted">
-          <LockIcon className="mt-0.5 size-4" />
-          {lockedMessage(experience)}
-        </p>
+        <>
+          {/* Silueta de lo que sigue: solo la forma; el contenido no existe en el navegador. */}
+          <div aria-hidden="true" className="mt-3 flex max-w-sm flex-col gap-2 opacity-70">
+            <span className="silhouette-bar w-4/5" />
+            <span className="silhouette-bar w-3/5" />
+          </div>
+          <p className="mt-3 flex items-start gap-2 text-sm text-muted">
+            <LockIcon className="mt-0.5 size-4" />
+            {lockedMessage(experience)}
+          </p>
+        </>
+      ) : null}
+
+      {experience.status === 'completed' && field ? (
+        <FieldEmblem visual={field} className="mt-3" />
       ) : null}
 
       {experience.status === 'available' ? (

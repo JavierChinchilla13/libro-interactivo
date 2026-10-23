@@ -7,6 +7,7 @@ import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { useSession } from '../auth/session';
 import { publicApi, publicKeys } from '../home/api';
 import { LibraryBookCard, type LibraryEntry } from './LibraryBookCard';
+import { nextHref } from './nextStep';
 import { useLibrary } from './useLibrary';
 
 /** Orden de «Tus libros»: primero lo que tiene un paso por hacer, luego lo abierto, lo bloqueado y lo que viene. */
@@ -29,13 +30,6 @@ function GridSkeleton() {
       className="h-[27rem] animate-pulse rounded-token-xl border border-line bg-surface md:h-[19rem]"
     />
   );
-}
-
-/** Ruta del siguiente paso de un libro abierto: el quiz, o el juego (que va por libro). */
-function nextHref(entry: LibraryEntry): string | undefined {
-  const next = entry.progress?.nextExperience;
-  if (!next) return undefined;
-  return next.kind === 'game' ? `/panel/juego/${entry.book.id}` : `/panel/quiz/${next.id}`;
 }
 
 const shortcut =
