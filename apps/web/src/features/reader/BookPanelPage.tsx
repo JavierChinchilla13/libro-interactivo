@@ -55,6 +55,7 @@ function BookHeader({ entry }: { entry: LibraryEntry }) {
         <div className={access === 'open' ? '' : 'opacity-60 saturate-50'}>
           <Plate
             cover={book.cover}
+            title={book.title}
             priority
             className="w-full"
             landscapeClassName="w-full"

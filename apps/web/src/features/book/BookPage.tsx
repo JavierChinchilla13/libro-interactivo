@@ -83,6 +83,7 @@ export function BookPage() {
       <div className="grid gap-8 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-12">
         <Plate
           cover={data.cover}
+          title={data.title}
           priority
           className="mx-auto w-3/5 max-w-72 md:w-full md:max-w-none"
           landscapeClassName="mx-auto w-full max-w-xl md:max-w-none"

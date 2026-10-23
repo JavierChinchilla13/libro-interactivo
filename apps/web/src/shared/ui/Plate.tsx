@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { thumbUrl } from '../lib/cloudinary';
 
 type Image = { url: string; alt: string; width: number; height: number };
@@ -33,6 +34,7 @@ export function Plate({
   priority = false,
   sizes = '(min-width: 1024px) 440px, 320px',
   landscapeSizes,
+  title,
 }: {
   cover?: Image | undefined;
   className?: string;
@@ -41,7 +43,11 @@ export function Plate({
   /** Ancho con el que se muestra la portada (para elegir la miniatura); `landscapeSizes` rige las apaisadas. */
   sizes?: string;
   landscapeSizes?: string;
+  /** Nombre del libro: se muestra si la portada no carga (en lugar del icono de imagen rota). */
+  title?: string;
 }) {
+  // Qué portada falló: un fallo es de esa imagen, no de la placa (con otra portada se vuelve a intentar).
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   if (cover) {
     const ratio = plateRatio(cover);
     const landscape = ratio > 1;
@@ -52,23 +58,34 @@ export function Plate({
       <div
         data-plate="cover"
         data-landscape={landscape || undefined}
+        data-failed={failedUrl === cover.url || undefined}
         style={{ aspectRatio: String(ratio) }}
         className={`img-frame relative overflow-hidden rounded-token-xs shadow-elev-2 ${
           landscape && landscapeClassName !== undefined ? landscapeClassName : className
         }`}
       >
-        <img
-          src={thumbUrl(cover.url, 640)}
-          srcSet={srcSet}
-          sizes={srcSet ? (landscape && landscapeSizes ? landscapeSizes : sizes) : undefined}
-          alt={cover.alt}
-          width={cover.width}
-          height={cover.height}
-          decoding="async"
-          loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'auto'}
-          className="absolute inset-0 size-full object-cover"
-        />
+        {failedUrl === cover.url ? (
+          // Fondo sólido del tema con el título: ocupa el mismo hueco y no deja el icono de imagen rota.
+          <div className="absolute inset-0 grid place-items-center bg-surface-alt p-4 text-center">
+            {title ? (
+              <p className="font-display text-lg leading-snug [overflow-wrap:anywhere]">{title}</p>
+            ) : null}
+          </div>
+        ) : (
+          <img
+            src={thumbUrl(cover.url, 640)}
+            srcSet={srcSet}
+            sizes={srcSet ? (landscape && landscapeSizes ? landscapeSizes : sizes) : undefined}
+            alt={cover.alt}
+            width={cover.width}
+            height={cover.height}
+            decoding="async"
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'auto'}
+            onError={() => setFailedUrl(cover.url)}
+            className="absolute inset-0 size-full object-cover"
+          />
+        )}
       </div>
     );
   }

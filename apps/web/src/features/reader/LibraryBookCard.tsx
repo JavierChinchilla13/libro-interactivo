@@ -60,6 +60,7 @@ export function LibraryBookCard({
       <div className={dim ? 'opacity-55 saturate-50' : ''}>
         <Plate
           cover={book.cover}
+          title={book.title}
           priority={priority}
           className="w-full"
           landscapeClassName="w-full"
