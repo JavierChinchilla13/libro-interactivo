@@ -169,6 +169,52 @@ describe('entrada del panel del lector', { timeout: 30_000 }, () => {
     expect(screen.queryByText('El universo')).not.toBeInTheDocument();
   });
 
+  describe('columnas de «Tus libros» según cuántas tarjetas pequeñas hay', () => {
+    const grid = async (books: unknown[]) => {
+      mockApi({ ...library(books), 'GET /api/site': () => json(site) });
+      renderAt('/panel');
+      return screen.findByRole('list', { name: 'Tus libros' });
+    };
+
+    it('una pequeña junto a la grande: tarjeta horizontal de ancho completo, sin hueco', async () => {
+      const list = await grid([open(1, 1, 3), locked(2)]);
+      expect(list.className).not.toContain('sm:grid-cols-2');
+      const small = within(list).getByRole('article', { name: '[PLACEHOLDER] Libro 2' });
+      expect(small).toHaveAttribute('data-layout', 'horizontal');
+      expect(within(list).getByRole('article', { name: '[PLACEHOLDER] Libro 1' })).toHaveAttribute(
+        'data-layout',
+        'featured',
+      );
+    });
+
+    it('dos pequeñas: dos columnas que llenan la fila (no tres con un hueco)', async () => {
+      const list = await grid([open(1, 1, 3), locked(2), upcoming(3)]);
+      expect(list.className).toContain('sm:grid-cols-2');
+      expect(list.className).not.toContain('lg:grid-cols-3');
+      for (const title of ['[PLACEHOLDER] Libro 2', '[PLACEHOLDER] Libro 3']) {
+        expect(within(list).getByRole('article', { name: title })).toHaveAttribute(
+          'data-layout',
+          'grid',
+        );
+      }
+    });
+
+    it('tres o más pequeñas: tres columnas en pantallas anchas', async () => {
+      const list = await grid([open(1, 1, 3), locked(2), upcoming(3), locked(4)]);
+      expect(list.className).toContain('sm:grid-cols-2');
+      expect(list.className).toContain('lg:grid-cols-3');
+    });
+
+    it('sin libro grande (ninguno abierto), todas son pequeñas y se reparten por igual', async () => {
+      const list = await grid([locked(1), locked(2)]);
+      expect(list.className).toContain('sm:grid-cols-2');
+      expect(list.className).not.toContain('lg:grid-cols-3');
+      for (const card of within(list).getAllByRole('article')) {
+        expect(card).toHaveAttribute('data-layout', 'grid');
+      }
+    });
+  });
+
   it('«Cómo funciona» explica las mecánicas reales y sube sobre «Tus libros» si aún no hay libro abierto', async () => {
     mockApi({ ...library([locked(1)]), 'GET /api/site': () => json(site) });
     renderAt('/panel');

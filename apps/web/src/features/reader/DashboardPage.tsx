@@ -34,6 +34,16 @@ function GridSkeleton() {
   );
 }
 
+/**
+ * Columnas de la cuadrícula según cuántas tarjetas pequeñas hay (la grande ocupa la fila entera): con una sola la
+ * tarjeta es horizontal; con dos, dos columnas que llenan la fila; con tres o más, tres desde pantallas anchas.
+ */
+export function gridColumns(smallCount: number): string {
+  if (smallCount <= 1) return 'grid-cols-1';
+  if (smallCount === 2) return 'grid-cols-1 sm:grid-cols-2';
+  return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+}
+
 const shortcut =
   'flex items-center justify-between gap-4 border-t border-line py-4 transition-colors first:border-t-0 hover:text-primary active:bg-surface-alt/40';
 
@@ -68,6 +78,8 @@ export function DashboardPage() {
   const ambient = universe?.headerImages?.[0];
   const image = universe?.headerImages?.[1];
   const noneOpen = library.data !== undefined && open.length === 0;
+  const hasLead = entries[0]?.access === 'open';
+  const smallCount = hasLead ? entries.length - 1 : entries.length;
 
   return (
     <div className="flex flex-col gap-14 md:gap-20">
@@ -120,22 +132,26 @@ export function DashboardPage() {
             <LibraryBookCard entry={entries[0]} featured priority />
           ) : null}
           {entries.length > 1 ? (
-            <ul
-              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-              aria-label="Tus libros"
-            >
+            <ul className={`grid gap-4 ${gridColumns(smallCount)}`} aria-label="Tus libros">
               {entries.map((entry, index) => {
                 const lead = index === 0 && entry.access === 'open';
+                // Una sola tarjeta pequeña junto a la grande: horizontal y de ancho completo (sin hueco a la derecha).
+                const horizontal = !lead && hasLead && smallCount === 1;
                 return (
                   // La tarjeta grande puede ser lo primero que se pinta: no se anima. Las demás entran escalonadas.
                   <li
                     key={entry.book.id}
-                    className={lead ? 'sm:col-span-2 lg:col-span-3' : index === 0 ? '' : 'reveal'}
+                    className={lead ? 'col-span-full' : index === 0 ? '' : 'reveal'}
                     style={
                       index > 0 ? ({ '--i': Math.min(index - 1, 4) } as CSSProperties) : undefined
                     }
                   >
-                    <LibraryBookCard entry={entry} featured={lead} priority={index === 0} />
+                    <LibraryBookCard
+                      entry={entry}
+                      featured={lead}
+                      horizontal={horizontal}
+                      priority={index === 0}
+                    />
                   </li>
                 );
               })}
