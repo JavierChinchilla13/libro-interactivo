@@ -170,7 +170,7 @@ describe('página del libro en el panel', { timeout: 30_000 }, () => {
     expect(await screen.findByText(/Completaste todo el libro/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ver los extras' })).toHaveAttribute(
       'href',
-      '/panel/extras',
+      '/panel/libros/libro-1/extras',
     );
   });
 

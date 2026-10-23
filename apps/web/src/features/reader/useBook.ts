@@ -33,11 +33,15 @@ export function pickBook(
  * Libro con el que trabaja el panel del lector. Si la saga tiene varios, se recuerda el último elegido en este
  * navegador (solo una comodidad: no es dato de la cuenta).
  */
-export function useSelectedBook() {
+export function useSelectedBook(slug?: string) {
   const books = useQuery({ queryKey: readerKeys.books, queryFn: booksApi.list, staleTime: 60_000 });
   const chosen = useSelectedBookId();
   const list = playable(books.data?.books ?? []);
-  const book = pickBook(list, chosen, 'first');
+  // En una dirección de un libro (`/panel/libros/:slug/…`) manda el de la dirección, no el recordado.
+  const book =
+    slug === undefined
+      ? pickBook(list, chosen, 'first')
+      : list.find((candidate) => candidate.slug === slug);
   return {
     books: list,
     book,
