@@ -164,13 +164,13 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await dialog.getByRole('button', { name: '¡A la aventura!' }).click();
     await expect(dialog).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Hola, Lectora E2E' })).toBeVisible();
-    await expect(page.getByText('Progreso: 0 de 1')).toBeVisible();
+    await expect(page.getByText('0 de 1 experiencias abiertas en tu libro')).toBeVisible();
     // Los extras siguen cerrados y no revelan nada.
-    await expect(page.getByText('Bloqueados')).toBeVisible();
+    await expect(page.getByText('Se abren al terminar un libro')).toBeVisible();
     await expect(page.getByText(seeded.extraTitle)).toHaveCount(0);
 
     // 4) Hace el quiz: intro → preguntas (con «Atrás») → revelado → resultado con porcentajes y datos.
-    await page.getByRole('link', { name: new RegExp(`Empezar\\s*${seeded.quizTitle}`) }).click();
+    await page.getByRole('link', { name: new RegExp(`Seguir con\\s*${seeded.quizTitle}`) }).click();
     await expect(page.getByRole('heading', { name: seeded.quizTitle })).toBeVisible();
     await expect(page.getByText('Elige lo que más va contigo.')).toBeVisible();
     await page.getByRole('button', { name: 'Comenzar' }).click();
@@ -195,6 +195,8 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await page.getByRole('link', { name: 'Volver a mi panel' }).click();
 
     // 5) El panel refleja el avance y se abren los extras (libro completo).
+    await expect(page.getByText('1 de 1 experiencias abiertas en tu libro')).toBeVisible();
+    await page.getByRole('link', { name: /Volver al libro/ }).click();
     await expect(page.getByText('Progreso: 1 de 1')).toBeVisible();
     await expect(page.getByText(/Completaste todo el libro/)).toBeVisible();
     await page.getByRole('link', { name: 'Ver los extras' }).click();

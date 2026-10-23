@@ -89,7 +89,7 @@ test.describe('juego (celular y escritorio)', () => {
     const { show } = (await (await welcome).json()) as { show: boolean };
     await expect(page.getByRole('heading', { name: /^Hola, / })).toBeVisible();
     if (show) await page.getByRole('button', { name: '¡A la aventura!' }).click();
-    await page.getByRole('link', { name: /^Jugar/ }).click();
+    await page.getByRole('link', { name: /^Seguir con/ }).click();
 
     // 2) Mala decisión: final fallido y botón para intentarlo de nuevo.
     await page.getByRole('button', { name: '[PLACEHOLDER] Pasillo izquierdo' }).click();
@@ -110,6 +110,7 @@ test.describe('juego (celular y escritorio)', () => {
 
     // 4) El panel refleja el juego completado.
     await page.getByRole('link', { name: 'Volver al panel' }).click();
+    await page.getByRole('link', { name: /Volver al libro/ }).click();
     await expect(page.getByText('Completado')).toBeVisible();
     await expect(page.getByText('Progreso: 1 de 1')).toBeVisible();
   });
