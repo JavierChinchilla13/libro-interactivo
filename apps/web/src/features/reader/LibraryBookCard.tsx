@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { formatDate } from '../../shared/lib/dates';
 import { releaseTarget } from '../../shared/lib/countdown';
+import { FieldEmblem } from '../../shared/ui/FieldEmblem';
 import { LockIcon } from '../../shared/ui/icons';
 import { Plate } from '../../shared/ui/Plate';
 import { Countdown } from '../home/Countdown';
@@ -107,6 +108,7 @@ export function LibraryBookCard({
         {access === 'open' && entry.progress ? (
           <>
             <Progress done={entry.progress.done} total={entry.progress.total} title={book.title} />
+            {entry.field ? <FieldEmblem visual={entry.field} /> : null}
             <Link to={`/panel/libros/${book.slug}`} className="btn btn-secondary mt-1 self-start">
               {entry.progress.bookCompleted ? 'Volver al libro' : 'Entrar al libro'}
               <span className="sr-only"> {book.title}</span>
