@@ -10,6 +10,7 @@ import { Button } from '../../shared/ui/controls';
 import { Alert, Loading } from '../../shared/ui/layout';
 import { readerApi, readerKeys } from './api';
 import { lockedMessage } from './ExperienceStep';
+import { Celebration } from './Celebration';
 import { ResultView } from './ResultView';
 import { RevealSequence } from './RevealSequence';
 
@@ -384,6 +385,7 @@ export function QuizPage() {
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
+      <Celebration fieldKey={view.result.visual?.key} />
       <ResultView result={view.result} asPage />
       <div className="flex flex-col gap-3">
         <Link to={primary.to} className="btn btn-primary btn-lg w-full sm:w-auto sm:self-start">
