@@ -110,7 +110,7 @@ test.describe('juego (celular y escritorio)', () => {
 
     // 4) El panel refleja el juego completado.
     await page.getByRole('link', { name: 'Volver al panel' }).click();
-    await page.getByRole('link', { name: /Volver al libro/ }).click();
+    await page.getByRole('link', { name: /ir al libro/ }).click();
     await expect(page.getByText('Completado')).toBeVisible();
     await expect(page.getByText('Progreso: 1 de 1')).toBeVisible();
   });

@@ -196,7 +196,11 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
 
     // 5) El panel refleja el avance y se abren los extras (libro completo).
     await expect(page.getByText('1 de 1 experiencias abiertas en tu libro')).toBeVisible();
-    await page.getByRole('link', { name: /Volver al libro/ }).click();
+    // La tarjeta entera es el enlace: se abre pulsando en cualquier parte de ella (aquí, una esquina).
+    const card = page.getByRole('article', { name: seeded.bookTitle });
+    await expect(card.getByRole('link')).toHaveCount(1);
+    await card.click({ position: { x: 12, y: 12 } });
+    await expect(page).toHaveURL(/\/panel\/libros\/libro-lector-/);
     await expect(page.getByText('Progreso: 1 de 1')).toBeVisible();
     await expect(page.getByText(/Completaste todo el libro/)).toBeVisible();
     await page.getByRole('link', { name: 'Ver los extras' }).click();
