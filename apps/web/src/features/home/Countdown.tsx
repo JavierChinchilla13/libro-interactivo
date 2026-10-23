@@ -41,11 +41,20 @@ function Cell({ label, value, vapor }: { label: string; value: string; vapor: bo
  * oculta. Al llegar la fecha desaparece. Los lectores de pantalla reciben una frase que cambia cada minuto, no cada
  * segundo.
  */
-export function Countdown({ target, dateLabel }: { target: Date; dateLabel: string }) {
+export function Countdown({
+  target,
+  dateLabel,
+  animated = true,
+}: {
+  target: Date;
+  dateLabel: string;
+  /** `false`: sin lienzo de partículas (la regla de animaciones solo lo permite en la ficha del libro). */
+  animated?: boolean;
+}) {
   const root = useRef<HTMLElement>(null);
   const [now, setNow] = useState(() => Date.now());
   const [inView, setInView] = useState(false);
-  const vapor = inView && !reducedMotion();
+  const vapor = animated && inView && !reducedMotion();
 
   useEffect(() => {
     const element = root.current;
