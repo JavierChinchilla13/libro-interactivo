@@ -258,12 +258,11 @@ describe('GET /api/books/:slug (landing: pestañas de la wiki y quizzes)', () =>
       },
       { kind: 'term', title: 'Glosario', locked: false },
     ]);
-    expect(detail.experiences).toEqual([
-      { kind: 'quiz', id: expect.any(String), order: 1, title: '[PLACEHOLDER] Quiz uno' },
-    ]);
+    // Solo tipo y posición: el título del quiz no sale de la ficha pública.
+    expect(detail.experiences).toEqual([{ kind: 'quiz', order: 1 }]);
     const text = JSON.stringify(res.body);
     expect(text).not.toMatch(
-      /INTRO-SECRETA|NO-SE-VE-ABIERTA|QUIZ-EN-BORRADOR|670000000000000000000099|unlockAfter|questions|resultKey/,
+      /INTRO-SECRETA|NO-SE-VE-ABIERTA|QUIZ-EN-BORRADOR|Quiz uno|670000000000000000000099|unlockAfter|questions|resultKey/,
     );
   });
 });
