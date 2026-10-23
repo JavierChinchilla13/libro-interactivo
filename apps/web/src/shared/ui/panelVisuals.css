@@ -41,4 +41,56 @@
     border-radius: 9999px;
     background: color-mix(in srgb, var(--token-line) 70%, transparent);
   }
+
+  /* Entrada del panel: saludo más contenido que el libro, imagen de la autora como ambiente y tarjeta abierta con color. */
+  .greeting-title {
+    font-size: clamp(2rem, 1.1rem + 3.2vw, 3.25rem);
+  }
+  .greeting-ambient {
+    position: absolute;
+    inset: -1.5rem 0 auto 0;
+    z-index: -1;
+    width: 100%;
+    height: 14rem;
+    object-fit: cover;
+    opacity: 0.28;
+    border-radius: var(--token-radius-xl);
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent);
+    mask-image: linear-gradient(to bottom, #000 40%, transparent);
+  }
+  .book-card-open {
+    border-color: color-mix(in srgb, var(--token-accent) 30%, var(--token-line));
+    background-image: radial-gradient(
+      60% 80% at 18% 30%,
+      color-mix(in srgb, var(--token-primary) 14%, transparent),
+      transparent 70%
+    );
+    transition:
+      border-color 150ms ease-out,
+      background-color 150ms ease-out,
+      transform 120ms ease-out;
+  }
+  .book-card-open:active {
+    transform: scale(0.99);
+  }
+  /* Barra de avance que crece con `transform` (no con `width`): una vez, al aparecer. */
+  .meter-scale {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--token-primary);
+    transform: scaleX(var(--p, 0));
+    transform-origin: left;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .meter-scale {
+      animation: meter-grow 600ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    }
+  }
+  @keyframes meter-grow {
+    from {
+      transform: scaleX(0);
+    }
+  }
 }
