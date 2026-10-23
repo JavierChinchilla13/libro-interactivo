@@ -105,7 +105,10 @@ export function DashboardPage() {
           <LibraryBookCard entry={entries[0]} featured priority />
         ) : null}
         {entries.length > 1 ? (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Tus libros">
+          <ul
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            aria-label="Tus libros"
+          >
             {entries.map((entry, index) => {
               const lead = index === 0 && entry.access === 'open';
               return (
@@ -121,7 +124,7 @@ export function DashboardPage() {
       {hasUniverse && universe ? (
         <section
           aria-labelledby="que-es"
-          className="grid items-center gap-6 border-t border-line pt-8 md:grid-cols-[7fr_5fr] md:gap-10"
+          className="grid grid-cols-1 items-center gap-6 border-t border-line pt-8 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-10"
         >
           <div className="flex flex-col gap-3">
             <p className="label">El universo</p>
