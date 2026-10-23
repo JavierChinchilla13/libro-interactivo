@@ -1055,8 +1055,8 @@
     gap: clamp(0.75rem, 3vw, 1.75rem);
   }
   .countdown-compact .countdown-row {
-    flex-wrap: nowrap;
-    gap: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
   }
   .countdown-compact .countdown-digits {
     font-size: clamp(1.625rem, 6vw, 2.25rem);
