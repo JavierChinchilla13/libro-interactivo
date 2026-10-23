@@ -221,6 +221,8 @@ describe('quiz: preguntas', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Terminar' }));
 
     await screen.findByRole('heading', { name: '[PLACEHOLDER] Resultado A' });
+    // La celebración llega con el resultado (nunca antes) y es un sello con texto, no solo movimiento.
+    expect(screen.getByRole('status')).toHaveTextContent('Quiz completado');
     const sent = called(`POST /api/attempts/${ATTEMPT}/stages/etapa-1/answers`);
     expect(sent).toHaveLength(1);
     expect(sent[0]?.body).toEqual({
