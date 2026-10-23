@@ -49,7 +49,7 @@ export const readerApi = {
 };
 
 export const readerKeys = {
-  library: (userId: string) => ['reader', 'library', userId] as const,
+  library: ['reader', 'library'] as const,
   books: ['reader', 'books'] as const,
   progress: (bookId: string) => ['reader', 'progress', bookId] as const,
   results: (bookId: string) => ['reader', 'results', bookId] as const,
