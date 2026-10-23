@@ -26,7 +26,7 @@ function GridSkeleton() {
   return (
     <div
       aria-hidden="true"
-      className="h-72 animate-pulse rounded-token-xl border border-line bg-surface"
+      className="h-[27rem] animate-pulse rounded-token-xl border border-line bg-surface md:h-[19rem]"
     />
   );
 }
@@ -121,32 +121,6 @@ export function DashboardPage() {
         ) : null}
       </section>
 
-      {hasUniverse && universe ? (
-        <section
-          aria-labelledby="que-es"
-          className="grid grid-cols-1 items-center gap-6 border-t border-line pt-8 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-10"
-        >
-          <div className="flex flex-col gap-3">
-            <p className="label">El universo</p>
-            <h2 id="que-es" className="section-title text-2xl">
-              {universe.headline ?? 'Universo Memorias'}
-            </h2>
-            {universe.introHtml ? <SafeHtml html={universe.introHtml} /> : null}
-          </div>
-          {image ? (
-            <img
-              src={heightUrl(image.url, 420)}
-              alt={image.alt}
-              width={image.width}
-              height={image.height}
-              loading="lazy"
-              decoding="async"
-              className="max-h-72 w-full rounded-token-xl border border-line object-cover"
-            />
-          ) : null}
-        </section>
-      ) : null}
-
       <nav aria-label="Atajos" className="border-t border-line pt-2">
         <ul>
           <li>
@@ -178,6 +152,31 @@ export function DashboardPage() {
           </li>
         </ul>
       </nav>
+      {hasUniverse && universe ? (
+        <section
+          aria-labelledby="que-es"
+          className="grid grid-cols-1 items-center gap-6 border-t border-line pt-8 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-10"
+        >
+          <div className="flex flex-col gap-3">
+            <p className="label">El universo</p>
+            <h2 id="que-es" className="section-title text-2xl">
+              {universe.headline ?? 'Universo Memorias'}
+            </h2>
+            {universe.introHtml ? <SafeHtml html={universe.introHtml} /> : null}
+          </div>
+          {image ? (
+            <img
+              src={heightUrl(image.url, 420)}
+              alt={image.alt}
+              width={image.width}
+              height={image.height}
+              loading="lazy"
+              decoding="async"
+              className="max-h-72 w-full rounded-token-xl border border-line object-cover"
+            />
+          ) : null}
+        </section>
+      ) : null}
     </div>
   );
 }
