@@ -72,7 +72,7 @@ export function DashboardPage() {
   return (
     <div className="flex flex-col gap-14 md:gap-20">
       <div className="flex flex-col gap-8">
-        <div className="fade-up relative isolate">
+        <div className="fade-up greeting-block relative isolate">
           {ambient ? (
             <img
               src={heightUrl(ambient.url, 360)}
