@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { booksApi, readerKeys } from './api';
 import { setSelectedBookId, useSelectedBookId } from './bookSelection';
 
+export { setSelectedBookId };
+
 /** Libros con contenido para jugar: los publicados (los «próximamente» todavía no tienen nada). */
 export function playable(books: readonly PublicBookSummary[]): PublicBookSummary[] {
   return books.filter((book) => book.status === 'published');

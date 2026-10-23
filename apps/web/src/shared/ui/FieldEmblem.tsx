@@ -1,4 +1,5 @@
 import type { FieldVisualKey } from '@libro/shared';
+import './panelVisuals.css';
 
 /**
  * «Tu campo»: emblema estático (solo CSS, sin lienzo) del campo de poder del resultado de la lectora. Es el mismo dato
