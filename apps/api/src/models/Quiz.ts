@@ -21,6 +21,31 @@ const quizSchema = new Schema(
     currentVersion: { type: Number, required: true, default: 0, min: 0 },
     lastPublishedAt: { type: Date },
     settings: { type: Schema.Types.Mixed, required: true },
+    /**
+     * Apariencia en vivo (fondo, velo, acento, portada y texto de introducción): vive FUERA de `quizVersions` y se edita
+     * sin publicar una versión nueva. Se valida con `quizAppearanceSchema` al escribir y al leer. Ausente = modo
+     * legado (la introducción sale del snapshot).
+     */
+    appearance: { type: Schema.Types.Mixed },
+    /** Revisión de la apariencia (concurrencia optimista: cada edición la sube en 1). */
+    appearanceRev: { type: Number, default: 0, min: 0 },
+    /** Auditoría: los últimos cambios (quién, cuándo, qué claves y el estado anterior) para poder revertir. */
+    appearanceHistory: {
+      type: [
+        new Schema(
+          {
+            rev: { type: Number, required: true, min: 1 },
+            at: { type: Date, required: true },
+            by: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+            action: { type: String, enum: ['update', 'revert', 'seed'], required: true },
+            changed: { type: [String], default: [] },
+            before: { type: Schema.Types.Mixed, default: null },
+          },
+          { _id: false, minimize: false },
+        ),
+      ],
+      default: [],
+    },
     draft: {
       stages: { type: Schema.Types.Mixed, required: true, default: [] },
       results: { type: Schema.Types.Mixed, required: true, default: [] },
