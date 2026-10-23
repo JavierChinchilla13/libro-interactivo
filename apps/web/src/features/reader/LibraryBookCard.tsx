@@ -1,5 +1,5 @@
 import type { ReaderLibraryResponse } from '@libro/shared';
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router';
 import { formatDate } from '../../shared/lib/dates';
 import { releaseTarget } from '../../shared/lib/countdown';
@@ -27,7 +27,7 @@ function Progress({ done, total, title }: { done: number; total: number; title: 
         aria-label={`Avance en ${title}`}
         className="meter"
       >
-        <div className="meter-fill" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
+        <div className="meter-scale" style={{ '--p': total ? done / total : 0 } as CSSProperties} />
       </div>
     </div>
   );
@@ -85,7 +85,7 @@ export function LibraryBookCard({
       data-access={access}
       className={`relative flex h-full gap-5 rounded-token-xl border border-line bg-surface p-4 sm:p-5 ${
         access === 'open'
-          ? 'transition-colors hover:border-primary/60 hover:bg-surface-alt/40 active:bg-surface-alt has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-primary'
+          ? 'book-card-open hover:border-primary/60 hover:bg-surface-alt/40 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-primary'
           : ''
       } ${
         featured

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useParams } from 'react-router';
 import { NotFoundPage } from '../../app/NotFoundPage';
 import { errorMessage } from '../../shared/api/messages';
@@ -85,10 +85,10 @@ function BookHeader({ entry }: { entry: LibraryEntry }) {
                 className="meter"
               >
                 <div
-                  className="meter-fill"
-                  style={{
-                    width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%`,
-                  }}
+                  className="meter-scale"
+                  style={
+                    { '--p': progress.total ? progress.done / progress.total : 0 } as CSSProperties
+                  }
                 />
               </div>
             </div>
