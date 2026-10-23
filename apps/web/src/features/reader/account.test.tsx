@@ -387,6 +387,7 @@ describe('resultados del lector', () => {
               attemptsCompleted: 2,
               completedAt: '2026-10-06T12:00:00.000Z',
               resultTitle: '[PLACEHOLDER] Resultado B',
+              visual: { key: 'rain', fieldName: 'Agitación' },
             },
           ],
         }),
@@ -396,6 +397,8 @@ describe('resultados del lector', () => {
       await screen.findByRole('heading', { name: '[PLACEHOLDER] Resultado B' }),
     ).toBeInTheDocument();
     expect(screen.getByText(/2 intentos/)).toBeInTheDocument();
+    expect(screen.getByText('Tu campo')).toBeInTheDocument();
+    expect(screen.getByText('Agitación')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Ver/ })).toHaveAttribute(
       'href',
       `/panel/resultados/${quizId}`,
