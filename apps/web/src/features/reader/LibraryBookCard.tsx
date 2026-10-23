@@ -84,7 +84,7 @@ export function LibraryBookCard({
       data-access={access}
       className={`flex h-full gap-5 rounded-token-xl border border-line bg-surface p-4 sm:p-5 ${
         featured
-          ? 'flex-col md:grid md:grid-cols-[5fr_7fr] md:items-center md:gap-8 md:p-7'
+          ? 'flex-col md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:items-center md:gap-8 md:p-7'
           : 'flex-col'
       }`}
     >
@@ -127,6 +127,7 @@ export function LibraryBookCard({
               target={releaseAt}
               dateLabel={formatDate(book.releaseDate)}
               animated={false}
+              compact
             />
           ) : null
         ) : null}

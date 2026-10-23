@@ -875,7 +875,11 @@
     margin: 0;
     border-radius: calc(var(--review-radius) - var(--review-gap));
     background:
-      linear-gradient(160deg, color-mix(in srgb, var(--token-accent) 11%, transparent), transparent 55%),
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--token-accent) 11%, transparent),
+        transparent 55%
+      ),
       var(--token-surface-alt);
     padding: 1.5rem;
   }
@@ -1049,6 +1053,13 @@
     display: flex;
     flex-wrap: wrap;
     gap: clamp(0.75rem, 3vw, 1.75rem);
+  }
+  .countdown-compact .countdown-row {
+    flex-wrap: nowrap;
+    gap: 1rem;
+  }
+  .countdown-compact .countdown-digits {
+    font-size: clamp(1.625rem, 6vw, 2.25rem);
   }
   .countdown-cell {
     display: flex;
