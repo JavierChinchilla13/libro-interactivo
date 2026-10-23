@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { imageRefSchema, objectIdSchema } from './common.js';
+import { readerAppearanceSchema } from './quizAppearance.js';
 import { publicBookSummarySchema } from './site.js';
 import { fieldSlugSchema, fieldVisualKeySchema } from './wiki.js';
 
@@ -167,6 +168,11 @@ export const quizIntroResponseSchema = z.object({
   inProgressAttemptId: objectIdSchema.optional(),
   /** `false` en un quiz de una sola vez que ya se completó. */
   canStart: z.boolean(),
+  /**
+   * Solo decoración (fondo, velo y acento). Viaja únicamente aquí —con sesión y desbloqueo en cada petición—: nunca en
+   * listas, en `/books*` ni en los payloads de intento o resultado. Sin `resultKey` ni nada que revele un resultado.
+   */
+  appearance: readerAppearanceSchema.optional(),
 });
 export type QuizIntroResponse = z.infer<typeof quizIntroResponseSchema>;
 
