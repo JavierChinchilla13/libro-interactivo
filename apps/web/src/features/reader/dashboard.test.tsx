@@ -169,6 +169,63 @@ describe('entrada del panel del lector', { timeout: 30_000 }, () => {
     expect(screen.queryByText('El universo')).not.toBeInTheDocument();
   });
 
+  it('«Cómo funciona» explica las mecánicas reales y sube sobre «Tus libros» si aún no hay libro abierto', async () => {
+    mockApi({ ...library([locked(1)]), 'GET /api/site': () => json(site) });
+    renderAt('/panel');
+    const steps = within(await screen.findByRole('list', { name: 'Cómo funciona' })).getAllByRole(
+      'listitem',
+    );
+    expect(steps).toHaveLength(4);
+    expect(
+      steps.map((step) => within(step).getByRole('heading', { level: 3 }).textContent),
+    ).toEqual([
+      'Escanea el QR de tu libro',
+      'Haz los quizzes en orden',
+      'Descubre lo que se desbloquea',
+      'Termina el libro y abre los extras',
+    ]);
+    // Lo que falta está marcado, no inventado.
+    expect(within(steps[0]!).getByText(/\[PLACEHOLDER\]/)).toBeInTheDocument();
+    const how = screen.getByRole('heading', { name: 'Cómo funciona' });
+    const books = screen.getByRole('heading', { name: 'Tus libros' });
+    expect(how.compareDocumentPosition(books) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('con un libro abierto, «Cómo funciona» queda debajo de «Tus libros»', async () => {
+    mockApi({ ...library([open(1, 1, 3)]), 'GET /api/site': () => json(site) });
+    renderAt('/panel');
+    const books = await screen.findByRole('heading', { name: 'Tus libros' });
+    const how = await screen.findByRole('heading', { name: 'Cómo funciona' });
+    expect(books.compareDocumentPosition(how) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('la imagen de la autora es ambiente decorativo del saludo (sin texto alternativo)', async () => {
+    const image = (n: number) => ({
+      provider: 'cloudinary',
+      publicId: `libro/${n}`,
+      url: `https://res.cloudinary.com/demo/image/upload/libro/${n}`,
+      width: 800,
+      height: 400,
+      alt: `Imagen ${n}`,
+    });
+    mockApi({
+      ...library([open(1, 1, 3)]),
+      'GET /api/site': () =>
+        json({ ...site, universe: { ...site.universe, headerImages: [1, 2, 3, 4, 5].map(image) } }),
+    });
+    const { container } = renderAt('/panel');
+    await screen.findByRole('heading', { name: 'Tus libros' });
+    const ambient = await vi.waitFor(() => {
+      const found = container.querySelector('img.greeting-ambient');
+      if (!found) throw new Error('aún no');
+      return found;
+    });
+    expect(ambient).toHaveAttribute('alt', '');
+    expect(ambient).toHaveAttribute('loading', 'lazy');
+    expect(ambient).toHaveAttribute('fetchpriority', 'low');
+    expect(ambient.getAttribute('src')).toContain('libro/1');
+  });
+
   it('los atajos llevan a resultados, wiki y extras', async () => {
     mockApi({ ...library([open(1, 0, 2)]), 'GET /api/site': () => json(site) });
     renderAt('/panel');

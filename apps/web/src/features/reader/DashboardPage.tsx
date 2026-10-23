@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
+import type { CSSProperties } from 'react';
 import { Link } from 'react-router';
 import { errorMessage } from '../../shared/api/messages';
 import { heightUrl } from '../../shared/lib/cloudinary';
-import { Alert, EmptyState, PageHeader } from '../../shared/ui/layout';
+import { Alert, EmptyState } from '../../shared/ui/layout';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { useSession } from '../auth/session';
 import { publicApi, publicKeys } from '../home/api';
+import { HowItWorks } from './HowItWorks';
 import { LibraryBookCard, type LibraryEntry } from './LibraryBookCard';
 import { nextHref } from './nextStep';
 import { useLibrary } from './useLibrary';
@@ -62,58 +64,87 @@ export function DashboardPage() {
 
   const universe = site.data?.universe;
   const hasUniverse = Boolean(universe?.headline || universe?.introHtml);
-  const image = universe?.headerImages?.[0];
+  // La primera imagen de la autora es el ambiente del saludo; la segunda (si hay) acompaña «Qué es el universo».
+  const ambient = universe?.headerImages?.[0];
+  const image = universe?.headerImages?.[1];
+  const noneOpen = library.data !== undefined && open.length === 0;
 
   return (
-    <div className="flex flex-col gap-10">
-      <div>
-        <PageHeader title={`Hola, ${session.data?.name ?? ''}`} subtitle={subtitle} />
-        {nextStep && href ? (
-          <Link to={href} className="btn btn-primary btn-lg">
-            Seguir con {nextStep.title}
-          </Link>
-        ) : null}
+    <div className="flex flex-col gap-14 md:gap-20">
+      <div className="flex flex-col gap-8">
+        <header className="fade-up relative isolate">
+          {ambient ? (
+            <img
+              src={heightUrl(ambient.url, 360)}
+              alt=""
+              width={ambient.width}
+              height={ambient.height}
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
+              className="greeting-ambient"
+            />
+          ) : null}
+          <h1 className="page-title greeting-title">{`Hola, ${session.data?.name ?? ''}`}</h1>
+          {subtitle ? <p className="mt-2 text-base text-muted">{subtitle}</p> : null}
+          {nextStep && href ? (
+            <Link to={href} className="btn btn-primary btn-lg mt-6">
+              Seguir con {nextStep.title}
+            </Link>
+          ) : null}
+        </header>
+
+        {noneOpen && entries.length > 0 ? <HowItWorks /> : null}
+
+        <section aria-labelledby="tus-libros" className="flex flex-col gap-4">
+          <h2 id="tus-libros" className="section-title text-2xl">
+            Tus libros
+          </h2>
+          {library.isPending ? <GridSkeleton /> : null}
+          {library.isError ? (
+            <div className="flex flex-col items-start gap-3">
+              <Alert>{errorMessage(library.error)}</Alert>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => void library.refetch()}
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : null}
+          {library.data && entries.length === 0 ? (
+            <EmptyState title="Todavía no hay libros disponibles">Vuelve pronto.</EmptyState>
+          ) : null}
+          {entries.length === 1 && entries[0] ? (
+            <LibraryBookCard entry={entries[0]} featured priority />
+          ) : null}
+          {entries.length > 1 ? (
+            <ul
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              aria-label="Tus libros"
+            >
+              {entries.map((entry, index) => {
+                const lead = index === 0 && entry.access === 'open';
+                return (
+                  // La tarjeta grande puede ser lo primero que se pinta: no se anima. Las demás entran escalonadas.
+                  <li
+                    key={entry.book.id}
+                    className={lead ? 'sm:col-span-2 lg:col-span-3' : index === 0 ? '' : 'reveal'}
+                    style={
+                      index > 0 ? ({ '--i': Math.min(index - 1, 4) } as CSSProperties) : undefined
+                    }
+                  >
+                    <LibraryBookCard entry={entry} featured={lead} priority={index === 0} />
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </section>
       </div>
 
-      <section aria-labelledby="tus-libros" className="flex flex-col gap-4">
-        <h2 id="tus-libros" className="section-title text-2xl">
-          Tus libros
-        </h2>
-        {library.isPending ? <GridSkeleton /> : null}
-        {library.isError ? (
-          <div className="flex flex-col items-start gap-3">
-            <Alert>{errorMessage(library.error)}</Alert>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => void library.refetch()}
-            >
-              Reintentar
-            </button>
-          </div>
-        ) : null}
-        {library.data && entries.length === 0 ? (
-          <EmptyState title="Todavía no hay libros disponibles">Vuelve pronto.</EmptyState>
-        ) : null}
-        {entries.length === 1 && entries[0] ? (
-          <LibraryBookCard entry={entries[0]} featured priority />
-        ) : null}
-        {entries.length > 1 ? (
-          <ul
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            aria-label="Tus libros"
-          >
-            {entries.map((entry, index) => {
-              const lead = index === 0 && entry.access === 'open';
-              return (
-                <li key={entry.book.id} className={lead ? 'sm:col-span-2 lg:col-span-3' : ''}>
-                  <LibraryBookCard entry={entry} featured={lead} priority={index === 0} />
-                </li>
-              );
-            })}
-          </ul>
-        ) : null}
-      </section>
+      {library.data && !noneOpen ? <HowItWorks /> : null}
 
       <nav aria-label="Atajos" className="border-t border-line pt-2">
         <ul>
