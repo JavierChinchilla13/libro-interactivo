@@ -213,7 +213,9 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
       );
       expect(overflow, `desborde en ${path}`).toBeLessThanOrEqual(1);
     }
+    // La dirección antigua lleva a los resultados del libro.
     await page.goto('/panel/resultados');
+    await expect(page).toHaveURL(/\/panel\/libros\/[^/]+\/resultados$/);
     await expect(page.getByRole('heading', { name: 'Eres de los que se quedan' })).toBeVisible();
 
     // 7) Cerrar sesión: el panel vuelve a pedir ingresar.
