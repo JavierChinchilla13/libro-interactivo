@@ -35,12 +35,10 @@ export function createPublicBookService() {
     if (!book) throw new AppError('NOT_FOUND', 'No encontramos ese libro');
     const full = toBookResponse(book);
     const quizzes = await Quiz.find({ bookId: book._id, status: 'published' })
-      .select('title order')
+      .select('order')
       .sort({ order: 1 })
       .lean();
-    const game = await GameStory.findOne({ bookId: book._id, status: 'published' })
-      .select('title')
-      .lean();
+    const hasGame = await GameStory.exists({ bookId: book._id, status: 'published' });
     return {
       ...summaryOf(full),
       synopsis: full.synopsis,
@@ -61,24 +59,12 @@ export function createPublicBookService() {
             ? { lockedMessage: section.lockedMessage }
             : {}),
         })),
-      // Solo el nombre y la posición de cada quiz publicado (nunca preguntas ni resultados).
+      // Solo el tipo y la posición de cada experiencia: ni títulos ni identificadores (privacidad; ver el esquema).
       experiences: [
-        ...quizzes.map((quiz) => ({
-          kind: 'quiz' as const,
-          id: String(quiz._id),
-          order: quiz.order,
-          title: quiz.title,
-        })),
-        // El juego, si el libro lo tiene, va siempre al final (solo su nombre).
-        ...(game
-          ? [
-              {
-                kind: 'game' as const,
-                id: String(game._id),
-                order: (quizzes[quizzes.length - 1]?.order ?? 0) + 1,
-                title: game.title,
-              },
-            ]
+        ...quizzes.map((quiz) => ({ kind: 'quiz' as const, order: quiz.order })),
+        // El juego, si el libro lo tiene, va siempre al final.
+        ...(hasGame
+          ? [{ kind: 'game' as const, order: (quizzes[quizzes.length - 1]?.order ?? 0) + 1 }]
           : []),
       ],
     };

@@ -151,13 +151,15 @@ export const publicBookDetailSchema = publicBookSummarySchema.extend({
       lockedMessage: z.string().optional(),
     }),
   ),
-  /** Solo el nombre y la posición de cada quiz publicado: nunca su contenido. */
+  /**
+   * Solo el tipo y la posición de cada experiencia publicada (cuántas hay y en qué orden): ni títulos ni identificadores.
+   * Es igual para todo el mundo —por eso se puede guardar en caché compartida—; quien ya abrió el libro ve los títulos
+   * de sus quizzes en su avance (`/me/progress`).
+   */
   experiences: z.array(
     z.object({
       kind: z.enum(['quiz', 'game']),
-      id: objectIdSchema,
       order: z.number().int(),
-      title: z.string(),
     }),
   ),
 });
