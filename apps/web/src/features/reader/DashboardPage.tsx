@@ -72,7 +72,7 @@ export function DashboardPage() {
   return (
     <div className="flex flex-col gap-14 md:gap-20">
       <div className="flex flex-col gap-8">
-        <header className="fade-up relative isolate">
+        <div className="fade-up relative isolate">
           {ambient ? (
             <img
               src={heightUrl(ambient.url, 360)}
@@ -92,7 +92,7 @@ export function DashboardPage() {
               Seguir con {nextStep.title}
             </Link>
           ) : null}
-        </header>
+        </div>
 
         {noneOpen && entries.length > 0 ? <HowItWorks /> : null}
 
