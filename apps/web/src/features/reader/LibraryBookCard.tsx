@@ -43,10 +43,13 @@ function Progress({ done, total, title }: { done: number; total: number; title: 
 export function LibraryBookCard({
   entry,
   featured = false,
+  horizontal = false,
   priority = false,
 }: {
   entry: LibraryEntry;
   featured?: boolean;
+  /** Tarjeta pequeña de ancho completo (portada a la izquierda): cuando es la única junto a la grande. */
+  horizontal?: boolean;
   priority?: boolean;
 }) {
   const { book, access } = entry;
@@ -64,9 +67,19 @@ export function LibraryBookCard({
           priority={priority}
           className="w-full"
           landscapeClassName="w-full"
-          sizes={featured ? '(min-width: 768px) 420px, 92vw' : '(min-width: 1024px) 320px, 46vw'}
+          sizes={
+            featured
+              ? '(min-width: 768px) 420px, 92vw'
+              : horizontal
+                ? '(min-width: 640px) 420px, 92vw'
+                : '(min-width: 1024px) 320px, 46vw'
+          }
           landscapeSizes={
-            featured ? '(min-width: 768px) 520px, 92vw' : '(min-width: 1024px) 360px, 92vw'
+            featured
+              ? '(min-width: 768px) 520px, 92vw'
+              : horizontal
+                ? '(min-width: 640px) 480px, 92vw'
+                : '(min-width: 1024px) 360px, 92vw'
           }
         />
       </div>
@@ -84,6 +97,7 @@ export function LibraryBookCard({
     <article
       aria-label={book.title}
       data-access={access}
+      data-layout={featured ? 'featured' : horizontal ? 'horizontal' : 'grid'}
       className={`relative flex h-full gap-5 rounded-token-xl border border-line bg-surface p-4 sm:p-5 ${
         access === 'open'
           ? 'book-card-open hover:border-primary/60 hover:bg-surface-alt/40 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-primary'
@@ -91,7 +105,9 @@ export function LibraryBookCard({
       } ${
         featured
           ? 'flex-col md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:items-center md:gap-8 md:p-7'
-          : 'flex-col'
+          : horizontal
+            ? 'flex-col sm:grid sm:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] sm:items-center sm:gap-6'
+            : 'flex-col'
       }`}
     >
       {cover}
