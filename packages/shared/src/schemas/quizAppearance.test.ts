@@ -5,6 +5,8 @@ import {
   APPEARANCE_FIELDS,
   APPEARANCE_HISTORY_LIMIT,
   OVERLAY_FLOOR,
+  OVERLAY_MIN,
+  overlayMinimum,
   QUIZ_VIDEO_LIMITS,
   quizAppearanceResponseSchema,
   quizAppearanceSchema,
@@ -74,14 +76,40 @@ describe('apariencia del quiz', () => {
     );
   });
 
-  it('la intensidad del velo va de 0,5 a 0,92', () => {
-    for (const strength of [0.5, 0.78, 0.92]) {
-      expect(ok({ overlay: { mode: 'manual', strength } }).success).toBe(true);
+  it('el velo en modo automático puede bajar hasta 0,5 (cuando el editor midió el fondo)', () => {
+    for (const strength of [0.5, 0.6, 0.78, 0.92]) {
+      expect(ok({ overlay: { mode: 'auto', strength } }).success, String(strength)).toBe(true);
     }
     for (const strength of [0.49, 0.93, 0, 1]) {
-      expect(ok({ overlay: { mode: 'manual', strength } }).success).toBe(false);
+      expect(ok({ overlay: { mode: 'auto', strength } }).success, String(strength)).toBe(false);
     }
+    // Sin modo, el valor por defecto es automático.
+    expect(ok({ overlay: { strength: 0.6 } }).data?.overlay.mode).toBe('auto');
+  });
+
+  it('el velo en modo manual no baja del piso 0,78: sin medición no hay garantía de contraste', () => {
+    for (const strength of [0.78, 0.85, 0.92]) {
+      expect(ok({ overlay: { mode: 'manual', strength } }).success, String(strength)).toBe(true);
+    }
+    for (const strength of [0.5, 0.6, 0.77, 0.7799]) {
+      expect(ok({ overlay: { mode: 'manual', strength } }).success, String(strength)).toBe(false);
+    }
+    expect(ok({ overlay: { mode: 'manual', strength: 0.93 } }).success).toBe(false);
     expect(ok({ overlay: { mode: 'raro', strength: 0.8 } }).success).toBe(false);
+  });
+
+  it('el mínimo de cada modo, para el control del editor', () => {
+    expect(overlayMinimum('manual')).toBe(OVERLAY_FLOOR);
+    expect(overlayMinimum('auto')).toBe(OVERLAY_MIN);
+  });
+
+  it('la lectora recibe el mismo velo ya validado (manual por debajo del piso no cabe)', () => {
+    expect(
+      readerAppearanceSchema.safeParse({ overlay: { mode: 'manual', strength: 0.6 } }).success,
+    ).toBe(false);
+    expect(
+      readerAppearanceSchema.safeParse({ overlay: { mode: 'auto', strength: 0.6 } }).success,
+    ).toBe(true);
   });
 
   it('el acento es un token de la lista cerrada, nunca un color libre', () => {

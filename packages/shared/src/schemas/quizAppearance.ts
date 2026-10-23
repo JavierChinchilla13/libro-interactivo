@@ -17,10 +17,18 @@ export const QUIZ_VIDEO_LIMITS = {
   formats: ['mp4', 'webm'],
 } as const;
 
-/** Intensidad de la capa de contraste: 0,78 es el piso que mantiene el texto en AA incluso sobre un píxel blanco. */
+/**
+ * Intensidad de la capa de contraste. 0,78 es el piso que mantiene el texto en AA incluso sobre un píxel blanco: es el
+ * mínimo del modo `manual`. Solo el modo `auto`, cuando el editor midió el fondo, puede bajar hasta `OVERLAY_MIN`.
+ */
 export const OVERLAY_MIN = 0.5;
 export const OVERLAY_MAX = 0.92;
 export const OVERLAY_FLOOR = 0.78;
+
+/** Mínimo de intensidad que admite cada modo (el editor lo usa como tope inferior del control). */
+export function overlayMinimum(mode: 'auto' | 'manual'): number {
+  return mode === 'manual' ? OVERLAY_FLOOR : OVERLAY_MIN;
+}
 
 /** Cuántos estados anteriores se conservan para revertir. */
 export const APPEARANCE_HISTORY_LIMIT = 10;
@@ -63,11 +71,22 @@ export const quizBackgroundSchema = z.discriminatedUnion('kind', [
 ]);
 export type QuizBackground = z.infer<typeof quizBackgroundSchema>;
 
-export const quizOverlaySchema = z.object({
-  /** `auto`: el editor calcula la intensidad mínima que cumple AA; `manual`: la eligió la autora. */
-  mode: z.enum(['auto', 'manual']).default('auto'),
-  strength: z.number().min(OVERLAY_MIN).max(OVERLAY_MAX).default(OVERLAY_FLOOR),
-});
+export const quizOverlaySchema = z
+  .object({
+    /** `auto`: el editor midió el fondo y calculó la intensidad mínima que cumple AA; `manual`: la eligió la autora. */
+    mode: z.enum(['auto', 'manual']).default('auto'),
+    strength: z.number().min(OVERLAY_MIN).max(OVERLAY_MAX).default(OVERLAY_FLOOR),
+  })
+  .superRefine((overlay, ctx) => {
+    // Sin medición no hay garantía de contraste: el modo manual no baja del piso.
+    if (overlay.mode === 'manual' && overlay.strength < OVERLAY_FLOOR) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['strength'],
+        message: `En modo manual la intensidad no puede ser menor que ${OVERLAY_FLOOR}`,
+      });
+    }
+  });
 export type QuizOverlay = z.infer<typeof quizOverlaySchema>;
 
 const DEFAULT_OVERLAY = { mode: 'auto', strength: OVERLAY_FLOOR } as const;
