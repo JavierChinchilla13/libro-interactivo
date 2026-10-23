@@ -120,7 +120,9 @@ describe('GET /api/me/library', () => {
     const res = await agent.get('/api/me/library').expect(200);
     const text = JSON.stringify(res.body);
     expect(text).not.toContain(content.title);
-    expect(text).not.toMatch(/resultKey|stages|questions|answers|nextExperience|fieldSlug|"progress"/);
+    expect(text).not.toMatch(
+      /resultKey|stages|questions|answers|nextExperience|fieldSlug|"progress"/,
+    );
     expect(Object.keys(res.body.books[0]).sort()).toEqual(['access', 'book']);
   });
 

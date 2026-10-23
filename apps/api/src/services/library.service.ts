@@ -50,7 +50,9 @@ export function createLibraryService(deps: { progress: ProgressService; quizzes:
           progress: {
             done: state.experiences.filter((e) => e.status === 'completed').length,
             total: state.experiences.length,
-            ...(next ? { nextExperience: { kind: next.kind, id: next.id, title: next.title } } : {}),
+            ...(next
+              ? { nextExperience: { kind: next.kind, id: next.id, title: next.title } }
+              : {}),
             bookCompleted: state.bookCompleted,
           },
           ...(field ? { field } : {}),
