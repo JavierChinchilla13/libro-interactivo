@@ -1,4 +1,5 @@
 import {
+  quizAppearanceSchema,
   quizContentSchema,
   quizDraftSchema,
   type CreateQuizRequest,
@@ -90,8 +91,14 @@ export function createQuizAdminService(deps: QuizAdminDeps) {
       hasUnpublishedChanges =
         !strict.success || hashQuizContent(sanitizeQuizHtml(strict.data)) !== latest.contentHash;
     }
-    // La apariencia en vivo (revisión y bloque) llega con el modelo, en el paso siguiente: por ahora, sin editar.
-    return { ...toSummary(quiz), draft, hasUnpublishedChanges, appearanceRev: 0 };
+    const appearance = quizAppearanceSchema.safeParse(quiz.appearance);
+    return {
+      ...toSummary(quiz),
+      draft,
+      hasUnpublishedChanges,
+      ...(appearance.success ? { appearance: appearance.data } : {}),
+      appearanceRev: quiz.appearanceRev ?? 0,
+    };
   }
 
   async function get(id: string): Promise<QuizDetailResponse> {
@@ -130,20 +137,23 @@ export function createQuizAdminService(deps: QuizAdminDeps) {
       throw new AppError('CONFLICT', 'Un quiz archivado no se puede editar');
     assertQuizMediaAllowed(draft);
     const clean = sanitizeQuizHtml(draft);
+    // Con apariencia en vivo, la introducción y la portada se editan allí (sin versión): el borrador deja de tocar
+    // esos dos campos de la raíz, que quedan como la copia que se congela en cada versión publicada.
+    const liveAppearance = quiz.appearance !== undefined && quiz.appearance !== null;
     await Quiz.updateOne(
       { _id: id },
       {
         $set: {
           title: clean.title,
-          instructionsHtml: clean.instructionsHtml,
           settings: clean.settings,
           'draft.stages': clean.stages,
           'draft.results': clean.results,
           'draft.updatedAt': deps.clock(),
           'draft.updatedBy': actor.userId,
-          ...(clean.image ? { image: clean.image } : {}),
+          ...(liveAppearance ? {} : { instructionsHtml: clean.instructionsHtml }),
+          ...(!liveAppearance && clean.image ? { image: clean.image } : {}),
         },
-        ...(clean.image ? {} : { $unset: { image: 1 } }),
+        ...(!liveAppearance && !clean.image ? { $unset: { image: 1 } } : {}),
       },
     );
     return get(id);
