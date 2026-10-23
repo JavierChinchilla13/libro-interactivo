@@ -9,7 +9,7 @@ import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Button } from '../../shared/ui/controls';
 import { Alert, Loading } from '../../shared/ui/layout';
 import { readerApi, readerKeys } from './api';
-import { lockedMessage } from './DashboardPage';
+import { lockedMessage } from './ExperienceStep';
 import { ResultView } from './ResultView';
 import { RevealSequence } from './RevealSequence';
 
