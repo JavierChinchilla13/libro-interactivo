@@ -55,10 +55,64 @@ describe('consulta de archivos (API de administración)', () => {
     });
     const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe(
-      'https://api.cloudinary.com/v1_1/mi-cuenta/resources/video/upload/libro/quiz-bg/abc',
+      'https://api.cloudinary.com/v1_1/mi-cuenta/resources/video/upload/libro/quiz-bg/abc?media_metadata=true',
     );
     const auth = (init.headers as Record<string, string>)['Authorization'];
     expect(auth).toBe(`Basic ${Buffer.from('123:secreto-de-prueba').toString('base64')}`);
+  });
+
+  it('en un video pide los metadatos de medios (sin ellos Cloudinary no devuelve la duración); en una imagen, no', async () => {
+    const fetchImpl = vi.fn(async () =>
+      json({ public_id: 'x', bytes: 1, format: 'mp4', width: 1, height: 1, duration: 13.4134 }),
+    );
+    const provider = new CloudinaryImageProvider(credentials, fetchImpl);
+    await provider.inspect({ publicId: 'libro/quiz-bg/abc', resource: 'video' });
+    await provider.inspect({ publicId: 'libro/quiz-bg/abc', resource: 'image' });
+    const urls = fetchImpl.mock.calls.map((call) => (call as unknown as [string])[0]);
+    expect(urls[0]).toBe(
+      'https://api.cloudinary.com/v1_1/mi-cuenta/resources/video/upload/libro/quiz-bg/abc?media_metadata=true',
+    );
+    expect(urls[1]).not.toContain('media_metadata');
+  });
+
+  it('la respuesta real de un video sin metadatos no trae duración: queda sin duración, nunca inventada', async () => {
+    // Forma real observada en la cuenta: sin `?media_metadata=true` faltaba `duration`.
+    const without = new CloudinaryImageProvider(credentials, async () =>
+      json({
+        public_id: 'libro/quiz-bg/abc',
+        bytes: 3_000_000,
+        format: 'mp4',
+        width: 1280,
+        height: 720,
+        created_at: '2026-10-25T10:00:00Z',
+      }),
+    );
+    const info = await without.inspect({ publicId: 'libro/quiz-bg/abc', resource: 'video' });
+    expect(info?.durationSeconds).toBeUndefined();
+    const withMetadata = new CloudinaryImageProvider(credentials, async () =>
+      json({
+        public_id: 'libro/quiz-bg/abc',
+        bytes: 3_000_000,
+        format: 'mp4',
+        width: 1280,
+        height: 720,
+        duration: 13.4134,
+        created_at: '2026-10-25T10:00:00Z',
+      }),
+    );
+    expect(
+      (await withMetadata.inspect({ publicId: 'libro/quiz-bg/abc', resource: 'video' }))
+        ?.durationSeconds,
+    ).toBe(13.4134);
+    // Una duración que no es un número positivo tampoco cuenta como medida.
+    for (const duration of [0, -1, null, 'abc']) {
+      const odd = new CloudinaryImageProvider(credentials, async () =>
+        json({ public_id: 'x', bytes: 1, format: 'mp4', width: 1, height: 1, duration }),
+      );
+      expect(
+        (await odd.inspect({ publicId: 'x', resource: 'video' }))?.durationSeconds,
+      ).toBeUndefined();
+    }
   });
 
   it('un archivo que no existe da null; un error de Cloudinary o de red da 503 sin revelar secretos', async () => {

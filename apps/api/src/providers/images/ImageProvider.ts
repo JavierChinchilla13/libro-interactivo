@@ -142,13 +142,18 @@ export class CloudinaryImageProvider implements ImageProvider {
       format: (asset.format ?? '').toLowerCase(),
       width: asset.width ?? 0,
       height: asset.height ?? 0,
-      ...(typeof asset.duration === 'number' ? { durationSeconds: asset.duration } : {}),
+      // La duración solo existe si se pidieron los metadatos; un valor que no es un número positivo no cuenta.
+      ...(typeof asset.duration === 'number' && asset.duration > 0
+        ? { durationSeconds: asset.duration }
+        : {}),
       createdAt: asset.created_at ?? new Date(0).toISOString(),
     };
   }
 
   async inspect({ publicId, resource }: { publicId: string; resource: UploadResource }) {
-    const response = await this.admin(`/resources/${resource}/upload/${publicId}`);
+    // Sin `media_metadata=true` Cloudinary NO devuelve la duración de un video (comprobado en la cuenta real).
+    const query = resource === 'video' ? '?media_metadata=true' : '';
+    const response = await this.admin(`/resources/${resource}/upload/${publicId}${query}`);
     if (response.status === 404) return null;
     if (!response.ok) {
       throw new AppError('UNAVAILABLE', 'No pudimos verificar el archivo en Cloudinary');

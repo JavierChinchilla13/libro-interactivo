@@ -446,11 +446,21 @@ describe('apariencia del quiz: el video se verifica con Cloudinary', () => {
     await expect(
       appearance.update(quiz.id, editor, { appearance: withVideo(), expectedRev: 0 }),
     ).rejects.toMatchObject({ code: 'VALIDATION' });
-    cloud.set(videoAsset('libro/quiz-bg/vid', { durationSeconds: undefined }));
-    await expect(
-      appearance.update(quiz.id, editor, { appearance: withVideo(), expectedRev: 0 }),
-    ).rejects.toMatchObject({ code: 'VALIDATION' });
     expect((await appearance.get(quiz.id)).rev).toBe(0);
+  });
+
+  it('si Cloudinary no da la duración, el video se rechaza con un mensaje claro y no se guarda nada', async () => {
+    const { appearance, quiz, editor, cloud } = await world();
+    cloud.set(videoAsset('libro/quiz-bg/vid', { durationSeconds: undefined }));
+    const error = await appearance
+      .update(quiz.id, editor, { appearance: withVideo({ durationSeconds: 3 }), expectedRev: 0 })
+      .catch((e: unknown) => e);
+    expect(error).toMatchObject({ code: 'VALIDATION' });
+    expect((error as Error).message).toContain('No pudimos medir la duración');
+    expect((error as Error).message).toContain('no se guardó');
+    // La duración que dice el navegador (3 s) NO sirve de sustituto.
+    const stored = await appearance.get(quiz.id);
+    expect(stored).toMatchObject({ appearance: null, rev: 0, history: [] });
   });
 
   it('rechaza un video que no existe en Cloudinary', async () => {
