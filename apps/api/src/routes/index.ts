@@ -54,6 +54,7 @@ import type { AccessService } from '../services/access.service.js';
 import type { ExtraService } from '../services/extra.service.js';
 import type { BookService } from '../services/book.service.js';
 import type { QuizAdminService } from '../services/quizAdmin.service.js';
+import type { QuizAppearanceService } from '../services/quizAppearance.service.js';
 import type { WikiService } from '../services/wiki.service.js';
 import type { Guards } from '../middleware/auth.js';
 import type { RequireUnlocked } from '../middleware/unlocked.js';
@@ -117,6 +118,7 @@ export interface RouteDeps {
   library: LibraryService;
   quizPublisher: QuizPublishService;
   quizAdmin: QuizAdminService;
+  quizAppearance: QuizAppearanceService;
   books: BookService;
   wiki: WikiService;
   images: ImageProvider;
@@ -207,7 +209,7 @@ export function createApiRouter(deps: RouteDeps): Router {
     '/admin/quizzes',
     createAdminQuizRouter(
       createAdminQuizController(deps.quizPublisher),
-      createAdminQuizEditorController(deps.quizAdmin),
+      createAdminQuizEditorController(deps.quizAdmin, deps.quizAppearance),
       deps.guards,
     ),
   );

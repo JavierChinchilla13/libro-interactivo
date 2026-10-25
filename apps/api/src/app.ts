@@ -44,6 +44,7 @@ import { createQuizService } from './services/quiz.service.js';
 import { createQuizPublishService } from './services/quizPublish.service.js';
 import { createBookService } from './services/book.service.js';
 import { createQuizAdminService } from './services/quizAdmin.service.js';
+import { createQuizAppearanceService } from './services/quizAppearance.service.js';
 import { createWikiService } from './services/wiki.service.js';
 import { createTokenService } from './services/token.service.js';
 
@@ -157,6 +158,7 @@ export function createApp(
   const quizPublisher = createQuizPublishService({ clock, quizzes });
   const requireUnlocked = createRequireUnlocked(progress);
   const quizAdmin = createQuizAdminService({ clock });
+  const quizAppearance = createQuizAppearanceService({ clock });
   const books = createBookService();
   const wiki = createWikiService();
   const images = deps.images ?? createImageProvider(deps.env);
@@ -215,6 +217,7 @@ export function createApp(
       progress,
       quizPublisher,
       quizAdmin,
+      quizAppearance,
       books,
       wiki,
       images,
