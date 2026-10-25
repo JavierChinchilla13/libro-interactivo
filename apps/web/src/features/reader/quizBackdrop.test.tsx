@@ -251,6 +251,8 @@ describe('QuizPage: video de fondo', () => {
     expect(bg()?.querySelector('img')).toBeNull();
     fireEvent.error(bg()?.querySelector('video') as HTMLVideoElement);
     expect(bg()?.querySelector('video')).toBeNull();
+    // Sin video no hay nada que pausar: el botón desaparece.
+    expect(screen.queryByRole('button', { name: /video de fondo/i })).toBeNull();
     expect(bg()?.querySelector('.quiz-bg-veil')).not.toBeNull();
     expect(screen.getByText('[PLACEHOLDER] Instrucciones')).toBeInTheDocument();
   });
