@@ -40,6 +40,8 @@ export function useBackgroundPlayback({
   const [video, setVideo] = useState<HTMLVideoElement | null>(null);
   const [root, setRoot] = useState<HTMLElement | null>(null);
   const [canAnimate, setCanAnimate] = useState(motionAllowed);
+  // El archivo de video no cargó: se queda el póster y desaparece el botón (no hay nada que pausar).
+  const [failed, setFailed] = useState(false);
   const [wanted, setWanted] = useState(autoplay);
   const [visible, setVisible] = useState(true);
   const [tabVisible, setTabVisible] = useState(() => !document.hidden);
@@ -71,6 +73,8 @@ export function useBackgroundPlayback({
   const shouldRun = canAnimate && wanted && visible && tabVisible;
   useEffect(() => {
     if (!video) return;
+    const onError = () => setFailed(true);
+    video.addEventListener('error', onError);
     // Otro elemento animado tomó el lugar: este se detiene y queda pausado hasta que la persona lo reanude.
     const runner: AnimationRunner = {
       pause() {
@@ -86,6 +90,7 @@ export function useBackgroundPlayback({
       video.pause();
     }
     return () => {
+      video.removeEventListener('error', onError);
       releaseAnimation(runner);
     };
   }, [shouldRun, video]);
@@ -97,6 +102,6 @@ export function useBackgroundPlayback({
   return {
     attachVideo: setVideo,
     attachRoot: setRoot,
-    state: { canAnimate, playing: canAnimate && wanted, toggle },
+    state: { canAnimate: canAnimate && !failed, playing: canAnimate && wanted, toggle },
   };
 }

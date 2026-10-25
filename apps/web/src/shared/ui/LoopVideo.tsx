@@ -33,7 +33,6 @@ export function LoopVideo({
   onVisible?: () => void;
 }) {
   const [posterFailed, setPosterFailed] = useState(false);
-  const [videoFailed, setVideoFailed] = useState(false);
   // Una vez que corrió, se queda a la vista aunque se pause (el fotograma congelado, no el póster).
   const [started, setStarted] = useState(false);
   return (
@@ -49,7 +48,7 @@ export function LoopVideo({
           className={className}
         />
       )}
-      {canAnimate && !videoFailed ? (
+      {canAnimate ? (
         <video
           ref={attachVideo}
           src={videoUrl(source.url, width)}
@@ -65,7 +64,6 @@ export function LoopVideo({
             setStarted(true);
             onVisible?.();
           }}
-          onError={() => setVideoFailed(true)}
           className={`loop-video ${className}`}
         />
       ) : null}
