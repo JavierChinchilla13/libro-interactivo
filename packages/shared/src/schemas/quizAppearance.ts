@@ -30,6 +30,26 @@ export function overlayMinimum(mode: 'auto' | 'manual'): number {
   return mode === 'manual' ? OVERLAY_FLOOR : OVERLAY_MIN;
 }
 
+/** Carpeta de Cloudinary de los fondos de quiz (propósito de subida `quiz-bg`). */
+export const QUIZ_BG_FOLDER = 'libro/quiz-bg';
+
+/** Póster de un video: su primer fotograma como JPG (`so_0`), con formato y calidad automáticos. */
+export function videoPosterUrl(videoUrl: string): string {
+  return videoUrl
+    .replace('/video/upload/', '/video/upload/so_0,f_auto,q_auto/')
+    .replace(/\.[A-Za-z0-9]+(\?.*)?$/, '.jpg');
+}
+
+/** ¿La URL de Cloudinary es de este `publicId` (con cualquier transformación y extensión)? */
+export function urlHasPublicId(url: string, publicId: string): boolean {
+  try {
+    const path = decodeURIComponent(new URL(url).pathname);
+    return path.endsWith(`/${publicId}`) || path.includes(`/${publicId}.`);
+  } catch {
+    return false;
+  }
+}
+
 /** Cuántos estados anteriores se conservan para revertir. */
 export const APPEARANCE_HISTORY_LIMIT = 10;
 

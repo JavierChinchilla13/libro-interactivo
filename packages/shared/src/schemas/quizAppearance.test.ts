@@ -10,9 +10,12 @@ import {
   QUIZ_VIDEO_LIMITS,
   quizAppearanceResponseSchema,
   quizAppearanceSchema,
+  QUIZ_BG_FOLDER,
   readerAppearanceSchema,
   revertQuizAppearanceRequestSchema,
   updateQuizAppearanceRequestSchema,
+  urlHasPublicId,
+  videoPosterUrl,
 } from './quizAppearance.js';
 import { imageSignatureRequestSchema } from './upload.js';
 
@@ -275,5 +278,34 @@ describe('integración con el resto del contrato', () => {
     ).toBe(true);
     expect(imageSignatureRequestSchema.safeParse({ purpose: 'quiz-bg' }).success).toBe(true);
     expect(imageSignatureRequestSchema.safeParse({ purpose: 'otro' }).success).toBe(false);
+  });
+});
+
+describe('póster y pertenencia de un medio', () => {
+  it('el póster es el primer fotograma en JPG, con formato y calidad automáticos', () => {
+    expect(
+      videoPosterUrl('https://res.cloudinary.com/mi/video/upload/v123/libro/quiz-bg/abc.mp4'),
+    ).toBe(
+      'https://res.cloudinary.com/mi/video/upload/so_0,f_auto,q_auto/v123/libro/quiz-bg/abc.jpg',
+    );
+    expect(
+      videoPosterUrl('https://res.cloudinary.com/mi/video/upload/libro/quiz-bg/abc.webm'),
+    ).toBe('https://res.cloudinary.com/mi/video/upload/so_0,f_auto,q_auto/libro/quiz-bg/abc.jpg');
+  });
+
+  it('reconoce que una URL es de un publicId, con transformaciones, versión y cualquier extensión', () => {
+    const id = `${QUIZ_BG_FOLDER}/abc`;
+    expect(urlHasPublicId(`https://res.cloudinary.com/mi/video/upload/v1/${id}.mp4`, id)).toBe(
+      true,
+    );
+    expect(
+      urlHasPublicId(`https://res.cloudinary.com/mi/video/upload/so_0,f_auto/v1/${id}.jpg`, id),
+    ).toBe(true);
+    expect(urlHasPublicId(`https://res.cloudinary.com/mi/video/upload/${id}`, id)).toBe(true);
+    expect(urlHasPublicId(`https://res.cloudinary.com/mi/video/upload/${id}x.mp4`, id)).toBe(false);
+    expect(urlHasPublicId(`https://res.cloudinary.com/mi/video/upload/otra/abc.mp4`, id)).toBe(
+      false,
+    );
+    expect(urlHasPublicId('no es una url', id)).toBe(false);
   });
 });
