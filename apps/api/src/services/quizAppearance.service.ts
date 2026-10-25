@@ -220,7 +220,10 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
       throw new AppError('VALIDATION', 'El video debe ser mp4 o webm');
     }
     if (info.durationSeconds === undefined) {
-      throw new AppError('VALIDATION', 'No pudimos leer la duración del video');
+      throw new AppError(
+        'VALIDATION',
+        'No pudimos medir la duración del video en Cloudinary, así que no se guardó. Súbelo de nuevo o inténtalo en un momento',
+      );
     }
     if (
       info.durationSeconds >
