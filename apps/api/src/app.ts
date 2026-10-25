@@ -11,6 +11,7 @@ import type { Logger } from './lib/logger.js';
 import { createGuards, type Guards } from './middleware/auth.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error.js';
 import { createRequireUnlocked } from './middleware/unlocked.js';
+import { configureCloudinaryAccount } from './lib/images.js';
 import { createImageProvider, type ImageProvider } from './providers/images/ImageProvider.js';
 import { S3StorageProvider, s3ConfigFromEnv } from './providers/storage/S3StorageProvider.js';
 import {
@@ -158,10 +159,15 @@ export function createApp(
   const quizPublisher = createQuizPublishService({ clock, quizzes });
   const requireUnlocked = createRequireUnlocked(progress);
   const quizAdmin = createQuizAdminService({ clock });
-  const quizAppearance = createQuizAppearanceService({ clock });
   const books = createBookService();
   const wiki = createWikiService();
   const images = deps.images ?? createImageProvider(deps.env);
+  // Las URLs de contenido solo valen si son de nuestra cuenta de Cloudinary (y `demo` fuera de producción).
+  configureCloudinaryAccount({
+    cloudName: deps.env.CLOUDINARY_CLOUD_NAME,
+    production: deps.env.NODE_ENV === 'production',
+  });
+  const quizAppearance = createQuizAppearanceService({ clock, images });
   const s3 = s3ConfigFromEnv(deps.env);
   const storage =
     deps.storage ?? (s3 ? new S3StorageProvider({ ...s3, clock }) : new MemoryStorageProvider());

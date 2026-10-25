@@ -1,6 +1,8 @@
 import {
   APPEARANCE_FIELDS,
   APPEARANCE_HISTORY_LIMIT,
+  QUIZ_BG_FOLDER,
+  QUIZ_VIDEO_LIMITS,
   quizAppearanceSchema,
   type AppearanceField,
   type AppearanceHistoryEntry,
@@ -8,12 +10,14 @@ import {
   type QuizAppearanceResponse,
   type RevertQuizAppearanceRequest,
   type UpdateQuizAppearanceRequest,
+  urlHasPublicId,
 } from '@libro/shared';
 import type { Types } from 'mongoose';
 import type { Clock } from '../lib/clock.js';
 import { AppError } from '../lib/errors.js';
 import { assertCloudinaryUrls } from '../lib/images.js';
 import { sanitizeRichHtml } from '../lib/sanitize.js';
+import type { ImageProvider } from '../providers/images/ImageProvider.js';
 import { Quiz } from '../models/Quiz.js';
 import { QuizVersion } from '../models/QuizVersion.js';
 import { User } from '../models/User.js';
@@ -21,6 +25,8 @@ import type { Actor } from './progress.service.js';
 
 export interface QuizAppearanceDeps {
   clock: Clock;
+  /** Para verificar con Cloudinary lo que el navegador no puede garantizar (duración, peso y formato del video). */
+  images: ImageProvider;
 }
 
 type HistoryDoc = {
@@ -176,6 +182,74 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
   }
 
   /**
+   * Lo que no se puede confiar al navegador: que el fondo sea de la carpeta de fondos de quiz y, si es video, que
+   * exista y cumpla el tope de peso, formato y duración según Cloudinary. Los datos medidos por Cloudinary reemplazan a
+   * los que mandó el navegador. Un archivo que no cumple se rechaza (el archivo subido NO se borra: eso es de
+   * mantenimiento, nunca de este servicio).
+   */
+  async function verified(appearance: QuizAppearance): Promise<QuizAppearance> {
+    const background = appearance.background;
+    if (!background) return appearance;
+    const media = background.kind === 'image' ? background.image : background.video;
+    if (
+      !media.publicId.startsWith(`${QUIZ_BG_FOLDER}/`) ||
+      !urlHasPublicId(media.url, media.publicId)
+    ) {
+      throw new AppError(
+        'VALIDATION',
+        'El fondo debe subirse desde la pestaña Apariencia del quiz',
+      );
+    }
+    if (background.kind === 'image') return appearance;
+
+    const video = background.video;
+    if (!video.url.includes('/video/upload/')) {
+      throw new AppError('VALIDATION', 'La dirección del video no es válida');
+    }
+    if (!urlHasPublicId(video.posterUrl, video.publicId)) {
+      throw new AppError('VALIDATION', 'El póster no corresponde a ese video');
+    }
+    const info = await deps.images.inspect({ publicId: video.publicId, resource: 'video' });
+    if (!info)
+      throw new AppError('VALIDATION', 'No encontramos ese video en Cloudinary: súbelo de nuevo');
+    if (info.bytes > QUIZ_VIDEO_LIMITS.maxBytes) {
+      const mb = (info.bytes / (1024 * 1024)).toFixed(1);
+      throw new AppError('VALIDATION', `El video pesa ${mb} MB; el máximo es 5 MB`);
+    }
+    if (!(QUIZ_VIDEO_LIMITS.formats as readonly string[]).includes(info.format)) {
+      throw new AppError('VALIDATION', 'El video debe ser mp4 o webm');
+    }
+    if (info.durationSeconds === undefined) {
+      throw new AppError('VALIDATION', 'No pudimos leer la duración del video');
+    }
+    if (
+      info.durationSeconds >
+      QUIZ_VIDEO_LIMITS.maxDurationSeconds + QUIZ_VIDEO_LIMITS.toleranceSeconds
+    ) {
+      throw new AppError(
+        'VALIDATION',
+        `El video dura ${info.durationSeconds.toFixed(1)} s; el máximo es ${QUIZ_VIDEO_LIMITS.maxDurationSeconds} s`,
+      );
+    }
+    const measured = quizAppearanceSchema.safeParse({
+      ...appearance,
+      background: {
+        kind: 'video',
+        video: {
+          ...video,
+          durationSeconds: info.durationSeconds,
+          ...(info.width > 0 ? { width: info.width } : {}),
+          ...(info.height > 0 ? { height: info.height } : {}),
+        },
+      },
+    });
+    if (!measured.success) {
+      throw new AppError('VALIDATION', measured.error.issues[0]?.message ?? 'Video no válido');
+    }
+    return measured.data;
+  }
+
+  /**
    * Escribe un estado nuevo en una sola operación: solo si la revisión sigue siendo la que la persona vio y el quiz no
    * está archivado. Sin coincidencia no cambia nada (409).
    */
@@ -224,7 +298,7 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
   ): Promise<QuizAppearanceResponse> {
     const quiz = await mustFind(quizId);
     if (quiz.status === 'archived') throw new AppError('CONFLICT', ARCHIVED_MESSAGE);
-    const next = validated(request.appearance);
+    const next = await verified(validated(request.appearance));
     const first = readStored(quiz.appearance) === null;
     await commit(quiz, actor, next, first ? 'seed' : 'update', request.expectedRev);
     const warnings: QuizAppearanceResponse['warnings'] = mentionsResult(
