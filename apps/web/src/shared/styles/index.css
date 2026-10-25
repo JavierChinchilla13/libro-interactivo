@@ -745,12 +745,121 @@
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    border: 1px solid var(--token-line);
+    border: 1px solid var(--quiz-accent, var(--token-line));
     border-radius: var(--token-radius-xl);
     background:
       radial-gradient(90% 120% at 15% 0%, rgb(168 155 255 / 0.28), transparent 60%),
       radial-gradient(80% 100% at 90% 100%, rgb(63 216 255 / 0.18), transparent 60%),
       var(--token-surface);
+  }
+  /*
+   * Fondo de un quiz (apariencia): capa fija detrás de todo, sin mover el contenido. Debajo siempre hay un color liso
+   * (si el fondo no carga se ve ese) y encima un velo del color del sitio cuya intensidad calcula el cliente para que
+   * el texto atenuado cumpla AA. Solo se anima la opacidad (fundido de entrada).
+   */
+  .quiz-bg {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 100%;
+    height: 100lvh;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--token-bg);
+    contain: layout paint;
+  }
+  .quiz-bg-media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity var(--token-dur-slow) var(--token-ease-out);
+  }
+  .quiz-bg[data-loaded] img.quiz-bg-media,
+  .quiz-bg[data-loaded] video.quiz-bg-media[data-started] {
+    opacity: 1;
+  }
+  .quiz-bg-veil {
+    position: absolute;
+    inset: 0;
+    /* Mismo color que usa el cálculo de contraste (PALETTE.bg). */
+    background: #06142b;
+    opacity: var(--quiz-veil, 0.78);
+    transition: opacity var(--token-dur-slow) var(--token-ease-out);
+  }
+  /* Video corto en bucle: invisible hasta que corre; una vez que corrió, pausado se queda el fotograma. */
+  .loop-video {
+    opacity: 0;
+    transition: opacity var(--token-dur-slow) var(--token-ease-out);
+  }
+  .loop-video[data-started] {
+    opacity: 1;
+  }
+  /* Acento de la apariencia: solo títulos grandes, bordes y controles (3:1), nunca texto corrido. */
+  .quiz-accent-fill {
+    background: var(--quiz-accent, var(--token-primary));
+  }
+  .quiz-accent-title {
+    color: var(--quiz-accent, inherit);
+  }
+  /* Botón de pausa del video: 44 px, con texto, en el flujo de la página. */
+  .playback-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0 0.9rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-pill);
+    background: color-mix(in srgb, var(--token-surface) 88%, transparent);
+    color: var(--token-text);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: transform var(--token-dur-press) var(--token-ease-out);
+  }
+  .playback-toggle:active {
+    transform: scale(0.97);
+  }
+  /* Video del resultado: el póster fija el tamaño y el video se apila encima (misma celda). */
+  .result-video {
+    display: grid;
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+    min-width: min(100%, 16rem);
+    min-height: 9rem;
+    margin: 0;
+    overflow: hidden;
+    background: var(--token-sunken);
+  }
+  .result-video-media {
+    grid-area: 1 / 1;
+    max-width: 100%;
+    max-height: 24rem;
+  }
+  .result-video video.result-video-media {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .result-video-toggle {
+    grid-area: 1 / 1;
+    align-self: end;
+    justify-self: end;
+    margin: 0.5rem;
+    z-index: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .quiz-bg-media,
+    .quiz-bg-veil,
+    .loop-video {
+      transition: none;
+    }
   }
   .quiz-hero-img {
     position: absolute;

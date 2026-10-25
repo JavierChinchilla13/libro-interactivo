@@ -441,10 +441,15 @@ describe('vista del resultado', () => {
       />,
     );
     const video = container.querySelector('video');
-    expect(video).toHaveAttribute('aria-label', 'Descripción del video');
+    // Decorativo para lectores de pantalla: el texto alternativo va en el contenedor, una sola vez.
+    expect(screen.getByRole('img', { name: 'Descripción del video' })).toBeInTheDocument();
+    expect(video).toHaveAttribute('aria-hidden', 'true');
     expect(video?.muted).toBe(true);
     expect(video).toHaveAttribute('loop');
-    expect(video).toHaveAttribute('controls');
+    expect(video).toHaveAttribute('playsinline');
+    expect(video).not.toHaveAttribute('controls');
+    expect(video).toHaveAttribute('preload', 'none');
+    expect(screen.getByRole('button', { name: /video del resultado/i })).toBeInTheDocument();
     rerender(
       <ResultView
         result={{

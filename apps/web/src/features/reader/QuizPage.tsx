@@ -11,6 +11,7 @@ import { Alert, Loading } from '../../shared/ui/layout';
 import { readerApi, readerKeys } from './api';
 import { lockedMessage } from './ExperienceStep';
 import { Celebration } from './Celebration';
+import { useQuizBackdrop } from './QuizBackdrop';
 import { ResultView } from './ResultView';
 import { RevealSequence } from './RevealSequence';
 
@@ -100,6 +101,8 @@ export function QuizPage() {
     retry: false,
     staleTime: 0,
   });
+  // Fondo de la apariencia (si el quiz la tiene): solo llega con el quiz ya desbloqueado.
+  const { backdrop, toggle, accentStyle } = useQuizBackdrop(intro.data?.appearance);
   const bookId = intro.data?.bookId ?? '';
   const progress = useQuery({
     queryKey: readerKeys.progress(bookId),
@@ -201,8 +204,12 @@ export function QuizPage() {
   if (view.phase === 'intro') {
     const startError = start.error instanceof ApiClientError ? start.error : null;
     return (
-      <div className="mx-auto flex max-w-xl flex-col gap-5">
-        <LeaveButton unsaved={false} />
+      <div className="mx-auto flex max-w-xl flex-col gap-5" style={accentStyle}>
+        {backdrop}
+        <div className="flex items-center justify-between gap-3">
+          <LeaveButton unsaved={false} />
+          {toggle}
+        </div>
         <div className="quiz-hero">
           {quiz.image ? (
             <img
@@ -217,7 +224,9 @@ export function QuizPage() {
                 Quiz {position + 1} de {experiences.length}
               </p>
             ) : null}
-            <PhaseHeading className="page-title text-h2">{quiz.title}</PhaseHeading>
+            <PhaseHeading className="page-title quiz-accent-title text-h2">
+              {quiz.title}
+            </PhaseHeading>
           </div>
         </div>
         {quiz.instructionsHtml ? <SafeHtml html={quiz.instructionsHtml} /> : null}
@@ -274,9 +283,14 @@ export function QuizPage() {
       setView({ ...view, ...next });
 
     return (
-      <div className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-xl flex-col gap-5">
-        <div className="flex items-center justify-between text-sm">
+      <div
+        className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-xl flex-col gap-5"
+        style={accentStyle}
+      >
+        {backdrop}
+        <div className="flex items-center justify-between gap-3 text-sm">
           <LeaveButton unsaved={Object.keys(answers).length > 0} />
+          {toggle}
           <span aria-hidden="true">
             Pregunta {index + 1} de {stage.questions.length}
           </span>
@@ -298,7 +312,7 @@ export function QuizPage() {
             <span
               key={item.id}
               aria-hidden="true"
-              className={`h-1.5 flex-1 rounded-full transition-colors duration-(--token-dur-fast) ease-token-out ${position <= index ? 'bg-primary' : 'bg-unlit/40'}`}
+              className={`h-1.5 flex-1 rounded-full transition-colors duration-(--token-dur-fast) ease-token-out ${position <= index ? 'quiz-accent-fill' : 'bg-unlit/40'}`}
             />
           ))}
         </div>
@@ -367,6 +381,7 @@ export function QuizPage() {
     const effect = view.result.reveal?.effect ?? view.result.revealIntro?.effect;
     return (
       <>
+        {backdrop}
         <PhaseHeading srOnly>Tus resultados se están preparando</PhaseHeading>
         <RevealSequence lines={lines} effect={effect} onDone={finishReveal} />
       </>
@@ -384,7 +399,8 @@ export function QuizPage() {
   const secondaryPanel = primary.to !== '/panel';
 
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-6">
+    <div className="mx-auto flex max-w-xl flex-col gap-6" style={accentStyle}>
+      {backdrop}
       <Celebration fieldKey={view.result.visual?.key} />
       <ResultView result={view.result} asPage />
       <div className="flex flex-col gap-3">
