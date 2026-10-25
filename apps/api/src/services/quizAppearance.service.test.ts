@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { Quiz } from '../models/Quiz.js';
 import { QuizVersion } from '../models/QuizVersion.js';
 import { createUser } from '../test-utils/auth.js';
+import { fakeImages, videoAsset } from '../test-utils/fakeImages.js';
 import { useTestDb } from '../test-utils/db.js';
 import { createBook, createQuiz, simpleContent } from '../test-utils/quizFixtures.js';
 import { createQuizAdminService } from './quizAdmin.service.js';
@@ -46,7 +47,8 @@ async function world() {
     content: simpleContent({ title: 'Quiz de prueba' }),
     publishedBy: admin._id,
   });
-  const appearance = createQuizAppearanceService({ clock });
+  const cloud = fakeImages([videoAsset('libro/quiz-bg/vid')]);
+  const appearance = createQuizAppearanceService({ clock, images: cloud.provider });
   const quizAdmin = createQuizAdminService({ clock });
   const actor = (u: { _id: unknown }, role: 'ADMIN' | 'EDITOR') => ({
     userId: String(u._id),
@@ -54,6 +56,7 @@ async function world() {
   });
   return {
     clockRef,
+    cloud,
     quiz,
     appearance,
     quizAdmin,
@@ -380,5 +383,138 @@ describe('apariencia del quiz: historial y reversión', () => {
     await User.deleteOne({ _id: editor.userId });
     const res = await appearance.get(quiz.id);
     expect(res.history[0]?.by).toEqual({ id: editor.userId, name: null });
+  });
+});
+
+const videoRef = (over: Record<string, unknown> = {}) => ({
+  provider: 'cloudinary' as const,
+  publicId: 'libro/quiz-bg/vid',
+  url: 'https://res.cloudinary.com/demo/video/upload/v1/libro/quiz-bg/vid.mp4',
+  width: 1280,
+  height: 720,
+  durationSeconds: 5,
+  posterUrl:
+    'https://res.cloudinary.com/demo/video/upload/so_0,f_auto,q_auto/v1/libro/quiz-bg/vid.jpg',
+  alt: 'Niebla sobre una ciudad',
+  ...over,
+});
+const withVideo = (over: Record<string, unknown> = {}): QuizAppearanceInput => ({
+  background: { kind: 'video', video: videoRef(over) as never },
+});
+
+describe('apariencia del quiz: el video se verifica con Cloudinary', () => {
+  it('acepta un video que cumple y guarda las medidas reales (no las que mandó el navegador)', async () => {
+    const { appearance, quiz, editor, cloud } = await world();
+    const res = await appearance.update(quiz.id, editor, {
+      appearance: withVideo(),
+      expectedRev: 0,
+    });
+    const video = res.appearance?.background;
+    expect(video?.kind).toBe('video');
+    if (video?.kind === 'video') {
+      expect(video.video.durationSeconds).toBe(8.2); // el navegador decía 5
+      expect(video.video.width).toBe(1280);
+    }
+    expect(cloud.provider.inspect).toHaveBeenCalledWith({
+      publicId: 'libro/quiz-bg/vid',
+      resource: 'video',
+    });
+  });
+
+  it('rechaza un video que dura más de 10 s (con margen de 2) aunque el navegador diga que dura poco', async () => {
+    const { appearance, quiz, editor, cloud } = await world();
+    cloud.set(videoAsset('libro/quiz-bg/vid', { durationSeconds: 14.5 }));
+    await expect(
+      appearance.update(quiz.id, editor, {
+        appearance: withVideo({ durationSeconds: 3 }),
+        expectedRev: 0,
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION', message: expect.stringContaining('14.5') });
+    cloud.set(videoAsset('libro/quiz-bg/vid', { durationSeconds: 11.9 }));
+    await expect(
+      appearance.update(quiz.id, editor, { appearance: withVideo(), expectedRev: 0 }),
+    ).resolves.toMatchObject({ rev: 1 });
+  });
+
+  it('rechaza un video de más de 5 MB, de otro formato o sin duración', async () => {
+    const { appearance, quiz, editor, cloud } = await world();
+    cloud.set(videoAsset('libro/quiz-bg/vid', { bytes: 6 * 1024 * 1024 }));
+    await expect(
+      appearance.update(quiz.id, editor, { appearance: withVideo(), expectedRev: 0 }),
+    ).rejects.toMatchObject({ code: 'VALIDATION', message: expect.stringContaining('5 MB') });
+    cloud.set(videoAsset('libro/quiz-bg/vid', { format: 'mov' }));
+    await expect(
+      appearance.update(quiz.id, editor, { appearance: withVideo(), expectedRev: 0 }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+    cloud.set(videoAsset('libro/quiz-bg/vid', { durationSeconds: undefined }));
+    await expect(
+      appearance.update(quiz.id, editor, { appearance: withVideo(), expectedRev: 0 }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+    expect((await appearance.get(quiz.id)).rev).toBe(0);
+  });
+
+  it('rechaza un video que no existe en Cloudinary', async () => {
+    const { appearance, quiz, editor } = await world();
+    const ghost = {
+      publicId: 'libro/quiz-bg/fantasma',
+      url: 'https://res.cloudinary.com/demo/video/upload/libro/quiz-bg/fantasma.mp4',
+      posterUrl: 'https://res.cloudinary.com/demo/video/upload/so_0/libro/quiz-bg/fantasma.jpg',
+    };
+    await expect(
+      appearance.update(quiz.id, editor, { appearance: withVideo(ghost), expectedRev: 0 }),
+    ).rejects.toMatchObject({
+      code: 'VALIDATION',
+      message: expect.stringContaining('No encontramos'),
+    });
+  });
+
+  it('el póster y el video deben ser del mismo archivo y estar en la carpeta de fondos', async () => {
+    const { appearance, quiz, editor } = await world();
+    await expect(
+      appearance.update(quiz.id, editor, {
+        appearance: withVideo({
+          posterUrl: 'https://res.cloudinary.com/demo/video/upload/libro/quiz-bg/otro.jpg',
+        }),
+        expectedRev: 0,
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION', message: expect.stringContaining('póster') });
+    await expect(
+      appearance.update(quiz.id, editor, {
+        appearance: withVideo({ publicId: 'libro/cover/vid' }),
+        expectedRev: 0,
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+    // Una imagen de fondo tampoco puede venir de otra carpeta.
+    await expect(
+      appearance.update(quiz.id, editor, {
+        appearance: {
+          background: {
+            kind: 'image',
+            image: {
+              ...image('x'),
+              publicId: 'libro/cover/x',
+              url: 'https://res.cloudinary.com/demo/image/upload/libro/cover/x.jpg',
+            },
+          },
+        },
+        expectedRev: 0,
+      }),
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
+  });
+
+  it('una imagen de fondo no necesita consultar a Cloudinary', async () => {
+    const { appearance, quiz, editor, cloud } = await world();
+    await appearance.update(quiz.id, editor, { appearance: withImage('uno'), expectedRev: 0 });
+    expect(cloud.provider.inspect).not.toHaveBeenCalled();
+  });
+
+  it('nunca borra nada en Cloudinary: ni al cambiar el fondo, ni al quitarlo, ni al revertir', async () => {
+    const { appearance, quiz, editor, cloud } = await world();
+    await appearance.update(quiz.id, editor, { appearance: withVideo(), expectedRev: 0 });
+    await appearance.update(quiz.id, editor, { appearance: withImage('dos'), expectedRev: 1 });
+    await appearance.update(quiz.id, editor, { appearance: {}, expectedRev: 2 });
+    await appearance.revert(quiz.id, editor, { rev: 2, expectedRev: 3 });
+    expect(cloud.provider.destroy).not.toHaveBeenCalled();
+    expect(cloud.destroyed).toEqual([]);
   });
 });
