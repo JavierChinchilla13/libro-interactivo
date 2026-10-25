@@ -1,5 +1,8 @@
 import { luminance } from './color';
 
+/** Tiempo máximo para medir una imagen. */
+const MEASURE_TIMEOUT_MS = 6000;
+
 const cache = new Map<string, Promise<string | undefined>>();
 
 const toHex = (r: number, g: number, b: number): string =>
@@ -13,7 +16,13 @@ const toHex = (r: number, g: number, b: number): string =>
 export function measureBackdrop(url: string): Promise<string | undefined> {
   const known = cache.get(url);
   if (known) return known;
-  const promise = new Promise<string | undefined>((resolve) => {
+  const promise = new Promise<string | undefined>((resolveOnce) => {
+    // Una medida que tarda demasiado no debe bloquear a quien edita: sin medida se usa el piso seguro.
+    const timer = setTimeout(() => resolveOnce(undefined), MEASURE_TIMEOUT_MS);
+    const resolve = (value: string | undefined) => {
+      clearTimeout(timer);
+      resolveOnce(value);
+    };
     if (typeof Image === 'undefined' || typeof document === 'undefined') return resolve(undefined);
     const image = new Image();
     image.crossOrigin = 'anonymous';
@@ -51,5 +60,9 @@ export function measureBackdrop(url: string): Promise<string | undefined> {
     image.src = url;
   });
   cache.set(url, promise);
+  // Un fallo (red, tiempo) no se recuerda: la próxima vez se vuelve a intentar.
+  void promise.then((hex) => {
+    if (hex === undefined) cache.delete(url);
+  });
   return promise;
 }

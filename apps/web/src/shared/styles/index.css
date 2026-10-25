@@ -770,6 +770,33 @@
     background: var(--token-bg);
     contain: layout paint;
   }
+  /* Vista previa del editor: la misma capa, pero dentro de su caja (no fija a la pantalla). */
+  .quiz-bg[data-contained] {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    z-index: 0;
+  }
+  .quiz-preview {
+    position: relative;
+    isolation: isolate;
+    height: 100%;
+    overflow: hidden;
+    background: var(--token-bg);
+    color: var(--token-text);
+  }
+  /* A 375 px las medidas fluidas (vw) deben dar lo del celular, no lo de la ventana del editor. */
+  .quiz-preview[data-size='movil'] {
+    --token-text-h1: 1.95rem;
+    --token-text-h2: 1.875rem;
+  }
+  .quiz-preview[data-size='movil'] .quiz-hero-content {
+    padding: 1.25rem;
+  }
+  .quiz-preview-page {
+    position: relative;
+    z-index: 1;
+  }
   .quiz-bg-media {
     position: absolute;
     inset: 0;
