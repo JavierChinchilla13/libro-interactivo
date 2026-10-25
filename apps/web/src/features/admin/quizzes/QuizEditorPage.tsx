@@ -7,13 +7,14 @@ import { Alert, Badge, Loading, PageHeader, TabPanel, Tabs } from '../../../shar
 import { keys, quizzesApi } from '../api';
 import { errorMessage } from '../errors';
 import type { Draft } from './draft';
+import { AppearanceTab } from './AppearanceTab';
 import { GeneralTab } from './GeneralTab';
 import { PreviewPanel } from './PreviewPanel';
 import { ResultsTab } from './ResultsTab';
 import { StagesTab } from './StagesTab';
 import { VersionsTab } from './VersionsTab';
 
-type Tab = 'general' | 'etapas' | 'resultados' | 'versiones';
+type Tab = 'general' | 'etapas' | 'resultados' | 'apariencia' | 'versiones';
 
 const snapshot = (draft: Draft) => JSON.stringify(draft);
 
@@ -203,12 +204,18 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           { id: 'general', label: 'General' },
           { id: 'etapas', label: 'Etapas y preguntas' },
           { id: 'resultados', label: 'Resultados' },
+          { id: 'apariencia', label: 'Apariencia' },
           { id: 'versiones', label: 'Versiones' },
         ]}
       />
       <fieldset disabled={archived} className="contents">
         <TabPanel id="general" active={tab}>
-          <GeneralTab quiz={quiz} draft={draft} onChange={setDraft} />
+          <GeneralTab
+            quiz={quiz}
+            draft={draft}
+            onChange={setDraft}
+            onOpenAppearance={() => setTab('apariencia')}
+          />
         </TabPanel>
         <TabPanel id="etapas" active={tab}>
           <StagesTab draft={draft} onChange={setDraft} />
@@ -217,6 +224,9 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           <ResultsTab draft={draft} bookId={quiz.bookId} onChange={setDraft} />
         </TabPanel>
       </fieldset>
+      <TabPanel id="apariencia" active={tab}>
+        <AppearanceTab quiz={quiz} archived={archived} title={draft.title} />
+      </TabPanel>
       <TabPanel id="versiones" active={tab}>
         <VersionsTab quizId={quizId} archived={archived} />
       </TabPanel>

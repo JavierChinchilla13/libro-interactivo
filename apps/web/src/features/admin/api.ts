@@ -24,12 +24,15 @@ import {
   publishQuizResponseSchema,
   quizDetailResponseSchema,
   quizListResponseSchema,
+  quizAppearanceHistoryResponseSchema,
+  quizAppearanceResponseSchema,
   quizValidationResponseSchema,
   quizVersionsResponseSchema,
   siteSettingsResponseSchema,
   wikiEntryResponseSchema,
   wikiListResponseSchema,
   type BookInputPayload,
+  type QuizAppearanceInput,
   type CreateStaffUserRequest,
   type UpdateUserRequest,
   type CreateAccessTokenRequest,
@@ -115,6 +118,23 @@ export const quizzesApi = {
   preview: (id: string) =>
     apiRequest(`/admin/quizzes/${id}/preview`, attemptResponseSchema, { method: 'POST' }),
   versions: (id: string) => apiRequest(`/admin/quizzes/${id}/versions`, quizVersionsResponseSchema),
+};
+
+/** Apariencia del quiz (fondo, velo, acento, portada e introducción): se edita en vivo, sin publicar una versión. */
+export const appearanceApi = {
+  get: (id: string) => apiRequest(`/admin/quizzes/${id}/appearance`, quizAppearanceResponseSchema),
+  history: (id: string) =>
+    apiRequest(`/admin/quizzes/${id}/appearance/history`, quizAppearanceHistoryResponseSchema),
+  update: (id: string, appearance: QuizAppearanceInput, expectedRev: number) =>
+    apiRequest(`/admin/quizzes/${id}/appearance`, quizAppearanceResponseSchema, {
+      method: 'PUT',
+      body: { appearance, expectedRev },
+    }),
+  revert: (id: string, rev: number, expectedRev: number) =>
+    apiRequest(`/admin/quizzes/${id}/appearance/revert`, quizAppearanceResponseSchema, {
+      method: 'POST',
+      body: { rev, expectedRev },
+    }),
 };
 
 export interface WikiFilter {
@@ -216,6 +236,7 @@ export const keys = {
   quizzes: (bookId: string) => ['admin', 'quizzes', 'list', bookId] as const,
   quiz: (id: string) => ['admin', 'quizzes', id] as const,
   versions: (id: string) => ['admin', 'quizzes', id, 'versions'] as const,
+  appearance: (id: string) => ['admin', 'quizzes', id, 'appearance'] as const,
   access: (bookId: string) => ['admin', 'access', bookId] as const,
   extras: (bookId: string) => ['admin', 'extras', bookId] as const,
   extra: (id: string) => ['admin', 'extras', 'one', id] as const,
