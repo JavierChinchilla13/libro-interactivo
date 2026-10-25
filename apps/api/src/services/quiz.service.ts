@@ -1,4 +1,5 @@
 import {
+  quizAppearanceSchema,
   quizContentSchema,
   type AttemptResponse,
   type QuizContent,
@@ -107,12 +108,27 @@ export function createQuizService(deps: QuizServiceDeps) {
         .lean(),
     ]);
     const allowRetake = content.settings.allowRetake;
+    // La apariencia (fuera de las versiones) manda sobre la introducción y la portada del snapshot; solo viajan
+    // fondo, velo y acento: nunca historial, revisión ni quién editó.
+    const parsed = quizAppearanceSchema.safeParse(quiz.appearance);
+    const appearance = parsed.success ? parsed.data : undefined;
     return {
       id: quiz._id.toString(),
       bookId: quiz.bookId.toString(),
       title: content.title,
-      instructionsHtml: content.instructionsHtml,
-      ...(content.image ? { image: content.image } : {}),
+      instructionsHtml: appearance ? (appearance.introHtml ?? '') : content.instructionsHtml,
+      ...((appearance ? appearance.cover : content.image)
+        ? { image: appearance ? appearance.cover : content.image }
+        : {}),
+      ...(appearance
+        ? {
+            appearance: {
+              ...(appearance.background ? { background: appearance.background } : {}),
+              overlay: appearance.overlay,
+              ...(appearance.accent ? { accent: appearance.accent } : {}),
+            },
+          }
+        : {}),
       allowRetake,
       status: completedCount > 0 ? 'completed' : 'available',
       completedCount,
