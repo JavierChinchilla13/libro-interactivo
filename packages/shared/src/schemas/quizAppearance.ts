@@ -142,6 +142,13 @@ export const appearanceHistoryEntrySchema = z.object({
 });
 export type AppearanceHistoryEntry = z.infer<typeof appearanceHistoryEntrySchema>;
 
+/** Solo el historial (sin el bloque de apariencia): para pintar la lista de cambios y sus «Volver a este estado». */
+export const quizAppearanceHistoryResponseSchema = z.object({
+  rev: z.number().int().min(0),
+  history: z.array(appearanceHistoryEntrySchema).max(APPEARANCE_HISTORY_LIMIT),
+});
+export type QuizAppearanceHistoryResponse = z.infer<typeof quizAppearanceHistoryResponseSchema>;
+
 export const quizAppearanceResponseSchema = z.object({
   appearance: quizAppearanceSchema.nullable(),
   rev: z.number().int().min(0),
