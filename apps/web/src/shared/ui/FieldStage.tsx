@@ -1,12 +1,6 @@
 import type { FieldVisualKey } from '@libro/shared';
 import { useEffect, useRef, type ReactNode } from 'react';
-
-interface Running {
-  pause(): void;
-}
-
-/** Solo un fondo animado corre a la vez en toda la página: al arrancar uno, el anterior se detiene. */
-let active: Running | null = null;
+import { claimAnimation, releaseAnimation } from '../lib/animationSlot';
 
 function reducedMotion(): boolean {
   return (
@@ -72,12 +66,12 @@ export function FieldStage({
     const sync = () => {
       if (!mounted) return;
       if (visible && !document.hidden) {
-        active?.pause();
-        active = mounted;
+        // Solo un elemento animado corre a la vez en toda la página: al arrancar este, el anterior se detiene.
+        claimAnimation(mounted);
         mounted.resume();
       } else {
         mounted.pause();
-        if (active === mounted) active = null;
+        releaseAnimation(mounted);
       }
     };
 
@@ -120,7 +114,7 @@ export function FieldStage({
       observer.disconnect();
       document.removeEventListener('visibilitychange', sync);
       mounted?.destroy();
-      if (active === mounted) active = null;
+      if (mounted) releaseAnimation(mounted);
     };
   }, [visualKey]);
 
