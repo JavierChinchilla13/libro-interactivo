@@ -21,7 +21,10 @@ export function createQuizController(
 ) {
   const getIntro: RequestHandler = async (_req, res) => {
     const { params } = getInput<unknown, unknown, QuizParams>(res);
-    res.json(await quizzes.getIntro(getAuth(res), params.quizId));
+    const intro = await quizzes.getIntro(getAuth(res), params.quizId);
+    // Depende de la sesión y del desbloqueo: ninguna caché compartida debe guardarlo.
+    res.set('Cache-Control', 'private, no-store');
+    res.json(intro);
   };
 
   const startAttempt: RequestHandler = async (_req, res) => {
