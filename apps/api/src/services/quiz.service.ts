@@ -108,18 +108,18 @@ export function createQuizService(deps: QuizServiceDeps) {
         .lean(),
     ]);
     const allowRetake = content.settings.allowRetake;
-    // La apariencia (fuera de las versiones) manda sobre la introducción y la portada del snapshot; solo viajan
-    // fondo, velo y acento: nunca historial, revisión ni quién editó.
+    // La apariencia (fuera de las versiones) manda solo en lo que define: lo que no trae, lo toma del snapshot.
+    // `introHtml: ''` es «quitar a propósito» y sale vacío. Solo viajan fondo, velo y acento: nunca historial,
+    // revisión ni quién editó.
     const parsed = quizAppearanceSchema.safeParse(quiz.appearance);
     const appearance = parsed.success ? parsed.data : undefined;
+    const cover = appearance?.cover ?? content.image;
     return {
       id: quiz._id.toString(),
       bookId: quiz.bookId.toString(),
       title: content.title,
-      instructionsHtml: appearance ? (appearance.introHtml ?? '') : content.instructionsHtml,
-      ...((appearance ? appearance.cover : content.image)
-        ? { image: appearance ? appearance.cover : content.image }
-        : {}),
+      instructionsHtml: appearance?.introHtml ?? content.instructionsHtml,
+      ...(cover ? { image: cover } : {}),
       ...(appearance
         ? {
             appearance: {

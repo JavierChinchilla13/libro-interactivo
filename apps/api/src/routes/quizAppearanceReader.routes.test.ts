@@ -3,6 +3,7 @@ import {
   attemptResponseSchema,
   quizIntroResponseSchema,
   type QuizAppearanceInput,
+  type QuizContent,
 } from '@libro/shared';
 import { describe, expect, it } from 'vitest';
 import { Quiz } from '../models/Quiz.js';
@@ -32,10 +33,10 @@ const FULL: QuizAppearanceInput = {
 };
 
 /** Mundo con el desbloqueo por QR encendido (como en producción): la lectora solo ve lo que canjeó. */
-async function world(unlocked: boolean) {
+async function world(unlocked: boolean, snapshot?: QuizContent) {
   const w = await staffWorld({ env: { REQUIRE_QR_UNLOCK: 'true' } });
   const book = await createBook();
-  const content = simpleContent({ title: 'Quiz de prueba' });
+  const content = snapshot ?? simpleContent({ title: 'Quiz de prueba' });
   const quiz = await createQuiz({
     bookId: book._id,
     order: 1,
@@ -93,12 +94,25 @@ describe('la introducción del quiz entrega la apariencia', () => {
     expect(text).not.toContain(String(editorUser._id));
   });
 
-  it('si se quita la introducción en la apariencia, la lectora no ve la del snapshot (la apariencia manda)', async () => {
-    const { reader, intro, save } = await world(true);
-    await save({ ...FULL, introHtml: undefined, cover: undefined });
+  it('una apariencia solo con fondo conserva la introducción y la portada del snapshot', async () => {
+    const content: QuizContent = {
+      ...simpleContent({ title: 'Quiz con portada' }),
+      image: { ...bg('portada-snapshot'), deliveryType: 'upload' as const },
+    };
+    const { reader, intro, save } = await world(true, content);
+    await save({ background: FULL.background });
+    const body = quizIntroResponseSchema.parse((await reader.get(intro).expect(200)).body);
+    expect(body.appearance?.background).toBeDefined();
+    expect(body.instructionsHtml).toBe(content.instructionsHtml);
+    expect(body.image?.publicId).toBe('libro/quiz-bg/portada-snapshot');
+  });
+
+  it('introHtml vacío es «quitar a propósito»: la introducción sale vacía aunque el snapshot tenga una', async () => {
+    const { reader, intro, save, content } = await world(true);
+    expect(content.instructionsHtml).not.toBe('');
+    await save({ ...FULL, introHtml: '' });
     const body = quizIntroResponseSchema.parse((await reader.get(intro).expect(200)).body);
     expect(body.instructionsHtml).toBe('');
-    expect(body.image).toBeUndefined();
   });
 
   it('es de esa lectora y no se guarda en cachés compartidas', async () => {
