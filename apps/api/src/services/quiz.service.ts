@@ -493,6 +493,7 @@ export function createQuizService(deps: QuizServiceDeps) {
 
     return {
       quizId,
+      bookId: current.bookId.toString(),
       title: currentContent.title,
       allowRetake,
       current: {

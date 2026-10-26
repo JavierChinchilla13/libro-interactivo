@@ -112,9 +112,12 @@ export const extraPreviewResponseSchema = z.object({
 // --- Lector ---
 
 export const readerExtrasQuerySchema = z.object({ bookId: objectIdSchema });
-/** Mientras el libro no esté completo solo se informa que está bloqueado (ni títulos ni cantidad). */
+/**
+ * Mientras el libro no esté completo solo se informa que está bloqueado, y si ya hay algo publicado detrás (`hasExtras`,
+ * un booleano: ni títulos ni cantidad), para distinguir «aún no hay capítulos» de «te faltan quizzes para abrirlos».
+ */
 export const readerExtrasResponseSchema = z.discriminatedUnion('locked', [
-  z.object({ locked: z.literal(true) }),
+  z.object({ locked: z.literal(true), hasExtras: z.boolean() }),
   z.object({
     locked: z.literal(false),
     extras: z.array(
