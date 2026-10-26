@@ -1,4 +1,5 @@
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { sectionOf } from '../../app/layouts/PanelLayout';
 import { BOOK_ID, json, mockApi, renderAt } from '../../test/mockApi';
@@ -33,34 +34,72 @@ const world = (entries: unknown[]) =>
       json({ bookId: BOOK_ID, experiences: [], bookCompleted: false }),
   });
 
+const progressFor = (id: string) => ({
+  [`GET /api/me/progress?bookId=${id}`]: () =>
+    json({ bookId: id, experiences: [], bookCompleted: false }),
+});
+const bookTabs = () => screen.getByRole('navigation', { name: /^Secciones de / });
+const generalTabs = () => screen.getAllByRole('navigation', { name: 'Panel' })[0]!;
+
 describe('resultados y extras dentro de cada libro', { timeout: 30_000 }, () => {
-  it('/panel/resultados lleva a los resultados del primer libro abierto y marca la pestaña', async () => {
+  it('con un solo libro abierto, /panel/resultados va directo a sus resultados con el título del libro', async () => {
     world([entry(2, 'locked'), entry(1, 'open')]);
     renderAt('/panel/resultados');
-    expect(await screen.findByRole('heading', { name: 'Mis resultados' })).toBeInTheDocument();
-    expect(screen.getByText('[PLACEHOLDER] Libro 1')).toBeInTheDocument();
-    const [tabs] = screen.getAllByRole('navigation', { name: 'Panel' });
-    expect(within(tabs!).getByRole('link', { name: 'Resultados' })).toHaveAttribute(
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'Tus resultados en [PLACEHOLDER] Libro 1',
+      }),
+    ).toBeInTheDocument();
+    expect(within(bookTabs()).getByRole('link', { name: 'Resultados' })).toHaveAttribute(
       'aria-current',
       'page',
     );
-    expect(within(tabs!).getByRole('link', { name: 'Panel' })).not.toHaveAttribute('aria-current');
   });
 
-  it('/panel/extras lleva a los extras del libro que la lectora abrió por última vez', async () => {
-    localStorage.setItem('libro_selected_book', BOOK_ID);
+  it('con un solo libro abierto, /panel/extras va directo a sus extras con el título del libro', async () => {
+    world([entry(1, 'open')]);
+    renderAt('/panel/extras');
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'Capítulos extra de [PLACEHOLDER] Libro 1',
+      }),
+    ).toBeInTheDocument();
+    expect(within(bookTabs()).getByRole('link', { name: 'Extras' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
+  it('con varios libros abiertos, /panel/resultados y /panel/extras son puntos de acceso que listan los libros', async () => {
+    world([entry(1, 'open'), entry(3, 'open'), entry(2, 'locked')]);
+    const first = renderAt('/panel/resultados');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Resultados' }),
+    ).toBeInTheDocument();
+    const list = screen.getByRole('list', { name: 'Tus libros' });
+    const links = within(list).getAllByRole('link');
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      '/panel/libros/libro-1/resultados',
+      '/panel/libros/libro-3/resultados',
+    ]);
+    expect(screen.getByText(/todavía no abriste no tienen resultados/)).toBeInTheDocument();
+    // El libro sin abrir no se ofrece.
+    expect(within(list).queryByText('[PLACEHOLDER] Libro 2')).toBeNull();
+    first.unmount();
+    vi.unstubAllGlobals();
     world([entry(1, 'open'), entry(3, 'open')]);
     renderAt('/panel/extras');
-    expect(await screen.findByRole('heading', { name: 'Capítulos extra' })).toBeInTheDocument();
-    expect(screen.getByText('[PLACEHOLDER] Libro 1')).toBeInTheDocument();
-    const [tabs] = screen.getAllByRole('navigation', { name: 'Panel' });
-    expect(within(tabs!).getByRole('link', { name: 'Extras' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
+    expect(await screen.findByRole('heading', { level: 1, name: 'Extras' })).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('list', { name: 'Tus libros' }))
+        .getAllByRole('link')
+        .map((link) => link.getAttribute('href')),
+    ).toEqual(['/panel/libros/libro-1/extras', '/panel/libros/libro-3/extras']);
   });
 
-  it('sin libros abiertos, las direcciones antiguas llevan a la entrada del panel', async () => {
+  it('sin libros abiertos, los puntos de acceso llevan a la entrada del panel', async () => {
     world([entry(1, 'locked')]);
     renderAt('/panel/resultados');
     expect(await screen.findByRole('heading', { name: /^Hola, / })).toBeInTheDocument();
@@ -71,16 +110,146 @@ describe('resultados y extras dentro de cada libro', { timeout: 30_000 }, () => 
     renderAt('/panel/libros/no-existe/resultados');
     expect(await screen.findByText('Página no encontrada')).toBeInTheDocument();
   });
+});
 
-  it('la página del libro cuenta como «Panel» para la pestaña activa', async () => {
+describe('marco del libro: migas, subnavegador y barra', { timeout: 30_000 }, () => {
+  it('el resumen lleva migas «Tus libros › libro», el subnavegador con Resumen marcado y arriba solo «‹ Tus libros»', async () => {
     world([entry(1, 'open')]);
     renderAt('/panel/libros/libro-1');
     await screen.findByRole('heading', { level: 1, name: '[PLACEHOLDER] Libro 1' });
-    const [tabs] = screen.getAllByRole('navigation', { name: 'Panel' });
-    expect(within(tabs!).getByRole('link', { name: 'Panel' })).toHaveAttribute(
+    const crumbs = screen.getByRole('navigation', { name: 'Migas' });
+    expect(within(crumbs).getByRole('link', { name: 'Tus libros' })).toHaveAttribute(
+      'href',
+      '/panel',
+    );
+    expect(within(crumbs).getByText('[PLACEHOLDER] Libro 1')).toHaveAttribute(
       'aria-current',
       'page',
     );
+    const tabs = within(bookTabs()).getAllByRole('link');
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['Resumen', 'Resultados', 'Extras']);
+    expect(tabs.map((tab) => tab.getAttribute('href'))).toEqual([
+      '/panel/libros/libro-1',
+      '/panel/libros/libro-1/resultados',
+      '/panel/libros/libro-1/extras',
+    ]);
+    expect(within(bookTabs()).getByRole('link', { name: 'Resumen' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    // Arriba: sin «Resultados» ni «Extras» generales, solo volver a «Tus libros».
+    expect(
+      within(generalTabs())
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['‹ Tus libros']);
+    // Abajo (celular): volver + las tres secciones del libro.
+    const bottom = screen.getByRole('navigation', { name: 'Panel (móvil)' });
+    expect(
+      within(bottom)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['‹ Tus libros', 'Resumen', 'Resultados', 'Extras']);
+    expect(within(bottom).getByRole('link', { name: 'Resumen' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
+  it('fuera de un libro la barra es la general: Tus libros, Resultados y Extras', async () => {
+    world([entry(1, 'open')]);
+    renderAt('/panel');
+    await screen.findByRole('heading', { name: /^Hola, / });
+    expect(
+      within(generalTabs())
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Tus libros', 'Resultados', 'Extras']);
+    const bottom = screen.getByRole('navigation', { name: 'Panel (móvil)' });
+    expect(
+      within(bottom)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Tus libros', 'Resultados', 'Extras']);
+  });
+
+  it('en Resultados hay cabecera compacta con el título del libro, migas con la sección y la sección marcada', async () => {
+    world([entry(1, 'open')]);
+    renderAt('/panel/libros/libro-1/resultados');
+    await screen.findByRole('heading', { level: 1, name: /Tus resultados en/ });
+    const crumbs = screen.getByRole('navigation', { name: 'Migas' });
+    expect(within(crumbs).getByRole('link', { name: '[PLACEHOLDER] Libro 1' })).toHaveAttribute(
+      'href',
+      '/panel/libros/libro-1',
+    );
+    expect(within(crumbs).getByText('Resultados')).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByText('0 de 1 experiencias abiertas')).toBeInTheDocument();
+    const bottom = screen.getByRole('navigation', { name: 'Panel (móvil)' });
+    expect(within(bottom).getByRole('link', { name: 'Resultados' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
+  it('con varios libros abiertos se puede cambiar de libro sin pasar por el panel y conserva la sección', async () => {
+    mockApi({
+      'GET /api/me/library': () => json({ books: [entry(1, 'open'), entry(3, 'open')] }),
+      'GET /api/books': () => json({ books: [book(1), book(3)] }),
+      [`GET /api/me/results?bookId=${BOOK_ID}`]: () => json({ results: [] }),
+      [`GET /api/me/results?bookId=${book(3).id}`]: () => json({ results: [] }),
+      ...progressFor(BOOK_ID),
+      ...progressFor(book(3).id),
+    });
+    renderAt('/panel/libros/libro-1/resultados');
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Tus resultados en [PLACEHOLDER] Libro 1',
+    });
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'Cambiar de libro' }),
+      'libro-3',
+    );
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'Tus resultados en [PLACEHOLDER] Libro 3',
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('con un solo libro abierto no ofrece cambiar de libro', async () => {
+    world([entry(1, 'open')]);
+    renderAt('/panel/libros/libro-1/resultados');
+    await screen.findByRole('heading', { level: 1, name: /Tus resultados en/ });
+    expect(screen.queryByRole('combobox', { name: 'Cambiar de libro' })).toBeNull();
+  });
+
+  it('un libro sin abrir solo tiene su resumen: sin subnavegador y sus subrutas vuelven al resumen', async () => {
+    world([entry(1, 'locked')]);
+    renderAt('/panel/libros/libro-1/extras');
+    await screen.findByRole('heading', { level: 1, name: '[PLACEHOLDER] Libro 1' });
+    expect(screen.queryByRole('navigation', { name: /^Secciones de / })).toBeNull();
+    expect(screen.getByRole('navigation', { name: 'Migas' })).toBeInTheDocument();
+  });
+
+  it('un título de libro larguísimo se recorta en las migas y la cabecera sin romper nada', async () => {
+    const long = 'El archivo de las memorias que el mar devolvió una madrugada sin nombre ni dueño '
+      .repeat(3)
+      .trim();
+    mockApi({
+      'GET /api/me/library': () =>
+        json({ books: [{ ...entry(1, 'open'), book: { ...book(1), title: long } }] }),
+      'GET /api/books': () => json({ books: [{ ...book(1), title: long }] }),
+      [`GET /api/me/results?bookId=${BOOK_ID}`]: () => json({ results: [] }),
+    });
+    renderAt('/panel/libros/libro-1/resultados');
+    await screen.findByRole('heading', { level: 1, name: `Tus resultados en ${long}` });
+    const crumbLink = within(screen.getByRole('navigation', { name: 'Migas' })).getByRole('link', {
+      name: long,
+    });
+    expect(crumbLink).toHaveAttribute('title', long);
+    expect(crumbLink.closest('li')).toHaveClass('truncate');
+    expect(screen.getAllByText(long, { selector: 'p' })[0]).toHaveClass('line-clamp-2');
   });
 });
 

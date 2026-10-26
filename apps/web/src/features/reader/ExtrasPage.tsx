@@ -40,7 +40,7 @@ export function ExtrasPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Capítulos extra" subtitle={slug !== undefined ? book?.title : undefined} />
+      <PageHeader compact title={book ? `Capítulos extra de ${book.title}` : 'Capítulos extra'} />
       {extras.data?.locked !== false ? (
         <section className="flex flex-col gap-3 border-l-2 border-unlit pl-5">
           <h2 className="font-semibold">Aún están bloqueados</h2>

@@ -1,12 +1,30 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BOOK_ID, READER, apiError, empty, json, mockApi, renderAt } from '../../test/mockApi';
+import {
+  BOOK,
+  BOOK_ID,
+  READER,
+  apiError,
+  empty,
+  json,
+  mockApi,
+  renderAt,
+} from '../../test/mockApi';
 
 beforeEach(() => localStorage.clear());
 afterEach(() => vi.unstubAllGlobals());
 
 const NO_SESSION = { session: null } as const;
+// El marco del libro (migas y subnavegador) pide la biblioteca de la lectora.
+const LIBRARY = {
+  'GET /api/me/library': () =>
+    json({
+      books: [
+        { book: BOOK, access: 'open', progress: { done: 1, total: 3, bookCompleted: false } },
+      ],
+    }),
+};
 const GOOD = 'Nube-Azul-Cuatro-87';
 
 describe('registro', () => {
@@ -277,6 +295,7 @@ describe('extras del lector', () => {
 
   it('bloqueados: solo el aviso y cuánto falta, sin títulos ni cantidad', async () => {
     mockApi({
+      ...LIBRARY,
       [extrasKey]: () => json({ locked: true }),
       [`GET /api/me/progress?bookId=${BOOK_ID}`]: progress,
     });
@@ -288,6 +307,7 @@ describe('extras del lector', () => {
 
   it('abiertos: lista con tipo y «Visto»', async () => {
     mockApi({
+      ...LIBRARY,
       [extrasKey]: () =>
         json({
           locked: false,
@@ -377,6 +397,7 @@ describe('resultados del lector', () => {
 
   it('lista el resultado vigente de cada quiz y vacío da una guía', async () => {
     mockApi({
+      ...LIBRARY,
       [`GET /api/me/results?bookId=${BOOK_ID}`]: () =>
         json({
           results: [
@@ -404,7 +425,10 @@ describe('resultados del lector', () => {
       `/panel/resultados/${quizId}`,
     );
     vi.unstubAllGlobals();
-    mockApi({ [`GET /api/me/results?bookId=${BOOK_ID}`]: () => json({ results: [] }) });
+    mockApi({
+      ...LIBRARY,
+      [`GET /api/me/results?bookId=${BOOK_ID}`]: () => json({ results: [] }),
+    });
     renderAt('/panel/libros/libro-1/resultados');
     expect(await screen.findAllByText('Todavía no tienes resultados')).not.toHaveLength(0);
   });
