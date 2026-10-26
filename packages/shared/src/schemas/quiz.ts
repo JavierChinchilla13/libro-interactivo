@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { imageRefSchema, objectIdSchema } from './common.js';
-import { readerAppearanceSchema } from './quizAppearance.js';
+import { readerAppearanceSchema, readerQuestionAppearanceSchema } from './quizAppearance.js';
 import { publicBookSummarySchema } from './site.js';
 import { fieldSlugSchema, fieldVisualKeySchema } from './wiki.js';
 
@@ -131,6 +131,8 @@ export const readerQuestionSchema = z.object({
   text: z.string(),
   image: imageRefSchema.optional(),
   answers: z.array(readerAnswerSchema),
+  /** Fondo, velo y acento propios de esta pregunta (solo si la autora los personalizó): decoración. */
+  appearance: readerQuestionAppearanceSchema.optional(),
 });
 export const stagePayloadSchema = z.object({
   stageId: quizIdSchema,

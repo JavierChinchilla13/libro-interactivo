@@ -29,7 +29,10 @@ export function createQuizController(
 
   const startAttempt: RequestHandler = async (_req, res) => {
     const { params } = getInput<unknown, unknown, QuizParams>(res);
-    res.json(await quizzes.startAttempt(getAuth(res), params.quizId));
+    const attempt = await quizzes.startAttempt(getAuth(res), params.quizId);
+    // La etapa lleva ajustes de apariencia propios de la lectora y su desbloqueo: ninguna caché compartida debe guardarla.
+    res.set('Cache-Control', 'private, no-store');
+    res.json(attempt);
   };
 
   const submitAnswers: RequestHandler = async (_req, res) => {
@@ -38,7 +41,9 @@ export function createQuizController(
       unknown,
       { attemptId: string; stageId: string }
     >(res);
-    res.json(await quizzes.submitAnswers(getAuth(res), params.attemptId, params.stageId, body));
+    const next = await quizzes.submitAnswers(getAuth(res), params.attemptId, params.stageId, body);
+    res.set('Cache-Control', 'private, no-store');
+    res.json(next);
   };
 
   const listResults: RequestHandler = async (_req, res) => {

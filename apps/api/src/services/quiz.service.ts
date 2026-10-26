@@ -25,6 +25,7 @@ import {
   answerOrderFor,
   questionOrderFor,
   type AnswerOrder,
+  type QuestionAppearances,
   resolveStageAnswers,
   tallyAnswers,
   toResultPayload,
@@ -85,6 +86,18 @@ export function createQuizService(deps: QuizServiceDeps) {
     return { quiz, version, content: contentOf(version) };
   }
 
+  /**
+   * Ajustes de apariencia por pregunta (fondo, velo y acento) guardados en el quiz, sin las entradas vacías. Son
+   * decoración y viajan CON la etapa (no en la introducción), para no adelantar el fondo de preguntas que aún no se ven.
+   */
+  function questionAppearancesOf(raw: unknown): QuestionAppearances | undefined {
+    const parsed = quizAppearanceSchema.safeParse(raw);
+    const entries = Object.entries(parsed.success ? (parsed.data.questions ?? {}) : {}).filter(
+      ([, entry]) => Object.keys(entry).length > 0,
+    );
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+  }
+
   /** Etapa en curso de un intento abierto, lista para entregar. */
   function currentStagePayload(
     attempt: {
@@ -96,6 +109,7 @@ export function createQuizService(deps: QuizServiceDeps) {
       }[];
     },
     content: QuizContent,
+    questionAppearance?: QuestionAppearances,
   ): AttemptResponse {
     const entry = attempt.stages[attempt.stages.length - 1];
     const stage = content.stages.find((candidate) => candidate.id === entry?.stageId);
@@ -103,7 +117,7 @@ export function createQuizService(deps: QuizServiceDeps) {
     return {
       attemptId: attempt._id.toString(),
       status: 'in_progress',
-      stage: toStagePayload(stage, entry.questionOrder, entry.answerOrder),
+      stage: toStagePayload(stage, entry.questionOrder, entry.answerOrder, questionAppearance),
     };
   }
 
@@ -161,7 +175,7 @@ export function createQuizService(deps: QuizServiceDeps) {
       const openContent = open.quizVersionId.equals(version._id)
         ? content
         : (await loadVersionById(open.quizVersionId)).content;
-      return currentStagePayload(open, openContent);
+      return currentStagePayload(open, openContent, questionAppearancesOf(quiz.appearance));
     }
 
     if (!isTest && !content.settings.allowRetake) {
@@ -195,13 +209,17 @@ export function createQuizService(deps: QuizServiceDeps) {
         startedAt: now,
         expireAt: addDays(now, IN_PROGRESS_TTL_DAYS),
       });
-      return currentStagePayload({ _id: attempt._id, stages: attempt.stages }, content);
+      return currentStagePayload(
+        { _id: attempt._id, stages: attempt.stages },
+        content,
+        questionAppearancesOf(quiz.appearance),
+      );
     } catch (error) {
       if (!isDuplicateKey(error)) throw error;
       // Dos "iniciar" a la vez: gana uno; el otro reanuda el intento que quedó abierto.
       const winner = await QuizAttempt.findOne({ ...mine, status: 'in_progress' }).lean();
       if (!winner) throw error;
-      return currentStagePayload(winner, content);
+      return currentStagePayload(winner, content, questionAppearancesOf(quiz.appearance));
     }
   }
 
@@ -387,7 +405,14 @@ export function createQuizService(deps: QuizServiceDeps) {
     return {
       attemptId: advanced._id.toString(),
       status: 'in_progress',
-      stage: toStagePayload(next, nextEntry.questionOrder, nextAnswerOrder),
+      stage: toStagePayload(
+        next,
+        nextEntry.questionOrder,
+        nextAnswerOrder,
+        questionAppearancesOf(
+          (await Quiz.findById(attempt.quizId).select('appearance').lean())?.appearance,
+        ),
+      ),
     };
   }
 

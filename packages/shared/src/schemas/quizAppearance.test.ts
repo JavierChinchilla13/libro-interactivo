@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { quizDetailResponseSchema } from './adminQuiz.js';
-import { quizIntroResponseSchema } from './quiz.js';
+import { quizIntroResponseSchema, readerQuestionSchema } from './quiz.js';
 import {
   APPEARANCE_FIELDS,
   APPEARANCE_HISTORY_LIMIT,
@@ -184,6 +184,7 @@ describe('apariencia del quiz', () => {
       'accent',
       'cover',
       'introHtml',
+      'questions',
     ]);
   });
 
@@ -371,5 +372,125 @@ describe('póster y pertenencia de un medio', () => {
       expect(QUIZ_BG_PUBLIC_ID.test(publicId), publicId).toBe(false);
     }
     expect(QUIZ_BG_PUBLIC_ID.test('libro/quiz-bg/rvgxzqrnyifhsnr2yfxg')).toBe(true);
+  });
+});
+
+describe('apariencia por pregunta', () => {
+  const video = (name: string) => ({
+    provider: 'cloudinary' as const,
+    publicId: `libro/quiz-bg/${name}`,
+    url: `https://res.cloudinary.com/demo/video/upload/libro/quiz-bg/${name}.mp4`,
+    width: 1280,
+    height: 720,
+    durationSeconds: 8,
+    posterUrl: `https://res.cloudinary.com/demo/video/upload/so_0/libro/quiz-bg/${name}.jpg`,
+    alt: 'Humo',
+  });
+  const photo = (name: string) => ({
+    ...image,
+    publicId: `libro/quiz-bg/${name}`,
+    alt: `Foto ${name}`,
+  });
+  const withQuestions = (questions: Record<string, unknown>, extra: object = {}) =>
+    quizAppearanceSchema.safeParse({ questions, ...extra });
+  const imageEntries = (n: number) =>
+    Object.fromEntries(
+      Array.from({ length: n }, (_, i) => [
+        `p${i}`,
+        { background: { kind: 'image', image: photo(`m${i}`) } },
+      ]),
+    );
+  const videoEntries = (n: number) =>
+    Object.fromEntries(
+      Array.from({ length: n }, (_, i) => [
+        `v${i}`,
+        { background: { kind: 'video', video: video(`v${i}`) } },
+      ]),
+    );
+
+  it('acepta ajustes por id estable: fondo propio, «sin fondo», velo y acento; todo es opcional', () => {
+    const result = withQuestions({
+      'etapa-1-p1': { background: { kind: 'image', image: photo('a') }, accent: '#FF8FB1' },
+      p2: { background: { kind: 'none' } },
+      p3: { overlay: { mode: 'manual', strength: 0.9 } },
+      p4: {},
+    });
+    expect(result.success).toBe(true);
+    expect(result.data?.questions?.['etapa-1-p1']?.accent).toBe('#ff8fb1');
+  });
+
+  it('rechaza lo que no es decoración o no es un id: resultKey, introducción, carpetas ajenas y claves raras', () => {
+    expect(withQuestions({ p1: { resultKey: 'r1' } }).success).toBe(false);
+    expect(withQuestions({ p1: { introHtml: '<p>x</p>' } }).success).toBe(false);
+    expect(
+      withQuestions({
+        p1: { background: { kind: 'image', image: { ...photo('a'), publicId: 'libro/otra/a' } } },
+      }).success,
+    ).toBe(false);
+    for (const key of ['', ' p1', 'p 1', '../x', 'a/b', 'p1;drop', 'x'.repeat(65), '-p1']) {
+      expect(withQuestions({ [key]: {} }).success, JSON.stringify(key)).toBe(false);
+    }
+    // El piso del velo rige también por pregunta.
+    expect(withQuestions({ p1: { overlay: { mode: 'manual', strength: 0.6 } } }).success).toBe(
+      false,
+    );
+  });
+
+  it('tope: como máximo 5 preguntas con fondo propio (el velo y el acento sueltos no cuentan)', () => {
+    expect(withQuestions(imageEntries(5)).success).toBe(true);
+    const six = withQuestions(imageEntries(6));
+    expect(six.success).toBe(false);
+    expect(six.error?.issues[0]?.message).toContain('5 preguntas');
+    const accents = Object.fromEntries(
+      Array.from({ length: 40 }, (_, i) => [`q${i}`, { accent: '#ffffff' }]),
+    );
+    expect(withQuestions({ ...imageEntries(5), ...accents }).success).toBe(true);
+    // «Sin fondo» no es un medio.
+    expect(
+      withQuestions({ ninguno: { background: { kind: 'none' } }, ...imageEntries(5) }).success,
+    ).toBe(true);
+  });
+
+  it('tope: como máximo 4 videos en todo el quiz, contando el general', () => {
+    const general = { background: { kind: 'video', video: video('g') } };
+    expect(withQuestions(videoEntries(3), general).success).toBe(true);
+    const tooMany = withQuestions(videoEntries(4), general);
+    expect(tooMany.success).toBe(false);
+    expect(tooMany.error?.issues.some((issue) => issue.message.includes('4 videos'))).toBe(true);
+    expect(withQuestions(videoEntries(5)).success).toBe(false);
+  });
+
+  it('tope: hasta 60 preguntas con ajustes y 100 KB en total', () => {
+    const entries = (n: number) =>
+      Object.fromEntries(Array.from({ length: n }, (_, i) => [`p${i}`, { accent: '#123456' }]));
+    expect(withQuestions(entries(60)).success).toBe(true);
+    expect(withQuestions(entries(61)).success).toBe(false);
+    const huge = withQuestions(
+      {},
+      {
+        cover: {
+          ...image,
+          url: `https://res.cloudinary.com/demo/image/upload/${'a'.repeat(120_000)}.jpg`,
+        },
+      },
+    );
+    expect(huge.success).toBe(false);
+    expect(huge.error?.issues.some((issue) => issue.message.includes('100 KB'))).toBe(true);
+  });
+
+  it('las URL de un fondo no pueden pasar de 2048 caracteres', () => {
+    const long = `https://res.cloudinary.com/demo/image/upload/libro/quiz-bg/abc.jpg?${'x'.repeat(2100)}`;
+    expect(ok({ background: { kind: 'image', image: { ...image, url: long } } }).success).toBe(
+      false,
+    );
+  });
+
+  it('el lector recibe junto a la pregunta solo fondo, velo y acento', () => {
+    const question = { id: 'p1', text: '¿Qué?', answers: [{ id: 'a', text: 'Una' }] };
+    const parse = (extra: object) =>
+      readerQuestionSchema.safeParse({ ...question, ...extra }).success;
+    expect(parse({ appearance: { accent: '#ff8fb1' } })).toBe(true);
+    expect(parse({ appearance: { resultKey: 'r1' } })).toBe(false);
+    expect(parse({})).toBe(true);
   });
 });

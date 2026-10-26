@@ -94,6 +94,7 @@ export const FIELD_LABELS: Record<AppearanceField, string> = {
   accent: 'acento',
   cover: 'portada',
   introHtml: 'introducción',
+  questions: 'preguntas',
 };
 
 /** Dirección de la imagen que representa el fondo (la propia imagen o el póster del video) para medirla. */

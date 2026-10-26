@@ -1,5 +1,6 @@
 import { randomInt } from 'node:crypto';
 import type {
+  ReaderQuestionAppearance,
   QuizContent,
   QuizIssue,
   ResultDef,
@@ -50,6 +51,9 @@ export function questionOrderFor(stage: StageDef, random: RandomInt): string[] {
   const ids = stage.questions.map((question) => question.id);
   return stage.shuffleQuestions ? shuffle(ids, random) : ids;
 }
+
+/** Ajustes de apariencia por id de pregunta (decoración: fondo, velo y acento). */
+export type QuestionAppearances = Readonly<Record<string, ReaderQuestionAppearance>>;
 
 /** Orden en que se entregan las respuestas de cada pregunta: ids por pregunta. */
 export type AnswerOrder = readonly { questionId: string; answerIds: readonly string[] }[];
@@ -182,6 +186,7 @@ export function toStagePayload(
   stage: StageDef,
   questionOrder: readonly string[],
   answerOrder?: AnswerOrder | null,
+  questionAppearance?: QuestionAppearances,
 ): StagePayload {
   const answersByQuestion = new Map(
     (answerOrder ?? []).map((item) => [item.questionId, item.answerIds]),
@@ -195,6 +200,10 @@ export function toStagePayload(
         id: question.id,
         text: question.text,
         ...(question.image ? { image: question.image } : {}),
+        // Solo las preguntas de ESTA etapa: los ajustes de ids que ya no existen en la versión se ignoran sin error.
+        ...(questionAppearance?.[question.id]
+          ? { appearance: questionAppearance[question.id] }
+          : {}),
         answers: orderedAnswers(question.answers, answersByQuestion.get(question.id)).map(
           (answer) => ({ id: answer.id, text: answer.text }),
         ),

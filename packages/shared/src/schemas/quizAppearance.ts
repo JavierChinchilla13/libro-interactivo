@@ -114,7 +114,14 @@ export const appearanceAccentSchema = z.preprocess(
 export type AppearanceAccent = string;
 
 /** La lista blanca exacta: lo único que se puede cambiar en vivo. */
-export const APPEARANCE_FIELDS = ['background', 'overlay', 'accent', 'cover', 'introHtml'] as const;
+export const APPEARANCE_FIELDS = [
+  'background',
+  'overlay',
+  'accent',
+  'cover',
+  'introHtml',
+  'questions',
+] as const;
 export type AppearanceField = (typeof APPEARANCE_FIELDS)[number];
 
 const altSchema = z.string().trim().min(1, 'Escribe un texto alternativo').max(200);
@@ -125,6 +132,7 @@ const backgroundPublicIdSchema = z
 
 export const backgroundImageSchema = imageRefSchema.extend({
   publicId: backgroundPublicIdSchema,
+  url: z.string().min(1).max(2048),
   alt: altSchema,
 });
 
@@ -132,7 +140,7 @@ export const backgroundImageSchema = imageRefSchema.extend({
 export const backgroundVideoSchema = z.object({
   provider: z.literal('cloudinary'),
   publicId: backgroundPublicIdSchema,
-  url: z.string().min(1),
+  url: z.string().min(1).max(2048),
   width: z.number().int().positive().max(4096),
   height: z.number().int().positive().max(4096),
   durationSeconds: z
@@ -142,7 +150,7 @@ export const backgroundVideoSchema = z.object({
       QUIZ_VIDEO_LIMITS.maxDurationSeconds + QUIZ_VIDEO_LIMITS.toleranceSeconds,
       `El video no puede durar más de ${QUIZ_VIDEO_LIMITS.maxDurationSeconds} segundos`,
     ),
-  posterUrl: z.string().min(1, 'El video necesita un póster'),
+  posterUrl: z.string().min(1, 'El video necesita un póster').max(2048),
   alt: altSchema,
 });
 export type BackgroundVideo = z.infer<typeof backgroundVideoSchema>;
@@ -152,6 +160,34 @@ export const quizBackgroundSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('video'), video: backgroundVideoSchema }),
 ]);
 export type QuizBackground = z.infer<typeof quizBackgroundSchema>;
+
+/**
+ * Topes del bloque de apariencia (constantes fáciles de cambiar): cuidan el peso de la página y los créditos de
+ * Cloudinary. Un video general cuenta como un video.
+ */
+export const APPEARANCE_LIMITS = {
+  /** Preguntas con ajustes propios (de cualquier tipo). */
+  maxCustomQuestions: 60,
+  /** Preguntas con un fondo propio (imagen o video; uno por pregunta). */
+  maxQuestionMedia: 5,
+  /** Videos en todo el quiz (el general más los de las preguntas). */
+  maxVideos: 4,
+  /** Tamaño del bloque guardado (el historial conserva 10 estados anteriores). */
+  maxBytes: 100 * 1024,
+} as const;
+
+/** El `id` estable de una pregunta (mismo formato que `quizIdSchema`; no se importa para no crear un ciclo). */
+const questionIdKey = z
+  .string()
+  .regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/, 'Id de pregunta no válido');
+
+/** Fondo de una pregunta: lo del general, una imagen, un video o «ninguno» (quita el fondo solo en esa pregunta). */
+export const questionBackgroundSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('image'), image: backgroundImageSchema }),
+  z.object({ kind: z.literal('video'), video: backgroundVideoSchema }),
+  z.object({ kind: z.literal('none') }),
+]);
+export type QuestionBackground = z.infer<typeof questionBackgroundSchema>;
 
 export const quizOverlaySchema = z
   .object({
@@ -173,6 +209,19 @@ export type QuizOverlay = z.infer<typeof quizOverlaySchema>;
 
 const DEFAULT_OVERLAY = { mode: 'auto', strength: OVERLAY_FLOOR } as const;
 
+/**
+ * Ajustes de UNA pregunta. Cada campo ausente significa «usar el general». Es solo decoración: nunca contiene
+ * nada que dependa del resultado.
+ */
+export const questionAppearanceSchema = z
+  .object({
+    background: questionBackgroundSchema.optional(),
+    overlay: quizOverlaySchema.optional(),
+    accent: appearanceAccentSchema.optional(),
+  })
+  .strict();
+export type QuestionAppearance = z.infer<typeof questionAppearanceSchema>;
+
 export const quizAppearanceSchema = z
   .object({
     background: quizBackgroundSchema.optional(),
@@ -182,8 +231,38 @@ export const quizAppearanceSchema = z
     cover: imageRefSchema.optional(),
     /** Texto de introducción (HTML saneado en el servidor): ambientación, nunca reglas de puntaje ni pistas. */
     introHtml: z.string().max(5000).optional(),
+    /** Ajustes propios de algunas preguntas, por el `id` estable de la pregunta (nunca por su posición). */
+    questions: z.record(questionIdKey, questionAppearanceSchema).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((appearance, ctx) => {
+    const entries = Object.values(appearance.questions ?? {});
+    const limits = APPEARANCE_LIMITS;
+    const fail = (message: string) =>
+      ctx.addIssue({ code: 'custom', path: ['questions'], message });
+    if (entries.length > limits.maxCustomQuestions) {
+      fail(`Como máximo ${limits.maxCustomQuestions} preguntas pueden tener ajustes propios`);
+    }
+    const withMedia = entries.filter(
+      (entry) => entry.background && entry.background.kind !== 'none',
+    );
+    if (withMedia.length > limits.maxQuestionMedia) {
+      fail(
+        `Como máximo ${limits.maxQuestionMedia} preguntas pueden tener un fondo propio (imagen o video)`,
+      );
+    }
+    const videos =
+      (appearance.background?.kind === 'video' ? 1 : 0) +
+      entries.filter((entry) => entry.background?.kind === 'video').length;
+    if (videos > limits.maxVideos) {
+      fail(`El quiz puede tener como máximo ${limits.maxVideos} videos de fondo en total`);
+    }
+    if (new TextEncoder().encode(JSON.stringify(appearance)).length > limits.maxBytes) {
+      fail(
+        `La apariencia ocupa demasiado (máximo ${limits.maxBytes / 1024} KB): quita ajustes de preguntas`,
+      );
+    }
+  });
 export type QuizAppearance = z.infer<typeof quizAppearanceSchema>;
 export type QuizAppearanceInput = z.input<typeof quizAppearanceSchema>;
 
@@ -196,6 +275,10 @@ export const readerAppearanceSchema = z
   })
   .strict();
 export type ReaderAppearance = z.infer<typeof readerAppearanceSchema>;
+
+/** Lo que recibe la lectora junto a cada pregunta de la etapa (solo fondo, velo y acento; nunca el resultado). */
+export const readerQuestionAppearanceSchema = questionAppearanceSchema;
+export type ReaderQuestionAppearance = z.infer<typeof readerQuestionAppearanceSchema>;
 
 // --- Edición (panel: EDITOR o ADMIN) ---
 
