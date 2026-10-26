@@ -281,6 +281,79 @@ describe('editor de quizzes', () => {
     expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
   });
 
+  it('el interruptor de respuestas va junto al de preguntas y «Dejar al final» se guarda por respuesta', async () => {
+    const withStage = detail({
+      draft: draft({
+        stages: [
+          {
+            id: 'etapa-1',
+            order: 1,
+            shuffleQuestions: true,
+            shuffleAnswers: true,
+            producesFinal: true,
+            questions: [
+              {
+                id: 'p1',
+                text: '¿Qué haces?',
+                answers: [
+                  { id: 'p1a', text: 'Me quedo', resultKey: 'r1' },
+                  { id: 'p1b', text: 'Me voy', resultKey: 'r2' },
+                  { id: 'p1c', text: 'Ninguna de las anteriores', resultKey: 'r1' },
+                ],
+              },
+            ],
+          },
+        ],
+        results: [
+          { key: 'r1', stageId: 'etapa-1', title: 'Uno' },
+          { key: 'r2', stageId: 'etapa-1', title: 'Dos' },
+        ],
+      }),
+    });
+    const { called } = mockApi(
+      {
+        [`GET ${url}`]: () => json(withStage),
+        [`PUT ${url}/draft`]: ({ body }) => json({ ...withStage, draft: body as object }),
+      },
+      { session: ADMIN },
+    );
+    renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    await screen.findByRole('heading', { name: 'Quiz Uno' });
+    await userEvent.click(screen.getByRole('tab', { name: 'Etapas y preguntas' }));
+    const questions = screen.getByRole('checkbox', { name: 'Barajar las preguntas de esta etapa' });
+    const answers = screen.getByRole('checkbox', {
+      name: /^Barajar las respuestas de cada pregunta/,
+    });
+    // Mismo grupo de opciones, una tras otra, ambas activas por defecto.
+    expect(questions).toBeChecked();
+    expect(answers).toBeChecked();
+    expect(
+      questions.compareDocumentPosition(answers) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('checkbox', { name: /^Dejar la respuesta 3 al final/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar borrador' }));
+    await screen.findByText('Borrador guardado.');
+    const saved = called(`PUT ${url}/draft`)[0]?.body as {
+      stages: {
+        shuffleAnswers: boolean;
+        questions: { answers: { id: string; pinLast?: boolean }[] }[];
+      }[];
+    };
+    expect(saved.stages[0]?.shuffleAnswers).toBe(true);
+    expect(saved.stages[0]?.questions[0]?.answers.map((x) => x.pinLast ?? false)).toEqual([
+      false,
+      false,
+      true,
+    ]);
+
+    // Con el barajado apagado ya no tiene sentido «Dejar al final»: no se ofrece.
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: /^Barajar las respuestas de cada pregunta/ }),
+    );
+    expect(screen.queryByRole('checkbox', { name: /al final/ })).toBeNull();
+  });
+
   it('muestra el error cuando el quiz no existe', async () => {
     mockApi(
       { [`GET ${url}`]: () => apiError('NOT_FOUND', 'Quiz no encontrado', 404) },
