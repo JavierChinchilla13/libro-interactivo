@@ -240,13 +240,13 @@ describe('apariencia del quiz: sanea y valida', () => {
         appearance: { title: 'Otro título' } as unknown as QuizAppearanceInput,
         expectedRev: 0,
       }),
-    ).rejects.toBeTruthy();
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
     await expect(
       appearance.update(quiz.id, editor, {
         appearance: { overlay: { mode: 'manual', strength: 0.6 } },
         expectedRev: 0,
       }),
-    ).rejects.toBeTruthy();
+    ).rejects.toMatchObject({ code: 'VALIDATION' });
     expect((await appearance.get(quiz.id)).rev).toBe(0);
   });
 
