@@ -1545,6 +1545,7 @@
   .user-menu {
     position: relative;
     min-width: 0;
+    max-width: 14rem;
     flex-shrink: 1;
   }
   .user-menu-trigger {
@@ -1600,7 +1601,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  @media (max-width: 359px) {
+  @media (max-width: 369px) {
     .user-menu-chevron {
       display: none;
     }
@@ -1608,7 +1609,7 @@
       padding-right: 0.25rem;
     }
   }
-  @media (min-width: 360px) and (max-width: 639px) {
+  @media (min-width: 370px) and (max-width: 767px) {
     .user-menu-first {
       display: block;
     }
@@ -1679,6 +1680,11 @@
     font-size: 0.8125rem;
     color: var(--token-muted);
   }
+  .user-menu-sep {
+    height: 1px;
+    margin: 0.25rem 0.5rem;
+    background: var(--token-line);
+  }
   .user-menu-item {
     display: flex;
     align-items: center;
@@ -1691,6 +1697,9 @@
     text-align: left;
     color: var(--token-text);
     transition: background-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .user-menu-item[aria-current='page'] {
+    color: var(--token-primary);
   }
   .user-menu-item:hover,
   .user-menu-item:focus-visible {

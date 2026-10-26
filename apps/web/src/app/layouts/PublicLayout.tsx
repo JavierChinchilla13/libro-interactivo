@@ -6,10 +6,9 @@ import { publicApi, publicKeys } from '../../features/home/api';
 import { Brand } from '../../shared/ui/Brand';
 import { PageBackground } from '../../shared/ui/PageBackground';
 import { MAIN_ID, navTabLg, SkipLink } from '../../shared/ui/nav';
-import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
 import { UserMenu } from '../../shared/ui/UserMenu';
 
-const ctaClass = () => 'btn btn-primary btn-compact';
+const ctaClass = () => 'btn btn-primary btn-compact whitespace-nowrap';
 
 const FOOTER_LINKS = [
   { to: '/wiki', label: 'Wiki' },
@@ -85,14 +84,12 @@ export function PublicLayout() {
             <div className="flex flex-col gap-1 xl:flex-row xl:items-center">
               {user ? (
                 <>
-                  {isStaff(user) ? (
-                    <StaffSwitcher />
-                  ) : (
+                  {isStaff(user) ? null : (
                     <NavLink to={homeFor(user)} className={ctaClass}>
                       Mi panel
                     </NavLink>
                   )}
-                  <UserMenu alwaysShowName />
+                  <UserMenu alwaysShowName looseZones={false} />
                 </>
               ) : (
                 <>

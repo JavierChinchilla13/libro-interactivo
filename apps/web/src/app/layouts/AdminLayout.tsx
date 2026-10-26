@@ -90,7 +90,7 @@ export function AdminLayout() {
 
       <div className="flex min-w-0 flex-col">
         <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-2 border-b border-line bg-bg px-4 py-2.5">
-          <StaffSwitcher />
+          <StaffSwitcher className="hidden 2xl:inline-flex" />
           <UserMenu />
         </header>
         <main
