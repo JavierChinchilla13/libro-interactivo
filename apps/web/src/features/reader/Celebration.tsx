@@ -4,7 +4,8 @@ import './celebration.css';
 
 /** Chispas del momento: posición fija por índice (nada aleatorio, nada que dependa del resultado). */
 const SPARKS = Array.from({ length: 14 }, (_, i) => {
-  const angle = (i / 14) * Math.PI * 2 + (i % 2 === 0 ? 0.12 : -0.12);
+  // El emblema está en el borde izquierdo: el estallido se abre hacia la derecha (de -70° a 70°) para no salirse de la pantalla.
+  const angle = ((-70 + (140 * i) / 13) * Math.PI) / 180 + (i % 2 === 0 ? 0.05 : -0.05);
   const dist = i % 3 === 0 ? 84 : i % 3 === 1 ? 64 : 100;
   return {
     i,

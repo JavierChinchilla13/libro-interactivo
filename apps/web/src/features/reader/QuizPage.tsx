@@ -102,7 +102,18 @@ export function QuizPage() {
     staleTime: 0,
   });
   // Fondo de la apariencia (si el quiz la tiene): solo llega con el quiz ya desbloqueado.
-  const { backdrop, toggle, accentStyle } = useQuizBackdrop(intro.data?.appearance);
+  // En el revelado y en el resultado el fondo es solo el póster: ahí corren la celebración, el campo animado y el video
+  // del resultado (un solo elemento animado a la vez) y el fondo no debe moverse sin botón de pausa.
+  const { backdrop, toggle, accentStyle } = useQuizBackdrop(intro.data?.appearance, {
+    staticOnly: view.phase === 'reveal' || view.phase === 'result',
+  });
+  // Un solo árbol: el fondo es siempre el primer hijo y no se desmonta al cambiar de fase.
+  const shell = (node: ReactNode) => (
+    <>
+      {backdrop}
+      {node}
+    </>
+  );
   const bookId = intro.data?.bookId ?? '';
   const progress = useQuery({
     queryKey: readerKeys.progress(bookId),
@@ -203,9 +214,8 @@ export function QuizPage() {
 
   if (view.phase === 'intro') {
     const startError = start.error instanceof ApiClientError ? start.error : null;
-    return (
+    return shell(
       <div className="mx-auto flex max-w-xl flex-col gap-5" style={accentStyle}>
-        {backdrop}
         <div className="flex items-center justify-between gap-3">
           <LeaveButton unsaved={false} />
           {toggle}
@@ -269,7 +279,7 @@ export function QuizPage() {
                 : 'Comenzar'}
           </Button>
         ) : null}
-      </div>
+      </div>,
     );
   }
 
@@ -282,12 +292,11 @@ export function QuizPage() {
     const patch = (next: Partial<Extract<View, { phase: 'stage' }>>) =>
       setView({ ...view, ...next });
 
-    return (
+    return shell(
       <div
         className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-xl flex-col gap-5"
         style={accentStyle}
       >
-        {backdrop}
         <div className="flex items-center justify-between gap-3 text-sm">
           <LeaveButton unsaved={Object.keys(answers).length > 0} />
           {toggle}
@@ -372,19 +381,18 @@ export function QuizPage() {
             </Button>
           )}
         </div>
-      </div>
+      </div>,
     );
   }
 
   if (view.phase === 'reveal') {
     const lines = [...(view.result.revealIntro?.lines ?? []), ...(view.result.reveal?.lines ?? [])];
     const effect = view.result.reveal?.effect ?? view.result.revealIntro?.effect;
-    return (
+    return shell(
       <>
-        {backdrop}
         <PhaseHeading srOnly>Tus resultados se están preparando</PhaseHeading>
         <RevealSequence lines={lines} effect={effect} onDone={finishReveal} />
-      </>
+      </>,
     );
   }
 
@@ -398,9 +406,8 @@ export function QuizPage() {
       : { to: '/panel', label: 'Volver a mi panel' };
   const secondaryPanel = primary.to !== '/panel';
 
-  return (
+  return shell(
     <div className="mx-auto flex max-w-xl flex-col gap-6" style={accentStyle}>
-      {backdrop}
       <Celebration fieldKey={view.result.visual?.key} />
       <ResultView result={view.result} asPage />
       <div className="flex flex-col gap-3">
@@ -439,6 +446,6 @@ export function QuizPage() {
           ) : null}
         </div>
       </div>
-    </div>
+    </div>,
   );
 }

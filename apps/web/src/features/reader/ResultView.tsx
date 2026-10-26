@@ -27,8 +27,6 @@ function ResultVideo({
   return (
     <figure
       ref={attachRoot}
-      role="img"
-      aria-label={video.alt}
       style={style}
       className="result-video fade-up img-frame self-start rounded-token-xs"
     >
@@ -38,6 +36,7 @@ function ResultVideo({
         canAnimate={state.canAnimate}
         width={900}
         className="result-video-media"
+        posterAlt={video.alt}
       />
       <PlaybackToggle state={state} label="video del resultado" className="result-video-toggle" />
     </figure>

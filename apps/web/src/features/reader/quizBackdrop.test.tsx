@@ -258,6 +258,42 @@ describe('QuizPage: video de fondo', () => {
   });
 });
 
+describe('QuizPage: el fondo no se remonta al cambiar de fase', () => {
+  it('es el mismo elemento en la introducción y en las preguntas (no se desmonta al cambiar de fase)', async () => {
+    const stage = {
+      stageId: 'etapa-1',
+      questions: [
+        {
+          id: 'p1',
+          text: '¿Qué haces?',
+          answers: [
+            { id: 'p1a', text: 'Me quedo' },
+            { id: 'p1b', text: 'Me voy' },
+          ],
+        },
+      ],
+    };
+    mockApi({
+      [`GET /api/quizzes/${QUIZ}`]: intro({
+        background: { kind: 'video', video },
+        overlay: { mode: 'manual', strength: 0.82 },
+      }),
+      [`POST /api/quizzes/${QUIZ}/attempts`]: () =>
+        json({ attemptId: '670000000000000000000099', status: 'in_progress', stage }),
+      'POST /api/attempts/670000000000000000000099/stages/etapa-1/answers': () => json({}),
+    });
+    renderAt(`/panel/quiz/${QUIZ}`);
+    await screen.findByRole('heading', { name: '[PLACEHOLDER] Quiz 2' });
+    const before = bg();
+    expect(before?.querySelector('video')).not.toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Comenzar' }));
+    await screen.findByText('¿Qué haces?');
+    // Misma capa (no se desmontó) y el video siguió siendo el mismo elemento.
+    expect(bg()).toBe(before);
+    expect(bg()?.querySelector('video')).not.toBeNull();
+  });
+});
+
 describe('ResultView: video del resultado con el mismo comportamiento', () => {
   const result = {
     key: 'r1',

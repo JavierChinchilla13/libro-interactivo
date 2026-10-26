@@ -23,6 +23,7 @@ export function LoopVideo({
   width = 720,
   className = '',
   onVisible,
+  posterAlt = '',
 }: {
   source: LoopVideoSource;
   attachVideo: (element: HTMLVideoElement | null) => void;
@@ -31,6 +32,8 @@ export function LoopVideo({
   className?: string;
   /** Avisa cuando ya hay algo que ver: el póster cargó o el video empezó. */
   onVisible?: () => void;
+  /** Texto alternativo del póster; vacío = decorativo (el fondo de un quiz lleva el suyo en su contenedor). */
+  posterAlt?: string;
 }) {
   const [posterFailed, setPosterFailed] = useState(false);
   // Una vez que corrió, se queda a la vista aunque se pause (el fotograma congelado, no el póster).
@@ -40,8 +43,8 @@ export function LoopVideo({
       {posterFailed ? null : (
         <img
           src={posterUrl(source.posterUrl ?? videoPosterUrl(source.url), width)}
-          alt=""
-          aria-hidden="true"
+          alt={posterAlt}
+          aria-hidden={posterAlt ? undefined : true}
           decoding="async"
           onLoad={onVisible}
           onError={() => setPosterFailed(true)}

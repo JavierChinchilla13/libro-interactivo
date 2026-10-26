@@ -847,10 +847,17 @@
     color: var(--token-text);
     font-size: 0.875rem;
     cursor: pointer;
-    transition: transform var(--token-dur-press) var(--token-ease-out);
+    transition:
+      transform var(--token-dur-press) var(--token-ease-out),
+      background-color var(--token-dur-fast) var(--token-ease-out);
   }
   .playback-toggle:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .playback-toggle:hover {
+      background: var(--token-surface-alt);
+    }
   }
   /* Video del resultado: el póster fija el tamaño y el video se apila encima (misma celda). */
   .result-video {
