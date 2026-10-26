@@ -11,6 +11,7 @@ import { Alert, Badge, Card, EmptyState, Loading, PageHeader } from '../../share
 import './howItWorks.css';
 import { readerApi, readerKeys } from './api';
 import { useSelectedBook } from './useBook';
+import { useLibrary } from './useLibrary';
 
 const KIND: Record<ExtraKind, string> = { pdf: 'PDF', text: 'Texto', image: 'Imagen' };
 
@@ -176,6 +177,7 @@ export function ExtraViewPage() {
     gcTime: 0,
     refetchOnWindowFocus: false,
   });
+  const library = useLibrary();
   const [expired, setExpired] = useState(false);
   const expiresIn = extra.data && extra.data.kind !== 'text' ? extra.data.expiresIn : undefined;
 
@@ -204,10 +206,13 @@ export function ExtraViewPage() {
   }
 
   const data = extra.data;
+  // «Cerrar» vuelve a los extras de ESE libro (el punto de acceso general queda de respaldo mientras se sabe cuál es).
+  const slug = library.data?.books.find((entry) => entry.book.id === data.bookId)?.book.slug;
+  const back = slug ? `/panel/libros/${slug}/extras` : '/panel/extras';
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
       <p className="text-sm">
-        <Link to="/panel/extras" className="underline">
+        <Link to={back} className="underline">
           ✕ Cerrar
         </Link>
       </p>
