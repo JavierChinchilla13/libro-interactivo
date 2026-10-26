@@ -22,14 +22,17 @@ const videoWidth = (): number =>
  * El velo del modo automático se mide sobre la zona más clara del fondo; hasta medirla (o si el navegador no puede),
  * vale el piso, que es seguro incluso sobre un píxel blanco. Si el fondo no carga, queda el color liso del sitio.
  */
-export function useQuizBackdrop(appearance: ReaderAppearance | undefined): {
+export function useQuizBackdrop(
+  appearance: ReaderAppearance | undefined,
+  { staticOnly = false }: { staticOnly?: boolean } = {},
+): {
   backdrop: ReactNode;
   toggle: ReactNode;
   /** Estilo del contenedor de la página: el acento de la apariencia como variable CSS. */
   accentStyle: CSSProperties | undefined;
 } {
   const background = appearance?.background;
-  const { attachRoot, attachVideo, state } = useBackgroundPlayback();
+  const { attachRoot, attachVideo, state } = useBackgroundPlayback({ enabled: !staticOnly });
   const [loaded, setLoaded] = useState(false);
   const [measured, setMeasured] = useState<{ url: string; hex: string | undefined } | null>(null);
 

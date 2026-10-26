@@ -36,7 +36,8 @@ export interface BackgroundPlayback {
  */
 export function useBackgroundPlayback({
   autoplay = true,
-}: { autoplay?: boolean } = {}): BackgroundPlayback {
+  enabled = true,
+}: { autoplay?: boolean; enabled?: boolean } = {}): BackgroundPlayback {
   const [video, setVideo] = useState<HTMLVideoElement | null>(null);
   const [root, setRoot] = useState<HTMLElement | null>(null);
   const [canAnimate, setCanAnimate] = useState(motionAllowed);
@@ -70,7 +71,7 @@ export function useBackgroundPlayback({
     return () => observer.disconnect();
   }, [root]);
 
-  const shouldRun = canAnimate && wanted && visible && tabVisible;
+  const shouldRun = enabled && canAnimate && wanted && visible && tabVisible;
   useEffect(() => {
     if (!video) return;
     const onError = () => setFailed(true);
@@ -85,7 +86,10 @@ export function useBackgroundPlayback({
     if (shouldRun) {
       claimAnimation(runner);
       // `play()` puede rechazarse (política de autoplay o archivo roto): el póster ya está de fondo.
-      void Promise.resolve(video.play()).catch(() => undefined);
+      void Promise.resolve(video.play()).catch((error: unknown) => {
+        // El navegador no deja arrancarlo solo (ahorro de energía, autoplay): queda el póster y el botón dice «Reproducir».
+        if (error instanceof DOMException && error.name === 'NotAllowedError') setWanted(false);
+      });
     } else {
       video.pause();
     }
@@ -102,6 +106,10 @@ export function useBackgroundPlayback({
   return {
     attachVideo: setVideo,
     attachRoot: setRoot,
-    state: { canAnimate: canAnimate && !failed, playing: canAnimate && wanted, toggle },
+    state: {
+      canAnimate: enabled && canAnimate && !failed,
+      playing: enabled && canAnimate && wanted,
+      toggle,
+    },
   };
 }
