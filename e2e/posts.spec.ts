@@ -12,6 +12,8 @@ test.describe('actualizaciones (escritorio)', () => {
     playwright,
     baseURL,
   }) => {
+    // Recorrido largo (autora y visitante): con la suite entera en paralelo el margen estándar de 30 s no alcanza.
+    test.setTimeout(90_000);
     const stamp = Date.now();
     const title = `Feria E2E ${stamp}`;
 
