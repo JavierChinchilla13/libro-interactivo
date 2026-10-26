@@ -79,7 +79,8 @@ export function AppearanceTab({
   if (!query.data) return <Loading />;
   return (
     <AppearanceEditor
-      key={`${query.data.rev}-${generation}`}
+      // Solo se remonta al recargar a propósito: guardar no debe borrar el aviso de «Guardado».
+      key={generation}
       quiz={quiz}
       archived={archived}
       title={title}
@@ -539,35 +540,37 @@ function HistoryList({
             lo que estés editando.
           </p>
           <ol className="flex flex-col divide-y divide-border">
-            {[...history].reverse().map((entry) => (
-              <li
-                key={entry.rev}
-                className="flex flex-wrap items-center justify-between gap-2 py-2"
-              >
-                <div className="min-w-0 text-sm">
-                  <p className="font-medium">
-                    #{entry.rev} · {ACTION_LABELS[entry.action]}
-                  </p>
-                  <p className="break-words text-muted">
-                    {new Date(entry.at).toLocaleString('es-CR')} ·{' '}
-                    {entry.by.name ?? 'cuenta eliminada'}
-                  </p>
-                  <p className="break-words text-muted">
-                    {entry.changed.length > 0
-                      ? `Cambió: ${entry.changed.map((field) => FIELD_LABELS[field]).join(', ')}`
-                      : 'Sin cambios visibles'}
-                  </p>
-                </div>
-                <Button
-                  variant="secondary"
-                  disabled={disabled}
-                  loading={busy}
-                  onClick={() => onRevert(entry.rev)}
+            {[...history]
+              .sort((a, b) => b.rev - a.rev)
+              .map((entry) => (
+                <li
+                  key={entry.rev}
+                  className="flex flex-wrap items-center justify-between gap-2 py-2"
                 >
-                  Volver a antes
-                </Button>
-              </li>
-            ))}
+                  <div className="min-w-0 text-sm">
+                    <p className="font-medium">
+                      #{entry.rev} · {ACTION_LABELS[entry.action]}
+                    </p>
+                    <p className="break-words text-muted">
+                      {new Date(entry.at).toLocaleString('es-CR')} ·{' '}
+                      {entry.by.name ?? 'cuenta eliminada'}
+                    </p>
+                    <p className="break-words text-muted">
+                      {entry.changed.length > 0
+                        ? `Cambió: ${entry.changed.map((field) => FIELD_LABELS[field]).join(', ')}`
+                        : 'Sin cambios visibles'}
+                    </p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    disabled={disabled}
+                    loading={busy}
+                    onClick={() => onRevert(entry.rev)}
+                  >
+                    Volver a antes
+                  </Button>
+                </li>
+              ))}
           </ol>
         </>
       )}
