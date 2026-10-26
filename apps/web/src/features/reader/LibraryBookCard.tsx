@@ -14,6 +14,7 @@ export type LibraryEntry = ReaderLibraryResponse['books'][number];
 export const LOCKED_BOOK_TEXT = 'Escanea el QR del primer quiz para abrirlo';
 
 function Progress({ done, total, title }: { done: number; total: number; title: string }) {
+  if (total === 0) return <p className="text-sm text-muted">Aún sin experiencias</p>;
   return (
     <div className="flex flex-col gap-2">
       <p className="text-sm font-medium tabular-nums">

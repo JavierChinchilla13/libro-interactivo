@@ -227,11 +227,19 @@ export function createExtraService(deps: ExtraDeps) {
 
   // ----- Lector -----
 
-  /** Bloqueado → solo `{ locked: true }` (ni títulos ni cantidad). Completo → la lista de publicados. */
+  /**
+   * Bloqueado → solo `{ locked: true, hasExtras }` (un booleano: ni títulos ni cantidad). Completo → la lista de
+   * publicados.
+   */
   async function listForReader(userId: string, bookId: string): Promise<ReaderExtrasResponse> {
     const book = await Book.findById(bookId).select('status').lean();
     if (book?.status !== 'published') throw new AppError('NOT_FOUND', 'No encontramos ese libro');
-    if (!(await progress.isBookCompleted(userId, bookId))) return { locked: true };
+    if (!(await progress.isBookCompleted(userId, bookId))) {
+      return {
+        locked: true,
+        hasExtras: (await Extra.exists({ bookId, status: 'published' })) !== null,
+      };
+    }
     const [extras, seen] = await Promise.all([
       Extra.find({ bookId, status: 'published' }).sort({ order: 1 }).lean(),
       ExtraAccess.find({ userId, bookId }).select('extraId').lean(),
@@ -279,12 +287,19 @@ export function createExtraService(deps: ExtraDeps) {
       );
     }
 
+    const bookIdText = extra.bookId.toString();
     if (extra.kind === 'text')
-      return { kind: 'text', title: extra.title, bodyHtml: extra.bodyHtml ?? '' };
+      return {
+        kind: 'text',
+        bookId: bookIdText,
+        title: extra.title,
+        bodyHtml: extra.bodyHtml ?? '',
+      };
     const key = extra.file?.storageKey;
     if (!key) throw new AppError('INTERNAL', 'Este extra no tiene archivo');
     return {
       kind: extra.kind,
+      bookId: bookIdText,
       title: extra.title,
       url: await storage.createDownloadUrl(key, READER_URL_TTL_SECONDS),
       mime: extra.file?.mime ?? 'application/octet-stream',

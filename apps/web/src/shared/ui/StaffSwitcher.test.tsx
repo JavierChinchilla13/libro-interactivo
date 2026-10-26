@@ -1,4 +1,5 @@
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { READER, json, mockApi, renderAt } from '../../test/mockApi';
 import { zoneOf } from './StaffSwitcher';
@@ -29,10 +30,9 @@ describe('StaffSwitcher', { timeout: 30_000 }, () => {
     ['ADMIN', ADMIN],
     ['EDITOR', EDITOR],
   ])(
-    'una cuenta %s lo ve en el sitio, el panel y la administración con la zona marcada',
+    'una cuenta %s lo ve suelto en el panel y la administración con la zona marcada',
     async (_role, user) => {
       for (const [path, active] of [
-        ['/', 'Ver sitio'],
         ['/panel', 'Mi panel'],
         ['/admin', 'Admin'],
       ] as const) {
@@ -49,6 +49,27 @@ describe('StaffSwitcher', { timeout: 30_000 }, () => {
       }
     },
   );
+
+  it('en el sitio no hay selector suelto: las zonas van dentro del menú de usuario, con la actual marcada en el panel', async () => {
+    mockApi(handlers, { session: ADMIN });
+    renderAt('/');
+    await userEvent.click(await screen.findByRole('button', { name: 'Menú' }));
+    expect(switcher()).not.toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('button', { name: 'Admin' }));
+    const items = screen.getAllByRole('menuitem');
+    expect(items.map((item) => item.textContent)).toEqual([
+      'Ver sitio',
+      'Mi panel',
+      'Admin',
+      'Ajustes',
+      'Salir',
+    ]);
+    expect(items.slice(0, 3).map((item) => item.getAttribute('href'))).toEqual([
+      '/',
+      '/panel',
+      '/admin',
+    ]);
+  });
 
   it('una lectora normal no lo ve en ninguna zona', async () => {
     for (const path of ['/', '/panel']) {

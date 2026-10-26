@@ -63,7 +63,9 @@ describe('guards de /admin (solo mejoran la experiencia; la seguridad es del API
     expect(await screen.findByRole('heading', { name: 'Inicio del panel' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Libros' })).toBeInTheDocument();
     expect(screen.queryByText('Solo administradores')).not.toBeInTheDocument();
-    expect(screen.getByText(/Editora/)).toBeInTheDocument();
+    // El rol vive ahora dentro del menú de usuario.
+    await userEvent.click(screen.getByRole('button', { name: 'Persona' }));
+    expect(screen.getByText('Editora')).toBeInTheDocument();
   });
 
   it('una administradora ve además Códigos QR, Usuarios, Mensajes, Estadísticas y Ajustes', async () => {
