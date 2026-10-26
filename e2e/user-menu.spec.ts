@@ -63,4 +63,55 @@ test.describe('menú de usuario (celular y escritorio)', () => {
     await page.getByRole('menuitem', { name: 'Salir' }).click();
     await expect(page).toHaveURL(/\/ingresar$/);
   });
+
+  const NAMES = [
+    'Maximiliano-Bartholomew-Wiśniewska-Kowalczyk Pérez',
+    '🌙✨ Luna de la Vega',
+    'Jo',
+    'Alejandra Montserrat-Wiśniewska de la Vega y Fernández 🌙',
+  ];
+  for (const name of NAMES) {
+    test(`a 375 px la barra no se rompe con «${name.slice(0, 24)}…»: primer nombre corto y a 340 px solo el avatar`, async ({
+      page,
+    }) => {
+      const stamp = `${Date.now()}-${test.info().project.name}-${name.length}`;
+      const register = await page.request.post('/api/auth/register', {
+        data: { name, email: `barra-${stamp}@ejemplo.com`, password: PASSWORD },
+      });
+      expect(register.status(), await register.text()).toBe(201);
+      await page.request.post('/api/me/welcome-seen');
+
+      for (const [width, showsFirst] of [
+        [375, true],
+        [340, false],
+      ] as const) {
+        await page.setViewportSize({ width, height: 800 });
+        await page.goto('/panel');
+        const trigger = page.getByRole('button', { name });
+        await expect(trigger).toBeVisible();
+        const first = trigger.locator('.user-menu-first');
+        if (showsFirst) {
+          await expect(first).toBeVisible();
+          await expect(first).not.toHaveText('');
+        } else {
+          await expect(first).toBeHidden();
+        }
+        const geometry = await page.evaluate(() => {
+          const rect = (selector: string) =>
+            document.querySelector(selector)?.getBoundingClientRect().toJSON() as DOMRect;
+          return {
+            pill: rect('.site-header .nav-pill'),
+            brand: rect('.site-header .nav-pill a'),
+            trigger: rect('.user-menu-trigger'),
+            scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          };
+        });
+        expect(geometry.scroll).toBeLessThanOrEqual(0);
+        expect(geometry.trigger.right).toBeLessThanOrEqual(geometry.pill.right + 0.5);
+        expect(geometry.trigger.left).toBeGreaterThanOrEqual(geometry.brand.right - 0.5);
+        expect(geometry.trigger.height).toBeGreaterThanOrEqual(44);
+        expect(geometry.pill.height).toBeLessThan(90);
+      }
+    });
+  }
 });
