@@ -1,5 +1,6 @@
 import {
   APPEARANCE_ACCENTS,
+  formatDecimal,
   OVERLAY_MAX,
   overlayMinimum,
   type AppearanceAccent,
@@ -14,7 +15,7 @@ import { posterUrl, thumbUrl } from '../../../shared/lib/cloudinary';
 import { measureBackdrop } from '../../../shared/lib/measureBackdrop';
 import { Button, TextField } from '../../../shared/ui/controls';
 import { Alert, Card, Loading } from '../../../shared/ui/layout';
-import { appearanceApi, keys } from '../api';
+import { appearanceApi, keys, quizzesApi } from '../api';
 import { ImageField } from '../components/MediaFields';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { errorMessage } from '../errors';
@@ -54,7 +55,7 @@ function tokenHex(name: string): string | undefined {
 }
 
 const percent = (value: number) => `${Math.round(value * 100)} %`;
-const ratio = (value: number) => value.toFixed(1).replace('.', ',');
+const ratio = (value: number) => formatDecimal(value);
 
 /** Pestaña «Apariencia»: fondo, velo, acento, portada e introducción. Se aplica en vivo, sin publicar una versión. */
 export function AppearanceTab({
@@ -105,6 +106,18 @@ function AppearanceEditor({
   onReload: () => Promise<void>;
 }) {
   const client = useQueryClient();
+  // «Quiz N de M»: el lugar de este quiz entre los quizzes vigentes de su libro (como lo ve la lectora).
+  const siblings = useQuery({
+    queryKey: keys.quizzes(quiz.bookId),
+    queryFn: () => quizzesApi.list(quiz.bookId),
+  });
+  const position = useMemo(() => {
+    const live = (siblings.data?.quizzes ?? [])
+      .filter((item) => item.status !== 'archived')
+      .sort((a, b) => a.order - b.order);
+    const index = live.findIndex((item) => item.id === quiz.id);
+    return index >= 0 ? { index: index + 1, total: live.length } : undefined;
+  }, [siblings.data, quiz.id]);
   const defaults = useMemo(
     () => ({ introHtml: quiz.draft.instructionsHtml ?? '', cover: quiz.draft.image }),
     [quiz.draft.instructionsHtml, quiz.draft.image],
@@ -413,7 +426,17 @@ function AppearanceEditor({
           </Alert>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-3">
+        <HistoryList
+          history={history}
+          disabled={disabled || dirty}
+          busy={revert.isPending}
+          onRevert={(entryRev) => {
+            setNotice(null);
+            revert.mutate(entryRev);
+          }}
+        />
+
+        <div className="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 rounded-token-lg border border-border bg-surface p-3 shadow-[0_-8px_20px_-12px_rgb(0_0_0/0.6)]">
           <Button
             disabled={disabled || !dirty || Boolean(missing) || measuring}
             loading={save.isPending}
@@ -424,22 +447,14 @@ function AppearanceEditor({
           >
             Guardar apariencia
           </Button>
-          {dirty ? <span className="text-sm text-warning">Cambios sin guardar</span> : null}
+          <span role="status" className={`text-sm ${dirty ? 'text-warning' : 'text-muted'}`}>
+            {dirty ? 'Cambios sin guardar' : archived ? 'Solo lectura' : 'Todo guardado'}
+          </span>
         </div>
-
-        <HistoryList
-          history={history}
-          disabled={disabled || dirty}
-          busy={revert.isPending}
-          onRevert={(entryRev) => {
-            setNotice(null);
-            revert.mutate(entryRev);
-          }}
-        />
       </div>
 
       <div className="min-w-0 lg:sticky lg:top-4 lg:self-start">
-        <AppearancePreview form={form} strength={strength} title={title} />
+        <AppearancePreview form={form} strength={strength} title={title} position={position} />
       </div>
     </div>
   );

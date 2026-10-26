@@ -131,7 +131,7 @@ describe('videoProblem (límites de 5 MB y 10 s)', () => {
 
   it('rechaza por duración (más de 10 s con el margen de 2 s)', () => {
     expect(videoProblem({ size: mb(2), type: 'video/mp4' }, 13.4)).toBe(
-      'El video dura 13 s y el máximo es 10 s. Recórtalo y vuelve a subirlo.',
+      'El video dura 13,4 s y el máximo es 10 s. Recórtalo y vuelve a subirlo.',
     );
   });
 

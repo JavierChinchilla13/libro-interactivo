@@ -60,7 +60,7 @@ describe('video de fondo por la ruta', () => {
       .send({ appearance: { background: { kind: 'video', video: video() } }, expectedRev: 0 });
     expect(res.status).toBe(400);
     expect(code(res)).toBe('VALIDATION');
-    expect(res.body.error.message).toContain('25.0 s');
+    expect(res.body.error.message).toContain('25,0 s');
   });
 
   it('sin Cloudinary configurado, un video responde 503 y una imagen se guarda sin problema', async () => {

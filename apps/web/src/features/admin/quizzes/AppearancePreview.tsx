@@ -60,11 +60,14 @@ export function AppearancePreview({
   form,
   strength,
   title,
+  position,
 }: {
   form: AppearanceForm;
   /** Intensidad real del velo (ya resuelta). */
   strength: number;
   title: string;
+  /** «Quiz N de M» real de este quiz en su libro; mientras se carga, solo «Quiz». */
+  position: { index: number; total: number } | undefined;
 }) {
   const [size, setSize] = useState<SizeKey>('movil');
   const { width, height } = PREVIEW_SIZES[size];
@@ -118,7 +121,9 @@ export function AppearancePreview({
             <div className="quiz-hero">
               <CoverImage cover={form.cover} />
               <div className="quiz-hero-content">
-                <p className="label">Quiz 1 de 3</p>
+                <p className="label">
+                  {position ? `Quiz ${position.index} de ${position.total}` : 'Quiz'}
+                </p>
                 <p className="page-title quiz-accent-title text-h2">{title || 'Título del quiz'}</p>
               </div>
             </div>

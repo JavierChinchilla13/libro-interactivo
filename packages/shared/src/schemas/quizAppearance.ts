@@ -30,6 +30,11 @@ export function overlayMinimum(mode: 'auto' | 'manual'): number {
   return mode === 'manual' ? OVERLAY_FLOOR : OVERLAY_MIN;
 }
 
+/** Número con coma decimal (así se escribe en español): `13,4`. Lo usan los mensajes del servidor y del editor. */
+export function formatDecimal(value: number, digits = 1): string {
+  return value.toFixed(digits).replace('.', ',');
+}
+
 /** Carpeta de Cloudinary de los fondos de quiz (propósito de subida `quiz-bg`). */
 export const QUIZ_BG_FOLDER = 'libro/quiz-bg';
 

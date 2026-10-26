@@ -429,7 +429,7 @@ describe('apariencia del quiz: el video se verifica con Cloudinary', () => {
         appearance: withVideo({ durationSeconds: 3 }),
         expectedRev: 0,
       }),
-    ).rejects.toMatchObject({ code: 'VALIDATION', message: expect.stringContaining('14.5') });
+    ).rejects.toMatchObject({ code: 'VALIDATION', message: expect.stringContaining('14,5 s') });
     cloud.set(videoAsset('libro/quiz-bg/vid', { durationSeconds: 11.9 }));
     await expect(
       appearance.update(quiz.id, editor, { appearance: withVideo(), expectedRev: 0 }),
