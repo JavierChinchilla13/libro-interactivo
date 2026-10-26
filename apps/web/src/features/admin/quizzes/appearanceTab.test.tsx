@@ -161,6 +161,11 @@ describe('pestaña Apariencia', () => {
     expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Guardar apariencia' }));
     await screen.findByText(/Ya lo ven las lectoras, sin publicar una versión nueva/);
+    // El aviso sigue ahí tras refrescarse los datos del quiz (no se remonta la pestaña).
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(
+      screen.getByText(/Ya lo ven las lectoras, sin publicar una versión nueva/),
+    ).toBeInTheDocument();
     const put = called(`PUT /api/admin/quizzes/${QUIZ_ID}/appearance`)[0];
     expect(put?.body).toMatchObject({ expectedRev: 2, appearance: { accent: 'success' } });
     expect(put?.body).toMatchObject({ appearance: { introHtml: '<p>Una niebla espesa.</p>' } });
@@ -217,6 +222,9 @@ describe('pestaña Apariencia', () => {
     );
     const user = await openTab();
     expect(await screen.findByText(/#2 · Edición/)).toBeInTheDocument();
+    // Del más reciente al más antiguo, sin importar el orden en que llegue.
+    const entries = screen.getAllByText(/^#\d · /).map((node) => node.textContent);
+    expect(entries).toEqual(['#2 · Edición', '#1 · Primera edición']);
     expect(screen.getByText(/Cambió: fondo, introducción/)).toBeInTheDocument();
     expect(screen.getByText(/cuenta eliminada/)).toBeInTheDocument();
     await user.click(screen.getAllByRole('button', { name: 'Volver a antes' })[0] as HTMLElement);
