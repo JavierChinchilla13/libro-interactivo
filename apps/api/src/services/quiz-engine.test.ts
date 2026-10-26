@@ -8,6 +8,7 @@ import {
   twoStageContent,
 } from '../test-utils/quizFixtures.js';
 import {
+  answerOrderFor,
   computeDistribution,
   firstStage,
   nextStage,
@@ -299,5 +300,82 @@ describe('propiedad: el resultado final siempre es un resultado válido de la et
       }
       expect(finals.has(finalKey ?? '')).toBe(true);
     }
+  });
+});
+
+describe('barajado de respuestas', () => {
+  const stageWith = (over: object = {}) => ({
+    ...simpleStage('e1', ['r1', 'r2', 'r3', 'r4'], { questions: 3 }),
+    shuffleAnswers: true,
+    ...over,
+  });
+
+  it('sin la opción no hay orden guardado: se entregan en el orden de la autora', () => {
+    expect(answerOrderFor(stageWith({ shuffleAnswers: false }), seededRandom(1))).toBeUndefined();
+    const stage = stageWith({ shuffleAnswers: false });
+    const payload = toStagePayload(stage, ['e1-p1'], undefined);
+    expect(payload.questions[0]?.answers.map((answer) => answer.id)).toEqual(
+      stage.questions[0]?.answers.map((answer) => answer.id),
+    );
+  });
+
+  it('es una permutación de las respuestas de cada pregunta y es reproducible con semilla', () => {
+    const stage = stageWith();
+    const a = answerOrderFor(stage, seededRandom(42));
+    const b = answerOrderFor(stage, seededRandom(42));
+    expect(a).toEqual(b);
+    expect(a).toHaveLength(3);
+    for (const item of a ?? []) {
+      const authored =
+        stage.questions.find((q) => q.id === item.questionId)?.answers.map((x) => x.id) ?? [];
+      expect([...item.answerIds].sort()).toEqual([...authored].sort());
+    }
+    // Con otra semilla el orden cambia (en al menos una pregunta).
+    expect(answerOrderFor(stage, seededRandom(43))).not.toEqual(a);
+  });
+
+  it('«Dejar al final» no se mueve nunca: queda al final, en el orden de la autora', () => {
+    const base = stageWith();
+    const stage = {
+      ...base,
+      questions: base.questions.map((question) => ({
+        ...question,
+        answers: question.answers.map((answer, index) =>
+          index >= 2 ? { ...answer, pinLast: true } : answer,
+        ),
+      })),
+    };
+    for (let seed = 1; seed <= 30; seed += 1) {
+      for (const item of answerOrderFor(stage, seededRandom(seed)) ?? []) {
+        const authored = stage.questions.find((q) => q.id === item.questionId)?.answers ?? [];
+        expect(item.answerIds.slice(-2)).toEqual([authored[2]?.id, authored[3]?.id]);
+        expect([...item.answerIds.slice(0, 2)].sort()).toEqual(
+          [authored[0]?.id, authored[1]?.id].sort(),
+        );
+      }
+    }
+  });
+
+  it('el payload sigue el orden guardado, tolera ids que sobran o faltan y nunca lleva resultKey', () => {
+    const stage = stageWith();
+    const order = answerOrderFor(stage, seededRandom(9)) ?? [];
+    const payload = toStagePayload(stage, ['e1-p1', 'e1-p2', 'e1-p3'], order);
+    expect(payload.questions.map((q) => q.answers.map((a) => a.id))).toEqual(
+      order.map((item) => item.answerIds),
+    );
+    expect(JSON.stringify(payload)).not.toMatch(/resultKey|pinLast/);
+    const damaged = [{ questionId: 'e1-p1', answerIds: ['no-existe', 'e1-p1-c'] }];
+    const ids = toStagePayload(stage, ['e1-p1'], damaged).questions[0]?.answers.map((a) => a.id);
+    expect(ids?.[0]).toBe('e1-p1-c');
+    expect(ids).toHaveLength(4);
+  });
+
+  it('un quiz publicado sin el campo se lee como «sí barajar» (por defecto)', () => {
+    const content = simpleContent();
+    const legacy = JSON.parse(JSON.stringify(content)) as QuizContent;
+    for (const stage of legacy.stages)
+      delete (stage as { shuffleAnswers?: boolean }).shuffleAnswers;
+    const parsed = quizContentSchema.parse(legacy);
+    expect(parsed.stages.every((stage) => stage.shuffleAnswers === true)).toBe(true);
   });
 });

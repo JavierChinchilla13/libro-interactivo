@@ -22,7 +22,9 @@ import {
   firstStage,
   nextStage,
   pickWinner,
+  answerOrderFor,
   questionOrderFor,
+  type AnswerOrder,
   resolveStageAnswers,
   tallyAnswers,
   toResultPayload,
@@ -85,7 +87,14 @@ export function createQuizService(deps: QuizServiceDeps) {
 
   /** Etapa en curso de un intento abierto, lista para entregar. */
   function currentStagePayload(
-    attempt: { _id: Types.ObjectId; stages: { stageId: string; questionOrder: string[] }[] },
+    attempt: {
+      _id: Types.ObjectId;
+      stages: {
+        stageId: string;
+        questionOrder: string[];
+        answerOrder?: AnswerOrder | null | undefined;
+      }[];
+    },
     content: QuizContent,
   ): AttemptResponse {
     const entry = attempt.stages[attempt.stages.length - 1];
@@ -94,7 +103,7 @@ export function createQuizService(deps: QuizServiceDeps) {
     return {
       attemptId: attempt._id.toString(),
       status: 'in_progress',
-      stage: toStagePayload(stage, entry.questionOrder),
+      stage: toStagePayload(stage, entry.questionOrder, entry.answerOrder),
     };
   }
 
@@ -169,6 +178,7 @@ export function createQuizService(deps: QuizServiceDeps) {
       .lean();
     const now = clock();
     const order = questionOrderFor(first, random);
+    const answerOrder = answerOrderFor(first, random);
     try {
       const attempt = await QuizAttempt.create({
         userId: actor.userId,
@@ -178,7 +188,9 @@ export function createQuizService(deps: QuizServiceDeps) {
         version: version.version,
         attemptNumber: (last?.attemptNumber ?? 0) + 1,
         status: 'in_progress',
-        stages: [{ stageId: first.id, questionOrder: order }],
+        stages: [
+          { stageId: first.id, questionOrder: order, ...(answerOrder ? { answerOrder } : {}) },
+        ],
         isTest,
         startedAt: now,
         expireAt: addDays(now, IN_PROGRESS_TTL_DAYS),
@@ -291,6 +303,7 @@ export function createQuizService(deps: QuizServiceDeps) {
     const closed = {
       stageId: entry.stageId,
       questionOrder: entry.questionOrder,
+      ...(entry.answerOrder ? { answerOrder: entry.answerOrder } : {}),
       answers: checked.answers.map(({ questionId, answerId }) => ({
         questionId,
         answerId,
@@ -354,7 +367,12 @@ export function createQuizService(deps: QuizServiceDeps) {
     const next = nextStage(content, stage.id, winner.resultKey);
     if (!next)
       throw new AppError('INTERNAL', 'El quiz no tiene cómo continuar desde este resultado');
-    const nextEntry = { stageId: next.id, questionOrder: questionOrderFor(next, random) };
+    const nextAnswerOrder = answerOrderFor(next, random);
+    const nextEntry = {
+      stageId: next.id,
+      questionOrder: questionOrderFor(next, random),
+      ...(nextAnswerOrder ? { answerOrder: nextAnswerOrder } : {}),
+    };
     const advanced = await QuizAttempt.findOneAndUpdate(
       stillOpen,
       {
@@ -369,7 +387,7 @@ export function createQuizService(deps: QuizServiceDeps) {
     return {
       attemptId: advanced._id.toString(),
       status: 'in_progress',
-      stage: toStagePayload(next, nextEntry.questionOrder),
+      stage: toStagePayload(next, nextEntry.questionOrder, nextAnswerOrder),
     };
   }
 

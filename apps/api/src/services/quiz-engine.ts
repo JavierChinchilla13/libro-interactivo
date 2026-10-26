@@ -51,6 +51,27 @@ export function questionOrderFor(stage: StageDef, random: RandomInt): string[] {
   return stage.shuffleQuestions ? shuffle(ids, random) : ids;
 }
 
+/** Orden en que se entregan las respuestas de cada pregunta: ids por pregunta. */
+export type AnswerOrder = readonly { questionId: string; answerIds: readonly string[] }[];
+
+/**
+ * Orden barajado de las respuestas de cada pregunta de la etapa, o `undefined` si la etapa no baraja respuestas. Las
+ * marcadas «Dejar al final» (`pinLast`) no se mueven: quedan al final, en el orden de la autora.
+ */
+export function answerOrderFor(stage: StageDef, random: RandomInt): AnswerOrder | undefined {
+  if (!stage.shuffleAnswers) return undefined;
+  return stage.questions.map((question) => ({
+    questionId: question.id,
+    answerIds: [
+      ...shuffle(
+        question.answers.filter((answer) => !answer.pinLast).map((answer) => answer.id),
+        random,
+      ),
+      ...question.answers.filter((answer) => answer.pinLast).map((answer) => answer.id),
+    ],
+  }));
+}
+
 /** La etapa inicial: la única sin condición (la validación garantiza que hay una sola). */
 export function firstStage(content: QuizContent): StageDef | undefined {
   return [...content.stages]
@@ -141,8 +162,30 @@ export function computeDistribution(
   return rows.map(({ resultKey, percent }) => ({ resultKey, percent }));
 }
 
+/** Respuestas en el orden guardado en el intento; sin orden (intentos anteriores) o con ids que sobran o faltan, el de la autora. */
+function orderedAnswers<T extends { id: string }>(
+  answers: readonly T[],
+  order: readonly string[] | undefined,
+): T[] {
+  if (!order) return [...answers];
+  const byId = new Map(answers.map((answer) => [answer.id, answer]));
+  const listed = order.flatMap((id) => {
+    const answer = byId.get(id);
+    return answer ? [answer] : [];
+  });
+  const seen = new Set(listed.map((answer) => answer.id));
+  return [...listed, ...answers.filter((answer) => !seen.has(answer.id))];
+}
+
 /** Etapa tal como se entrega al lector: preguntas en el orden dado y SIN `resultKey`. */
-export function toStagePayload(stage: StageDef, questionOrder: readonly string[]): StagePayload {
+export function toStagePayload(
+  stage: StageDef,
+  questionOrder: readonly string[],
+  answerOrder?: AnswerOrder | null,
+): StagePayload {
+  const answersByQuestion = new Map(
+    (answerOrder ?? []).map((item) => [item.questionId, item.answerIds]),
+  );
   const byId = new Map(stage.questions.map((question) => [question.id, question]));
   const questions = questionOrder.flatMap((id) => {
     const question = byId.get(id);
@@ -152,7 +195,9 @@ export function toStagePayload(stage: StageDef, questionOrder: readonly string[]
         id: question.id,
         text: question.text,
         ...(question.image ? { image: question.image } : {}),
-        answers: question.answers.map((answer) => ({ id: answer.id, text: answer.text })),
+        answers: orderedAnswers(question.answers, answersByQuestion.get(question.id)).map(
+          (answer) => ({ id: answer.id, text: answer.text }),
+        ),
       },
     ];
   });

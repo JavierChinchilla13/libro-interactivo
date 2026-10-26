@@ -14,6 +14,7 @@ const draftAnswerSchema = z.object({
   id: quizIdSchema,
   text: z.string().max(500),
   resultKey: z.string().max(64),
+  pinLast: z.boolean().optional(),
 });
 
 const draftQuestionSchema = z.object({
@@ -28,6 +29,7 @@ const draftStageSchema = z.object({
   order: z.number().int().min(1),
   title: z.string().max(120).optional(),
   shuffleQuestions: z.boolean().default(true),
+  shuffleAnswers: z.boolean().default(true),
   conditionStageId: quizIdSchema.optional(),
   conditionResultKey: quizIdSchema.optional(),
   producesFinal: z.boolean(),

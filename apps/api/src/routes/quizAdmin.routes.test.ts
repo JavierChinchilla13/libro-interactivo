@@ -236,3 +236,56 @@ describe('quizVersions es inmutable', () => {
     expect((await QuizVersion.findById(version._id))?.title).toBe(simpleContent().title);
   });
 });
+
+describe('opciones de barajado de respuestas en el panel', () => {
+  it('el borrador guarda shuffleAnswers y «Dejar al final», se publican y rigen en los intentos', async () => {
+    const { editor, reader, book } = await world();
+    const quiz = await createQuiz({ bookId: book._id, order: 1, content: simpleContent() });
+    const id = quiz._id.toString();
+    const detail = (await editor.get(`/api/admin/quizzes/${id}`).expect(200)).body;
+
+    const draft = {
+      ...detail.draft,
+      stages: detail.draft.stages.map((stage: { questions: { answers: object[] }[] }) => ({
+        ...stage,
+        shuffleAnswers: true,
+        questions: stage.questions.map((question) => ({
+          ...question,
+          answers: question.answers.map((answer, index, all) =>
+            index === all.length - 1 ? { ...answer, text: 'Ninguna', pinLast: true } : answer,
+          ),
+        })),
+      })),
+    };
+    const saved = await editor.put(`/api/admin/quizzes/${id}/draft`).send(draft).expect(200);
+    expect(saved.body.draft.stages[0].questions[0].answers.at(-1).pinLast).toBe(true);
+    await editor.post(`/api/admin/quizzes/${id}/publish`).expect(201);
+
+    for (let round = 0; round < 3; round += 1) {
+      const attempt = attemptResponseSchema.parse(
+        (await reader.post(`/api/quizzes/${id}/attempts`).expect(200)).body,
+      );
+      if (attempt.status !== 'in_progress') throw new Error('Se esperaba una etapa');
+      for (const question of attempt.stage.questions) {
+        expect(question.answers.at(-1)?.text).toBe('Ninguna');
+      }
+      await reader
+        .post(`/api/attempts/${attempt.attemptId}/stages/${attempt.stage.stageId}/answers`)
+        .send({
+          answers: attempt.stage.questions.map((q) => ({
+            questionId: q.id,
+            answerId: q.answers[0]!.id,
+          })),
+        })
+        .expect(200);
+    }
+
+    // Apagar la opción exige publicar otra versión: lo ya publicado sigue barajando hasta entonces.
+    const off = {
+      ...draft,
+      stages: draft.stages.map((stage: object) => ({ ...stage, shuffleAnswers: false })),
+    };
+    await editor.put(`/api/admin/quizzes/${id}/draft`).send(off).expect(200);
+    expect((await QuizVersion.countDocuments({ quizId: quiz._id })) as number).toBe(1);
+  });
+});
