@@ -119,12 +119,14 @@ export function AppearancePreview({
               ) : null}
             </div>
             <div className="quiz-hero">
-              <CoverImage cover={form.cover} />
+              <CoverImage key={form.cover?.url} cover={form.cover} />
               <div className="quiz-hero-content">
                 <p className="label">
                   {position ? `Quiz ${position.index} de ${position.total}` : 'Quiz'}
                 </p>
-                <p className="page-title quiz-accent-title text-h2">{title || 'Título del quiz'}</p>
+                <p className="page-title quiz-accent-title text-h2 [text-wrap:balance]">
+                  {title || 'Título del quiz'}
+                </p>
               </div>
             </div>
             {form.introHtml ? <SafeHtml html={form.introHtml} /> : null}

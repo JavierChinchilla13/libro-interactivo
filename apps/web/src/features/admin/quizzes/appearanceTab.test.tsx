@@ -227,7 +227,10 @@ describe('pestaña Apariencia', () => {
     expect(entries).toEqual(['#2 · Edición', '#1 · Primera edición']);
     expect(screen.getByText(/Cambió: fondo, introducción/)).toBeInTheDocument();
     expect(screen.getByText(/cuenta eliminada/)).toBeInTheDocument();
+    // Pide confirmación: las lectoras lo ven en seguida.
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
     await user.click(screen.getAllByRole('button', { name: 'Volver a antes' })[0] as HTMLElement);
+    expect(confirm).toHaveBeenCalledOnce();
     await screen.findByText(/Se volvió al estado anterior/);
     expect(called(`POST /api/admin/quizzes/${QUIZ_ID}/appearance/revert`)[0]?.body).toEqual({
       rev: 2,
@@ -285,5 +288,18 @@ describe('pestaña Apariencia', () => {
     expect(screen.getByRole('button', { name: 'Guardar apariencia' }).parentElement).toHaveClass(
       'sticky',
     );
+  });
+
+  it('cambiar de pestaña no tira los cambios sin guardar de Apariencia', async () => {
+    mockApi(base({ [`GET /api/admin/quizzes/${QUIZ_ID}/appearance`]: () => json(state()) }), {
+      session: ADMIN,
+    });
+    const user = await openTab();
+    await user.click(await screen.findByRole('radio', { name: /Verde/ }));
+    expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'General' }));
+    await user.click(screen.getByRole('tab', { name: 'Apariencia' }));
+    expect(screen.getByRole('radio', { name: /Verde/ })).toBeChecked();
+    expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
   });
 });
