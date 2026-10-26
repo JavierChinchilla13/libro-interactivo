@@ -415,11 +415,33 @@ describe('extras del lector', () => {
     ).toHaveAttribute('href', `/panel/extras/${'b'.repeat(24)}`);
   });
 
+  it('«Cerrar» al leer un extra vuelve a los extras de ESE libro', async () => {
+    mockApi({
+      ...LIBRARY,
+      [`GET /api/extras/${'a'.repeat(24)}`]: () =>
+        json({
+          kind: 'text',
+          bookId: BOOK_ID,
+          title: '[PLACEHOLDER] Texto',
+          bodyHtml: '<p>Hola</p>',
+        }),
+    });
+    renderAt(`/panel/extras/${'a'.repeat(24)}`);
+    expect(await screen.findByText('Hola')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: '✕ Cerrar' })).toHaveAttribute(
+        'href',
+        '/panel/libros/libro-1/extras',
+      ),
+    );
+  });
+
   it('abrir un texto lo muestra saneado; un extra bloqueado (403) no entrega nada', async () => {
     mockApi({
       [`GET /api/extras/${'a'.repeat(24)}`]: () =>
         json({
           kind: 'text',
+          bookId: BOOK_ID,
           title: '[PLACEHOLDER] Texto',
           bodyHtml: '<p>Contenido</p><script>alert(1)</script>',
         }),
@@ -442,6 +464,7 @@ describe('extras del lector', () => {
         n += 1;
         return json({
           kind: 'pdf',
+          bookId: BOOK_ID,
           title: '[PLACEHOLDER] PDF',
           url: `https://almacen.ejemplo.com/f.pdf?firma=${n}`,
           mime: 'application/pdf',
