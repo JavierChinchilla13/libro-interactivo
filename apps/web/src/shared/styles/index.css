@@ -797,6 +797,14 @@
     position: relative;
     z-index: 1;
   }
+  /* Cambio de fondo entre preguntas: la capa nueva entra con un fundido de opacidad sobre la anterior. */
+  .quiz-bg {
+    transition: opacity var(--token-dur-slow) var(--token-ease-out);
+  }
+  .quiz-bg[data-entering],
+  .quiz-bg[data-fading] {
+    opacity: 0;
+  }
   .quiz-bg-media {
     position: absolute;
     inset: 0;
@@ -829,6 +837,7 @@
   /* Acento de la apariencia: solo títulos grandes, bordes y controles (3:1), nunca texto corrido. */
   .quiz-accent-fill {
     background: var(--quiz-accent, var(--token-primary));
+    transition: background-color var(--token-dur-base) var(--token-ease-out);
   }
   .quiz-accent-title {
     color: var(--quiz-accent, inherit);
@@ -889,6 +898,7 @@
     z-index: 1;
   }
   @media (prefers-reduced-motion: reduce) {
+    .quiz-bg,
     .quiz-bg-media,
     .quiz-bg-veil,
     .loop-video {

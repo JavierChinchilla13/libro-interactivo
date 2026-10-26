@@ -37,12 +37,19 @@ export interface BackgroundPlayback {
 export function useBackgroundPlayback({
   autoplay = true,
   enabled = true,
-}: { autoplay?: boolean; enabled?: boolean } = {}): BackgroundPlayback {
+  sourceKey = '',
+}: {
+  autoplay?: boolean;
+  enabled?: boolean;
+  /** Identifica el video actual: un fallo solo cuenta para ese video, no para el que venga después. */
+  sourceKey?: string;
+} = {}): BackgroundPlayback {
   const [video, setVideo] = useState<HTMLVideoElement | null>(null);
   const [root, setRoot] = useState<HTMLElement | null>(null);
   const [canAnimate, setCanAnimate] = useState(motionAllowed);
   // El archivo de video no cargó: se queda el póster y desaparece el botón (no hay nada que pausar).
-  const [failed, setFailed] = useState(false);
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const failed = failedKey === sourceKey;
   const [wanted, setWanted] = useState(autoplay);
   const [visible, setVisible] = useState(true);
   const [tabVisible, setTabVisible] = useState(() => !document.hidden);
@@ -74,7 +81,7 @@ export function useBackgroundPlayback({
   const shouldRun = enabled && canAnimate && wanted && visible && tabVisible;
   useEffect(() => {
     if (!video) return;
-    const onError = () => setFailed(true);
+    const onError = () => setFailedKey(sourceKey);
     video.addEventListener('error', onError);
     // Otro elemento animado tomó el lugar: este se detiene y queda pausado hasta que la persona lo reanude.
     const runner: AnimationRunner = {
@@ -97,7 +104,7 @@ export function useBackgroundPlayback({
       video.removeEventListener('error', onError);
       releaseAnimation(runner);
     };
-  }, [shouldRun, video]);
+  }, [shouldRun, video, sourceKey]);
 
   const toggle = useCallback(() => {
     setWanted((current) => !current);
