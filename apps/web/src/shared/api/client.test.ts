@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { healthResponseSchema } from '@libro/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiClientError, apiRequest } from './client';
@@ -62,6 +63,19 @@ describe('apiRequest', () => {
       // La segunda vez ya no hay respuesta temprana: pide como siempre.
       await apiRequest('/health', healthResponseSchema);
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('al iniciar o cerrar sesión se descarta la respuesta temprana de /me/library (era de otra sesión)', async () => {
+      const fetchMock = vi.fn(
+        async () => new Response(JSON.stringify({ ok: true }), { status: 200 }),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      const early = {
+        '/me/library': Promise.resolve(new Response('{"books":["de la sesión anterior"]}')),
+      };
+      (window as unknown as { __early: unknown }).__early = early;
+      await apiRequest('/auth/logout', z.unknown(), { method: 'POST' });
+      expect(early).not.toHaveProperty('/me/library');
     });
 
     it('si la petición temprana falló, pide por su cuenta', async () => {
