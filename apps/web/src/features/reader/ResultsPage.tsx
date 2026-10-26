@@ -42,13 +42,14 @@ export function ResultsPage() {
   const list = results.data?.results ?? [];
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Tus resultados" />
-      <p className="-mt-3 max-w-prose text-muted">
-        Aquí queda lo que descubriste en este libro: tu resultado de cada quiz.{' '}
-        {canRetake
-          ? 'Puedes revisar el historial de intentos y repetir los quizzes que lo permiten.'
-          : 'Puedes revisar el historial de cada intento.'}
-      </p>
+      <PageHeader
+        title="Tus resultados"
+        subtitle={`Aquí queda lo que descubriste en este libro: tu resultado de cada quiz. ${
+          canRetake
+            ? 'Puedes revisar el historial de intentos y repetir los quizzes que lo permiten.'
+            : 'Puedes revisar el historial de cada intento.'
+        }`}
+      />
       {list.length === 0 ? (
         <EmptyState title="Todavía no tienes resultados en este libro">
           Cuando completes un quiz, aquí queda lo que descubriste.{' '}
@@ -144,8 +145,8 @@ export function ResultDetailPage() {
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        <Link to="/panel" className="btn btn-primary">
-          Volver a mi panel
+        <Link to={slug ? `/panel/libros/${slug}` : '/panel'} className="btn btn-primary">
+          {slug ? 'Volver al libro' : 'Volver a mi panel'}
         </Link>
         {allowRetake ? (
           <Link to={`/panel/quiz/${quizId}`} className="text-sm underline">

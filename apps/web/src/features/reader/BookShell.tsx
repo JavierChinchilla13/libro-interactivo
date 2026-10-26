@@ -146,7 +146,7 @@ export function BookShell() {
         {isOpen ? (
           <nav
             aria-label={`Secciones de ${entry.book.title}`}
-            className="flex gap-1 border-b border-line"
+            className="flex gap-1 border-b border-line max-sm:hidden"
           >
             {BOOK_SECTIONS.map((item) => (
               <NavLink
