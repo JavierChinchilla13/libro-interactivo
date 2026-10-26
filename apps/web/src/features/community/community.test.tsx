@@ -71,6 +71,23 @@ describe('fan arts', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('un enlace de artista que no es http(s) no se vuelve enlace (el nombre va como texto)', async () => {
+    mockApi(
+      {
+        'GET /api/fan-arts': () =>
+          json({ fanArts: [art(1, { artistLink: 'javascript:alert(1)' }), art(2)] }),
+      },
+      NO_SESSION,
+    );
+    renderAt('/fan-arts');
+    await userEvent.click(
+      await screen.findByRole('button', { name: /Ampliar el fan art Título 1/ }),
+    );
+    const dialog = screen.getByRole('dialog', { name: 'Foto ampliada' });
+    expect(within(dialog).getByText(/Por Artista 1/)).toBeInTheDocument();
+    expect(within(dialog).queryByRole('link')).not.toBeInTheDocument();
+  });
+
   it('con varios libros publicados ofrece filtrar y pide solo los de ese libro', async () => {
     const second = { ...BOOK, id: '670000000000000000000011', slug: 'libro-2', title: 'Libro 2' };
     const { called } = mockApi(

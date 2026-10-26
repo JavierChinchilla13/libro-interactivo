@@ -41,7 +41,10 @@ export function FanArtsPage() {
               key={book?.id ?? 'todos'}
               type="button"
               aria-pressed={bookId === book?.id}
-              onClick={() => setBookId(book?.id)}
+              onClick={() => {
+                setBookId(book?.id);
+                setView('galeria');
+              }}
               className="chip"
             >
               {book?.title ?? 'Todos'}
@@ -103,7 +106,7 @@ export function FanArtsPage() {
         .
       </p>
 
-      {open !== null ? (
+      {open !== null && arts[open] ? (
         <Lightbox
           items={arts.map((art) => ({
             image: art.image,
@@ -112,7 +115,7 @@ export function FanArtsPage() {
                 {art.title ? <p className="font-semibold">{art.title}</p> : null}
                 <p className="text-sm">
                   Por{' '}
-                  {art.artistLink ? (
+                  {art.artistLink && /^https?:\/\//i.test(art.artistLink) ? (
                     <a
                       href={art.artistLink}
                       target="_blank"

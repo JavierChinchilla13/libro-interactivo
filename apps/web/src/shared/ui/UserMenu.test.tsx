@@ -93,6 +93,17 @@ describe('UserMenu en el panel', { timeout: 30_000 }, () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  it('Tab cierra el menú y deja el foco en el botón (no en el documento), para seguir desde ahí', async () => {
+    mockApi({}, { session: withName('Lectora Prueba') });
+    renderAt('/panel');
+    const user = userEvent.setup();
+    const button = await trigger('Lectora Prueba');
+    await user.click(button);
+    await user.tab();
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.body).not.toHaveFocus();
+  });
+
   it('↑ sobre el botón abre con el foco en la última opción', async () => {
     mockApi({}, { session: withName('Lectora Prueba') });
     renderAt('/panel');
