@@ -263,9 +263,7 @@ function QuestionFields({
                   if (!mediaFull) patch({ background: { kind: 'image', image: undefined } });
                 }}
               >
-                <span title={mediaFull ? 'Ya hay 5 preguntas con fondo propio' : undefined}>
-                  Imagen{mediaFull ? ' (tope)' : ''}
-                </span>
+                Imagen{mediaFull ? ' (tope)' : ''}
               </Chip>
               <Chip
                 name={`${id}-bg`}
@@ -275,19 +273,16 @@ function QuestionFields({
                     patch({ background: { kind: 'video', video: undefined } });
                 }}
               >
-                <span
-                  title={
-                    mediaFull
-                      ? 'Ya hay 5 preguntas con fondo propio'
-                      : videosFull
-                        ? 'Ya hay 4 videos en el quiz'
-                        : undefined
-                  }
-                >
-                  Video corto{mediaFull || videosFull ? ' (tope)' : ''}
-                </span>
+                Video corto{mediaFull || videosFull ? ' (tope)' : ''}
               </Chip>
             </fieldset>
+            {mediaFull || videosFull ? (
+              <p className="text-xs text-muted">
+                {mediaFull
+                  ? `Ya hay ${LIMITS.maxQuestionMedia} preguntas con fondo propio: quita uno para agregar otro.`
+                  : `Ya hay ${LIMITS.maxVideos} videos en el quiz: solo se puede elegir imagen.`}
+              </p>
+            ) : null}
             {own.kind === 'image' ? (
               <ImageField
                 label={`Imagen de la pregunta ${number}`}
