@@ -69,7 +69,7 @@ function BookHeader({ entry }: { entry: LibraryEntry }) {
             <p className="text-muted [overflow-wrap:anywhere]">{book.tagline}</p>
           ) : null}
 
-          {progress ? (
+          {progress && progress.total > 0 ? (
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium tabular-nums">
                 Progreso: {progress.done} de {progress.total}

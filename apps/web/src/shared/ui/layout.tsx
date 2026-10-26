@@ -36,20 +36,15 @@ export function PageHeader({
   title,
   subtitle,
   actions,
-  compact = false,
 }: {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
-  /** Titular más pequeño y que parte palabras largas: para títulos que incluyen el nombre de un libro. */
-  compact?: boolean;
 }) {
   return (
     <div className="fade-up mb-7 flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
-        <h1 className={compact ? 'page-title text-h2 [overflow-wrap:anywhere]' : 'page-title'}>
-          {title}
-        </h1>
+        <h1 className="page-title">{title}</h1>
         {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex min-w-0 max-w-full flex-wrap gap-2">{actions}</div> : null}

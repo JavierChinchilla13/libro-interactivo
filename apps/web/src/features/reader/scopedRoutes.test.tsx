@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { sectionOf } from '../../app/layouts/PanelLayout';
@@ -29,7 +29,7 @@ const world = (entries: unknown[]) =>
         books: (entries as { book: unknown }[]).map((e) => e.book),
       }),
     [`GET /api/me/results?bookId=${BOOK_ID}`]: () => json({ results: [] }),
-    [`GET /api/extras?bookId=${BOOK_ID}`]: () => json({ locked: true }),
+    [`GET /api/extras?bookId=${BOOK_ID}`]: () => json({ locked: true, hasExtras: true }),
     [`GET /api/me/progress?bookId=${BOOK_ID}`]: () =>
       json({ bookId: BOOK_ID, experiences: [], bookCompleted: false }),
   });
@@ -48,7 +48,7 @@ describe('resultados y extras dentro de cada libro', { timeout: 30_000 }, () => 
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: 'Tus resultados en [PLACEHOLDER] Libro 1',
+        name: 'Tus resultados',
       }),
     ).toBeInTheDocument();
     expect(within(bookTabs()).getByRole('link', { name: 'Resultados' })).toHaveAttribute(
@@ -63,7 +63,7 @@ describe('resultados y extras dentro de cada libro', { timeout: 30_000 }, () => 
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: 'Capítulos extra de [PLACEHOLDER] Libro 1',
+        name: 'Capítulos extra',
       }),
     ).toBeInTheDocument();
     expect(within(bookTabs()).getByRole('link', { name: 'Extras' })).toHaveAttribute(
@@ -176,7 +176,7 @@ describe('marco del libro: migas, subnavegador y barra', { timeout: 30_000 }, ()
   it('en Resultados hay cabecera compacta con el título del libro, migas con la sección y la sección marcada', async () => {
     world([entry(1, 'open')]);
     renderAt('/panel/libros/libro-1/resultados');
-    await screen.findByRole('heading', { level: 1, name: /Tus resultados en/ });
+    await screen.findByRole('heading', { level: 1, name: 'Tus resultados' });
     const crumbs = screen.getByRole('navigation', { name: 'Migas' });
     expect(within(crumbs).getByRole('link', { name: '[PLACEHOLDER] Libro 1' })).toHaveAttribute(
       'href',
@@ -203,7 +203,7 @@ describe('marco del libro: migas, subnavegador y barra', { timeout: 30_000 }, ()
     renderAt('/panel/libros/libro-1/resultados');
     await screen.findByRole('heading', {
       level: 1,
-      name: 'Tus resultados en [PLACEHOLDER] Libro 1',
+      name: 'Tus resultados',
     });
     await userEvent.selectOptions(
       screen.getByRole('combobox', { name: 'Cambiar de libro' }),
@@ -212,15 +212,16 @@ describe('marco del libro: migas, subnavegador y barra', { timeout: 30_000 }, ()
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: 'Tus resultados en [PLACEHOLDER] Libro 3',
+        name: 'Tus resultados',
       }),
     ).toBeInTheDocument();
+    expect(screen.getAllByText('[PLACEHOLDER] Libro 3', { selector: 'p' })[0]).toBeInTheDocument();
   });
 
   it('con un solo libro abierto no ofrece cambiar de libro', async () => {
     world([entry(1, 'open')]);
     renderAt('/panel/libros/libro-1/resultados');
-    await screen.findByRole('heading', { level: 1, name: /Tus resultados en/ });
+    await screen.findByRole('heading', { level: 1, name: 'Tus resultados' });
     expect(screen.queryByRole('combobox', { name: 'Cambiar de libro' })).toBeNull();
   });
 
@@ -243,13 +244,73 @@ describe('marco del libro: migas, subnavegador y barra', { timeout: 30_000 }, ()
       [`GET /api/me/results?bookId=${BOOK_ID}`]: () => json({ results: [] }),
     });
     renderAt('/panel/libros/libro-1/resultados');
-    await screen.findByRole('heading', { level: 1, name: `Tus resultados en ${long}` });
+    await screen.findByRole('heading', { level: 1, name: 'Tus resultados' });
     const crumbLink = within(screen.getByRole('navigation', { name: 'Migas' })).getByRole('link', {
       name: long,
     });
     expect(crumbLink).toHaveAttribute('title', long);
-    expect(crumbLink.closest('li')).toHaveClass('truncate');
+    expect(crumbLink).toHaveClass('truncate');
     expect(screen.getAllByText(long, { selector: 'p' })[0]).toHaveClass('line-clamp-2');
+  });
+});
+
+describe('ajustes del marco del libro', { timeout: 30_000 }, () => {
+  it('con un libro sin abrir la barra de abajo solo ofrece «‹ Tus libros» y «Resumen»', async () => {
+    world([entry(1, 'locked')]);
+    renderAt('/panel/libros/libro-1');
+    await screen.findByRole('heading', { level: 1, name: '[PLACEHOLDER] Libro 1' });
+    const bottom = screen.getByRole('navigation', { name: 'Panel (móvil)' });
+    await waitFor(() =>
+      expect(
+        within(bottom)
+          .getAllByRole('link')
+          .map((link) => link.textContent),
+      ).toEqual(['‹ Tus libros', 'Resumen']),
+    );
+  });
+
+  it('un libro sin quizzes dice «Aún sin experiencias» y no «0 de 0»', async () => {
+    mockApi({
+      'GET /api/me/library': () =>
+        json({
+          books: [{ ...entry(1, 'open'), progress: { done: 0, total: 0, bookCompleted: false } }],
+        }),
+      'GET /api/books': () => json({ books: [book(1)] }),
+      [`GET /api/me/results?bookId=${BOOK_ID}`]: () => json({ results: [] }),
+      ...progressFor(BOOK_ID),
+    });
+    renderAt('/panel/libros/libro-1/resultados');
+    await screen.findByRole('heading', { level: 1, name: 'Tus resultados' });
+    expect(screen.getByText('Aún sin experiencias')).toBeInTheDocument();
+    expect(screen.queryByText(/0 de 0/)).toBeNull();
+  });
+
+  it('la descripción de resultados menciona repetir solo si algún quiz del libro lo permite y no repite el título', async () => {
+    mockApi({
+      'GET /api/me/library': () => json({ books: [entry(1, 'open')] }),
+      'GET /api/books': () => json({ books: [book(1)] }),
+      [`GET /api/me/results?bookId=${BOOK_ID}`]: () => json({ results: [] }),
+      [`GET /api/me/progress?bookId=${BOOK_ID}`]: () =>
+        json({
+          bookId: BOOK_ID,
+          bookCompleted: false,
+          experiences: [
+            {
+              kind: 'quiz',
+              id: '1'.repeat(24),
+              title: 'Q1',
+              order: 1,
+              status: 'available',
+              inProgress: false,
+              allowRetake: true,
+            },
+          ],
+        }),
+    });
+    renderAt('/panel/libros/libro-1/resultados');
+    const description = await screen.findByText(/repetir los quizzes que lo permiten/);
+    expect(description).toHaveTextContent(/Aquí queda lo que descubriste en este libro/);
+    expect(description.textContent).not.toContain('[PLACEHOLDER] Libro 1');
   });
 });
 
