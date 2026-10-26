@@ -1,26 +1,13 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { APPEARANCE_ACCENTS, OVERLAY_FLOOR, OVERLAY_MAX, OVERLAY_MIN } from '@libro/shared';
+import { OVERLAY_FLOOR, OVERLAY_MAX, OVERLAY_MIN, QUICK_ACCENTS } from '@libro/shared';
 import { describe, expect, it } from 'vitest';
 import { contrast, PALETTE } from './color';
 import {
-  accentVar,
+  accentBackdrop,
   blendOverlay,
   overlayReadable,
   overlayStrengthFor,
   resolveOverlay,
 } from './quizAppearance';
-
-const file = ['src/shared/styles/tokens.css', 'apps/web/src/shared/styles/tokens.css']
-  .map((path) => resolve(process.cwd(), path))
-  .find((path) => existsSync(path));
-if (!file) throw new Error('No se encontró tokens.css');
-const css = readFileSync(file, 'utf8');
-const token = (name: string): string => {
-  const match = new RegExp(`--token-${name}:` + String.raw`\s*(#[0-9a-fA-F]{6})\s*;`).exec(css);
-  if (!match?.[1]) throw new Error(`Falta --token-${name}`);
-  return match[1];
-};
 
 describe('blendOverlay', () => {
   it('con intensidad 0 deja el fondo y con 1 queda el color del sitio', () => {
@@ -75,21 +62,21 @@ describe('resolveOverlay', () => {
   });
 });
 
-describe('acentos de la apariencia', () => {
-  it('cada acento permitido es un token del sitio', () => {
-    for (const accent of APPEARANCE_ACCENTS) {
-      expect(accentVar(accent)).toBe(`var(--token-${accent})`);
-      expect(css).toContain(`--token-${accent}:`);
-    }
-    expect(accentVar(undefined)).toBe('var(--token-primary)');
+describe('acento libre y fondo de lectura', () => {
+  it('el fondo contra el que se lee el acento es el fondo velado o, sin fondo, el color liso del sitio', () => {
+    expect(accentBackdrop(false, undefined, 0.8)).toBe(PALETTE.bg);
+    expect(accentBackdrop(true, undefined, OVERLAY_FLOOR)).toBe(
+      blendOverlay('#ffffff', OVERLAY_FLOOR),
+    );
+    expect(accentBackdrop(true, '#000000', 0.5)).toBe(blendOverlay('#000000', 0.5));
   });
 
-  it('cada acento cumple 3:1 (títulos grandes, bordes y controles) sobre el peor fondo posible con el velo del piso', () => {
-    // El texto corrido nunca usa el acento: va en --token-text / --token-muted (≥ 4,5:1 con el velo del piso).
+  it('los colores rápidos del editor se leen a 3:1 sobre el peor fondo velado sin necesidad de ajuste', () => {
     const worst = blendOverlay('#ffffff', OVERLAY_FLOOR);
-    for (const accent of APPEARANCE_ACCENTS) {
-      expect(contrast(token(accent), worst), accent).toBeGreaterThanOrEqual(3);
+    for (const color of QUICK_ACCENTS) {
+      expect(contrast(color.hex, worst), color.name).toBeGreaterThanOrEqual(3);
     }
+    // El texto corrido nunca usa el acento: va en texto y texto atenuado, ≥ 4,5:1 con el velo del piso.
     expect(contrast(PALETTE.text, worst)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(PALETTE.muted, worst)).toBeGreaterThanOrEqual(4.5);
   });

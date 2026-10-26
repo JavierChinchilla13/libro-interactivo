@@ -1,7 +1,6 @@
-import type { AppearanceAccent, ImageRefInput } from '@libro/shared';
+import type { ImageRefInput } from '@libro/shared';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { posterUrl, thumbUrl } from '../../../shared/lib/cloudinary';
-import { accentVar } from '../../../shared/lib/quizAppearance';
 import { SafeHtml } from '../../../shared/ui/SafeHtml';
 import type { AppearanceForm } from './appearanceForm';
 
@@ -61,6 +60,7 @@ export function AppearancePreview({
   strength,
   title,
   position,
+  accent,
 }: {
   form: AppearanceForm;
   /** Intensidad real del velo (ya resuelta). */
@@ -68,6 +68,8 @@ export function AppearancePreview({
   title: string;
   /** «Quiz N de M» real de este quiz en su libro; mientras se carga, solo «Quiz». */
   position: { index: number; total: number } | undefined;
+  /** Acento ya ajustado para que se lea (`#rrggbb` validado), o `undefined` para el color por defecto. */
+  accent: string | undefined;
 }) {
   const [size, setSize] = useState<SizeKey>('movil');
   const { width, height } = PREVIEW_SIZES[size];
@@ -79,7 +81,7 @@ export function AppearancePreview({
         : undefined;
   const style = {
     '--quiz-veil': strength,
-    ...(form.accent ? { '--quiz-accent': accentVar(form.accent as AppearanceAccent) } : {}),
+    ...(accent ? { '--quiz-accent': accent } : {}),
   } as CSSProperties;
 
   return (

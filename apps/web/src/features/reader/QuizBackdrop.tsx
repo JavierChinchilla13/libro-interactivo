@@ -3,7 +3,8 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { posterUrl, thumbUrl } from '../../shared/lib/cloudinary';
 import { measureBackdrop } from '../../shared/lib/measureBackdrop';
-import { accentVar, resolveOverlay } from '../../shared/lib/quizAppearance';
+import { accentCss, readableAccent } from '../../shared/lib/accent';
+import { accentBackdrop, resolveOverlay } from '../../shared/lib/quizAppearance';
 import { useBackgroundPlayback } from '../../shared/lib/useBackgroundPlayback';
 import { LoopVideo, PlaybackToggle } from '../../shared/ui/LoopVideo';
 
@@ -54,18 +55,21 @@ export function useQuizBackdrop(
     };
   }, [sampleUrl, appearance?.overlay.mode]);
 
-  if (!appearance || !background) {
-    return {
-      backdrop: null,
-      toggle: null,
-      accentStyle: appearance?.accent
-        ? ({ '--quiz-accent': accentVar(appearance.accent) } as CSSProperties)
-        : undefined,
-    };
-  }
-
   const measuredHex = measured?.url === sampleUrl ? measured?.hex : undefined;
-  const strength = resolveOverlay(appearance.overlay, measuredHex);
+  const strength = appearance ? resolveOverlay(appearance.overlay, measuredHex) : 0;
+  // El acento elegido se aclara lo mínimo (si hace falta) hasta leerse a 3:1 sobre el fondo ya velado de ESTE quiz; solo
+  // se escribe en CSS un #RRGGBB validado.
+  const chosen = accentCss(appearance?.accent);
+  const accentStyle = chosen
+    ? ({
+        '--quiz-accent': readableAccent(
+          chosen,
+          accentBackdrop(Boolean(background), measuredHex, strength),
+        ).hex,
+      } as CSSProperties)
+    : undefined;
+
+  if (!appearance || !background) return { backdrop: null, toggle: null, accentStyle };
   const alt = background.kind === 'image' ? background.image.alt : background.video.alt;
 
   const layer = (
@@ -106,8 +110,6 @@ export function useQuizBackdrop(
     backdrop: createPortal(layer, document.body),
     toggle:
       background.kind === 'video' ? <PlaybackToggle state={state} label="video de fondo" /> : null,
-    accentStyle: appearance.accent
-      ? ({ '--quiz-accent': accentVar(appearance.accent) } as CSSProperties)
-      : undefined,
+    accentStyle,
   };
 }
