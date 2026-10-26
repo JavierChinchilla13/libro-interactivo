@@ -201,10 +201,15 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
         'El fondo debe subirse desde la pestaña Apariencia del quiz',
       );
     }
-    if (background.kind === 'image') return appearance;
+    if (background.kind === 'image') {
+      if (!new URL(background.image.url).pathname.includes('/image/upload/')) {
+        throw new AppError('VALIDATION', 'La dirección de la imagen no es válida');
+      }
+      return appearance;
+    }
 
     const video = background.video;
-    if (!video.url.includes('/video/upload/')) {
+    if (!new URL(video.url).pathname.includes('/video/upload/')) {
       throw new AppError('VALIDATION', 'La dirección del video no es válida');
     }
     if (!urlHasPublicId(video.posterUrl, video.publicId)) {

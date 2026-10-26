@@ -115,6 +115,18 @@ describe('consulta de archivos (API de administración)', () => {
     }
   });
 
+  it('codifica cada segmento del identificador: `..`, `?` y `#` no pueden salir de la ruta de consulta', async () => {
+    const fetchImpl = vi.fn(async () =>
+      json({ public_id: 'x', bytes: 1, format: 'mp4', width: 1, height: 1 }),
+    );
+    const provider = new CloudinaryImageProvider(credentials, fetchImpl);
+    await provider.inspect({ publicId: 'libro/quiz-bg/a?b#c', resource: 'image' });
+    const url = (fetchImpl.mock.calls[0] as unknown as [string])[0];
+    expect(url).toBe(
+      'https://api.cloudinary.com/v1_1/mi-cuenta/resources/image/upload/libro/quiz-bg/a%3Fb%23c',
+    );
+  });
+
   it('un archivo que no existe da null; un error de Cloudinary o de red da 503 sin revelar secretos', async () => {
     const missing = new CloudinaryImageProvider(credentials, async () => json({}, 404));
     expect(await missing.inspect({ publicId: 'x', resource: 'video' })).toBeNull();
