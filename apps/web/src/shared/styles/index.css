@@ -1525,6 +1525,8 @@
   /* Menú de usuario (sitio, panel y administración): avatar de iniciales + nombre; el panel es una hoja desde abajo en celular. */
   .user-menu {
     position: relative;
+    min-width: 0;
+    flex-shrink: 1;
   }
   .user-menu-trigger {
     display: inline-flex;
@@ -1569,6 +1571,27 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  /* El primer nombre solo en celular, corto y con puntos suspensivos; en anchos muy pequeños queda solo el avatar. */
+  .user-menu-first {
+    display: none;
+    min-width: 0;
+    max-width: 3.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  @media (min-width: 360px) and (max-width: 639px) {
+    .user-menu-first {
+      display: block;
+    }
+    .user-menu-trigger {
+      gap: 0.375rem;
+      padding-right: 0.625rem;
+    }
+    .user-menu-chevron {
+      display: none;
+    }
   }
   .user-menu-chevron {
     flex-shrink: 0;

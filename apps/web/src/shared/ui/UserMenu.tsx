@@ -60,6 +60,12 @@ export function initialsOf(name: string | undefined): string {
   return letters.join('').toLocaleUpperCase('es');
 }
 
+/** El primer nombre para el botón en celular: la primera palabra que empieza con letra (o la primera, si no hay). */
+export function firstNameOf(name: string | undefined): string {
+  const words = (name ?? '').trim().split(/\s+/).filter(Boolean);
+  return words.find((word) => /^\p{L}/u.test(word)) ?? words[0] ?? '';
+}
+
 /**
  * Menú de usuario de las tres zonas (sitio, panel y administración): avatar de iniciales + nombre de la sesión, y un
  * menú con las opciones de `USER_MENU_ITEMS`. Teclado: Enter, Espacio o ↓ abren con el foco en la primera opción (↑
@@ -183,6 +189,12 @@ export function UserMenu({
           {initialsOf(user.name)}
         </span>
         <span className={`user-menu-name ${alwaysShowName ? '' : 'max-sm:sr-only'}`}>{name}</span>
+        {alwaysShowName || !firstNameOf(user.name) ? null : (
+          // En celular, solo el primer nombre y corto (el nombre completo sigue en el nombre accesible del botón).
+          <span aria-hidden="true" className="user-menu-first">
+            {firstNameOf(user.name)}
+          </span>
+        )}
         <svg viewBox="0 0 24 24" aria-hidden="true" className="user-menu-chevron">
           <path
             d="m6 9 6 6 6-6"

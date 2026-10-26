@@ -4,7 +4,7 @@ import { RouterProvider, createMemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders, createQueryClient } from '../../app/providers';
 import { READER, apiError, empty, json, mockApi, renderAt } from '../../test/mockApi';
-import { UserMenu, initialsOf, type UserMenuItem } from './UserMenu';
+import { UserMenu, firstNameOf, initialsOf, type UserMenuItem } from './UserMenu';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -27,6 +27,16 @@ describe('initialsOf', () => {
     expect(initialsOf('')).toBe('?');
     expect(initialsOf('   ')).toBe('?');
     expect(initialsOf(undefined)).toBe('?');
+  });
+});
+
+describe('firstNameOf', () => {
+  it('es la primera palabra con letra y vacío sin nombre', () => {
+    expect(firstNameOf('María José de la Vega')).toBe('María');
+    expect(firstNameOf('🌙 Luna Nueva')).toBe('Luna');
+    expect(firstNameOf('🌙✨')).toBe('🌙✨');
+    expect(firstNameOf('  ')).toBe('');
+    expect(firstNameOf(undefined)).toBe('');
   });
 });
 
@@ -136,6 +146,15 @@ describe('UserMenu en el panel', { timeout: 30_000 }, () => {
     await user.click(button);
     expect(document.querySelector('.user-menu-who-name')).toHaveTextContent(name);
     expect(screen.getAllByRole('menuitem')).toHaveLength(2);
+  });
+
+  it('en celular lleva el primer nombre (decorativo) y el nombre accesible sigue siendo el completo', async () => {
+    mockApi({}, { session: withName('María José de la Vega') });
+    renderAt('/panel');
+    const button = await trigger('María José de la Vega');
+    const first = button.querySelector('.user-menu-first');
+    expect(first).toHaveTextContent('María');
+    expect(first).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('un nombre que empieza con emoji da iniciales con emoji', async () => {
