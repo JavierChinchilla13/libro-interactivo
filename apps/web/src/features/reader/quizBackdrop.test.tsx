@@ -117,7 +117,7 @@ describe('QuizPage: fondo de la apariencia', () => {
       [`GET /api/quizzes/${QUIZ}`]: intro({
         background: { kind: 'image', image: image() },
         overlay: { mode: 'manual', strength: 0.88 },
-        accent: 'warning',
+        accent: '#ffcb66',
       }),
     });
     const { container } = renderAt(`/panel/quiz/${QUIZ}`);
@@ -127,7 +127,27 @@ describe('QuizPage: fondo de la apariencia', () => {
       (
         container.querySelector('[style*="--quiz-accent"]') as HTMLElement | null
       )?.style.getPropertyValue('--quiz-accent'),
-    ).toBe('var(--token-warning)');
+    ).toBe('#ffcb66');
+  });
+
+  it('un acento que no se leería sobre el fondo velado se aclara lo mínimo; uno que se lee se pinta tal cual', async () => {
+    mockApi({
+      [`GET /api/quizzes/${QUIZ}`]: intro({
+        background: { kind: 'image', image: image() },
+        overlay: { mode: 'manual', strength: 0.8 },
+        accent: '#1a3a6e',
+      }),
+    });
+    const { container } = renderAt(`/panel/quiz/${QUIZ}`);
+    await screen.findByRole('heading', { name: '[PLACEHOLDER] Quiz 2' });
+    const painted = (container.querySelector('[style*="--quiz-accent"]') as HTMLElement).style
+      .getPropertyValue('--quiz-accent')
+      .trim();
+    expect(painted).toMatch(/^#[0-9a-f]{6}$/);
+    expect(painted).not.toBe('#1a3a6e');
+    const { contrast } = await import('../../shared/lib/color');
+    const { accentBackdrop } = await import('../../shared/lib/quizAppearance');
+    expect(contrast(painted, accentBackdrop(true, undefined, 0.8))).toBeGreaterThanOrEqual(3);
   });
 
   it('si el fondo no carga, queda el color liso del sitio (la capa existe, la imagen sigue oculta)', async () => {

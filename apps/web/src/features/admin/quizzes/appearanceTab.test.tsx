@@ -32,7 +32,7 @@ const photo = (name: string) => ({
 const appearance = (over: object = {}) => ({
   background: { kind: 'image', image: photo('uno') },
   overlay: { mode: 'manual', strength: 0.8 },
-  accent: 'accent',
+  accent: '#a89bff',
   introHtml: '<p>Una niebla espesa.</p>',
   ...over,
 });
@@ -167,7 +167,7 @@ describe('pestaña Apariencia', () => {
       screen.getByText(/Ya lo ven las lectoras, sin publicar una versión nueva/),
     ).toBeInTheDocument();
     const put = called(`PUT /api/admin/quizzes/${QUIZ_ID}/appearance`)[0];
-    expect(put?.body).toMatchObject({ expectedRev: 2, appearance: { accent: 'success' } });
+    expect(put?.body).toMatchObject({ expectedRev: 2, appearance: { accent: '#5fe3ae' } });
     expect(put?.body).toMatchObject({ appearance: { introHtml: '<p>Una niebla espesa.</p>' } });
   });
 
@@ -301,5 +301,76 @@ describe('pestaña Apariencia', () => {
     await user.click(screen.getByRole('tab', { name: 'Apariencia' }));
     expect(screen.getByRole('radio', { name: /Verde/ })).toBeChecked();
     expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+  });
+
+  describe('color de acento libre', () => {
+    const open = async (accent: string | undefined = '#a89bff') => {
+      const { called } = mockApi(
+        base({
+          [`GET /api/admin/quizzes/${QUIZ_ID}/appearance`]: () =>
+            json(state({ appearance: appearance(accent ? { accent } : { accent: undefined }) })),
+          [`PUT /api/admin/quizzes/${QUIZ_ID}/appearance`]: ({ body }: { body: unknown }) =>
+            json(state({ rev: 3, appearance: (body as { appearance: object }).appearance })),
+        }),
+        { session: ADMIN },
+      );
+      const user = await openTab();
+      return {
+        user,
+        called,
+        hex: await screen.findByRole('textbox', { name: 'Código del color' }),
+      };
+    };
+
+    it('muestra el código #RRGGBB del color guardado y acepta uno nuevo con o sin # y en minúsculas', async () => {
+      const { user, hex, called } = await open();
+      expect(hex).toHaveValue('#A89BFF');
+      await user.clear(hex);
+      await user.type(hex, 'ff8fb1');
+      expect(hex).toHaveValue('#FF8FB1');
+      expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Guardar apariencia' }));
+      await screen.findByText(/Ya lo ven las lectoras/);
+      expect(called(`PUT /api/admin/quizzes/${QUIZ_ID}/appearance`)[0]?.body).toMatchObject({
+        appearance: { accent: '#ff8fb1' },
+      });
+    });
+
+    it('un código incompleto no cambia nada y avisa; al salir vuelve al color guardado', async () => {
+      const { user, hex } = await open();
+      await user.type(hex, '{backspace}{backspace}'); // '#A89B': incompleto
+      expect(hex).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByText(/Escribe un código de 6 cifras/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Guardar apariencia' })).toBeDisabled();
+      await user.tab();
+      expect(hex).toHaveValue('#A89BFF');
+    });
+
+    it('vaciar el campo o elegir «Por defecto» quita el acento; los colores rápidos lo fijan', async () => {
+      const { user, hex } = await open();
+      await user.click(screen.getByRole('radio', { name: 'Rosa' }));
+      expect(hex).toHaveValue('#FF8FB1');
+      await user.click(screen.getByRole('radio', { name: 'Por defecto' }));
+      expect(hex).toHaveValue('');
+      await user.type(hex, '#3fd8ff');
+      expect(screen.getByRole('radio', { name: 'Cian' })).toBeChecked();
+    });
+
+    it('un color que no se leería se ajusta lo mínimo y se le dice a la autora, con el antes y el después', async () => {
+      const { user, hex } = await open();
+      expect(screen.getByText('El color se lee bien sobre el fondo')).toBeInTheDocument();
+      await user.clear(hex);
+      await user.type(hex, '#1a3a6e');
+      expect(await screen.findByText('Ajustamos tu color para que se lea')).toBeInTheDocument();
+      const after = screen.getByText('Se verá así').parentElement as HTMLElement;
+      expect(screen.getByText('Tu color').parentElement).toHaveTextContent('#1A3A6E');
+      expect(after.textContent).toMatch(/#[0-9A-F]{6}/);
+      expect(after.textContent).not.toContain('#1A3A6E');
+      // La vista previa pinta el color ajustado (no el elegido) y se guarda lo elegido.
+      const preview = screen.getByTestId('quiz-preview');
+      const painted = preview.style.getPropertyValue('--quiz-accent');
+      expect(painted).toMatch(/^#[0-9a-f]{6}$/);
+      expect(painted).not.toBe('#1a3a6e');
+    });
   });
 });

@@ -157,9 +157,7 @@ test.describe('apariencia del quiz: editor y lectora', () => {
     await expect(backdrop).toHaveCount(1);
     await expect(readerPage.getByRole('img', { name: ALT })).toHaveCount(1);
     await expect(backdrop).toHaveAttribute('style', /--quiz-veil: 0\.85/);
-    await expect(readerPage.locator('[style*="--quiz-accent: var(--token-accent)"]')).toHaveCount(
-      1,
-    );
+    await expect(readerPage.locator('[style*="--quiz-accent: #a89bff"]')).toHaveCount(1);
 
     // 5) La autora recarga el editor: ve lo guardado, cambia el acento y guarda desde el panel.
     await page.goto(`/admin/quizzes/${quizId}`);
@@ -178,9 +176,7 @@ test.describe('apariencia del quiz: editor y lectora', () => {
     ).toBeVisible();
     await expect(page.getByText('Todo guardado')).toBeVisible();
     await readerPage.reload();
-    await expect(readerPage.locator('[style*="--quiz-accent: var(--token-success)"]')).toHaveCount(
-      1,
-    );
+    await expect(readerPage.locator('[style*="--quiz-accent: #5fe3ae"]')).toHaveCount(1);
 
     // 6) Quitar el fondo: la lectora vuelve a ver la página de siempre (sin versión nueva).
     await page.getByText('Sin fondo', { exact: true }).click();
@@ -200,6 +196,54 @@ test.describe('apariencia del quiz: editor y lectora', () => {
 
     const after = await (await page.request.get(`/api/admin/quizzes/${quizId}/versions`)).json();
     expect(after.versions).toHaveLength(1);
+    await reader.close();
+  });
+
+  test('acento libre: la autora escribe un #RRGGBB que no se leería, el panel avisa del ajuste y la lectora ve el color ajustado', async ({
+    page,
+    browser,
+  }) => {
+    test.setTimeout(120_000);
+    const { stamp, quizId, token } = await seed(page);
+    await fakeCloudinary(page);
+    expect(
+      (await putAppearance(page.request, quizId, appearanceWith('e2e-acento'), 0)).status(),
+    ).toBe(200);
+
+    await page.goto(`/admin/quizzes/${quizId}`);
+    await page.getByRole('tab', { name: 'Apariencia' }).click();
+    const code = page.getByRole('textbox', { name: 'Código del color' });
+    await expect(code).toHaveValue('#A89BFF');
+    await expect(page.getByText('El color se lee bien sobre el fondo')).toBeVisible();
+    await code.fill('#1a3a6e');
+    await expect(page.getByText('Ajustamos tu color para que se lea')).toBeVisible();
+    await expect(page.getByText('Tu color', { exact: true })).toBeVisible();
+    await expect(page.getByText('Se verá así', { exact: true })).toBeVisible();
+    // Un código incompleto avisa y no cambia lo guardado.
+    await code.fill('#1a3');
+    await expect(page.getByText(/Escribe un código de 6 cifras/)).toBeVisible();
+    await code.fill('#1a3a6e');
+    await page.getByRole('button', { name: 'Guardar apariencia' }).click();
+    await expect(page.getByText('Todo guardado')).toBeVisible();
+
+    // Se guardó lo que ella eligió; la lectora ve el color aclarado lo mínimo para leerse.
+    const stored = await (await page.request.get(`/api/admin/quizzes/${quizId}/appearance`)).json();
+    expect(stored.appearance.accent).toBe('#1a3a6e');
+    const reader = await newReader(browser, stamp, 'acento');
+    await unlock(reader, token);
+    await fakeCloudinary(reader);
+    const readerPage = await reader.newPage();
+    await readerPage.goto(`/panel/quiz/${quizId}`);
+    const style = await readerPage
+      .locator('[style*="--quiz-accent"]')
+      .first()
+      .getAttribute('style');
+    const painted = /--quiz-accent:\s*(#[0-9a-f]{6})/.exec(style ?? '')?.[1] ?? '';
+    expect(painted).toMatch(/^#[0-9a-f]{6}$/);
+    expect(painted).not.toBe('#1a3a6e');
+    const brightness = (hex: string) =>
+      [1, 3, 5].reduce((sum, i) => sum + parseInt(hex.slice(i, i + 2), 16), 0);
+    expect(brightness(painted)).toBeGreaterThan(brightness('#1a3a6e'));
     await reader.close();
   });
 

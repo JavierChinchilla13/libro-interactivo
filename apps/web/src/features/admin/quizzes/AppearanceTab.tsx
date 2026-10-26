@@ -1,9 +1,7 @@
 import {
-  APPEARANCE_ACCENTS,
   formatDecimal,
   OVERLAY_MAX,
   overlayMinimum,
-  type AppearanceAccent,
   type AppearanceHistoryEntry,
   type QuizAppearanceResponse,
   type QuizDetailResponse,
@@ -11,11 +9,14 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ApiClientError } from '../../../shared/api/client';
+import { readableAccent } from '../../../shared/lib/accent';
 import { posterUrl, thumbUrl } from '../../../shared/lib/cloudinary';
 import { measureBackdrop } from '../../../shared/lib/measureBackdrop';
+import { accentBackdrop } from '../../../shared/lib/quizAppearance';
 import { Button, TextField } from '../../../shared/ui/controls';
 import { Alert, Card, Loading } from '../../../shared/ui/layout';
 import { appearanceApi, keys, quizzesApi } from '../api';
+import { AccentField, Chip } from './AccentField';
 import { ImageField } from '../components/MediaFields';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { errorMessage } from '../errors';
@@ -33,26 +34,11 @@ import {
 } from './appearanceForm';
 import { AppearancePreview } from './AppearancePreview';
 
-const ACCENT_LABELS: Record<AppearanceAccent, string> = {
-  primary: 'Cian',
-  accent: 'Lavanda',
-  success: 'Verde',
-  warning: 'Ámbar',
-};
-
 const ACTION_LABELS: Record<AppearanceHistoryEntry['action'], string> = {
   seed: 'Primera edición',
   update: 'Edición',
   revert: 'Reversión',
 };
-
-/** Color real de un token del sitio (para calcular contrastes); `undefined` si no se puede leer. */
-function tokenHex(name: string): string | undefined {
-  const value = getComputedStyle(document.documentElement)
-    .getPropertyValue(`--token-${name}`)
-    .trim();
-  return /^#[0-9a-fA-F]{6}$/.test(value) ? value : undefined;
-}
 
 const percent = (value: number) => `${Math.round(value * 100)} %`;
 const ratio = (value: number) => formatDecimal(value);
@@ -162,7 +148,6 @@ function AppearanceEditor({
   const measured = measurement?.url === sampleUrl ? measurement?.hex : undefined;
 
   // Colores reales de los acentos (tokens del sitio) para avisar si alguno no se lee.
-  const accentHex = form.accent ? tokenHex(form.accent) : undefined;
 
   // Modo automático: la intensidad sigue a la medida (sin medida, el piso 0,78, que es seguro).
   const strength =
@@ -183,7 +168,17 @@ function AppearanceEditor({
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
-  const report = form.kind === 'none' ? null : contrastReport(measured, strength, accentHex);
+  // El acento se lee contra el fondo ya velado (o, sin fondo de quiz, contra el color liso del sitio); si no se leería a
+  // 3:1, se aclara lo mínimo. La autora ve el antes y el después; se guarda lo que ella eligió.
+  // Igual que el lector: solo en modo automático mide el fondo; en manual cuenta el peor caso (un punto blanco).
+  const accentSurface = accentBackdrop(
+    form.kind !== 'none',
+    form.mode === 'auto' ? measured : undefined,
+    strength,
+  );
+  const accentResult = form.accent ? readableAccent(form.accent, accentSurface) : undefined;
+  const report =
+    form.kind === 'none' ? null : contrastReport(measured, strength, accentResult?.hex);
 
   const backgroundAlt =
     form.kind === 'image' ? form.image?.alt : form.kind === 'video' ? form.video?.alt : 'ok';
@@ -355,24 +350,13 @@ function AppearanceEditor({
             Tiñe el título del quiz, el borde de la portada y la barra de avance. Nunca el texto
             corrido.
           </p>
-          <fieldset className="flex flex-wrap gap-2" disabled={disabled}>
-            <legend className="sr-only">Color de acento</legend>
-            {([undefined, ...APPEARANCE_ACCENTS] as const).map((accent) => (
-              <Chip
-                key={accent ?? 'default'}
-                name="accent"
-                checked={form.accent === accent}
-                onSelect={() => patch({ accent })}
-              >
-                <span
-                  aria-hidden="true"
-                  className="size-3.5 rounded-full border border-border"
-                  style={{ background: accent ? `var(--token-${accent})` : 'transparent' }}
-                />
-                {accent ? ACCENT_LABELS[accent] : 'Por defecto'}
-              </Chip>
-            ))}
-          </fieldset>
+          <AccentField
+            value={form.accent}
+            onChange={(accent) => patch({ accent })}
+            result={accentResult}
+            backdrop={accentSurface}
+            disabled={disabled}
+          />
         </Card>
 
         <Card className="flex min-w-0 flex-col gap-4">
@@ -469,33 +453,15 @@ function AppearanceEditor({
       </div>
 
       <div className="min-w-0 lg:sticky lg:top-4 lg:self-start">
-        <AppearancePreview form={form} strength={strength} title={title} position={position} />
+        <AppearancePreview
+          form={form}
+          strength={strength}
+          title={title}
+          position={position}
+          accent={accentResult?.hex}
+        />
       </div>
     </div>
-  );
-}
-
-/** Opción en forma de pastilla: el radio nativo queda oculto para la vista (pero sigue siendo el control del teclado). */
-function Chip({
-  name,
-  checked,
-  onSelect,
-  children,
-}: {
-  name: string;
-  checked: boolean;
-  onSelect: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <label
-      className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm transition-colors duration-(--token-dur-fast) ease-token-out has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary ${
-        checked ? 'border-primary bg-surface-alt text-text' : 'border-border text-muted'
-      }`}
-    >
-      <input type="radio" name={name} checked={checked} onChange={onSelect} className="sr-only" />
-      {children}
-    </label>
   );
 }
 
@@ -522,7 +488,7 @@ function ContrastNotice({ report }: { report: ReturnType<typeof contrastReport> 
         {report.accent !== undefined ? (
           <li>
             Acento (títulos y bordes): {ratio(report.accent)}:1{' '}
-            {report.accent >= 3 ? '✓' : '(mínimo 3)'}
+            {report.accent >= 3 ? 'cumple' : '(mínimo 3)'}
           </li>
         ) : null}
       </ul>

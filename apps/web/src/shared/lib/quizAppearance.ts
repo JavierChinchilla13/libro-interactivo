@@ -1,13 +1,8 @@
-import { OVERLAY_FLOOR, OVERLAY_MAX, OVERLAY_MIN, type AppearanceAccent } from '@libro/shared';
+import { OVERLAY_FLOOR, OVERLAY_MAX, OVERLAY_MIN } from '@libro/shared';
 import { contrast, PALETTE } from './color';
 
 /** Contraste mínimo (WCAG AA, texto normal) que debe tener el texto atenuado sobre el fondo ya velado. */
 const MIN_CONTRAST = 4.5;
-
-/** Color del acento de la apariencia: siempre un token del sitio, nunca un color libre. */
-export function accentVar(accent: AppearanceAccent | undefined): string {
-  return `var(--token-${accent ?? 'primary'})`;
-}
 
 const toHex = (channels: number[]): string =>
   `#${channels.map((c) => Math.round(c).toString(16).padStart(2, '0')).join('')}`;
@@ -65,4 +60,16 @@ export function resolveOverlay(
     OVERLAY_MAX,
     Math.max(OVERLAY_MIN, overlay.strength, overlayStrengthFor(measuredBackdrop)),
   );
+}
+
+/**
+ * Color contra el que debe leerse el acento: el fondo del quiz ya velado (el punto más claro medido o, sin medida, un
+ * píxel blanco: el peor caso) o, sin fondo de quiz, el color liso del sitio.
+ */
+export function accentBackdrop(
+  background: boolean,
+  measuredBackdrop: string | undefined,
+  strength: number,
+): string {
+  return background ? blendOverlay(measuredBackdrop ?? '#ffffff', strength) : PALETTE.bg;
 }
