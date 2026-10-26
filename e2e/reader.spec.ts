@@ -108,7 +108,7 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     playwright,
     baseURL,
   }) => {
-    const stamp = String(Date.now());
+    const stamp = `${Date.now()}-${test.info().project.name}`;
     const admin = await playwright.request.newContext({ baseURL });
     expect(
       (
