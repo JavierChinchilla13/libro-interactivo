@@ -350,8 +350,8 @@ export function QuizPage() {
           ))}
         </fieldset>
         {submit.isError ? <Alert>{errorMessage(submit.error)}</Alert> : null}
-        {/* Las acciones quedan abajo, al alcance del pulgar, y ocupan el ancho. */}
-        <div className="sticky bottom-0 z-10 -mx-4 mt-auto flex gap-3 border-t border-line bg-bg px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+        {/* Las acciones flotan abajo, al alcance del pulgar, como la barra de arriba (píldora, borde y vidrio por tokens). */}
+        <div className="nav-pill quiz-actions">
           <Button
             variant="secondary"
             size="lg"
