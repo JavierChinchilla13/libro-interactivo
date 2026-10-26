@@ -89,9 +89,12 @@ test.describe('códigos QR y capítulos extra', () => {
 
     const quiz = await reader.request.get(`/api/quizzes/${quizId}`);
     expect(quiz.status()).toBe(200);
-    // Los extras siguen bloqueados hasta completar el libro: ni siquiera se dice cuántos hay.
+    // Los extras siguen bloqueados hasta completar el libro: solo se dice si hay algo publicado, ni títulos ni cuántos.
     const locked = await reader.request.get(`/api/extras?bookId=${bookId}`);
-    expect(await locked.json()).toEqual({ locked: true });
+    const body = (await locked.json()) as Record<string, unknown>;
+    expect(Object.keys(body).sort()).toEqual(['hasExtras', 'locked']);
+    expect(body).toMatchObject({ locked: true });
+    expect(typeof body['hasExtras']).toBe('boolean');
     await reader.close();
   });
 
