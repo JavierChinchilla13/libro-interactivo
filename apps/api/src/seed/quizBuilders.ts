@@ -12,6 +12,8 @@ export function simpleStage(
   resultKeys: string[],
   options: {
     questions?: number;
+    /** Las pruebas dependen del orden de la autora (la respuesta `i` suma al resultado `i`): por defecto no baraja. */
+    shuffleAnswers?: boolean;
     producesFinal?: boolean;
     condition?: [string, string];
     order?: number;
@@ -22,6 +24,7 @@ export function simpleStage(
     id,
     order: options.order ?? 1,
     shuffleQuestions: true,
+    shuffleAnswers: options.shuffleAnswers ?? false,
     producesFinal: options.producesFinal ?? true,
     ...(options.condition
       ? { conditionStageId: options.condition[0], conditionResultKey: options.condition[1] }

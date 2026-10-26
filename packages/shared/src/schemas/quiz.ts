@@ -61,6 +61,8 @@ export const answerDefSchema = z.object({
   text: z.string().min(1).max(500),
   /** Resultado al que suma esta respuesta; debe existir en los `results` de la misma etapa. */
   resultKey: quizIdSchema,
+  /** «Dejar al final»: al barajar las respuestas, esta se queda al final (p. ej. «Ninguna de las anteriores»). */
+  pinLast: z.boolean().optional(),
 });
 
 export const questionDefSchema = z.object({
@@ -75,6 +77,11 @@ export const stageDefSchema = z.object({
   order: z.number().int().min(1),
   title: z.string().min(1).max(120).optional(),
   shuffleQuestions: z.boolean().default(true),
+  /**
+   * Las respuestas de cada pregunta se barajan (por intento: el orden se decide al iniciar la etapa y se guarda). Un
+   * quiz publicado sin este campo se lee como `true`.
+   */
+  shuffleAnswers: z.boolean().default(true),
   /** Etapa condicional: solo se ejecuta si el resultado de `conditionStageId` fue `conditionResultKey`. */
   conditionStageId: quizIdSchema.optional(),
   conditionResultKey: quizIdSchema.optional(),
