@@ -1,5 +1,4 @@
 import {
-  formatDecimal,
   OVERLAY_MAX,
   overlayMinimum,
   type AppearanceHistoryEntry,
@@ -7,20 +6,22 @@ import {
   type QuizDetailResponse,
 } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ApiClientError } from '../../../shared/api/client';
 import { readableAccent } from '../../../shared/lib/accent';
 import { posterUrl, thumbUrl } from '../../../shared/lib/cloudinary';
 import { measureBackdrop } from '../../../shared/lib/measureBackdrop';
 import { accentBackdrop } from '../../../shared/lib/quizAppearance';
-import { Button, TextField } from '../../../shared/ui/controls';
+import { Button } from '../../../shared/ui/controls';
 import { Alert, Card, Loading } from '../../../shared/ui/layout';
 import { appearanceApi, keys, quizzesApi } from '../api';
 import { AccentField, Chip } from './AccentField';
+import { QuestionsSection, type StageQuestions } from './QuestionsSection';
+import { ContrastNotice } from './ContrastNotice';
+import { VideoField } from './VideoField';
 import { ImageField } from '../components/MediaFields';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { errorMessage } from '../errors';
-import { uploadBackgroundVideo } from '../uploads';
 import {
   autoStrength,
   clampStrength,
@@ -28,6 +29,7 @@ import {
   FIELD_LABELS,
   formFromAppearance,
   formKey,
+  incompleteQuestions,
   sampleSource,
   toAppearance,
   type AppearanceForm,
@@ -41,7 +43,6 @@ const ACTION_LABELS: Record<AppearanceHistoryEntry['action'], string> = {
 };
 
 const percent = (value: number) => `${Math.round(value * 100)} %`;
-const ratio = (value: number) => formatDecimal(value);
 
 /** Pestaña «Apariencia»: fondo, velo, acento, portada e introducción. Se aplica en vivo, sin publicar una versión. */
 export function AppearanceTab({
@@ -126,6 +127,12 @@ function AppearanceEditor({
   );
   const patch = (changes: Partial<AppearanceForm>) =>
     setForm((current) => ({ ...current, ...changes }));
+  // Las preguntas del borrador, por etapa: a ellas se ligan los ajustes (por id estable, nunca por posición).
+  const stages: StageQuestions[] = quiz.draft.stages.map((stage, index) => ({
+    id: stage.id,
+    label: stage.title ? `Etapa ${index + 1} · ${stage.title}` : `Etapa ${index + 1}`,
+    questions: stage.questions.map((question) => ({ id: question.id, text: question.text })),
+  }));
 
   // Mide la zona más clara del fondo (imagen o póster) para el velo automático y el aviso de contraste.
   const source = sampleSource(form);
@@ -190,6 +197,8 @@ function AppearanceEditor({
         : !backgroundAlt?.trim()
           ? 'Escribe el texto alternativo del fondo (describe la imagen o el video).'
           : null;
+
+  const unfinished = incompleteQuestions(form);
 
   const save = useMutation({
     mutationFn: (sent: { body: ReturnType<typeof toAppearance>; key: string; rev: number }) =>
@@ -359,6 +368,13 @@ function AppearanceEditor({
           />
         </Card>
 
+        <QuestionsSection
+          stages={stages}
+          form={form}
+          onChange={(questions) => patch({ questions })}
+          disabled={disabled}
+        />
+
         <Card className="flex min-w-0 flex-col gap-4">
           {/* Mientras se guarda no se puede teclear: lo escrito en ese momento no iría en el envío. */}
           <div className="flex min-w-0 flex-col gap-4" inert={busy || undefined}>
@@ -435,9 +451,15 @@ function AppearanceEditor({
           }}
         />
 
+        {unfinished.length > 0 ? (
+          <p className="text-sm text-warning" role="status">
+            Hay preguntas con un fondo elegido pero sin archivo: súbelo o elige «Sin fondo» para
+            poder guardar.
+          </p>
+        ) : null}
         <div className="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 rounded-token-lg border border-border bg-surface p-3 shadow-[0_-8px_20px_-12px_rgb(0_0_0/0.6)]">
           <Button
-            disabled={disabled || !dirty || Boolean(missing) || measuring}
+            disabled={disabled || !dirty || Boolean(missing) || unfinished.length > 0 || measuring}
             loading={save.isPending}
             onClick={() => {
               setNotice(null);
@@ -452,47 +474,9 @@ function AppearanceEditor({
         </div>
       </div>
 
-      <div className="min-w-0 lg:sticky lg:top-4 lg:self-start">
-        <AppearancePreview
-          form={form}
-          strength={strength}
-          title={title}
-          position={position}
-          accent={accentResult?.hex}
-        />
+      <div className="min-w-0 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:self-start lg:overflow-y-auto">
+        <AppearancePreview form={form} title={title} position={position} stages={stages} />
       </div>
-    </div>
-  );
-}
-
-function ContrastNotice({ report }: { report: ReturnType<typeof contrastReport> }) {
-  const basis =
-    report.basis === 'measured'
-      ? 'sobre la zona más clara de este fondo'
-      : 'en el peor caso (un punto blanco del fondo)';
-  return (
-    <div
-      role="status"
-      className={`rounded-token border p-3 text-sm ${report.ok ? 'border-success/50' : 'border-warning'}`}
-    >
-      <p className="font-medium">
-        {report.ok ? 'El texto se lee bien' : 'Ojo: el texto podría leerse mal'}
-      </p>
-      <ul className="mt-1 text-muted tabular-nums">
-        <li>
-          Texto atenuado: {ratio(report.muted)}:1 {report.muted >= 4.5 ? '✓' : '(mínimo 4,5)'}
-        </li>
-        <li>
-          Texto principal: {ratio(report.text)}:1 {report.text >= 4.5 ? '✓' : '(mínimo 4,5)'}
-        </li>
-        {report.accent !== undefined ? (
-          <li>
-            Acento (títulos y bordes): {ratio(report.accent)}:1{' '}
-            {report.accent >= 3 ? 'cumple' : '(mínimo 3)'}
-          </li>
-        ) : null}
-      </ul>
-      <p className="mt-1 text-xs text-muted">Calculado {basis}.</p>
     </div>
   );
 }
@@ -556,84 +540,5 @@ function HistoryList({
         </>
       )}
     </Card>
-  );
-}
-
-/** Video corto de fondo: se revisa peso, formato y duración antes de subir, con mensajes claros. */
-function VideoField({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: AppearanceForm['video'];
-  onChange: (video: AppearanceForm['video']) => void;
-  disabled: boolean;
-}) {
-  const input = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function pick(file: File | undefined) {
-    if (!file) return;
-    setBusy(true);
-    setError(null);
-    try {
-      onChange(await uploadBackgroundVideo(file, value?.alt ?? ''));
-    } catch (failure) {
-      setError(errorMessage(failure));
-    } finally {
-      setBusy(false);
-      if (input.current) input.current.value = '';
-    }
-  }
-
-  return (
-    <fieldset className="flex min-w-0 flex-col gap-2" disabled={disabled}>
-      <legend className="text-sm font-medium">Video de fondo</legend>
-      <p className="text-xs text-muted">
-        Clip mudo y en bucle: MP4 o WebM, hasta 5 MB y 10 segundos. Cloudinary le saca el póster
-        (primer fotograma), que es lo que se ve con movimiento reducido.
-      </p>
-      {value ? (
-        <>
-          <img
-            src={posterUrl(value.posterUrl, 480)}
-            alt={value.alt}
-            className="max-h-40 w-auto max-w-full self-start rounded-token border border-border"
-          />
-          <p className="text-sm text-muted">
-            {Math.round(value.durationSeconds * 10) / 10} s · {value.width}×{value.height}
-          </p>
-          <TextField
-            label="Texto alternativo (describe el video)"
-            value={value.alt}
-            maxLength={200}
-            error={value.alt.trim() ? undefined : 'Describe el video para quien no lo puede ver.'}
-            onChange={(event) => onChange({ ...value, alt: event.target.value })}
-          />
-        </>
-      ) : (
-        <p className="text-sm text-muted">Sin video.</p>
-      )}
-      <input
-        ref={input}
-        type="file"
-        accept="video/mp4,video/webm"
-        className="sr-only"
-        aria-label="Elegir video de fondo"
-        onChange={(event) => void pick(event.target.files?.[0])}
-      />
-      <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" loading={busy} onClick={() => input.current?.click()}>
-          {value ? 'Cambiar video' : 'Subir video'}
-        </Button>
-        {value ? (
-          <Button variant="ghost" onClick={() => onChange(undefined)}>
-            Quitar
-          </Button>
-        ) : null}
-      </div>
-      {error ? <Alert>{error}</Alert> : null}
-    </fieldset>
   );
 }
