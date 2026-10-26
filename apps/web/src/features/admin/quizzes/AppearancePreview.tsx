@@ -125,7 +125,7 @@ export function AppearancePreview({
 
   return (
     <section aria-label="Vista previa" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-end gap-3 bg-bg px-1 pb-2">
         <div role="group" aria-label="Tamaño de la vista previa" className="flex flex-wrap gap-2">
           {(Object.keys(PREVIEW_SIZES) as SizeKey[]).map((key) => (
             <button
