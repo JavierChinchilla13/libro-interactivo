@@ -501,6 +501,7 @@ describe('extras para el lector', () => {
     const t = await reader.get(`/api/extras/${txt.id}`).expect(200);
     expect(readerExtraResponseSchema.parse(t.body)).toEqual({
       kind: 'text',
+      bookId,
       title: '[PLACEHOLDER] Capítulo extra 1',
       bodyHtml: '<p>[PLACEHOLDER] Texto del extra</p>',
     });
@@ -510,7 +511,7 @@ describe('extras para el lector', () => {
       (await reader.get(`/api/extras/${pdf.id}`).expect(200)).body,
     );
     if (p.kind !== 'pdf') throw new Error('Debía ser un PDF');
-    expect(p).toMatchObject({ mime: 'application/pdf', expiresIn: 180 });
+    expect(p).toMatchObject({ bookId, mime: 'application/pdf', expiresIn: 180 });
     expect(p.url).toContain(encodeURIComponent(`extras/${bookId}/doc.pdf`));
     expect(p.url).toContain('ttl=180'); // vida corta
     const i = readerExtraResponseSchema.parse(

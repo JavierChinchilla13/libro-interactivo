@@ -287,12 +287,19 @@ export function createExtraService(deps: ExtraDeps) {
       );
     }
 
+    const bookIdText = extra.bookId.toString();
     if (extra.kind === 'text')
-      return { kind: 'text', title: extra.title, bodyHtml: extra.bodyHtml ?? '' };
+      return {
+        kind: 'text',
+        bookId: bookIdText,
+        title: extra.title,
+        bodyHtml: extra.bodyHtml ?? '',
+      };
     const key = extra.file?.storageKey;
     if (!key) throw new AppError('INTERNAL', 'Este extra no tiene archivo');
     return {
       kind: extra.kind,
+      bookId: bookIdText,
       title: extra.title,
       url: await storage.createDownloadUrl(key, READER_URL_TTL_SECONDS),
       mime: extra.file?.mime ?? 'application/octet-stream',
