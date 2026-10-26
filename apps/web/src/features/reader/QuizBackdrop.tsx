@@ -47,6 +47,13 @@ function prewarmUrl(background: QuizBackground | undefined): string | undefined 
     : posterUrl(background.video.posterUrl, videoWidth());
 }
 
+/** El mismo `srcset` que usa la capa al pintarse, para que el navegador precaliente el tamaño que de verdad va a pedir. */
+function prewarmSrcSet(background: QuizBackground | undefined): string | undefined {
+  return background?.kind === 'image'
+    ? IMAGE_WIDTHS.map((w) => `${thumbUrl(background.image.url, w)} ${w}w`).join(', ')
+    : undefined;
+}
+
 function saveData(): boolean {
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
   return connection?.saveData === true;
@@ -131,13 +138,19 @@ export function useQuizBackdrop(
   }, [leaving, entering]);
 
   // Precalentar la imagen o el póster de la pregunta siguiente (nunca el video; nada con ahorro de datos).
-  const warm = prewarmUrl(effectiveAppearance(appearance, nextQuestion).background);
+  const warmBackground = effectiveAppearance(appearance, nextQuestion).background;
+  const warm = prewarmUrl(warmBackground);
+  const warmSet = prewarmSrcSet(warmBackground);
   useEffect(() => {
     if (!warm || saveData()) return;
     const image = new Image();
     image.decoding = 'async';
+    if (warmSet) {
+      image.sizes = '100vw';
+      image.srcset = warmSet;
+    }
     image.src = warm;
-  }, [warm]);
+  }, [warm, warmSet]);
 
   const layers = [leaving, current].filter(
     (layer, position, all): layer is Layer =>
