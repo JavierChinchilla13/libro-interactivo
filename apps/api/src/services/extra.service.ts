@@ -227,11 +227,19 @@ export function createExtraService(deps: ExtraDeps) {
 
   // ----- Lector -----
 
-  /** Bloqueado → solo `{ locked: true }` (ni títulos ni cantidad). Completo → la lista de publicados. */
+  /**
+   * Bloqueado → solo `{ locked: true, hasExtras }` (un booleano: ni títulos ni cantidad). Completo → la lista de
+   * publicados.
+   */
   async function listForReader(userId: string, bookId: string): Promise<ReaderExtrasResponse> {
     const book = await Book.findById(bookId).select('status').lean();
     if (book?.status !== 'published') throw new AppError('NOT_FOUND', 'No encontramos ese libro');
-    if (!(await progress.isBookCompleted(userId, bookId))) return { locked: true };
+    if (!(await progress.isBookCompleted(userId, bookId))) {
+      return {
+        locked: true,
+        hasExtras: (await Extra.exists({ bookId, status: 'published' })) !== null,
+      };
+    }
     const [extras, seen] = await Promise.all([
       Extra.find({ bookId, status: 'published' }).sort({ order: 1 }).lean(),
       ExtraAccess.find({ userId, bookId }).select('extraId').lean(),

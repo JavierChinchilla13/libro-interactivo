@@ -230,6 +230,8 @@ export const resultHistoryItemSchema = z.object({
 
 export const quizResultsResponseSchema = z.object({
   quizId: objectIdSchema,
+  /** El libro del quiz (para volver a los resultados de ese libro). */
+  bookId: objectIdSchema,
   title: z.string(),
   allowRetake: z.boolean(),
   /** Resultado vigente = el del último intento completado. */

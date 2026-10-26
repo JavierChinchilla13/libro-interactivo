@@ -347,6 +347,7 @@ describe('reglas por quiz: reintentos y porcentajes', () => {
     const res = await agent.get(`/api/me/results/${id}`).expect(200);
     const results = quizResultsResponseSchema.parse(res.body);
     expect(results.allowRetake).toBe(true);
+    expect(results.bookId).toBe(quiz.bookId.toString());
     expect(results.current.result.key).toBe('r3');
     expect(results.history.map((h) => [h.attemptNumber, h.resultTitle])).toEqual([
       [2, '[PLACEHOLDER] r3'],
