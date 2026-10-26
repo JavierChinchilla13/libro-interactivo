@@ -1,5 +1,6 @@
 import type { AuthUser } from '@libro/shared';
 import {
+  Fragment,
   useCallback,
   useEffect,
   useId,
@@ -10,9 +11,10 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useLogout, useSession } from '../../features/auth/session';
 import { GearIcon, LogoutIcon } from './icons';
+import { zoneOf } from './StaffSwitcher';
 
 type Role = AuthUser['role'];
 
@@ -27,11 +29,46 @@ export interface UserMenuItem {
   action?: 'logout';
   icon?: ReactNode;
   roles?: readonly Role[];
+  /** Zona a la que lleva (marca `aria-current` en la actual): así el selector de zonas cabe dentro del menú. */
+  zone?: 'site' | 'panel' | 'admin';
+  /** Las opciones de un mismo grupo van juntas; entre grupos hay una línea. */
+  group?: string;
+  /** Solo se ve donde el selector de zonas no cabe suelto en la barra (por debajo de 1536 px). */
+  narrowOnly?: boolean;
 }
 
+const STAFF: readonly Role[] = ['EDITOR', 'ADMIN'];
+
 export const USER_MENU_ITEMS: readonly UserMenuItem[] = [
-  { id: 'ajustes', label: 'Ajustes', to: '/panel/cuenta', icon: <GearIcon /> },
-  { id: 'salir', label: 'Salir', action: 'logout', icon: <LogoutIcon /> },
+  {
+    id: 'zona-sitio',
+    label: 'Ver sitio',
+    to: '/',
+    zone: 'site',
+    roles: STAFF,
+    group: 'zonas',
+    narrowOnly: true,
+  },
+  {
+    id: 'zona-panel',
+    label: 'Mi panel',
+    to: '/panel',
+    zone: 'panel',
+    roles: STAFF,
+    group: 'zonas',
+    narrowOnly: true,
+  },
+  {
+    id: 'zona-admin',
+    label: 'Admin',
+    to: '/admin',
+    zone: 'admin',
+    roles: STAFF,
+    group: 'zonas',
+    narrowOnly: true,
+  },
+  { id: 'ajustes', label: 'Ajustes', to: '/panel/cuenta', icon: <GearIcon />, group: 'cuenta' },
+  { id: 'salir', label: 'Salir', action: 'logout', icon: <LogoutIcon />, group: 'cuenta' },
 ];
 
 const ROLE_LABEL: Record<Role, string | null> = {
@@ -76,16 +113,20 @@ export function UserMenu({
   items = USER_MENU_ITEMS,
   className = '',
   alwaysShowName = false,
+  looseZones = true,
 }: {
   items?: readonly UserMenuItem[];
   className?: string;
   /** Muestra el nombre también en pantallas estrechas (p. ej. dentro del menú desplegable del sitio). */
   alwaysShowName?: boolean;
+  /** Hay un selector de zonas suelto en pantallas anchas (panel y administración); en el sitio no cabe y siempre va aquí. */
+  looseZones?: boolean;
 }) {
   const session = useSession();
   const user = session.data;
   const logout = useLogout();
   const navigate = useNavigate();
+  const currentZone = zoneOf(useLocation().pathname);
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -105,7 +146,10 @@ export function UserMenu({
   // Al abrir, el foco va a la primera o a la última opción.
   useEffect(() => {
     if (!open) return;
-    const list = refs.current.filter((element): element is HTMLElement => element !== null);
+    const list = refs.current.filter(
+      (element): element is HTMLElement =>
+        element !== null && getComputedStyle(element).display !== 'none',
+    );
     (wanted.current === 'last' ? list[list.length - 1] : list[0])?.focus();
   }, [open]);
 
@@ -138,8 +182,12 @@ export function UserMenu({
   const roleLabel = ROLE_LABEL[user.role];
   const name = user.name.trim() || 'Mi cuenta';
 
-  const move = (event: KeyboardEvent<HTMLElement>, current: number) => {
-    const list = refs.current.filter((element): element is HTMLElement => element !== null);
+  const move = (event: KeyboardEvent<HTMLElement>) => {
+    const list = refs.current.filter(
+      (element): element is HTMLElement =>
+        element !== null && getComputedStyle(element).display !== 'none',
+    );
+    const current = list.indexOf(event.currentTarget);
     const last = list.length - 1;
     const go = (index: number) => {
       event.preventDefault();
@@ -188,7 +236,7 @@ export function UserMenu({
         <span className="user-menu-avatar" aria-hidden="true">
           {initialsOf(user.name)}
         </span>
-        <span className={`user-menu-name ${alwaysShowName ? '' : 'max-sm:sr-only'}`}>{name}</span>
+        <span className={`user-menu-name ${alwaysShowName ? '' : 'max-md:sr-only'}`}>{name}</span>
         {alwaysShowName || !firstNameOf(user.name) ? null : (
           // En celular, solo el primer nombre y corto (el nombre completo sigue en el nombre accesible del botón).
           <span aria-hidden="true" className="user-menu-first">
@@ -232,9 +280,11 @@ export function UserMenu({
                   {visible.map((item, index) => {
                     const common = {
                       role: 'menuitem' as const,
-                      className: 'user-menu-item',
+                      className: `user-menu-item ${item.narrowOnly && looseZones ? '2xl:hidden' : ''}`,
+                      'aria-current':
+                        item.zone && item.zone === currentZone ? ('page' as const) : undefined,
                       tabIndex: -1,
-                      onKeyDown: (event: KeyboardEvent<HTMLElement>) => move(event, index),
+                      onKeyDown: move,
                     };
                     const content = (
                       <>
@@ -244,39 +294,51 @@ export function UserMenu({
                         </span>
                       </>
                     );
+                    const previous = visible[index - 1];
+                    const separator =
+                      previous && previous.group !== item.group ? (
+                        <div
+                          role="separator"
+                          className={`user-menu-sep ${previous.narrowOnly && looseZones ? '2xl:hidden' : ''}`}
+                        />
+                      ) : null;
                     if (item.to) {
                       return (
-                        <Link
-                          key={item.id}
-                          ref={(element) => {
-                            refs.current[index] = element;
-                          }}
-                          to={item.to}
-                          {...common}
-                          onClick={() => close(false)}
-                        >
-                          {content}
-                        </Link>
+                        <Fragment key={item.id}>
+                          {separator}
+                          <Link
+                            ref={(element) => {
+                              refs.current[index] = element;
+                            }}
+                            to={item.to}
+                            {...common}
+                            onClick={() => close(false)}
+                          >
+                            {content}
+                          </Link>
+                        </Fragment>
                       );
                     }
                     return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        ref={(element) => {
-                          refs.current[index] = element;
-                        }}
-                        {...common}
-                        disabled={logout.isPending}
-                        onClick={() => {
-                          if (item.action !== 'logout') return;
-                          logout.mutate(undefined, {
-                            onSettled: () => void navigate('/ingresar', { replace: true }),
-                          });
-                        }}
-                      >
-                        {content}
-                      </button>
+                      <Fragment key={item.id}>
+                        {separator}
+                        <button
+                          type="button"
+                          ref={(element) => {
+                            refs.current[index] = element;
+                          }}
+                          {...common}
+                          disabled={logout.isPending}
+                          onClick={() => {
+                            if (item.action !== 'logout') return;
+                            logout.mutate(undefined, {
+                              onSettled: () => void navigate('/ingresar', { replace: true }),
+                            });
+                          }}
+                        >
+                          {content}
+                        </button>
+                      </Fragment>
                     );
                   })}
                 </div>

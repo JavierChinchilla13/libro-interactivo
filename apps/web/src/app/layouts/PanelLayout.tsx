@@ -64,19 +64,13 @@ export function PanelLayout() {
                 ))}
               </nav>
               <div className="flex items-center gap-2">
-                <StaffSwitcher className="hidden sm:inline-flex" />
+                <StaffSwitcher className="hidden 2xl:inline-flex" />
                 <UserMenu />
               </div>
             </>
           )}
         </div>
       </header>
-      {immersive ? null : (
-        // En el celular el selector va bajo la cabecera (en el mismo sitio que en las otras dos zonas: arriba, a la derecha).
-        <div className="flex justify-end px-3 pt-2 sm:hidden">
-          <StaffSwitcher />
-        </div>
-      )}
       <main
         id={MAIN_ID}
         tabIndex={-1}
