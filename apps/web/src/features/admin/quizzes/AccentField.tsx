@@ -45,7 +45,10 @@ export function AccentField({
   result,
   backdrop,
   disabled,
+  allowDefault = true,
 }: {
+  /** Sin «Por defecto» (y sin poder vaciar el código) cuando el campo ya es «propio» de una pregunta. */
+  allowDefault?: boolean;
   value: string | undefined;
   onChange: (value: string | undefined) => void;
   /** Lo que se pintará de verdad (con el ajuste mínimo), o `undefined` sin acento. */
@@ -112,16 +115,26 @@ export function AccentField({
               Escribe un código de 6 cifras, como #A89BFF (0-9 y A-F).
             </p>
           ) : (
-            <p className="text-xs text-muted">Vacío = el color por defecto del sitio.</p>
+            <p className="text-xs text-muted">
+              {allowDefault
+                ? 'Vacío = el color por defecto del sitio.'
+                : 'Para volver al general marca «Acento: igual que el general».'}
+            </p>
           )}
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Colores rápidos">
-        <Chip name={`${id}-quick`} checked={value === undefined} onSelect={() => choose(undefined)}>
-          <span aria-hidden="true" className="size-3.5 rounded-full border border-border" />
-          Por defecto
-        </Chip>
+        {allowDefault ? (
+          <Chip
+            name={`${id}-quick`}
+            checked={value === undefined}
+            onSelect={() => choose(undefined)}
+          >
+            <span aria-hidden="true" className="size-3.5 rounded-full border border-border" />
+            Por defecto
+          </Chip>
+        ) : null}
         {QUICK_ACCENTS.map((color) => (
           <Chip
             key={color.hex}
