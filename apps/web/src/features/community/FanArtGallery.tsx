@@ -56,7 +56,7 @@ function Piece({
       type="button"
       onClick={onOpen}
       aria-label={label(art)}
-      className="img-frame block w-full overflow-hidden rounded-token-md bg-surface-alt"
+      className="img-frame block w-full overflow-hidden rounded-token-md bg-surface-alt transition-[filter] duration-150 hover:brightness-110"
       style={{ aspectRatio: ratioOf(art) }}
     >
       {failed ? (

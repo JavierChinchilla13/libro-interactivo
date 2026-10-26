@@ -200,7 +200,11 @@ export function UserMenu({
     else if (event.key === 'Escape') {
       event.preventDefault();
       close(true);
-    } else if (event.key === 'Tab') close(false);
+    } else if (event.key === 'Tab') {
+      // El panel está al final del documento: el foco vuelve al botón y Tab sigue desde ahí.
+      trigger.current?.focus();
+      close(false);
+    }
   };
 
   const openWith = (which: 'first' | 'last') => {
