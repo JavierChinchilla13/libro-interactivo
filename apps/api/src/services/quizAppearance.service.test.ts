@@ -92,7 +92,7 @@ describe('apariencia del quiz: lectura y primera edición', () => {
     });
     expect(res.rev).toBe(1);
     expect(res.appearance?.background).toMatchObject({ kind: 'image' });
-    expect(res.appearance?.accent).toBe('accent');
+    expect(res.appearance?.accent).toBe('#a89bff');
     expect(res.appearance?.overlay).toEqual({ mode: 'auto', strength: 0.78 });
     expect(res.history).toHaveLength(1);
     expect(res.history[0]).toMatchObject({
@@ -345,7 +345,7 @@ describe('apariencia del quiz: historial y reversión', () => {
     expect(res.history.map((h) => h.rev)).toEqual([3, 2, 1]);
     const back = await appearance.revert(quiz.id, admin, { rev: 3, expectedRev: 3 });
     expect(back.appearance?.background).toMatchObject({ image: { publicId: 'libro/quiz-bg/dos' } });
-    expect(back.appearance?.accent).toBe('warning');
+    expect(back.appearance?.accent).toBe('#ffcb66');
   });
 
   it('revertir la primera edición quita la apariencia por completo', async () => {

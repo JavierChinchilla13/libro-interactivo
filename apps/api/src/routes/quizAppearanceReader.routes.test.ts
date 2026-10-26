@@ -79,7 +79,7 @@ describe('la introducción del quiz entrega la apariencia', () => {
       image: { publicId: 'libro/quiz-bg/secreto-visual' },
     });
     expect(body.appearance?.overlay).toEqual({ mode: 'auto', strength: 0.7 });
-    expect(body.appearance?.accent).toBe('accent');
+    expect(body.appearance?.accent).toBe('#a89bff');
     expect(body.instructionsHtml).toBe('<p>Una niebla espesa cubre el laboratorio.</p>');
     expect(body.image?.publicId).toBe('libro/quiz-bg/portada-del-quiz');
   });
@@ -127,7 +127,7 @@ describe('la introducción del quiz entrega la apariencia', () => {
     await save(FULL);
     for (const agent of [admin, editor]) {
       const body = quizIntroResponseSchema.parse((await agent.get(intro).expect(200)).body);
-      expect(body.appearance?.accent).toBe('accent');
+      expect(body.appearance?.accent).toBe('#a89bff');
     }
   });
 });
@@ -227,7 +227,7 @@ describe('sin fugas: la apariencia no sale por ningún otro payload y nada revel
     expect(JSON.stringify(resumed)).not.toMatch(/appearance|secreto-visual/);
     // Y la introducción sí muestra la apariencia nueva.
     const body = quizIntroResponseSchema.parse((await reader.get(intro).expect(200)).body);
-    expect(body.appearance?.accent).toBe('accent');
+    expect(body.appearance?.accent).toBe('#a89bff');
     expect(body.inProgressAttemptId).toBe(started.attemptId);
     // Completarlo da un resultado, sin apariencia.
     if (started.status !== 'in_progress') throw new Error('Se esperaba una etapa');

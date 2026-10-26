@@ -4,9 +4,12 @@ import { quizIntroResponseSchema } from './quiz.js';
 import {
   APPEARANCE_FIELDS,
   APPEARANCE_HISTORY_LIMIT,
+  HEX_COLOR,
+  LEGACY_ACCENT_HEX,
   OVERLAY_FLOOR,
   OVERLAY_MIN,
   overlayMinimum,
+  QUICK_ACCENTS,
   QUIZ_VIDEO_LIMITS,
   quizAppearanceResponseSchema,
   quizAppearanceSchema,
@@ -116,13 +119,45 @@ describe('apariencia del quiz', () => {
     ).toBe(true);
   });
 
-  it('el acento es un token de la lista cerrada, nunca un color libre', () => {
-    for (const accent of ['primary', 'accent', 'success', 'warning']) {
-      expect(ok({ accent }).success).toBe(true);
+  it('el acento es un color libre #RRGGBB: se guarda en minúsculas y lo que no es un hex se rechaza', () => {
+    for (const accent of ['#ff0000', '#A89BFF', '#a89bff', '#000000', '#FfFfFf']) {
+      const parsed = ok({ accent });
+      expect(parsed.success, accent).toBe(true);
+      expect(parsed.data?.accent).toBe(accent.toLowerCase());
     }
-    for (const accent of ['#ff0000', 'red', 'danger', '']) {
-      expect(ok({ accent }).success).toBe(false);
+    for (const accent of [
+      'red',
+      'danger',
+      '',
+      '#fff',
+      '#ff00',
+      '#gg0000',
+      'ff0000',
+      '#ff0000ff',
+      'rgb(1,2,3)',
+      ' #ff0000',
+      'url(x)',
+      '#ff0000;color:red',
+      7,
+      null,
+    ]) {
+      expect(ok({ accent }).success, String(accent)).toBe(false);
     }
+  });
+
+  it('los nombres antiguos (lista cerrada) se siguen leyendo y quedan como su hex', () => {
+    for (const [name, hex] of Object.entries(LEGACY_ACCENT_HEX)) {
+      const parsed = ok({ accent: name });
+      expect(parsed.success, name).toBe(true);
+      expect(parsed.data?.accent).toBe(hex);
+      expect(readerAppearanceSchema.parse({ accent: name }).accent).toBe(hex);
+    }
+    expect(ok({ accent: 'Primary' }).success).toBe(false); // solo los nombres exactos de antes
+  });
+
+  it('los colores rápidos del editor son hex válidos y sin repetir', () => {
+    expect(QUICK_ACCENTS.every((color) => HEX_COLOR.test(color.hex))).toBe(true);
+    expect(new Set(QUICK_ACCENTS.map((color) => color.hex)).size).toBe(QUICK_ACCENTS.length);
   });
 
   it('el texto de introducción tiene tope de 5 000 caracteres', () => {
@@ -182,7 +217,7 @@ describe('lo que recibe la lectora', () => {
     expect(quizIntroResponseSchema.safeParse(intro).success).toBe(true);
     const withAppearance = quizIntroResponseSchema.safeParse({
       ...intro,
-      appearance: { background: { kind: 'video', video }, accent: 'accent' },
+      appearance: { background: { kind: 'video', video }, accent: '#a89bff' },
     });
     expect(withAppearance.success).toBe(true);
     expect(withAppearance.data?.appearance?.overlay.strength).toBe(OVERLAY_FLOOR);

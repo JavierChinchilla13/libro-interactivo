@@ -71,10 +71,47 @@ export function urlHasPublicId(url: string, publicId: string): boolean {
 /** Cuántos estados anteriores se conservan para revertir. */
 export const APPEARANCE_HISTORY_LIMIT = 10;
 
-/** Colores de acento permitidos: solo tokens del sitio (nunca un color libre). */
-export const APPEARANCE_ACCENTS = ['primary', 'accent', 'success', 'warning'] as const;
-export const appearanceAccentSchema = z.enum(APPEARANCE_ACCENTS);
-export type AppearanceAccent = z.infer<typeof appearanceAccentSchema>;
+/**
+ * Color de acento: un `#RRGGBB` libre. Solo se pinta en títulos grandes, bordes y controles (nunca en texto corrido) y
+ * el lector lo aclara lo mínimo, al pintarlo, hasta que se lea (3:1) sobre el fondo ya velado: la garantía de
+ * legibilidad es del cliente porque el servidor no ve píxeles. Se guarda siempre en minúsculas.
+ */
+export const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+export const isHexColor = (value: unknown): value is string =>
+  typeof value === 'string' && HEX_COLOR.test(value);
+
+/**
+ * Los acentos que antes eran nombres de token (lista cerrada) y su color en la paleta de esa época. Se siguen leyendo:
+ * al parsear se convierten en su `#RRGGBB` y al guardar queda el hex.
+ */
+export const LEGACY_ACCENT_HEX = {
+  primary: '#3fd8ff',
+  accent: '#a89bff',
+  success: '#5fe3ae',
+  warning: '#ffcb66',
+} as const;
+
+/** Colores rápidos del editor (opcionales): los cuatro de siempre y dos más. */
+export const QUICK_ACCENTS = [
+  { name: 'Cian', hex: LEGACY_ACCENT_HEX.primary },
+  { name: 'Lavanda', hex: LEGACY_ACCENT_HEX.accent },
+  { name: 'Verde', hex: LEGACY_ACCENT_HEX.success },
+  { name: 'Ámbar', hex: LEGACY_ACCENT_HEX.warning },
+  { name: 'Rosa', hex: '#ff8fb1' },
+  { name: 'Marfil', hex: '#f2ead8' },
+] as const;
+
+export const appearanceAccentSchema = z.preprocess(
+  (value) =>
+    typeof value === 'string' && value in LEGACY_ACCENT_HEX
+      ? LEGACY_ACCENT_HEX[value as keyof typeof LEGACY_ACCENT_HEX]
+      : value,
+  z
+    .string()
+    .regex(HEX_COLOR, 'El color debe ser un código #RRGGBB')
+    .transform((value) => value.toLowerCase()),
+);
+export type AppearanceAccent = string;
 
 /** La lista blanca exacta: lo único que se puede cambiar en vivo. */
 export const APPEARANCE_FIELDS = ['background', 'overlay', 'accent', 'cover', 'introHtml'] as const;

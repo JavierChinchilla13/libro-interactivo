@@ -108,7 +108,7 @@ describe('GET y PUT de la apariencia', () => {
     const saved = quizAppearanceResponseSchema.parse(res.body);
     expect(saved.rev).toBe(1);
     expect(saved.appearance).toMatchObject({
-      accent: 'accent',
+      accent: '#a89bff',
       introHtml: '<p>Una niebla espesa.</p>',
     });
     expect(saved.history[0]).toMatchObject({
@@ -211,11 +211,32 @@ describe('validación (Zod en la ruta)', () => {
     ]);
   });
 
-  it('rechaza un acento que no es un token (un color libre)', async () => {
-    await expectAllRejected([
-      { appearance: { accent: '#ff0000' }, expectedRev: 0 },
-      { appearance: { accent: 'red' }, expectedRev: 0 },
-    ]);
+  it('el acento es un color libre #RRGGBB: se guarda en minúsculas; un nombre antiguo queda como su hex', async () => {
+    const { editor, url } = await world();
+    const free = await editor
+      .put(url)
+      .send({ appearance: { accent: '#FF8FB1' }, expectedRev: 0 })
+      .expect(200);
+    expect(free.body.appearance.accent).toBe('#ff8fb1');
+    const legacy = await editor
+      .put(url)
+      .send({ appearance: { accent: 'success' }, expectedRev: 1 })
+      .expect(200);
+    expect(legacy.body.appearance.accent).toBe('#5fe3ae');
+    // Guardar el mismo color con su nombre antiguo no se cuenta como cambio de acento.
+    const same = await editor
+      .put(url)
+      .send({ appearance: { accent: '#5FE3AE', introHtml: '<p>Hola</p>' }, expectedRev: 2 })
+      .expect(200);
+    expect(same.body.history[0].changed).toEqual(['introHtml']);
+  });
+
+  it('rechaza un acento que no es #RRGGBB (nombres de color, funciones CSS, abreviaturas)', async () => {
+    await expectAllRejected(
+      ['red', '#fff', '#ff00', 'ff0000', 'rgb(1,2,3)', '#ff0000;color:red', 'url(x)', ''].map(
+        (accent) => ({ appearance: { accent }, expectedRev: 0 }),
+      ),
+    );
   });
 
   it('rechaza un video sin póster o de más de 12 s', async () => {
