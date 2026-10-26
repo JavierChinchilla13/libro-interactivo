@@ -37,13 +37,9 @@ test.describe('navegación dentro de un libro (celular y escritorio)', () => {
     // Resultados y Extras del libro, sin pasar por el panel general.
     await sections.getByRole('link', { name: 'Resultados' }).click();
     await expect(page).toHaveURL(new RegExp(`/panel/libros/libro-qr-${stamp}/resultados$`));
-    await expect(
-      page.getByRole('heading', { level: 1, name: `Tus resultados en ${first.bookTitle}` }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Tus resultados' })).toBeVisible();
     await sections.getByRole('link', { name: 'Extras' }).click();
-    await expect(
-      page.getByRole('heading', { level: 1, name: `Capítulos extra de ${first.bookTitle}` }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Capítulos extra' })).toBeVisible();
 
     // La barra: dentro del libro no hay «Resultados» ni «Extras» generales, solo volver.
     if (isMobile) {
@@ -67,10 +63,15 @@ test.describe('navegación dentro de un libro (celular y escritorio)', () => {
     await page
       .getByRole('combobox', { name: 'Cambiar de libro' })
       .selectOption(`libro-qr-${stamp + 1}`);
-    await expect(
-      page.getByRole('heading', { level: 1, name: `Capítulos extra de ${second.bookTitle}` }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Capítulos extra' })).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`/panel/libros/libro-qr-${stamp + 1}/extras$`));
+    await expect(page.getByRole('combobox', { name: 'Cambiar de libro' })).toHaveValue(
+      `libro-qr-${stamp + 1}`,
+    );
+    // El nombre del libro está en las migas y en la cabecera compacta, no en el titular.
+    await expect(
+      page.getByRole('navigation', { name: 'Migas' }).getByText(second.bookTitle),
+    ).toBeVisible();
 
     // Volver a «Tus libros» desde las migas.
     await page
