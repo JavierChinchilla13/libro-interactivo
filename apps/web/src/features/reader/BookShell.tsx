@@ -5,6 +5,7 @@ import { navTab } from '../../shared/ui/nav';
 import { Alert, Loading } from '../../shared/ui/layout';
 import { Plate } from '../../shared/ui/Plate';
 import { type LibraryEntry } from './LibraryBookCard';
+import { experiencesText } from './progressText';
 import { BOOK_SECTIONS, bookSectionOf, type BookSection } from './bookSections';
 import { useLibrary } from './useLibrary';
 
@@ -37,10 +38,10 @@ function BookCrumbs({
           </li>
         ) : (
           <>
-            <li className={`${crumb} max-w-[40%]`}>
+            <li className="flex min-w-0 shrink">
               <Link
                 to={`/panel/libros/${slug}`}
-                className="underline underline-offset-2 hover:text-text"
+                className="block min-w-0 truncate underline underline-offset-2 hover:text-text"
                 title={title}
               >
                 {title}
@@ -91,7 +92,7 @@ function CompactHeader({
         </p>
         {progress ? (
           <p className="text-sm text-muted tabular-nums">
-            {progress.done} de {progress.total} experiencias abiertas
+            {experiencesText(progress.done, progress.total)}
           </p>
         ) : null}
       </div>

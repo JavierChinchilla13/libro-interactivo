@@ -3,6 +3,7 @@ import { errorMessage } from '../../shared/api/messages';
 import { Alert, Loading, PageHeader } from '../../shared/ui/layout';
 import { Plate } from '../../shared/ui/Plate';
 import { type LibraryEntry } from './LibraryBookCard';
+import { experiencesText } from './progressText';
 import { useLibrary } from './useLibrary';
 
 type Section = 'resultados' | 'extras';
@@ -45,7 +46,7 @@ function BookRow({ entry, section }: { entry: LibraryEntry; section: Section }) 
           </span>
           {progress ? (
             <span className="block text-sm text-muted tabular-nums">
-              {progress.done} de {progress.total} experiencias abiertas
+              {experiencesText(progress.done, progress.total)}
             </span>
           ) : null}
         </span>

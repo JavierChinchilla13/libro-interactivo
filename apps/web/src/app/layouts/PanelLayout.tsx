@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation, useMatch } from 'react-router';
 import { BOOK_SECTIONS, bookSectionOf } from '../../features/reader/bookSections';
+import { useLibrary } from '../../features/reader/useLibrary';
 import { WelcomeModal } from '../../features/reader/WelcomeModal';
 import { Brand } from '../../shared/ui/Brand';
 import { PageBackground } from '../../shared/ui/PageBackground';
@@ -46,6 +47,10 @@ export function PanelLayout() {
   // Dentro de un libro las categorías son las del libro: arriba solo queda volver a «Tus libros».
   const bookSlug = bookSlugOf(pathname);
   const bookSection = bookSectionOf(pathname);
+  // Un libro sin abrir (o «próximamente») solo tiene su resumen: la barra de abajo no ofrece lo demás.
+  const library = useLibrary(bookSlug !== null);
+  const bookAccess = library.data?.books.find((entry) => entry.book.slug === bookSlug)?.access;
+  const bookTabs = bookAccess && bookAccess !== 'open' ? BOOK_SECTIONS.slice(0, 1) : BOOK_SECTIONS;
   // En el quiz solo queda la marca: sin «Salir» ni pestañas que cierren la sesión o abandonen sin querer.
   const inQuiz = useMatch('/panel/quiz/:quizId') !== null;
   const inGame = useMatch('/panel/juego/:bookId') !== null;
@@ -106,7 +111,7 @@ export function PanelLayout() {
               <Link to="/panel" className={bottomTab({ isActive: false })}>
                 ‹ Tus libros
               </Link>
-              {BOOK_SECTIONS.map((item) => (
+              {bookTabs.map((item) => (
                 <Link
                   key={item.id}
                   to={`/panel/libros/${bookSlug}${item.path}`}
