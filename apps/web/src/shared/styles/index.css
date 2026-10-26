@@ -1522,6 +1522,166 @@
     }
   }
 
+  /* Menú de usuario (sitio, panel y administración): avatar de iniciales + nombre; el panel es una hoja desde abajo en celular. */
+  .user-menu {
+    position: relative;
+  }
+  .user-menu-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 14rem;
+    min-height: 2.75rem;
+    padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-pill);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--token-text);
+    transition:
+      border-color var(--token-dur-fast) var(--token-ease-out),
+      background-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .user-menu-trigger[aria-expanded='true'] {
+    border-color: var(--token-primary);
+    background: color-mix(in srgb, var(--token-primary) 10%, transparent);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .user-menu-trigger:hover {
+      border-color: var(--token-primary);
+    }
+  }
+  .user-menu-avatar {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--token-primary) 18%, transparent);
+    color: var(--token-primary);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .user-menu-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-menu-chevron {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    color: var(--token-muted);
+    transition: transform var(--token-dur-fast) var(--token-ease-out);
+  }
+  .user-menu-trigger[aria-expanded='true'] .user-menu-chevron {
+    transform: rotate(180deg);
+  }
+  .user-menu-panel {
+    position: fixed;
+    top: var(--um-top, 4.5rem);
+    right: var(--um-right, 0.75rem);
+    z-index: 50;
+    width: min(18rem, calc(100vw - 1.5rem));
+    padding: 0.5rem;
+    border: 1px solid var(--token-line);
+    border-radius: 1.25rem;
+    background: color-mix(in srgb, var(--token-surface) 98%, transparent);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    transform-origin: top right;
+    transition:
+      opacity 160ms var(--token-ease-out),
+      transform 160ms var(--token-ease-out);
+    @starting-style {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+  }
+  .user-menu-backdrop {
+    display: none;
+  }
+  .user-menu-who {
+    padding: 0.5rem 0.75rem 0.625rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid var(--token-line);
+  }
+  .user-menu-who-name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+  }
+  .user-menu-who-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.8125rem;
+    color: var(--token-muted);
+  }
+  .user-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0 0.75rem;
+    border-radius: 0.75rem;
+    font-size: 0.9375rem;
+    text-align: left;
+    color: var(--token-text);
+    transition: background-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .user-menu-item:hover,
+  .user-menu-item:focus-visible {
+    background: var(--token-surface-alt);
+  }
+  .user-menu-item:disabled {
+    opacity: 0.6;
+  }
+  @media (max-width: 639px) {
+    .user-menu-backdrop {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 49;
+      background: rgb(0 0 0 / 0.55);
+    }
+    .user-menu-panel {
+      top: auto;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      width: auto;
+      padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+      border-radius: 1.5rem 1.5rem 0 0;
+      transform-origin: bottom center;
+      @starting-style {
+        opacity: 0;
+        transform: translateY(1.5rem);
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .user-menu-panel,
+    .user-menu-chevron {
+      transition: none;
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .user-menu-panel {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background: var(--token-surface);
+    }
+  }
+
   /* Qué es: el enunciado a gran escala y, al lado, cada verbo enlazado con lo que ya existe en el sitio. */
   .manifesto-grid {
     display: grid;
