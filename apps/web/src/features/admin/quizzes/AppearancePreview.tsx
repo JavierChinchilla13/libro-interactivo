@@ -125,7 +125,7 @@ export function AppearancePreview({
 
   return (
     <section aria-label="Vista previa" className="flex flex-col gap-3">
-      <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-end gap-3 bg-bg px-1 pb-2">
+      <div className="lg:sticky lg:top-0 z-10 -mx-1 flex flex-wrap items-end gap-3 bg-bg px-1 pb-2">
         <div role="group" aria-label="Tamaño de la vista previa" className="flex flex-wrap gap-2">
           {(Object.keys(PREVIEW_SIZES) as SizeKey[]).map((key) => (
             <button
@@ -289,7 +289,7 @@ function IntroScreen({
 function QuestionScreen({ variant }: { variant: Variant }) {
   return (
     <>
-      <p className="label">
+      <p className="text-sm text-muted">
         Pregunta {variant.index + 1} de {variant.total}
       </p>
       <div className="flex gap-1.5" aria-hidden="true">

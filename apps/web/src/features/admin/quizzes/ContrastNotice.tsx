@@ -20,7 +20,7 @@ export function ContrastNotice({
       role="status"
       className={`rounded-token border p-3 text-sm ${report.ok ? 'border-success/50' : 'border-warning'}`}
     >
-      {title ? <p className="text-xs font-semibold uppercase text-muted">{title}</p> : null}
+      {title ? <p className="text-xs font-semibold text-muted">{title}</p> : null}
       <p className="font-medium">
         {report.ok ? 'El texto se lee bien' : 'Ojo: el texto podría leerse mal'}
       </p>

@@ -19,6 +19,10 @@ import { ContrastNotice } from './ContrastNotice';
 import { VideoField } from './VideoField';
 
 /** Lo que el editor sabe de las preguntas del quiz (las del borrador), agrupadas por etapa. */
+/** Un cambio a los ajustes de una pregunta: el valor nuevo, o una función sobre el valor vigente. */
+type EntryUpdate =
+  QuestionForm | undefined | ((current: QuestionForm | undefined) => QuestionForm | undefined);
+
 export interface StageQuestions {
   id: string;
   label: string;
@@ -40,7 +44,10 @@ export function QuestionsSection({
 }: {
   stages: StageQuestions[];
   form: AppearanceForm;
-  onChange: (questions: AppearanceForm['questions']) => void;
+  /** Como `setState`: recibe una función sobre el estado vigente, para no pisar lo que cambió mientras se subía un archivo. */
+  onChange: (
+    update: (questions: AppearanceForm['questions']) => AppearanceForm['questions'],
+  ) => void;
   disabled: boolean;
 }) {
   const known = new Set(stages.flatMap((stage) => stage.questions.map((question) => question.id)));
@@ -48,12 +55,14 @@ export function QuestionsSection({
   const counts = mediaCounts(form);
   const total = stages.reduce((sum, stage) => sum + stage.questions.length, 0);
   const custom = Object.keys(form.questions).length;
-  const set = (id: string, entry: QuestionForm | undefined) => {
-    const next = { ...form.questions };
-    if (entry) next[id] = entry;
-    else delete next[id];
-    onChange(next);
-  };
+  const set = (id: string, update: EntryUpdate) =>
+    onChange((questions) => {
+      const next = { ...questions };
+      const entry = typeof update === 'function' ? update(questions[id]) : update;
+      if (entry) next[id] = entry;
+      else delete next[id];
+      return next;
+    });
 
   return (
     <Card className="flex min-w-0 flex-col gap-4">
@@ -86,9 +95,7 @@ export function QuestionsSection({
       {stages.map((stage) =>
         stage.questions.length === 0 ? null : (
           <section key={stage.id} aria-label={stage.label} className="flex min-w-0 flex-col gap-2">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
-              {stage.label}
-            </h3>
+            <h3 className="text-sm font-semibold text-muted">{stage.label}</h3>
             <ol className="flex flex-col divide-y divide-border">
               {stage.questions.map((question, index) => (
                 <QuestionRow
@@ -97,7 +104,7 @@ export function QuestionsSection({
                   question={question}
                   entry={form.questions[question.id]}
                   form={form}
-                  onChange={(entry) => set(question.id, entry)}
+                  onChange={(update) => set(question.id, update)}
                   disabled={disabled}
                 />
               ))}
@@ -109,8 +116,9 @@ export function QuestionsSection({
       {orphans.length > 0 ? (
         <Alert tone="warning" title="Personalizaciones sin pregunta">
           <p className="mb-2">
-            Estos ajustes son de preguntas que ya no están en el borrador. Las lectoras no los ven;
-            puedes quitarlos.
+            Estos ajustes son de preguntas que ya no están en el borrador. Si la versión publicada
+            todavía las tiene, las lectoras los siguen viendo; quitarlos los saca de la apariencia
+            en vivo.
           </p>
           <ul className="flex flex-col gap-2">
             {orphans.map((id) => (
@@ -152,7 +160,7 @@ function QuestionRow({
   question: { id: string; text: string };
   entry: QuestionForm | undefined;
   form: AppearanceForm;
-  onChange: (entry: QuestionForm | undefined) => void;
+  onChange: (update: EntryUpdate) => void;
   disabled: boolean;
 }) {
   const id = useId();
@@ -177,7 +185,24 @@ function QuestionRow({
         </div>
         <fieldset className="flex flex-wrap gap-2" disabled={disabled}>
           <legend className="sr-only">Apariencia de la pregunta {number}</legend>
-          <Chip name={`${id}-mode`} checked={!entry} onSelect={() => onChange(undefined)}>
+          <Chip
+            name={`${id}-mode`}
+            checked={!entry}
+            onSelect={() => {
+              // Un fondo ya subido se perdería de la pregunta (y quedaría sin usar en Cloudinary): se pide confirmar.
+              const hasMedia =
+                (entry?.background?.kind === 'image' && entry.background.image) ||
+                (entry?.background?.kind === 'video' && entry.background.video);
+              if (
+                hasMedia &&
+                !window.confirm(
+                  'Esta pregunta tiene un fondo propio. ¿Volver al general y descartarlo?',
+                )
+              )
+                return;
+              onChange(undefined);
+            }}
+          >
             Usar el general
           </Chip>
           <Chip name={`${id}-mode`} checked={Boolean(entry)} onSelect={() => onChange(entry ?? {})}>
@@ -208,7 +233,7 @@ function QuestionFields({
   number: number;
   entry: QuestionForm;
   form: AppearanceForm;
-  onChange: (entry: QuestionForm | undefined) => void;
+  onChange: (update: EntryUpdate) => void;
   disabled: boolean;
 }) {
   const id = useId();
@@ -220,6 +245,9 @@ function QuestionFields({
   const mediaFull = counts.questionMedia >= LIMITS.maxQuestionMedia && !ownHasMedia;
   const videosFull = counts.videos >= LIMITS.maxVideos && !ownIsVideo;
   const patch = (changes: Partial<QuestionForm>) => onChange({ ...entry, ...changes });
+  // El archivo llega tras una subida: se aplica sobre lo vigente (y se descarta si la pregunta ya volvió al general).
+  const late = (changes: Partial<QuestionForm>) =>
+    onChange((current) => (current ? { ...current, ...changes } : current));
   const without = (field: keyof QuestionForm): QuestionForm => {
     const { [field]: _removed, ...rest } = entry;
     return rest;
@@ -288,7 +316,7 @@ function QuestionFields({
                 label={`Imagen de la pregunta ${number}`}
                 purpose="quiz-bg"
                 value={own.image}
-                onChange={(image) => patch({ background: { kind: 'image', image } })}
+                onChange={(image) => late({ background: { kind: 'image', image } })}
                 altMaxLength={200}
                 hint="JPG, PNG, WebP o GIF, hasta 10 MB."
               />
@@ -296,7 +324,7 @@ function QuestionFields({
             {own.kind === 'video' ? (
               <VideoField
                 value={own.video}
-                onChange={(video) => patch({ background: { kind: 'video', video } })}
+                onChange={(video) => late({ background: { kind: 'video', video } })}
                 disabled={disabled}
               />
             ) : null}
