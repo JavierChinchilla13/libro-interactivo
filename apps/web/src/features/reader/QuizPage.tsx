@@ -104,8 +104,14 @@ export function QuizPage() {
   // Fondo de la apariencia (si el quiz la tiene): solo llega con el quiz ya desbloqueado.
   // En el revelado y en el resultado el fondo es solo el póster: ahí corren la celebración, el campo animado y el video
   // del resultado (un solo elemento animado a la vez) y el fondo no debe moverse sin botón de pausa.
+  const stageQuestions = view.phase === 'stage' ? view.stage.questions : [];
+  const stageIndex = view.phase === 'stage' ? view.index : 0;
   const { backdrop, toggle, accentStyle } = useQuizBackdrop(intro.data?.appearance, {
     staticOnly: view.phase === 'reveal' || view.phase === 'result',
+    // Fondo, velo y acento propios de la pregunta que se ve (lo que no traiga es el general) y, de la siguiente, solo
+    // se precalienta la imagen o el póster.
+    question: stageQuestions[stageIndex]?.appearance,
+    nextQuestion: stageQuestions[stageIndex + 1]?.appearance,
   });
   // Un solo árbol: el fondo es siempre el primer hijo y no se desmonta al cambiar de fase.
   const shell = (node: ReactNode) => (

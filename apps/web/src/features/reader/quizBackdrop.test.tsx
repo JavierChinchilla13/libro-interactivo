@@ -314,6 +314,217 @@ describe('QuizPage: el fondo no se remonta al cambiar de fase', () => {
   });
 });
 
+describe('QuizPage: fondo, velo y acento por pregunta', () => {
+  const ATTEMPT_ID = '670000000000000000000099';
+  const question = (id: string, text: string, appearance?: object) => ({
+    id,
+    text,
+    ...(appearance ? { appearance } : {}),
+    answers: [
+      { id: `${id}a`, text: `${text} A` },
+      { id: `${id}b`, text: `${text} B` },
+    ],
+  });
+  const general = {
+    background: { kind: 'image', image: image('general') },
+    overlay: { mode: 'manual', strength: 0.8 },
+    accent: '#a89bff',
+  };
+  const setup = (questions: object[], appearance: Record<string, unknown> = general) =>
+    mockApi({
+      [`GET /api/quizzes/${QUIZ}`]: intro(appearance),
+      [`POST /api/quizzes/${QUIZ}/attempts`]: () =>
+        json({
+          attemptId: ATTEMPT_ID,
+          status: 'in_progress',
+          stage: { stageId: 'etapa-1', questions },
+        }),
+    });
+  const layers = () => [...document.querySelectorAll<HTMLElement>('.quiz-bg')];
+  const sources = () =>
+    layers().map((layer) => layer.querySelector('img')?.getAttribute('src') ?? '');
+  const next = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getAllByRole('radio')[0]!);
+    await user.click(screen.getByRole('button', { name: /Siguiente/ }));
+  };
+  const accentOf = () =>
+    (
+      document.querySelector('[style*="--quiz-accent"]') as HTMLElement | null
+    )?.style.getPropertyValue('--quiz-accent') ?? '';
+
+  it('cada pregunta usa su fondo, velo y acento; lo que no define es el general; el medio de una pregunta no se pide hasta llegar a ella', async () => {
+    const warmed: string[] = [];
+    vi.stubGlobal(
+      'Image',
+      class {
+        decoding = '';
+        set src(value: string) {
+          warmed.push(value);
+        }
+      },
+    );
+    setup([
+      question('q1', 'Primera'),
+      question('q2', 'Segunda', {
+        background: { kind: 'image', image: image('propia') },
+        overlay: { mode: 'manual', strength: 0.9 },
+        accent: '#ff8fb1',
+      }),
+      question('q3', 'Tercera', { background: { kind: 'none' } }),
+    ]);
+    const user = userEvent.setup();
+    renderAt(`/panel/quiz/${QUIZ}`);
+    await user.click(await screen.findByRole('button', { name: 'Comenzar' }));
+    await screen.findByText('Primera');
+    // Pregunta 1: el general. La imagen de la 2 todavía NO está en la página, solo se precalentó.
+    expect(layers()).toHaveLength(1);
+    expect(sources()[0]).toContain('general');
+    expect(document.querySelector('img[src*="propia"]')).toBeNull();
+    expect(warmed.some((url) => url.includes('propia'))).toBe(true);
+    expect(layers()[0]?.style.getPropertyValue('--quiz-veil')).toBe('0.8');
+    expect(accentOf()).toBe('#a89bff');
+
+    // Pregunta 2: su propio fondo entra sobre el anterior (que se queda hasta que el nuevo está listo).
+    await next(user);
+    await screen.findByText('Segunda');
+    await waitFor(() => expect(layers()).toHaveLength(2));
+    const entering = layers().find((layer) => layer.querySelector('img[src*="propia"]'))!;
+    expect(entering).toHaveAttribute('data-entering');
+    expect(layers()[0]).not.toHaveAttribute('data-entering');
+    fireEvent.load(entering.querySelector('img')!);
+    await waitFor(() => expect(entering).not.toHaveAttribute('data-entering'));
+    await waitFor(() => expect(layers()).toHaveLength(1), { timeout: 2000 });
+    expect(sources()[0]).toContain('propia');
+    expect(layers()[0]?.style.getPropertyValue('--quiz-veil')).toBe('0.9');
+    expect(accentOf()).toBe('#ff8fb1');
+    // Solo la capa actual es una imagen con nombre para lectores de pantalla.
+    expect(screen.getAllByRole('img', { name: 'Niebla sobre la ciudad' })).toHaveLength(1);
+
+    // Pregunta 3: «sin fondo» (el color liso del sitio); el general vuelve en el resultado, no aquí.
+    await next(user);
+    await screen.findByText('Tercera');
+    await waitFor(() => expect(layers()).toHaveLength(0), { timeout: 2000 });
+    expect(accentOf()).toBe('#a89bff');
+  });
+
+  it('el velo manual por pregunta nunca baja del piso y el acento se aclara según el fondo de ESA pregunta', async () => {
+    setup([question('q1', 'Primera'), question('q2', 'Segunda', { accent: '#1a3a6e' })]);
+    const user = userEvent.setup();
+    renderAt(`/panel/quiz/${QUIZ}`);
+    await user.click(await screen.findByRole('button', { name: 'Comenzar' }));
+    await screen.findByText('Primera');
+    const { contrast } = await import('../../shared/lib/color');
+    const { accentBackdrop } = await import('../../shared/lib/quizAppearance');
+    await next(user);
+    await screen.findByText('Segunda');
+    const painted = accentOf();
+    expect(painted).not.toBe('#1a3a6e');
+    expect(contrast(painted, accentBackdrop(true, undefined, 0.8))).toBeGreaterThanOrEqual(3);
+  });
+
+  it('un medio que no carga no deja la pantalla sin fondo ni espera para siempre: el color liso y el velo', async () => {
+    setup([
+      question('q1', 'Primera'),
+      question('q2', 'Segunda', { background: { kind: 'image', image: image('rota') } }),
+    ]);
+    const user = userEvent.setup();
+    renderAt(`/panel/quiz/${QUIZ}`);
+    await user.click(await screen.findByRole('button', { name: 'Comenzar' }));
+    await screen.findByText('Primera');
+    await next(user);
+    await screen.findByText('Segunda');
+    const broken = await waitFor(() => {
+      const layer = layers().find((item) => item.querySelector('img[src*="rota"]'));
+      if (!layer) throw new Error('aún no');
+      return layer;
+    });
+    fireEvent.error(broken.querySelector('img')!);
+    await waitFor(() => expect(broken).not.toHaveAttribute('data-entering'));
+    // La capa existe (color liso y velo); la imagen no se muestra porque no cargó.
+    expect(broken).not.toHaveAttribute('data-loaded');
+    await user.click(screen.getAllByRole('radio')[0]!);
+    expect(screen.getByRole('button', { name: /Terminar/ })).toBeEnabled();
+  });
+
+  it('con un video propio: solo corre el de la capa actual, hay un botón de pausa y la siguiente solo precalienta su póster', async () => {
+    const warmed: string[] = [];
+    vi.stubGlobal(
+      'Image',
+      class {
+        decoding = '';
+        set src(value: string) {
+          warmed.push(value);
+        }
+      },
+    );
+    setup(
+      [
+        question('q1', 'Primera'),
+        question('q2', 'Segunda', { background: { kind: 'video', video } }),
+      ],
+      { overlay: { mode: 'manual', strength: 0.8 } },
+    );
+    const user = userEvent.setup();
+    renderAt(`/panel/quiz/${QUIZ}`);
+    await user.click(await screen.findByRole('button', { name: 'Comenzar' }));
+    await screen.findByText('Primera');
+    // En la pregunta 1 no hay fondo ni video; de la 2 solo se pidió el póster (una imagen), nunca el .mp4.
+    expect(document.querySelector('video')).toBeNull();
+    expect(warmed.some((url) => /so_0.*\.jpg/.test(url))).toBe(true);
+    expect(warmed.some((url) => url.includes('.mp4'))).toBe(false);
+    await next(user);
+    await screen.findByText('Segunda');
+    await waitFor(() => expect(document.querySelectorAll('video')).toHaveLength(1));
+    await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole('button', { name: 'Pausar video de fondo' })).toBeInTheDocument();
+  });
+
+  it('con movimiento reducido el video de una pregunta no se monta: solo su póster', async () => {
+    stubEnvironment({ reduced: true });
+    setup(
+      [
+        question('q1', 'Primera'),
+        question('q2', 'Segunda', { background: { kind: 'video', video } }),
+      ],
+      { overlay: { mode: 'manual', strength: 0.8 } },
+    );
+    const user = userEvent.setup();
+    renderAt(`/panel/quiz/${QUIZ}`);
+    await user.click(await screen.findByRole('button', { name: 'Comenzar' }));
+    await screen.findByText('Primera');
+    await next(user);
+    await screen.findByText('Segunda');
+    await waitFor(() => expect(layers().length).toBeGreaterThan(0));
+    expect(document.querySelector('video')).toBeNull();
+    expect(play).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /video de fondo/i })).toBeNull();
+    expect(document.querySelector('.quiz-bg img[src*="so_0"]')).not.toBeNull();
+  });
+
+  it('con ahorro de datos no se precalienta nada de la pregunta siguiente', async () => {
+    stubEnvironment({ saveData: true });
+    const warmed: string[] = [];
+    vi.stubGlobal(
+      'Image',
+      class {
+        decoding = '';
+        set src(value: string) {
+          warmed.push(value);
+        }
+      },
+    );
+    setup([
+      question('q1', 'Primera'),
+      question('q2', 'Segunda', { background: { kind: 'image', image: image('propia') } }),
+    ]);
+    const user = userEvent.setup();
+    renderAt(`/panel/quiz/${QUIZ}`);
+    await user.click(await screen.findByRole('button', { name: 'Comenzar' }));
+    await screen.findByText('Primera');
+    expect(warmed).toHaveLength(0);
+  });
+});
+
 describe('ResultView: video del resultado con el mismo comportamiento', () => {
   const result = {
     key: 'r1',

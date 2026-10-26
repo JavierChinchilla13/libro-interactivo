@@ -1,4 +1,13 @@
-import { OVERLAY_FLOOR, OVERLAY_MAX, OVERLAY_MIN } from '@libro/shared';
+import {
+  OVERLAY_FLOOR,
+  OVERLAY_MAX,
+  OVERLAY_MIN,
+  type QuizBackground,
+  type QuizOverlay,
+  type ReaderAppearance,
+  type ReaderQuestionAppearance,
+} from '@libro/shared';
+import { posterUrl, thumbUrl } from './cloudinary';
 import { contrast, PALETTE } from './color';
 
 /** Contraste mínimo (WCAG AA, texto normal) que debe tener el texto atenuado sobre el fondo ya velado. */
@@ -72,4 +81,36 @@ export function accentBackdrop(
   strength: number,
 ): string {
   return background ? blendOverlay(measuredBackdrop ?? '#ffffff', strength) : PALETTE.bg;
+}
+
+/** Lo que se ve en una pantalla del quiz una vez resuelto el general con los ajustes de la pregunta. */
+export interface EffectiveAppearance {
+  background: QuizBackground | undefined;
+  overlay: QuizOverlay;
+  accent: string | undefined;
+}
+
+const DEFAULT_OVERLAY: QuizOverlay = { mode: 'auto', strength: OVERLAY_FLOOR };
+
+/**
+ * Apariencia de una pregunta: cada campo que la pregunta no define es el del general; `{kind:'none'}` quita el fondo
+ * solo en esa pregunta. Sin apariencia general, valen los valores por defecto (sin fondo, velo automático).
+ */
+export function effectiveAppearance(
+  general: ReaderAppearance | undefined,
+  question?: ReaderQuestionAppearance,
+): EffectiveAppearance {
+  const own = question?.background;
+  return {
+    background: own === undefined ? general?.background : own.kind === 'none' ? undefined : own,
+    overlay: question?.overlay ?? general?.overlay ?? DEFAULT_OVERLAY,
+    accent: question?.accent ?? general?.accent,
+  };
+}
+
+/** Dirección de una miniatura del fondo para medir su zona más clara (la imagen o el póster del video). */
+export function backdropSampleUrl(background: QuizBackground | undefined): string | undefined {
+  if (background?.kind === 'image') return thumbUrl(background.image.url, 64);
+  if (background?.kind === 'video') return posterUrl(background.video.posterUrl, 64);
+  return undefined;
 }
