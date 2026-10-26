@@ -38,7 +38,7 @@ export async function migrateAccents(
   const quizzes = Quiz.find({
     $or: [{ appearance: { $exists: true } }, { 'appearanceHistory.0': { $exists: true } }],
   })
-    .select('appearance appearanceHistory')
+    .select('appearance appearanceHistory appearanceRev')
     .lean()
     .cursor();
   for await (const quiz of quizzes) {
@@ -55,8 +55,12 @@ export async function migrateAccents(
     report.withNamedAccent += 1;
     report.namedAccents += found;
     if (apply) {
-      await Quiz.collection.updateOne({ _id: quiz._id }, { $set: set });
-      report.rewritten += found;
+      // Se filtra por la revisión leída: si alguien guardó mientras tanto, los índices del historial se habrían movido.
+      const result = await Quiz.collection.updateOne(
+        { _id: quiz._id, appearanceRev: quiz.appearanceRev ?? 0 },
+        { $set: set },
+      );
+      if (result.matchedCount === 1) report.rewritten += found;
     }
   }
   return report;
