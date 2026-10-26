@@ -201,7 +201,7 @@ export function toStagePayload(
         text: question.text,
         ...(question.image ? { image: question.image } : {}),
         // Solo las preguntas de ESTA etapa: los ajustes de ids que ya no existen en la versión se ignoran sin error.
-        ...(questionAppearance?.[question.id]
+        ...(questionAppearance && Object.hasOwn(questionAppearance, question.id)
           ? { appearance: questionAppearance[question.id] }
           : {}),
         answers: orderedAnswers(question.answers, answersByQuestion.get(question.id)).map(

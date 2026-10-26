@@ -239,7 +239,7 @@ function AppearanceEditor({
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <div className="flex min-w-0 flex-col gap-5 pb-24">
+      <div className="flex min-w-0 flex-col gap-5 pb-24 [&_:is(input,select,button,textarea)]:scroll-mb-28">
         {archived ? (
           <Alert tone="warning" title="La apariencia no se puede cambiar">
             No se puede cambiar su apariencia. Puedes ver cómo quedó en la vista previa.
