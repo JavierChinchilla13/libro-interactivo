@@ -25,7 +25,7 @@ function ExtrasExplainer() {
       <h2 id="que-son-los-extras" className="section-title text-xl">
         Qué son los capítulos extra
       </h2>
-      <ol aria-labelledby="que-son-los-extras" className="how-steps" data-cols="3">
+      <ol className="how-steps" data-cols="3">
         <li className="how-step">
           <span className="how-step-number" aria-hidden="true">
             1
@@ -106,7 +106,7 @@ export function ExtrasPage() {
           </>
         ) : (
           <>
-            <section className="flex flex-col gap-3 border-l-2 border-unlit pl-5">
+            <section className="flex flex-col gap-3 rounded-token-xl border border-line bg-surface p-5">
               <h2 className="font-semibold">Aún están bloqueados</h2>
               <p className="text-sm text-muted">
                 {missing > 0

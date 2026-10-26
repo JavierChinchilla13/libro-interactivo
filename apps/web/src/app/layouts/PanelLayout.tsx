@@ -50,14 +50,16 @@ export function PanelLayout() {
   // Un libro sin abrir (o «próximamente») solo tiene su resumen: la barra de abajo no ofrece lo demás.
   const library = useLibrary(bookSlug !== null);
   const bookAccess = library.data?.books.find((entry) => entry.book.slug === bookSlug)?.access;
-  const bookTabs = bookAccess && bookAccess !== 'open' ? BOOK_SECTIONS.slice(0, 1) : BOOK_SECTIONS;
+  const bookTabs = bookAccess === 'open' ? BOOK_SECTIONS : BOOK_SECTIONS.slice(0, 1);
   // En el quiz solo queda la marca: sin «Salir» ni pestañas que cierren la sesión o abandonen sin querer.
   const inQuiz = useMatch('/panel/quiz/:quizId') !== null;
   const inGame = useMatch('/panel/juego/:bookId') !== null;
   const immersive = inQuiz || inGame;
 
   return (
-    <div className={`flex min-h-dvh flex-col ${immersive ? '' : 'pb-16 sm:pb-0'}`}>
+    <div
+      className={`flex min-h-dvh flex-col ${immersive ? '' : 'pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-0'}`}
+    >
       <SkipLink />
       <PageBackground fallback="first" />
       <header className="site-header sticky top-3 z-40 px-3">
@@ -104,7 +106,7 @@ export function PanelLayout() {
       {immersive ? null : (
         <nav
           aria-label="Panel (móvil)"
-          className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-bg sm:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-bg pb-[env(safe-area-inset-bottom)] sm:hidden"
         >
           {bookSlug ? (
             <>

@@ -27,9 +27,11 @@ const footerLink = 'link-slide inline-flex min-h-11 items-center hover:text-text
 export function PublicLayout() {
   const session = useSession();
   const user = session.data;
-  const [open, setOpen] = useState(false);
+  // El menú desplegable se cierra solo al cambiar de página: se recuerda en qué ruta se abrió.
+  const [openAt, setOpenAt] = useState<string | null>(null);
   // La portada no se anima al entrar: lo primero que se ve (titular) es lo que mide el LCP.
   const location = useLocation();
+  const open = openAt === location.pathname;
   const isHome = location.pathname === '/';
   // El fundido de entrada solo al navegar dentro de la app: en una carga directa el título se pinta ya visible.
   const firstLoad = location.key === 'default';
@@ -47,14 +49,16 @@ export function PublicLayout() {
             className="btn btn-secondary btn-compact xl:hidden"
             aria-expanded={open}
             aria-controls="menu-principal"
-            onClick={() => setOpen((value) => !value)}
+            onClick={() =>
+              setOpenAt((value) => (value === location.pathname ? null : location.pathname))
+            }
           >
             {open ? 'Cerrar' : 'Menú'}
           </button>
           <nav
             id="menu-principal"
             aria-label="Principal"
-            onClick={() => setOpen(false)}
+            onClick={() => setOpenAt(null)}
             className={`${open ? 'flex' : 'hidden'} nav-menu absolute inset-x-3 top-full mt-2 flex-col gap-1 p-3 xl:static xl:mt-0 xl:flex xl:flex-1 xl:flex-row xl:items-center xl:justify-end xl:gap-1 xl:border-0 xl:bg-transparent xl:p-0 xl:backdrop-blur-none`}
           >
             <div className="flex flex-col gap-1 xl:ml-8 xl:mr-auto xl:flex-row xl:items-center">
