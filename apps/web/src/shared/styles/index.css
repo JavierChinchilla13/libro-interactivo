@@ -1532,7 +1532,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    max-width: 14rem;
+    max-width: min(14rem, 100%);
     min-height: 2.75rem;
     padding: 0.25rem 0.5rem 0.25rem 0.25rem;
     border: 1px solid var(--token-line);
@@ -1576,10 +1576,18 @@
   .user-menu-first {
     display: none;
     min-width: 0;
-    max-width: 3.75rem;
+    max-width: 3.25rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  @media (max-width: 359px) {
+    .user-menu-chevron {
+      display: none;
+    }
+    .user-menu-trigger {
+      padding-right: 0.25rem;
+    }
   }
   @media (min-width: 360px) and (max-width: 639px) {
     .user-menu-first {
@@ -1587,7 +1595,11 @@
     }
     .user-menu-trigger {
       gap: 0.375rem;
-      padding-right: 0.625rem;
+      padding-right: 0.5rem;
+    }
+    .user-menu-avatar {
+      width: 2rem;
+      height: 2rem;
     }
     .user-menu-chevron {
       display: none;
