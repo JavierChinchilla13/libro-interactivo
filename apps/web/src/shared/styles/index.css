@@ -1522,6 +1522,25 @@
     }
   }
 
+  /* Una sola pieza: a su proporción, hasta 34 rem de ancho y sin pasar de 70 % del alto de la pantalla. */
+  .fan-single {
+    width: min(100%, calc(70dvh * var(--ratio, 1)), 34rem);
+  }
+  /* Fan arts en hileras: todas las piezas con la misma altura (el ancho lo da su proporción). */
+  .fan-rows {
+    --row-h: 15rem;
+  }
+  @media (min-width: 640px) {
+    .fan-rows {
+      --row-h: 16rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .fan-rows {
+      --row-h: 19rem;
+    }
+  }
+
   /* Menú de usuario (sitio, panel y administración): avatar de iniciales + nombre; el panel es una hoja desde abajo en celular. */
   .user-menu {
     position: relative;
