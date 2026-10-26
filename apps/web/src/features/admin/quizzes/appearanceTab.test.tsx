@@ -239,4 +239,43 @@ describe('pestaña Apariencia', () => {
     await user.click(screen.getByRole('button', { name: /Escritorio · 1280 px/ }));
     expect(screen.getByTestId('quiz-preview')).toHaveAttribute('data-size', 'escritorio');
   });
+
+  it('la vista previa muestra el número real «Quiz N de M» y la barra de guardado indica el estado', async () => {
+    const row = (id: string, order: number, status = 'published') => ({
+      id,
+      bookId: BOOK_ID,
+      slug: `quiz-${order}`,
+      order,
+      title: `Quiz ${order}`,
+      status,
+      currentVersion: 1,
+      allowRetake: true,
+      showBreakdown: false,
+      updatedAt: stamp,
+    });
+    mockApi(
+      base({
+        [`GET /api/admin/quizzes?bookId=${BOOK_ID}`]: () =>
+          json({
+            quizzes: [
+              row('670000000000000000000021', 1),
+              row('670000000000000000000022', 2, 'archived'),
+              row(QUIZ_ID, 3),
+              row('670000000000000000000023', 4),
+            ],
+          }),
+        [`GET /api/admin/quizzes/${QUIZ_ID}/appearance`]: () => json(state()),
+      }),
+      { session: ADMIN },
+    );
+    const user = await openTab();
+    // Los archivados no cuentan: de cuatro quizzes, uno archivado, este es el 2.º de 3 vigentes.
+    expect(await screen.findByText('Quiz 2 de 3')).toBeInTheDocument();
+    expect(screen.getByText('Todo guardado')).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: /Verde/ }));
+    expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardar apariencia' }).parentElement).toHaveClass(
+      'sticky',
+    );
+  });
 });

@@ -1,6 +1,7 @@
 import {
   QUIZ_BG_FOLDER,
   QUIZ_VIDEO_LIMITS,
+  formatDecimal,
   videoPosterUrl,
   type BackgroundVideo,
   type ImageRef,
@@ -114,13 +115,13 @@ export function videoProblem(
   seconds?: number,
 ): string | null {
   const max = QUIZ_VIDEO_LIMITS.maxBytes;
-  const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1).replace('.', ',');
+  const mb = (bytes: number) => formatDecimal(bytes / 1024 / 1024);
   if (!/^video\/(mp4|webm)$/.test(file.type)) return 'El video debe ser MP4 o WebM.';
   if (file.size > max)
     return `El video pesa ${mb(file.size)} MB y el máximo es ${mb(max)} MB. Comprímelo o recórtalo y vuelve a subirlo.`;
   const longest = QUIZ_VIDEO_LIMITS.maxDurationSeconds + QUIZ_VIDEO_LIMITS.toleranceSeconds;
   if (seconds !== undefined && seconds > longest)
-    return `El video dura ${Math.round(seconds)} s y el máximo es ${QUIZ_VIDEO_LIMITS.maxDurationSeconds} s. Recórtalo y vuelve a subirlo.`;
+    return `El video dura ${formatDecimal(seconds)} s y el máximo es ${QUIZ_VIDEO_LIMITS.maxDurationSeconds} s. Recórtalo y vuelve a subirlo.`;
   return null;
 }
 

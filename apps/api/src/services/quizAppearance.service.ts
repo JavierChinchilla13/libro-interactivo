@@ -3,6 +3,7 @@ import {
   APPEARANCE_HISTORY_LIMIT,
   QUIZ_BG_FOLDER,
   QUIZ_VIDEO_LIMITS,
+  formatDecimal,
   quizAppearanceSchema,
   type AppearanceField,
   type AppearanceHistoryEntry,
@@ -213,7 +214,7 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
     if (!info)
       throw new AppError('VALIDATION', 'No encontramos ese video en Cloudinary: súbelo de nuevo');
     if (info.bytes > QUIZ_VIDEO_LIMITS.maxBytes) {
-      const mb = (info.bytes / (1024 * 1024)).toFixed(1);
+      const mb = formatDecimal(info.bytes / (1024 * 1024));
       throw new AppError('VALIDATION', `El video pesa ${mb} MB; el máximo es 5 MB`);
     }
     if (!(QUIZ_VIDEO_LIMITS.formats as readonly string[]).includes(info.format)) {
@@ -231,7 +232,7 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
     ) {
       throw new AppError(
         'VALIDATION',
-        `El video dura ${info.durationSeconds.toFixed(1)} s; el máximo es ${QUIZ_VIDEO_LIMITS.maxDurationSeconds} s`,
+        `El video dura ${formatDecimal(info.durationSeconds)} s; el máximo es ${QUIZ_VIDEO_LIMITS.maxDurationSeconds} s`,
       );
     }
     const measured = quizAppearanceSchema.safeParse({
