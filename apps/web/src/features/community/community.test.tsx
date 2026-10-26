@@ -25,13 +25,13 @@ const art = (n: number, over: object = {}) => ({
 });
 
 describe('fan arts', () => {
-  it('muestra el mosaico con imágenes perezosas y el aviso para escribir a la autora', async () => {
+  it('muestra la galería con imágenes perezosas y el aviso para escribir a la autora', async () => {
     mockApi({ 'GET /api/fan-arts': () => json({ fanArts: [art(1), art(2)] }) }, NO_SESSION);
     renderAt('/fan-arts');
     expect(await screen.findByRole('heading', { level: 1, name: 'Fan arts' })).toBeInTheDocument();
     const first = await screen.findByRole('img', { name: 'Dibujo arte1' });
     expect(first).toHaveAttribute('loading', 'lazy');
-    expect(first).toHaveAttribute('src', expect.stringContaining('w_480'));
+    expect(first).toHaveAttribute('src', expect.stringContaining('w_640'));
     expect(within(screen.getByRole('main')).getAllByRole('listitem')).toHaveLength(2);
     expect(
       within(screen.getByRole('main')).getByRole('link', { name: 'Contacto' }),
