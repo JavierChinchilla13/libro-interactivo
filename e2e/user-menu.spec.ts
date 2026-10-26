@@ -49,7 +49,7 @@ test.describe('menú de usuario (celular y escritorio)', () => {
     await expect(page).toHaveURL(/\/ingresar/);
   });
 
-  test('la administradora tiene el menú en la administración, con el selector de zona al lado', async ({
+  test('la administradora tiene el menú en la administración, con las zonas dentro (y sueltas solo en pantallas muy anchas)', async ({
     page,
   }) => {
     const login = await page.request.post('/api/auth/login', {
@@ -57,9 +57,13 @@ test.describe('menú de usuario (celular y escritorio)', () => {
     });
     expect(login.status()).toBe(200);
     await page.goto('/admin');
-    await expect(page.getByRole('navigation', { name: 'Cambiar de zona' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Cambiar de zona' })).toBeHidden();
     await page.getByRole('button', { name: E2E_ADMIN.name }).click();
     await expect(page.getByText('Administradora')).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Admin' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
     await page.getByRole('menuitem', { name: 'Salir' }).click();
     await expect(page).toHaveURL(/\/ingresar$/);
   });
