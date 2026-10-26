@@ -45,11 +45,24 @@ export function videoPosterUrl(videoUrl: string): string {
     .replace(/\.[A-Za-z0-9]+(\?.*)?$/, '.jpg');
 }
 
-/** ¿La URL de Cloudinary es de este `publicId` (con cualquier transformación y extensión)? */
+/** Identificador de un fondo de quiz: la carpeta fija y un nombre simple (sin `..`, `?`, `#` ni barras extra). */
+export const QUIZ_BG_PUBLIC_ID = /^libro\/quiz-bg\/[A-Za-z0-9_-]{1,120}$/;
+
+const escapeRegex = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * ¿La URL de Cloudinary es exactamente de este `publicId`? La ruta debe ser `/<cuenta>/(image|video)/upload/` seguida
+ * solo de transformaciones simples (`so_0,f_auto`, `c_limit,w_720`…) o de la versión (`v123`), el `publicId` y, a lo
+ * sumo, una extensión. Así no pasan `fetch` remotos, `..` ni segmentos de más.
+ */
 export function urlHasPublicId(url: string, publicId: string): boolean {
   try {
-    const path = decodeURIComponent(new URL(url).pathname);
-    return path.endsWith(`/${publicId}`) || path.includes(`/${publicId}.`);
+    const parsed = new URL(url);
+    if (parsed.search || parsed.hash) return false;
+    const pattern = new RegExp(
+      `^/[^/]+/(?:image|video)/upload/(?:(?:[a-z]{1,3}_[A-Za-z0-9:,._-]*|v\\d+)/)*${escapeRegex(publicId)}(?:\\.[A-Za-z0-9]+)?$`,
+    );
+    return pattern.test(parsed.pathname);
   } catch {
     return false;
   }
@@ -69,12 +82,19 @@ export type AppearanceField = (typeof APPEARANCE_FIELDS)[number];
 
 const altSchema = z.string().trim().min(1, 'Escribe un texto alternativo').max(200);
 
-export const backgroundImageSchema = imageRefSchema.extend({ alt: altSchema });
+const backgroundPublicIdSchema = z
+  .string()
+  .regex(QUIZ_BG_PUBLIC_ID, 'El fondo debe subirse desde la pestaña Apariencia del quiz');
+
+export const backgroundImageSchema = imageRefSchema.extend({
+  publicId: backgroundPublicIdSchema,
+  alt: altSchema,
+});
 
 /** Video corto de fondo: póster y texto alternativo obligatorios, duración acotada. */
 export const backgroundVideoSchema = z.object({
   provider: z.literal('cloudinary'),
-  publicId: z.string().min(1),
+  publicId: backgroundPublicIdSchema,
   url: z.string().min(1),
   width: z.number().int().positive().max(4096),
   height: z.number().int().positive().max(4096),

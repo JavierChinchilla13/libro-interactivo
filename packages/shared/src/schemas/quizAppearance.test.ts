@@ -11,6 +11,7 @@ import {
   quizAppearanceResponseSchema,
   quizAppearanceSchema,
   QUIZ_BG_FOLDER,
+  QUIZ_BG_PUBLIC_ID,
   readerAppearanceSchema,
   revertQuizAppearanceRequestSchema,
   updateQuizAppearanceRequestSchema,
@@ -307,5 +308,33 @@ describe('póster y pertenencia de un medio', () => {
       false,
     );
     expect(urlHasPublicId('no es una url', id)).toBe(false);
+  });
+
+  it('urlHasPublicId rechaza fetch remoto, recorridos de ruta, consultas y segmentos de más', () => {
+    const id = `${QUIZ_BG_FOLDER}/abc`;
+    const base = 'https://res.cloudinary.com/mi';
+    expect(urlHasPublicId(`${base}/image/fetch/https://otro.example/${id}`, id)).toBe(false);
+    expect(urlHasPublicId(`${base}/image/upload/${id}.jpg?x=1`, id)).toBe(false);
+    expect(urlHasPublicId(`${base}/image/upload/..%2F..%2F${id}.jpg`, id)).toBe(false);
+    expect(urlHasPublicId(`${base}/image/upload/otra-carpeta/${id}.jpg`, id)).toBe(false);
+    expect(urlHasPublicId(`${base}/image/upload/l_video:x/fl_layer_apply/${id}.jpg`, id)).toBe(
+      true,
+    );
+    expect(urlHasPublicId(`${base}/image/upload/c_limit,w_720/v12/${id}.jpg`, id)).toBe(true);
+  });
+
+  it('el identificador de un fondo no admite recorridos, consultas ni carpetas ajenas', () => {
+    for (const publicId of [
+      'libro/quiz-bg/../../x',
+      'libro/quiz-bg/a%2F..%2Fb',
+      'libro/quiz-bg/a?b=1',
+      'libro/quiz-bg/a#b',
+      'libro/quiz-bg/a/b',
+      'libro/otra/a',
+      'libro/quiz-bg/',
+    ]) {
+      expect(QUIZ_BG_PUBLIC_ID.test(publicId), publicId).toBe(false);
+    }
+    expect(QUIZ_BG_PUBLIC_ID.test('libro/quiz-bg/rvgxzqrnyifhsnr2yfxg')).toBe(true);
   });
 });

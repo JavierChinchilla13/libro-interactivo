@@ -153,7 +153,9 @@ export class CloudinaryImageProvider implements ImageProvider {
   async inspect({ publicId, resource }: { publicId: string; resource: UploadResource }) {
     // Sin `media_metadata=true` Cloudinary NO devuelve la duración de un video (comprobado en la cuenta real).
     const query = resource === 'video' ? '?media_metadata=true' : '';
-    const response = await this.admin(`/resources/${resource}/upload/${publicId}${query}`);
+    // Cada segmento se codifica: un identificador con `..`, `?` o `#` no puede salir de esta ruta.
+    const path = publicId.split('/').map(encodeURIComponent).join('/');
+    const response = await this.admin(`/resources/${resource}/upload/${path}${query}`);
     if (response.status === 404) return null;
     if (!response.ok) {
       throw new AppError('UNAVAILABLE', 'No pudimos verificar el archivo en Cloudinary');
