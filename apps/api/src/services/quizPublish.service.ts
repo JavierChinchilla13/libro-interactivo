@@ -20,9 +20,45 @@ import { validateQuizContent } from './quiz-engine.js';
 import { sanitizeQuizHtml } from './quizContent.js';
 import { findPublishedFields } from './wikiField.js';
 
+/**
+ * Copia del contenido sin los valores por defecto que se añadieron DESPUÉS de las primeras versiones publicadas
+ * (`shuffleAnswers: true` y `pinLast` ausente o `false`). Así el hash de una versión guardada antes de esos campos sigue
+ * siendo válido: leerla con sus valores por defecto no cuenta como un cambio. Activar lo contrario (`shuffleAnswers:
+ * false` o `pinLast: true`) sí cambia el hash. Nunca se toca el snapshot guardado: solo se normaliza una copia.
+ */
+function withoutLaterDefaults(content: QuizContent): QuizContent {
+  const copy = structuredClone(content);
+  for (const stage of copy.stages) {
+    if (stage.shuffleAnswers === true)
+      delete (stage as { shuffleAnswers?: boolean }).shuffleAnswers;
+    for (const question of stage.questions) {
+      for (const answer of question.answers) {
+        if (answer.pinLast !== true) delete (answer as { pinLast?: boolean }).pinLast;
+      }
+    }
+  }
+  return copy;
+}
+
 /** Hash (SHA-256) del contenido canónico: detecta publicar sin cambios y borradores distintos de lo publicado. */
 export function hashQuizContent(content: QuizContent): string {
+  return `sha256:${sha256Hex(canonicalJson(withoutLaterDefaults(content)))}`;
+}
+
+/**
+ * Hash del contenido tal cual, con todos sus valores por defecto: es el que se guardó en las versiones publicadas
+ * mientras `shuffleAnswers` ya existía pero el hash aún no los ignoraba. Se sigue aceptando para esas versiones.
+ */
+function hashWithDefaults(content: QuizContent): string {
   return `sha256:${sha256Hex(canonicalJson(content))}`;
+}
+
+/** ¿Este contenido es el de la versión cuyo hash se guardó? (con o sin los valores por defecto añadidos después). */
+export function isSameQuizContent(content: QuizContent, storedHash: string | undefined): boolean {
+  return (
+    storedHash !== undefined &&
+    (storedHash === hashQuizContent(content) || storedHash === hashWithDefaults(content))
+  );
 }
 
 /** Contenido del borrador de un quiz tal como está guardado (aún sin validar). */
@@ -137,7 +173,7 @@ export function createQuizPublishService(deps: QuizPublishDeps) {
       .sort({ version: -1 })
       .select('version contentHash')
       .lean();
-    if (last?.contentHash === contentHash && quiz.status === 'published') {
+    if (isSameQuizContent(checked.content, last?.contentHash) && quiz.status === 'published') {
       throw new AppError('CONFLICT', 'No hay cambios desde la última versión publicada');
     }
     const version = Math.max(quiz.currentVersion, last?.version ?? 0) + 1;

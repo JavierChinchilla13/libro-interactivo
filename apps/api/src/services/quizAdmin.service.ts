@@ -18,7 +18,7 @@ import { QuizAttempt } from '../models/QuizAttempt.js';
 import { QuizVersion } from '../models/QuizVersion.js';
 import type { Actor } from './progress.service.js';
 import { assertQuizMediaAllowed, sanitizeQuizHtml } from './quizContent.js';
-import { draftContentOf, hashQuizContent } from './quizPublish.service.js';
+import { draftContentOf, isSameQuizContent } from './quizPublish.service.js';
 
 type QuizLean = NonNullable<Awaited<ReturnType<typeof loadLean>>>;
 
@@ -89,7 +89,7 @@ export function createQuizAdminService(deps: QuizAdminDeps) {
     if (latest) {
       const strict = quizContentSchema.safeParse(draftContentOf(quiz));
       hasUnpublishedChanges =
-        !strict.success || hashQuizContent(sanitizeQuizHtml(strict.data)) !== latest.contentHash;
+        !strict.success || !isSameQuizContent(sanitizeQuizHtml(strict.data), latest.contentHash);
     }
     const appearance = quizAppearanceSchema.safeParse(quiz.appearance);
     return {
