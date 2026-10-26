@@ -49,6 +49,11 @@
       top: -0.4375rem;
     }
   }
+  @media (min-width: 64rem) {
+    .how-steps[data-cols='3'] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
   @supports (animation-timeline: view()) {
     @media (prefers-reduced-motion: no-preference) {
       .how-step::before {

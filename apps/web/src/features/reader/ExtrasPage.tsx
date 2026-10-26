@@ -8,12 +8,63 @@ import { errorMessage } from '../../shared/api/messages';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Button } from '../../shared/ui/controls';
 import { Alert, Badge, Card, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
+import './howItWorks.css';
 import { readerApi, readerKeys } from './api';
 import { useSelectedBook } from './useBook';
 
 const KIND: Record<ExtraKind, string> = { pdf: 'PDF', text: 'Texto', image: 'Imagen' };
 
-/** Capítulos extra: bloqueados hasta completar el libro, sin dar títulos ni cantidad. */
+/**
+ * Qué son los capítulos extra, en tres líneas y con el lenguaje de «Cómo funciona». Solo mecánicas reales; el contenido
+ * concreto de cada libro lo pone la autora ([PLACEHOLDER]).
+ */
+function ExtrasExplainer() {
+  return (
+    <section aria-labelledby="que-son-los-extras" className="flex flex-col gap-4">
+      <h2 id="que-son-los-extras" className="section-title text-xl">
+        Qué son los capítulos extra
+      </h2>
+      <ol aria-labelledby="que-son-los-extras" className="how-steps" data-cols="3">
+        <li className="how-step">
+          <span className="how-step-number" aria-hidden="true">
+            1
+          </span>
+          <h3 className="font-semibold">Qué hay</h3>
+          <p className="text-sm text-muted [overflow-wrap:anywhere]">
+            Capítulos adicionales de este libro: textos, imágenes o PDF que publica la autora.
+            [PLACEHOLDER] Qué contiene cada uno.
+          </p>
+        </li>
+        <li className="how-step">
+          <span className="how-step-number" aria-hidden="true">
+            2
+          </span>
+          <h3 className="font-semibold">Cómo se abren</h3>
+          <p className="text-sm text-muted [overflow-wrap:anywhere]">
+            Al completar todos los quizzes y el juego de este libro.
+          </p>
+        </li>
+        <li className="how-step">
+          <span className="how-step-number" aria-hidden="true">
+            3
+          </span>
+          <h3 className="font-semibold">Cómo entrar</h3>
+          <p className="text-sm text-muted [overflow-wrap:anywhere]">
+            Desde esta página. Los que ya abriste quedan marcados «Visto».
+          </p>
+        </li>
+      </ol>
+    </section>
+  );
+}
+
+/**
+ * Capítulos extra de un libro, con tres estados distintos y siempre por libro:
+ * - bloqueados (el libro no está completo): con `hasExtras` se dice cuánto falta; sin él, que aún no hay publicados.
+ *   El servidor no entrega títulos ni cantidad mientras tanto;
+ * - completo y sin extras publicados: «aún no hay», con la explicación;
+ * - completo y con extras: la lista.
+ */
 export function ExtrasPage() {
   const { slug } = useParams();
   const { book, isPending, error } = useSelectedBook(slug);
@@ -36,41 +87,66 @@ export function ExtrasPage() {
   if (extras.isError) return <Alert>{errorMessage(extras.error)}</Alert>;
 
   const experiences = progress.data?.experiences ?? [];
-  const done = experiences.filter((e) => e.status === 'completed').length;
+  const missing = experiences.filter((e) => e.status !== 'completed').length;
+  const summary = slug !== undefined ? `/panel/libros/${slug}` : '/panel';
+  const data = extras.data;
 
   return (
-    <div className="flex flex-col gap-5">
-      <PageHeader compact title={book ? `Capítulos extra de ${book.title}` : 'Capítulos extra'} />
-      {extras.data?.locked !== false ? (
-        <section className="flex flex-col gap-3 border-l-2 border-unlit pl-5">
-          <h2 className="font-semibold">Aún están bloqueados</h2>
-          <p className="text-sm text-muted">
-            Completa todos los quizzes y el juego de este libro para abrirlos.
-          </p>
-          {experiences.length > 0 ? (
-            <p className="text-sm font-medium">
-              {done} de {experiences.length}
-            </p>
-          ) : null}
-          <Link to="/panel" className="text-sm underline">
-            Ir a mi panel
-          </Link>
-        </section>
-      ) : extras.data.extras.length === 0 ? (
-        <EmptyState title="Por ahora no hay capítulos extra">
-          La autora los irá agregando.
-        </EmptyState>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Capítulos extra" />
+      {data?.locked !== false ? (
+        data?.hasExtras === false ? (
+          <>
+            <EmptyState title="Aún no hay capítulos extra publicados">
+              La autora los irá agregando a este libro. Cuando haya, se abrirán al completar todos
+              sus quizzes y el juego.
+            </EmptyState>
+            <ExtrasExplainer />
+          </>
+        ) : (
+          <>
+            <section className="flex flex-col gap-3 border-l-2 border-unlit pl-5">
+              <h2 className="font-semibold">Aún están bloqueados</h2>
+              <p className="text-sm text-muted">
+                {missing > 0
+                  ? `Te ${missing === 1 ? 'falta 1 experiencia' : `faltan ${missing} experiencias`} (quizzes y juego) para abrirlos.`
+                  : 'Completa todos los quizzes y el juego de este libro para abrirlos.'}
+              </p>
+              {experiences.length > 0 ? (
+                <p className="text-sm font-medium tabular-nums">
+                  {experiences.length - missing} de {experiences.length} completadas
+                </p>
+              ) : null}
+              <Link to={summary} className="text-sm underline">
+                Seguir con el libro
+              </Link>
+            </section>
+            <ExtrasExplainer />
+          </>
+        )
+      ) : data.extras.length === 0 ? (
+        <>
+          <EmptyState title="Aún no hay capítulos extra publicados">
+            Completaste todo el libro. La autora irá agregando los capítulos extra.
+          </EmptyState>
+          <ExtrasExplainer />
+        </>
       ) : (
         <>
-          <p className="text-sm text-muted">{book?.title} · ¡Completaste todo!</p>
+          <p className="text-sm text-muted">
+            ¡Completaste todo el libro! Estos son sus capítulos extra; los que ya abriste quedan
+            marcados «Visto».
+          </p>
           <ul className="divide-y divide-line border-y border-line">
-            {extras.data.extras.map((extra) => (
+            {data.extras.map((extra) => (
               <li key={extra.id}>
                 <article className="flex items-center justify-between gap-4 py-4">
                   <div className="min-w-0">
-                    <h2 className="font-semibold">{extra.title}</h2>
+                    <h2 className="font-semibold [overflow-wrap:anywhere]">{extra.title}</h2>
                     <p className="text-xs text-muted">{KIND[extra.kind]}</p>
-                    {extra.description ? <p className="mt-1 text-sm">{extra.description}</p> : null}
+                    {extra.description ? (
+                      <p className="mt-1 text-sm [overflow-wrap:anywhere]">{extra.description}</p>
+                    ) : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     {extra.opened ? <Badge tone="success">Visto</Badge> : null}
