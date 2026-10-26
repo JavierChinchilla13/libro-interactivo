@@ -239,7 +239,7 @@ function AppearanceEditor({
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <div className="flex min-w-0 flex-col gap-5">
+      <div className="flex min-w-0 flex-col gap-5 pb-24">
         {archived ? (
           <Alert tone="warning" title="La apariencia no se puede cambiar">
             No se puede cambiar su apariencia. Puedes ver cómo quedó en la vista previa.
@@ -474,7 +474,7 @@ function AppearanceEditor({
         </div>
       </div>
 
-      <div className="min-w-0 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:self-start lg:overflow-y-auto">
+      <div className="min-w-0 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:self-start lg:overflow-y-auto">
         <AppearancePreview form={form} title={title} position={position} stages={stages} />
       </div>
     </div>
