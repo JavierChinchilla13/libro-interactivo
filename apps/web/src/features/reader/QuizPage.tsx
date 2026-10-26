@@ -303,7 +303,7 @@ export function QuizPage() {
         className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-xl flex-col gap-5"
         style={accentStyle}
       >
-        <div className="flex items-center justify-between gap-3 text-sm">
+        <div className="flex items-center justify-between gap-3 text-sm [&>*]:whitespace-nowrap">
           <LeaveButton unsaved={Object.keys(answers).length > 0} />
           {toggle}
           <span aria-hidden="true">

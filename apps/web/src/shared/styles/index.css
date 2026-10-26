@@ -2059,6 +2059,12 @@
   .quiz-actions > .btn:disabled {
     cursor: not-allowed;
   }
+  @media (max-width: 639px) {
+    .quiz-actions {
+      -webkit-backdrop-filter: blur(8px) saturate(1.3);
+      backdrop-filter: blur(8px) saturate(1.3);
+    }
+  }
   @media (prefers-reduced-transparency: reduce) {
     .quiz-actions {
       -webkit-backdrop-filter: none;
