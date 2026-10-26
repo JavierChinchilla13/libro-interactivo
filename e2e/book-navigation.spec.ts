@@ -28,7 +28,10 @@ test.describe('navegación dentro de un libro (celular y escritorio)', () => {
     await expect(page.getByRole('heading', { level: 1, name: first.bookTitle })).toBeVisible();
     const crumbs = page.getByRole('navigation', { name: 'Migas' });
     await expect(crumbs.getByRole('link', { name: 'Tus libros' })).toBeVisible();
-    const sections = page.getByRole('navigation', { name: `Secciones de ${first.bookTitle}` });
+    // En celular las secciones del libro viven en la barra de abajo; en escritorio, bajo la cabecera del libro.
+    const sections = isMobile
+      ? page.getByRole('navigation', { name: 'Panel (móvil)' })
+      : page.getByRole('navigation', { name: `Secciones de ${first.bookTitle}` });
     await expect(sections.getByRole('link', { name: 'Resumen' })).toHaveAttribute(
       'aria-current',
       'page',

@@ -1648,6 +1648,7 @@
     -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     transform-origin: top right;
+    overscroll-behavior: contain;
     transition:
       opacity 160ms var(--token-ease-out),
       transform 160ms var(--token-ease-out);
