@@ -92,7 +92,12 @@ describe('página del libro en el panel', { timeout: 30_000 }, () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: '[PLACEHOLDER] Libro 1' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '← Tus libros' })).toHaveAttribute('href', '/panel');
+    // Las migas del marco del libro llevan de vuelta a «Tus libros».
+    expect(
+      within(screen.getByRole('navigation', { name: 'Migas' })).getByRole('link', {
+        name: 'Tus libros',
+      }),
+    ).toHaveAttribute('href', '/panel');
     expect(screen.getByRole('link', { name: 'Seguir con [PLACEHOLDER] Quiz 2' })).toHaveAttribute(
       'href',
       `/panel/quiz/${'b'.repeat(24)}`,

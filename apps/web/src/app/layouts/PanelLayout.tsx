@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation, useMatch } from 'react-router';
+import { BOOK_SECTIONS, bookSectionOf } from '../../features/reader/bookSections';
 import { WelcomeModal } from '../../features/reader/WelcomeModal';
 import { Brand } from '../../shared/ui/Brand';
 import { PageBackground } from '../../shared/ui/PageBackground';
@@ -7,7 +8,7 @@ import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
 import { UserMenu } from '../../shared/ui/UserMenu';
 
 const ITEMS = [
-  { to: '/panel', label: 'Panel', section: 'panel' },
+  { to: '/panel', label: 'Tus libros', section: 'panel' },
   { to: '/panel/resultados', label: 'Resultados', section: 'resultados' },
   { to: '/panel/extras', label: 'Extras', section: 'extras' },
 ] as const;
@@ -30,12 +31,21 @@ export function sectionOf(pathname: string): Section | null {
   return null;
 }
 
+/** El libro cuya dirección se está viendo (`/panel/libros/:slug…`), si hay uno. */
+export function bookSlugOf(pathname: string): string | null {
+  return /^\/panel\/libros\/([^/]+)/.exec(pathname)?.[1] ?? null;
+}
+
 /**
  * Marco del panel del lector: navegación inferior en el celular, superior en escritorio.
  * Aquí aparece el mensaje de bienvenida cuando el servidor dice que toca.
  */
 export function PanelLayout() {
-  const current = sectionOf(useLocation().pathname);
+  const { pathname } = useLocation();
+  const current = sectionOf(pathname);
+  // Dentro de un libro las categorías son las del libro: arriba solo queda volver a «Tus libros».
+  const bookSlug = bookSlugOf(pathname);
+  const bookSection = bookSectionOf(pathname);
   // En el quiz solo queda la marca: sin «Salir» ni pestañas que cierren la sesión o abandonen sin querer.
   const inQuiz = useMatch('/panel/quiz/:quizId') !== null;
   const inGame = useMatch('/panel/juego/:bookId') !== null;
@@ -51,17 +61,23 @@ export function PanelLayout() {
           {immersive ? null : (
             <>
               <nav aria-label="Panel" className="hidden gap-1 sm:flex">
-                {ITEMS.map((item) => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    viewTransition
-                    aria-current={current === item.section ? 'page' : undefined}
-                    className={navTab({ isActive: current === item.section })}
-                  >
-                    {item.label}
+                {bookSlug ? (
+                  <Link to="/panel" viewTransition className={navTab({ isActive: false })}>
+                    ‹ Tus libros
                   </Link>
-                ))}
+                ) : (
+                  ITEMS.map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      viewTransition
+                      aria-current={current === item.section ? 'page' : undefined}
+                      className={navTab({ isActive: current === item.section })}
+                    >
+                      {item.label}
+                    </Link>
+                  ))
+                )}
               </nav>
               <div className="flex items-center gap-2">
                 <StaffSwitcher className="hidden 2xl:inline-flex" />
@@ -85,16 +101,34 @@ export function PanelLayout() {
           aria-label="Panel (móvil)"
           className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-bg sm:hidden"
         >
-          {ITEMS.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              aria-current={current === item.section ? 'page' : undefined}
-              className={bottomTab({ isActive: current === item.section })}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {bookSlug ? (
+            <>
+              <Link to="/panel" className={bottomTab({ isActive: false })}>
+                ‹ Tus libros
+              </Link>
+              {BOOK_SECTIONS.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/panel/libros/${bookSlug}${item.path}`}
+                  aria-current={bookSection === item.id ? 'page' : undefined}
+                  className={bottomTab({ isActive: bookSection === item.id })}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </>
+          ) : (
+            ITEMS.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                aria-current={current === item.section ? 'page' : undefined}
+                className={bottomTab({ isActive: current === item.section })}
+              >
+                {item.label}
+              </Link>
+            ))
+          )}
         </nav>
       )}
       <WelcomeModal />

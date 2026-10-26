@@ -48,9 +48,6 @@ function BookHeader({ entry }: { entry: LibraryEntry }) {
   const next = progress?.nextExperience;
   return (
     <header className="flex flex-col gap-5">
-      <Link to="/panel" className="self-start text-sm text-muted underline">
-        ← Tus libros
-      </Link>
       <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-10">
         <div className={access === 'open' ? '' : 'opacity-60 saturate-50'}>
           <Plate

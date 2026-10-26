@@ -32,7 +32,7 @@ export function ResultsPage() {
   const list = results.data?.results ?? [];
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Mis resultados" subtitle={slug !== undefined ? book?.title : undefined} />
+      <PageHeader compact title={book ? `Tus resultados en ${book.title}` : 'Tus resultados'} />
       {list.length === 0 ? (
         <EmptyState title="Todavía no tienes resultados">
           Cuando completes un quiz, aquí queda lo que descubriste.{' '}

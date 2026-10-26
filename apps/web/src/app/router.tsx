@@ -81,16 +81,23 @@ export const routes: RouteObject[] = [
             ...page(() => import('../features/reader/DashboardPage'), 'DashboardPage'),
           },
           {
+            // Un libro dentro del panel: migas y subnavegador (BookShell) con Resumen, Resultados y Extras.
             path: 'libros/:slug',
-            ...page(() => import('../features/reader/BookPanelPage'), 'BookPanelPage'),
-          },
-          {
-            path: 'libros/:slug/resultados',
-            ...page(() => import('../features/reader/ResultsPage'), 'ResultsPage'),
-          },
-          {
-            path: 'libros/:slug/extras',
-            ...page(() => import('../features/reader/ExtrasPage'), 'ExtrasPage'),
+            ...page(() => import('../features/reader/BookShell'), 'BookShell'),
+            children: [
+              {
+                index: true,
+                ...page(() => import('../features/reader/BookPanelPage'), 'BookPanelPage'),
+              },
+              {
+                path: 'resultados',
+                ...page(() => import('../features/reader/ResultsPage'), 'ResultsPage'),
+              },
+              {
+                path: 'extras',
+                ...page(() => import('../features/reader/ExtrasPage'), 'ExtrasPage'),
+              },
+            ],
           },
           {
             path: 'quiz/:quizId',
@@ -101,18 +108,18 @@ export const routes: RouteObject[] = [
             ...page(() => import('../features/game/GamePage'), 'GamePage'),
           },
           {
-            // Antigua dirección: lleva a los resultados del libro activo.
+            // Punto de acceso: elige un libro (con uno solo abierto va directo a sus resultados).
             path: 'resultados',
-            ...page(() => import('../features/reader/ScopedRedirect'), 'ResultsRedirect'),
+            ...page(() => import('../features/reader/BookAccessPage'), 'ResultsAccessPage'),
           },
           {
             path: 'resultados/:quizId',
             ...page(() => import('../features/reader/ResultsPage'), 'ResultDetailPage'),
           },
           {
-            // Antigua dirección: lleva a los extras del libro activo.
+            // Punto de acceso: elige un libro (con uno solo abierto va directo a sus extras).
             path: 'extras',
-            ...page(() => import('../features/reader/ScopedRedirect'), 'ExtrasRedirect'),
+            ...page(() => import('../features/reader/BookAccessPage'), 'ExtrasAccessPage'),
           },
           {
             path: 'extras/:extraId',
