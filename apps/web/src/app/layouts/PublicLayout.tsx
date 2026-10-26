@@ -7,6 +7,7 @@ import { Brand } from '../../shared/ui/Brand';
 import { PageBackground } from '../../shared/ui/PageBackground';
 import { MAIN_ID, navTabLg, SkipLink } from '../../shared/ui/nav';
 import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
+import { UserMenu } from '../../shared/ui/UserMenu';
 
 const ctaClass = () => 'btn btn-primary btn-compact';
 
@@ -83,13 +84,16 @@ export function PublicLayout() {
             <span aria-hidden="true" className="mx-3 hidden h-6 w-px bg-line xl:block" />
             <div className="flex flex-col gap-1 xl:flex-row xl:items-center">
               {user ? (
-                isStaff(user) ? (
-                  <StaffSwitcher />
-                ) : (
-                  <NavLink to={homeFor(user)} className={ctaClass}>
-                    Mi panel
-                  </NavLink>
-                )
+                <>
+                  {isStaff(user) ? (
+                    <StaffSwitcher />
+                  ) : (
+                    <NavLink to={homeFor(user)} className={ctaClass}>
+                      Mi panel
+                    </NavLink>
+                  )}
+                  <UserMenu alwaysShowName />
+                </>
               ) : (
                 <>
                   <NavLink to="/ingresar" viewTransition className={navTabLg}>

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router';
-import { useLogout, useSession } from '../../features/auth/session';
-import { Button } from '../../shared/ui/controls';
+import { NavLink, Outlet } from 'react-router';
+import { useSession } from '../../features/auth/session';
 import { Brand } from '../../shared/ui/Brand';
 import { MAIN_ID, sideLink, SkipLink } from '../../shared/ui/nav';
 import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
+import { UserMenu } from '../../shared/ui/UserMenu';
 
 /** Secciones del menú: contenido (editoras y administradoras) y las solo de administradoras. */
 const CONTENT = [
@@ -29,8 +29,6 @@ const ADMIN_ONLY = [
 /** Marco del panel de administración: menú lateral en escritorio, desplegable en móvil. */
 export function AdminLayout() {
   const session = useSession();
-  const logout = useLogout();
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const user = session.data;
   const isAdmin = user?.role === 'ADMIN';
@@ -92,23 +90,8 @@ export function AdminLayout() {
 
       <div className="flex min-w-0 flex-col">
         <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-2 border-b border-line bg-bg px-4 py-2.5">
-          <p className="text-sm text-muted">
-            {user?.name} · {isAdmin ? 'Administradora' : 'Editora'}
-          </p>
-          <div className="flex items-center gap-2">
-            <StaffSwitcher />
-            <Button
-              variant="secondary"
-              loading={logout.isPending}
-              onClick={() =>
-                logout.mutate(undefined, {
-                  onSettled: () => void navigate('/ingresar', { replace: true }),
-                })
-              }
-            >
-              Salir
-            </Button>
-          </div>
+          <StaffSwitcher />
+          <UserMenu />
         </header>
         <main
           id={MAIN_ID}

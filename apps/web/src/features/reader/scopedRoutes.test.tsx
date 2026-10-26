@@ -95,7 +95,7 @@ describe('sectionOf', () => {
     ['/panel/extras', 'extras'],
     ['/panel/extras/abc', 'extras'],
     ['/panel/libros/libro-1/extras', 'extras'],
-    ['/panel/cuenta', 'cuenta'],
+    ['/panel/cuenta', null],
     ['/panel/quiz/abc', null],
   ])('%s → %s', (path, expected) => {
     expect(sectionOf(path)).toBe(expected);

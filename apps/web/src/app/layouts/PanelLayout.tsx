@@ -1,17 +1,15 @@
-import { Link, Outlet, useLocation, useMatch, useNavigate } from 'react-router';
-import { useLogout } from '../../features/auth/session';
+import { Link, Outlet, useLocation, useMatch } from 'react-router';
 import { WelcomeModal } from '../../features/reader/WelcomeModal';
-import { Button } from '../../shared/ui/controls';
 import { Brand } from '../../shared/ui/Brand';
 import { PageBackground } from '../../shared/ui/PageBackground';
 import { bottomTab, MAIN_ID, navTab, SkipLink } from '../../shared/ui/nav';
 import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
+import { UserMenu } from '../../shared/ui/UserMenu';
 
 const ITEMS = [
   { to: '/panel', label: 'Panel', section: 'panel' },
   { to: '/panel/resultados', label: 'Resultados', section: 'resultados' },
   { to: '/panel/extras', label: 'Extras', section: 'extras' },
-  { to: '/panel/cuenta', label: 'Cuenta', section: 'cuenta' },
 ] as const;
 
 type Section = (typeof ITEMS)[number]['section'];
@@ -29,7 +27,6 @@ export function sectionOf(pathname: string): Section | null {
   if (path.startsWith('/panel/extras') || /^\/panel\/libros\/[^/]+\/extras/.test(path)) {
     return 'extras';
   }
-  if (path.startsWith('/panel/cuenta')) return 'cuenta';
   return null;
 }
 
@@ -38,8 +35,6 @@ export function sectionOf(pathname: string): Section | null {
  * Aquí aparece el mensaje de bienvenida cuando el servidor dice que toca.
  */
 export function PanelLayout() {
-  const logout = useLogout();
-  const navigate = useNavigate();
   const current = sectionOf(useLocation().pathname);
   // En el quiz solo queda la marca: sin «Salir» ni pestañas que cierren la sesión o abandonen sin querer.
   const inQuiz = useMatch('/panel/quiz/:quizId') !== null;
@@ -70,17 +65,7 @@ export function PanelLayout() {
               </nav>
               <div className="flex items-center gap-2">
                 <StaffSwitcher className="hidden sm:inline-flex" />
-                <Button
-                  variant="secondary"
-                  loading={logout.isPending}
-                  onClick={() =>
-                    logout.mutate(undefined, {
-                      onSettled: () => void navigate('/ingresar', { replace: true }),
-                    })
-                  }
-                >
-                  Salir
-                </Button>
+                <UserMenu />
               </div>
             </>
           )}

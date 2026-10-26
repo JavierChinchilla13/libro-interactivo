@@ -514,7 +514,9 @@ describe('quiz: foco, título y chrome del momento', () => {
   it('el panel sí conserva su navegación y su «Salir»', async () => {
     mockApi({ [`GET /api/me/progress?bookId=${BOOK_ID}`]: progress });
     renderAt('/panel');
-    expect(await screen.findByRole('button', { name: 'Salir' })).toBeInTheDocument();
+    // «Salir» vive en el menú de usuario (cerrado hasta que se abre).
+    await userEvent.click(await screen.findByRole('button', { name: 'Lectora Prueba' }));
+    expect(screen.getByRole('menuitem', { name: 'Salir' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Panel (móvil)' })).toBeInTheDocument();
   });
 
