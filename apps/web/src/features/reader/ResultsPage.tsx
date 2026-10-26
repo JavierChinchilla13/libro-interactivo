@@ -6,6 +6,7 @@ import { thumbUrl } from '../../shared/lib/cloudinary';
 import { FieldEmblem } from '../../shared/ui/FieldEmblem';
 import { Alert, Card, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
 import { readerApi, readerKeys } from './api';
+import { useLibrary } from './useLibrary';
 import { ResultView } from './ResultView';
 import { useSelectedBook } from './useBook';
 
@@ -23,6 +24,15 @@ export function ResultsPage() {
     enabled: bookId !== '',
     staleTime: 0,
   });
+  // Si algún quiz del libro se puede repetir, la descripción lo menciona (los datos ya están en caché del resumen).
+  const progress = useQuery({
+    queryKey: readerKeys.progress(bookId),
+    queryFn: () => readerApi.progress(bookId),
+    enabled: bookId !== '',
+  });
+  const canRetake = (progress.data?.experiences ?? []).some(
+    (item) => item.kind === 'quiz' && item.allowRetake,
+  );
 
   if (isPending || (bookId !== '' && results.isPending)) return <Loading />;
   if (error) return <Alert>{errorMessage(error)}</Alert>;
@@ -32,12 +42,19 @@ export function ResultsPage() {
   const list = results.data?.results ?? [];
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Mis resultados" subtitle={slug !== undefined ? book?.title : undefined} />
+      <PageHeader
+        title="Tus resultados"
+        subtitle={`Aquí queda lo que descubriste en este libro: tu resultado de cada quiz. ${
+          canRetake
+            ? 'Puedes revisar el historial de intentos y repetir los quizzes que lo permiten.'
+            : 'Puedes revisar el historial de cada intento.'
+        }`}
+      />
       {list.length === 0 ? (
-        <EmptyState title="Todavía no tienes resultados">
+        <EmptyState title="Todavía no tienes resultados en este libro">
           Cuando completes un quiz, aquí queda lo que descubriste.{' '}
-          <Link to="/panel" className="underline">
-            Ir a mi panel
+          <Link to={slug !== undefined ? `/panel/libros/${slug}` : '/panel'} className="underline">
+            {slug !== undefined ? 'Ir al resumen del libro' : 'Ir a mi panel'}
           </Link>
         </EmptyState>
       ) : (
@@ -84,6 +101,7 @@ export function ResultDetailPage() {
     retry: false,
     staleTime: 0,
   });
+  const library = useLibrary();
 
   if (detail.isPending) return <Loading />;
   if (detail.isError) {
@@ -98,12 +116,15 @@ export function ResultDetailPage() {
     );
   }
 
-  const { title, current, history, allowRetake } = detail.data;
+  const { title, current, history, allowRetake, bookId } = detail.data;
+  // Vuelve a los resultados de ESE libro (con el punto de acceso general como respaldo mientras se sabe cuál es).
+  const slug = library.data?.books.find((entry) => entry.book.id === bookId)?.book.slug;
+  const back = slug ? `/panel/libros/${slug}/resultados` : '/panel/resultados';
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
       <p className="text-sm">
-        <Link to="/panel/resultados" className="underline">
-          ← Mis resultados
+        <Link to={back} className="underline">
+          ← Tus resultados
         </Link>
       </p>
       <p className="text-sm text-muted">{title}</p>
@@ -124,8 +145,8 @@ export function ResultDetailPage() {
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        <Link to="/panel" className="btn btn-primary">
-          Volver a mi panel
+        <Link to={slug ? `/panel/libros/${slug}` : '/panel'} className="btn btn-primary">
+          {slug ? 'Volver al libro' : 'Volver a mi panel'}
         </Link>
         {allowRetake ? (
           <Link to={`/panel/quiz/${quizId}`} className="text-sm underline">

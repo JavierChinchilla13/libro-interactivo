@@ -1,12 +1,30 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BOOK_ID, READER, apiError, empty, json, mockApi, renderAt } from '../../test/mockApi';
+import {
+  BOOK,
+  BOOK_ID,
+  READER,
+  apiError,
+  empty,
+  json,
+  mockApi,
+  renderAt,
+} from '../../test/mockApi';
 
 beforeEach(() => localStorage.clear());
 afterEach(() => vi.unstubAllGlobals());
 
 const NO_SESSION = { session: null } as const;
+// El marco del libro (migas y subnavegador) pide la biblioteca de la lectora.
+const LIBRARY = {
+  'GET /api/me/library': () =>
+    json({
+      books: [
+        { book: BOOK, access: 'open', progress: { done: 1, total: 3, bookCompleted: false } },
+      ],
+    }),
+};
 const GOOD = 'Nube-Azul-Cuatro-87';
 
 describe('registro', () => {
@@ -275,19 +293,94 @@ describe('extras del lector', () => {
       ],
     });
 
-  it('bloqueados: solo el aviso y cuánto falta, sin títulos ni cantidad', async () => {
+  it('bloqueados con algo publicado: dice cuánto falta y lleva al libro, sin títulos ni cantidad de extras', async () => {
     mockApi({
-      [extrasKey]: () => json({ locked: true }),
+      ...LIBRARY,
+      [extrasKey]: () => json({ locked: true, hasExtras: true }),
       [`GET /api/me/progress?bookId=${BOOK_ID}`]: progress,
     });
     renderAt('/panel/libros/libro-1/extras');
     expect(await screen.findByText('Aún están bloqueados')).toBeInTheDocument();
-    expect(await screen.findByText('1 de 3')).toBeInTheDocument();
+    expect(await screen.findByText(/Te faltan 2 experiencias/)).toBeInTheDocument();
+    expect(await screen.findByText('1 de 3 completadas')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Seguir con el libro' })).toHaveAttribute(
+      'href',
+      '/panel/libros/libro-1',
+    );
     expect(screen.queryByRole('link', { name: /Abrir/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('Aún no hay capítulos extra publicados')).not.toBeInTheDocument();
+    // La explicación corta de qué son los extras, con el contenido concreto como [PLACEHOLDER].
+    expect(
+      screen.getByRole('heading', { name: 'Qué son los capítulos extra' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/\[PLACEHOLDER\] Qué contiene cada uno/)).toBeInTheDocument();
+  });
+
+  it('bloqueados y sin nada publicado: dice que aún no hay, sin prometer un desbloqueo ni contar lo que falta', async () => {
+    mockApi({
+      ...LIBRARY,
+      [extrasKey]: () => json({ locked: true, hasExtras: false }),
+      [`GET /api/me/progress?bookId=${BOOK_ID}`]: progress,
+    });
+    renderAt('/panel/libros/libro-1/extras');
+    expect(await screen.findByText('Aún no hay capítulos extra publicados')).toBeInTheDocument();
+    expect(screen.queryByText('Aún están bloqueados')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Te faltan/)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Qué son los capítulos extra' }),
+    ).toBeInTheDocument();
+  });
+
+  it('con el libro completo y sin extras publicados: estado vacío con la explicación', async () => {
+    mockApi({
+      ...LIBRARY,
+      [extrasKey]: () => json({ locked: false, extras: [] }),
+      [`GET /api/me/progress?bookId=${BOOK_ID}`]: progress,
+    });
+    renderAt('/panel/libros/libro-1/extras');
+    expect(await screen.findByText('Aún no hay capítulos extra publicados')).toBeInTheDocument();
+    expect(screen.getByText(/Completaste todo el libro/)).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Qué son los capítulos extra' }),
+    ).toBeInTheDocument();
+  });
+
+  it('cada libro tiene su propio estado: uno sin extras no afecta al otro', async () => {
+    const second = {
+      ...BOOK,
+      id: '670000000000000000000023',
+      slug: 'libro-3',
+      title: '[PLACEHOLDER] Libro 3',
+    };
+    const library = () =>
+      json({
+        books: [
+          { book: BOOK, access: 'open', progress: { done: 1, total: 3, bookCompleted: false } },
+          { book: second, access: 'open', progress: { done: 1, total: 3, bookCompleted: false } },
+        ],
+      });
+    const world = {
+      'GET /api/me/library': library,
+      'GET /api/books': () => json({ books: [BOOK, second] }),
+      [extrasKey]: () => json({ locked: true, hasExtras: true }),
+      [`GET /api/extras?bookId=${second.id}`]: () => json({ locked: true, hasExtras: false }),
+      [`GET /api/me/progress?bookId=${BOOK_ID}`]: progress,
+      [`GET /api/me/progress?bookId=${second.id}`]: progress,
+    };
+    mockApi(world);
+    const first = renderAt('/panel/libros/libro-1/extras');
+    expect(await screen.findByText('Aún están bloqueados')).toBeInTheDocument();
+    first.unmount();
+    vi.unstubAllGlobals();
+    mockApi(world);
+    renderAt('/panel/libros/libro-3/extras');
+    expect(await screen.findByText('Aún no hay capítulos extra publicados')).toBeInTheDocument();
+    expect(screen.queryByText('Aún están bloqueados')).not.toBeInTheDocument();
   });
 
   it('abiertos: lista con tipo y «Visto»', async () => {
     mockApi({
+      ...LIBRARY,
       [extrasKey]: () =>
         json({
           locked: false,
@@ -322,11 +415,33 @@ describe('extras del lector', () => {
     ).toHaveAttribute('href', `/panel/extras/${'b'.repeat(24)}`);
   });
 
+  it('«Cerrar» al leer un extra vuelve a los extras de ESE libro', async () => {
+    mockApi({
+      ...LIBRARY,
+      [`GET /api/extras/${'a'.repeat(24)}`]: () =>
+        json({
+          kind: 'text',
+          bookId: BOOK_ID,
+          title: '[PLACEHOLDER] Texto',
+          bodyHtml: '<p>Hola</p>',
+        }),
+    });
+    renderAt(`/panel/extras/${'a'.repeat(24)}`);
+    expect(await screen.findByText('Hola')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: '✕ Cerrar' })).toHaveAttribute(
+        'href',
+        '/panel/libros/libro-1/extras',
+      ),
+    );
+  });
+
   it('abrir un texto lo muestra saneado; un extra bloqueado (403) no entrega nada', async () => {
     mockApi({
       [`GET /api/extras/${'a'.repeat(24)}`]: () =>
         json({
           kind: 'text',
+          bookId: BOOK_ID,
           title: '[PLACEHOLDER] Texto',
           bodyHtml: '<p>Contenido</p><script>alert(1)</script>',
         }),
@@ -349,6 +464,7 @@ describe('extras del lector', () => {
         n += 1;
         return json({
           kind: 'pdf',
+          bookId: BOOK_ID,
           title: '[PLACEHOLDER] PDF',
           url: `https://almacen.ejemplo.com/f.pdf?firma=${n}`,
           mime: 'application/pdf',
@@ -377,6 +493,7 @@ describe('resultados del lector', () => {
 
   it('lista el resultado vigente de cada quiz y vacío da una guía', async () => {
     mockApi({
+      ...LIBRARY,
       [`GET /api/me/results?bookId=${BOOK_ID}`]: () =>
         json({
           results: [
@@ -404,18 +521,35 @@ describe('resultados del lector', () => {
       `/panel/resultados/${quizId}`,
     );
     vi.unstubAllGlobals();
-    mockApi({ [`GET /api/me/results?bookId=${BOOK_ID}`]: () => json({ results: [] }) });
+    mockApi({
+      ...LIBRARY,
+      [`GET /api/me/results?bookId=${BOOK_ID}`]: () => json({ results: [] }),
+    });
     renderAt('/panel/libros/libro-1/resultados');
-    expect(await screen.findAllByText('Todavía no tienes resultados')).not.toHaveLength(0);
+    expect(
+      await screen.findAllByText('Todavía no tienes resultados en este libro'),
+    ).not.toHaveLength(0);
+    // El estado vacío lleva al resumen del libro (no al panel general).
+    expect(screen.getByRole('link', { name: 'Ir al resumen del libro' })).toHaveAttribute(
+      'href',
+      '/panel/libros/libro-1',
+    );
+    // La descripción no repite el título y no habla de repetir si ningún quiz lo permite.
+    expect(
+      screen.getAllByText(/Aquí queda lo que descubriste en este libro/).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByText(/revisar el historial de cada intento/).length).toBeGreaterThan(0);
   });
 
   it('el detalle muestra el resultado, el historial (vigente primero) y si se puede repetir', async () => {
     mockApi({
+      ...LIBRARY,
       [`GET /api/me/results/${quizId}`]: () =>
         json({
           quizId,
           title: '[PLACEHOLDER] Quiz 1',
           allowRetake: false,
+          bookId: BOOK_ID,
           current: {
             attemptId: 'a'.repeat(24),
             completedAt: '2026-10-06T12:00:00.000Z',
@@ -443,6 +577,13 @@ describe('resultados del lector', () => {
     expect(
       await screen.findByRole('heading', { name: '[PLACEHOLDER] Resultado B' }),
     ).toBeInTheDocument();
+    // «← Tus resultados» vuelve a los resultados de ESE libro, no al punto de acceso general.
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: '← Tus resultados' })).toHaveAttribute(
+        'href',
+        '/panel/libros/libro-1/resultados',
+      ),
+    );
     const history = screen.getByRole('region', { name: 'Historial' });
     expect(
       within(history)

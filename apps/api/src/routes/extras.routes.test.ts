@@ -382,7 +382,10 @@ describe('extras para el lector', () => {
       ).body,
     );
     const listed = await reader.get('/api/extras').query({ bookId }).expect(200);
-    expect(readerExtrasResponseSchema.parse(listed.body)).toEqual({ locked: true });
+    expect(readerExtrasResponseSchema.parse(listed.body)).toEqual({
+      locked: true,
+      hasExtras: true,
+    });
     expect(JSON.stringify(listed.body)).not.toMatch(/SECRETO|extras/);
 
     await playQuizToEnd(reader, quiz1._id.toString()); // falta el quiz 2
@@ -390,7 +393,7 @@ describe('extras para el lector', () => {
       readerExtrasResponseSchema.parse(
         (await reader.get('/api/extras').query({ bookId }).expect(200)).body,
       ),
-    ).toEqual({ locked: true });
+    ).toEqual({ locked: true, hasExtras: true });
 
     const open = await reader.get(`/api/extras/${extra.id}`);
     expect(open.status).toBe(403);
@@ -498,6 +501,7 @@ describe('extras para el lector', () => {
     const t = await reader.get(`/api/extras/${txt.id}`).expect(200);
     expect(readerExtraResponseSchema.parse(t.body)).toEqual({
       kind: 'text',
+      bookId,
       title: '[PLACEHOLDER] Capítulo extra 1',
       bodyHtml: '<p>[PLACEHOLDER] Texto del extra</p>',
     });
@@ -507,7 +511,7 @@ describe('extras para el lector', () => {
       (await reader.get(`/api/extras/${pdf.id}`).expect(200)).body,
     );
     if (p.kind !== 'pdf') throw new Error('Debía ser un PDF');
-    expect(p).toMatchObject({ mime: 'application/pdf', expiresIn: 180 });
+    expect(p).toMatchObject({ bookId, mime: 'application/pdf', expiresIn: 180 });
     expect(p.url).toContain(encodeURIComponent(`extras/${bookId}/doc.pdf`));
     expect(p.url).toContain('ttl=180'); // vida corta
     const i = readerExtraResponseSchema.parse(
@@ -561,6 +565,56 @@ describe('extras para el lector', () => {
     expect((await other.get(`/api/extras/${extra.id}`)).status).toBe(403);
   });
 
+  it('hasExtras dice solo si hay algo publicado: sin títulos ni cantidad, sin contar borradores ni archivados, por libro y sin cambiar el 403', async () => {
+    const { reader, text, editor, bookId } = await world();
+    const locked = async (id = bookId) =>
+      (await reader.get('/api/extras').query({ bookId: id }).expect(200)).body;
+
+    // Sin nada publicado (o solo borradores y archivados): bloqueado y sin extras.
+    expect(await locked()).toEqual({ locked: true, hasExtras: false });
+    await editor
+      .post('/api/admin/extras')
+      .send(text({ slug: 'b', status: 'draft' }))
+      .expect(201);
+    await editor
+      .post('/api/admin/extras')
+      .send(text({ slug: 'a', status: 'archived' }))
+      .expect(201);
+    expect(await locked()).toEqual({ locked: true, hasExtras: false });
+
+    // Con uno publicado: hasExtras sí, pero la respuesta no trae nada más que esas dos claves.
+    const published = extraResponseSchema.parse(
+      (
+        await editor
+          .post('/api/admin/extras')
+          .send(text({ slug: 'p', title: 'TITULO-PUBLICADO-SECRETO' }))
+          .expect(201)
+      ).body,
+    );
+    await editor
+      .post('/api/admin/extras')
+      .send(text({ slug: 'p2', title: 'OTRO-SECRETO' }))
+      .expect(201);
+    const body = await locked();
+    expect(Object.keys(body).sort()).toEqual(['hasExtras', 'locked']);
+    expect(body).toEqual({ locked: true, hasExtras: true });
+    expect(JSON.stringify(body)).not.toMatch(/SECRETO|"2"|cantidad|count/i);
+
+    // Otro libro publicado sin extras no se contagia.
+    const other = await createBook({ slug: 'otro-libro' });
+    expect(await locked(other._id.toString())).toEqual({ locked: true, hasExtras: false });
+
+    // El acceso a un extra sigue igual: 403 NOT_UNLOCKED, sin contenido.
+    const open = await reader.get(`/api/extras/${published.id}`);
+    expect(open.status).toBe(403);
+    expect(code(open)).toBe('NOT_UNLOCKED');
+    expect(JSON.stringify(open.body)).not.toMatch(/SECRETO|Texto del extra|url/);
+    // Un libro inexistente o sin publicar sigue respondiendo 404 (no revela nada).
+    expect(
+      (await reader.get('/api/extras').query({ bookId: '670000000000000000000099' })).status,
+    ).toBe(404);
+  });
+
   it('las editoras NO ven los extras por la ruta del lector sin completar el libro (para eso está la vista previa)', async () => {
     const { editor, text, bookId } = await world();
     const extra = extraResponseSchema.parse(
@@ -571,6 +625,6 @@ describe('extras para el lector', () => {
       readerExtrasResponseSchema.parse(
         (await editor.get('/api/extras').query({ bookId }).expect(200)).body,
       ),
-    ).toEqual({ locked: true });
+    ).toEqual({ locked: true, hasExtras: true });
   });
 });

@@ -5,7 +5,7 @@
 
 /** Base de la pestaña: el subrayado es un pseudoelemento que solo cambia de escala (composición, sin repintar). */
 const tabBase =
-  'relative inline-flex min-h-11 items-center px-3.5 text-sm font-medium transition-colors duration-(--token-dur-fast) ease-token-out after:absolute after:inset-x-3.5 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-primary after:transition-transform after:duration-(--token-dur-fast) after:ease-token-out';
+  'relative inline-flex min-h-11 shrink-0 items-center whitespace-nowrap px-3.5 text-sm font-medium transition-colors duration-(--token-dur-fast) ease-token-out after:absolute after:inset-x-3.5 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-primary after:transition-transform after:duration-(--token-dur-fast) after:ease-token-out';
 const tabIdle = 'text-muted hover:text-text hover:after:scale-x-40';
 
 /** Pestaña de la barra superior (en fila desde `md`): la activa se subraya en cian; en el menú desplegable, se resalta. */

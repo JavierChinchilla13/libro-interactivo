@@ -61,7 +61,9 @@ export function useLogout() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => apiRequest('/auth/logout', z.null(), { method: 'POST' }),
-    onSettled: () => {
+    onSettled: async () => {
+      // Lo que esté en vuelo no debe escribir en la caché ya vaciada (datos de la persona que sale).
+      await client.cancelQueries();
       client.setQueryData(SESSION_KEY, null);
       client.removeQueries({ predicate: (query) => query.queryKey[0] !== 'session' });
     },

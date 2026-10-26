@@ -1,17 +1,17 @@
-import { Link, Outlet, useLocation, useMatch, useNavigate } from 'react-router';
-import { useLogout } from '../../features/auth/session';
+import { Link, Outlet, useLocation, useMatch } from 'react-router';
+import { BOOK_SECTIONS, bookSectionOf } from '../../features/reader/bookSections';
+import { useLibrary } from '../../features/reader/useLibrary';
 import { WelcomeModal } from '../../features/reader/WelcomeModal';
-import { Button } from '../../shared/ui/controls';
 import { Brand } from '../../shared/ui/Brand';
 import { PageBackground } from '../../shared/ui/PageBackground';
 import { bottomTab, MAIN_ID, navTab, SkipLink } from '../../shared/ui/nav';
 import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
+import { UserMenu } from '../../shared/ui/UserMenu';
 
 const ITEMS = [
-  { to: '/panel', label: 'Panel', section: 'panel' },
+  { to: '/panel', label: 'Tus libros', section: 'panel' },
   { to: '/panel/resultados', label: 'Resultados', section: 'resultados' },
   { to: '/panel/extras', label: 'Extras', section: 'extras' },
-  { to: '/panel/cuenta', label: 'Cuenta', section: 'cuenta' },
 ] as const;
 
 type Section = (typeof ITEMS)[number]['section'];
@@ -29,8 +29,12 @@ export function sectionOf(pathname: string): Section | null {
   if (path.startsWith('/panel/extras') || /^\/panel\/libros\/[^/]+\/extras/.test(path)) {
     return 'extras';
   }
-  if (path.startsWith('/panel/cuenta')) return 'cuenta';
   return null;
+}
+
+/** El libro cuya dirección se está viendo (`/panel/libros/:slug…`), si hay uno. */
+export function bookSlugOf(pathname: string): string | null {
+  return /^\/panel\/libros\/([^/]+)/.exec(pathname)?.[1] ?? null;
 }
 
 /**
@@ -38,16 +42,24 @@ export function sectionOf(pathname: string): Section | null {
  * Aquí aparece el mensaje de bienvenida cuando el servidor dice que toca.
  */
 export function PanelLayout() {
-  const logout = useLogout();
-  const navigate = useNavigate();
-  const current = sectionOf(useLocation().pathname);
+  const { pathname } = useLocation();
+  const current = sectionOf(pathname);
+  // Dentro de un libro las categorías son las del libro: arriba solo queda volver a «Tus libros».
+  const bookSlug = bookSlugOf(pathname);
+  const bookSection = bookSectionOf(pathname);
+  // Un libro sin abrir (o «próximamente») solo tiene su resumen: la barra de abajo no ofrece lo demás.
+  const library = useLibrary(bookSlug !== null);
+  const bookAccess = library.data?.books.find((entry) => entry.book.slug === bookSlug)?.access;
+  const bookTabs = bookAccess === 'open' ? BOOK_SECTIONS : BOOK_SECTIONS.slice(0, 1);
   // En el quiz solo queda la marca: sin «Salir» ni pestañas que cierren la sesión o abandonen sin querer.
   const inQuiz = useMatch('/panel/quiz/:quizId') !== null;
   const inGame = useMatch('/panel/juego/:bookId') !== null;
   const immersive = inQuiz || inGame;
 
   return (
-    <div className={`flex min-h-dvh flex-col ${immersive ? '' : 'pb-16 sm:pb-0'}`}>
+    <div
+      className={`flex min-h-dvh flex-col ${immersive ? '' : 'pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-0'}`}
+    >
       <SkipLink />
       <PageBackground fallback="first" />
       <header className="site-header sticky top-3 z-40 px-3">
@@ -56,42 +68,32 @@ export function PanelLayout() {
           {immersive ? null : (
             <>
               <nav aria-label="Panel" className="hidden gap-1 sm:flex">
-                {ITEMS.map((item) => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    viewTransition
-                    aria-current={current === item.section ? 'page' : undefined}
-                    className={navTab({ isActive: current === item.section })}
-                  >
-                    {item.label}
+                {bookSlug ? (
+                  <Link to="/panel" viewTransition className={navTab({ isActive: false })}>
+                    ‹ Tus libros
                   </Link>
-                ))}
+                ) : (
+                  ITEMS.map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      viewTransition
+                      aria-current={current === item.section ? 'page' : undefined}
+                      className={navTab({ isActive: current === item.section })}
+                    >
+                      {item.label}
+                    </Link>
+                  ))
+                )}
               </nav>
               <div className="flex items-center gap-2">
-                <StaffSwitcher className="hidden sm:inline-flex" />
-                <Button
-                  variant="secondary"
-                  loading={logout.isPending}
-                  onClick={() =>
-                    logout.mutate(undefined, {
-                      onSettled: () => void navigate('/ingresar', { replace: true }),
-                    })
-                  }
-                >
-                  Salir
-                </Button>
+                <StaffSwitcher className="hidden 2xl:inline-flex" />
+                <UserMenu />
               </div>
             </>
           )}
         </div>
       </header>
-      {immersive ? null : (
-        // En el celular el selector va bajo la cabecera (en el mismo sitio que en las otras dos zonas: arriba, a la derecha).
-        <div className="flex justify-end px-3 pt-2 sm:hidden">
-          <StaffSwitcher />
-        </div>
-      )}
       <main
         id={MAIN_ID}
         tabIndex={-1}
@@ -104,18 +106,36 @@ export function PanelLayout() {
       {immersive ? null : (
         <nav
           aria-label="Panel (móvil)"
-          className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-bg sm:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-bg pb-[env(safe-area-inset-bottom)] sm:hidden"
         >
-          {ITEMS.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              aria-current={current === item.section ? 'page' : undefined}
-              className={bottomTab({ isActive: current === item.section })}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {bookSlug ? (
+            <>
+              <Link to="/panel" className={bottomTab({ isActive: false })}>
+                ‹ Tus libros
+              </Link>
+              {bookTabs.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/panel/libros/${bookSlug}${item.path}`}
+                  aria-current={bookSection === item.id ? 'page' : undefined}
+                  className={bottomTab({ isActive: bookSection === item.id })}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </>
+          ) : (
+            ITEMS.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                aria-current={current === item.section ? 'page' : undefined}
+                className={bottomTab({ isActive: current === item.section })}
+              >
+                {item.label}
+              </Link>
+            ))
+          )}
         </nav>
       )}
       <WelcomeModal />
