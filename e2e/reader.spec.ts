@@ -108,6 +108,8 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     playwright,
     baseURL,
   }) => {
+    // Es un recorrido largo (registro, quiz, resultado y extras): con la suite entera en paralelo el margen estándar de 30 s no alcanza.
+    test.setTimeout(90_000);
     const stamp = `${Date.now()}-${test.info().project.name}`;
     const admin = await playwright.request.newContext({ baseURL });
     expect(
