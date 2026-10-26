@@ -75,8 +75,10 @@ export function AppearanceTab({
     staleTime: 0,
   });
   const [generation, setGeneration] = useState(0);
-  if (query.isError) return <Alert>{errorMessage(query.error)}</Alert>;
-  if (!query.data) return <Loading />;
+  // Un fallo al refrescar no debe tirar un editor con cambios: el error solo manda si no hay nada que mostrar.
+  if (!query.data && query.isError) return <Alert>{errorMessage(query.error)}</Alert>;
+  // No se arranca con datos viejos del caché: otra persona pudo guardar mientras esta pestaña estaba cerrada.
+  if (!query.data || !query.isFetchedAfterMount) return <Loading />;
   return (
     <AppearanceEditor
       // Solo se remonta al recargar a propósito: guardar no debe borrar el aviso de «Guardado».
@@ -195,12 +197,14 @@ function AppearanceEditor({
           : null;
 
   const save = useMutation({
-    mutationFn: () => appearanceApi.update(quiz.id, toAppearance(effective), rev),
-    onSuccess: async (result) => {
+    mutationFn: (sent: { body: ReturnType<typeof toAppearance>; key: string; rev: number }) =>
+      appearanceApi.update(quiz.id, sent.body, sent.rev),
+    onSuccess: async (result, sent) => {
       setRev(result.rev);
       setHistory(result.history);
       setWarnings(result.warnings);
-      setSavedKey(formKey(effective));
+      // Lo que se marca como guardado es lo que se envió, no lo que se haya tecleado mientras tanto.
+      setSavedKey(sent.key);
       setNotice('Guardado. Ya lo ven las lectoras, sin publicar una versión nueva.');
       client.setQueryData(keys.appearance(quiz.id), result);
       // El editor viejo oculta la introducción y la portada cuando existe apariencia.
@@ -239,7 +243,8 @@ function AppearanceEditor({
         ) : null}
         <p className="text-sm text-muted">
           La apariencia se aplica en cuanto guardas, sin publicar una versión nueva. Cambia solo lo
-          que se ve; las preguntas y los resultados siguen su propia publicación.
+          que se ve; las preguntas y los resultados siguen su propia publicación. Esta pestaña se
+          guarda aparte: no usa «Guardar borrador» ni «Publicar» de arriba.
         </p>
 
         <Card className="flex min-w-0 flex-col gap-4">
@@ -329,7 +334,7 @@ function AppearanceEditor({
               onChange={(event) =>
                 patch({ strength: clampStrength('manual', Number(event.target.value)) })
               }
-              className="min-h-11 w-full"
+              className="min-h-11 w-full accent-[var(--token-primary)]"
             />
             {form.mode === 'auto' && form.kind !== 'none' ? (
               <p className="text-xs text-muted">
@@ -362,7 +367,7 @@ function AppearanceEditor({
                 <span
                   aria-hidden="true"
                   className="size-3.5 rounded-full border border-border"
-                  style={{ background: `var(--token-${accent ?? 'primary'})` }}
+                  style={{ background: accent ? `var(--token-${accent})` : 'transparent' }}
                 />
                 {accent ? ACCENT_LABELS[accent] : 'Por defecto'}
               </Chip>
@@ -371,32 +376,35 @@ function AppearanceEditor({
         </Card>
 
         <Card className="flex min-w-0 flex-col gap-4">
-          <h2 className="font-semibold">Portada e introducción</h2>
-          <ImageField
-            label="Portada del quiz"
-            purpose="quiz"
-            value={form.cover}
-            onChange={(cover) => patch({ cover })}
-            altMaxLength={200}
-            removable={!quiz.draft.image}
-            hint={
-              quiz.draft.image
-                ? 'Para cambiarla, sube otra. Quitarla del todo no está disponible todavía.'
-                : 'Opcional.'
-            }
-          />
-          <RichTextEditor
-            label="Introducción"
-            value={form.introHtml}
-            onChange={(introHtml) => patch({ introHtml })}
-          />
-          <p className="text-xs text-muted">
-            Es ambientación del quiz, no reglas de puntaje: no nombres resultados ni des pistas. Un
-            cuadro vacío quita la introducción a propósito.
-          </p>
-          <p className="text-xs text-muted tabular-nums">
-            {form.introHtml.length} / 5000 caracteres de HTML
-          </p>
+          {/* Mientras se guarda no se puede teclear: lo escrito en ese momento no iría en el envío. */}
+          <div className="flex min-w-0 flex-col gap-4" inert={busy || undefined}>
+            <h2 className="font-semibold">Portada e introducción</h2>
+            <ImageField
+              label="Portada del quiz"
+              purpose="quiz"
+              value={form.cover}
+              onChange={(cover) => patch({ cover })}
+              altMaxLength={200}
+              removable={!quiz.draft.image}
+              hint={
+                quiz.draft.image
+                  ? 'Para cambiarla, sube otra. Quitarla del todo no está disponible todavía.'
+                  : 'Opcional.'
+              }
+            />
+            <RichTextEditor
+              label="Introducción"
+              value={form.introHtml}
+              onChange={(introHtml) => patch({ introHtml })}
+            />
+            <p className="text-xs text-muted">
+              Es ambientación del quiz, no reglas de puntaje: no nombres resultados ni des pistas.
+              Un cuadro vacío quita la introducción a propósito.
+            </p>
+            <p className="text-xs text-muted tabular-nums">
+              {form.introHtml.length} / 5000 caracteres de HTML
+            </p>
+          </div>
         </Card>
 
         {warnings.includes('APPEARANCE_MENTIONS_RESULT') ? (
@@ -430,8 +438,14 @@ function AppearanceEditor({
         <HistoryList
           history={history}
           disabled={disabled || dirty}
-          busy={revert.isPending}
+          pendingRev={revert.isPending ? revert.variables : undefined}
           onRevert={(entryRev) => {
+            if (
+              !window.confirm(
+                '¿Volver al estado anterior a este cambio? Las lectoras lo verán en seguida.',
+              )
+            )
+              return;
             setNotice(null);
             revert.mutate(entryRev);
           }}
@@ -443,7 +457,7 @@ function AppearanceEditor({
             loading={save.isPending}
             onClick={() => {
               setNotice(null);
-              save.mutate();
+              save.mutate({ body: toAppearance(effective), key: formKey(effective), rev });
             }}
           >
             Guardar apariencia
@@ -520,12 +534,13 @@ function ContrastNotice({ report }: { report: ReturnType<typeof contrastReport> 
 function HistoryList({
   history,
   disabled,
-  busy,
+  pendingRev,
   onRevert,
 }: {
   history: AppearanceHistoryEntry[];
   disabled: boolean;
-  busy: boolean;
+  /** Revisión que se está revirtiendo ahora (solo su fila muestra el «Un momento…»). */
+  pendingRev: number | undefined;
   onRevert: (rev: number) => void;
 }) {
   return (
@@ -563,8 +578,8 @@ function HistoryList({
                   </div>
                   <Button
                     variant="secondary"
-                    disabled={disabled}
-                    loading={busy}
+                    disabled={disabled || (pendingRev !== undefined && pendingRev !== entry.rev)}
+                    loading={pendingRev === entry.rev}
                     onClick={() => onRevert(entry.rev)}
                   >
                     Volver a antes
@@ -597,7 +612,7 @@ function VideoField({
     setBusy(true);
     setError(null);
     try {
-      onChange(await uploadBackgroundVideo(file, value?.alt ?? 'Video de fondo del quiz'));
+      onChange(await uploadBackgroundVideo(file, value?.alt ?? ''));
     } catch (failure) {
       setError(errorMessage(failure));
     } finally {
@@ -627,6 +642,7 @@ function VideoField({
             label="Texto alternativo (describe el video)"
             value={value.alt}
             maxLength={200}
+            error={value.alt.trim() ? undefined : 'Describe el video para quien no lo puede ver.'}
             onChange={(event) => onChange({ ...value, alt: event.target.value })}
           />
         </>
