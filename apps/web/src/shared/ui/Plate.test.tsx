@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Plate, plateRatio } from './Plate';
 
@@ -72,5 +72,44 @@ describe('Plate', () => {
     expect(plate).toHaveAttribute('aria-hidden', 'true');
     expect(plate).toHaveTextContent('Universo');
     expect(plate).toHaveTextContent('Memorias');
+  });
+});
+
+describe('Plate: portada que no carga', () => {
+  it('muestra un fondo sólido con el título, sin icono de imagen rota, y conserva el hueco reservado', () => {
+    const { container } = render(
+      <Plate cover={cover(1280, 720)} title="Memorias Postergadas" className="w-full" />,
+    );
+    fireEvent.error(screen.getByRole('img', { name: 'Portada' }));
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(container.querySelector('img')).toBeNull();
+    const box = container.querySelector('[data-plate="cover"]') as HTMLElement;
+    expect(box).toHaveAttribute('data-failed', 'true');
+    // Mismo hueco que con la imagen: la página no salta.
+    expect(parseFloat(box.style.aspectRatio)).toBeCloseTo(16 / 9);
+    expect(screen.getByText('Memorias Postergadas')).toBeInTheDocument();
+  });
+
+  it('sin título sigue sin mostrar la imagen rota (solo el fondo del tema)', () => {
+    const { container } = render(<Plate cover={cover(600, 900)} />);
+    fireEvent.error(screen.getByRole('img', { name: 'Portada' }));
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.querySelector('[data-plate="cover"]')).toHaveAttribute('data-failed', 'true');
+  });
+
+  it('el fallo es de esa imagen: con otra portada se vuelve a intentar', () => {
+    const { container, rerender } = render(<Plate cover={cover(600, 900)} title="Libro" />);
+    fireEvent.error(screen.getByRole('img', { name: 'Portada' }));
+    expect(container.querySelector('img')).toBeNull();
+    rerender(
+      <Plate
+        cover={{
+          ...cover(600, 900),
+          url: 'https://res.cloudinary.com/demo/image/upload/libro/otra',
+        }}
+        title="Libro"
+      />,
+    );
+    expect(container.querySelector('img')).not.toBeNull();
   });
 });

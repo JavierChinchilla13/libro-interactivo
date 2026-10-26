@@ -7,6 +7,19 @@ const stageEntrySchema = new Schema(
     stageId: { type: String, required: true },
     /** Orden barajado en que se entregaron las preguntas. */
     questionOrder: { type: [String], required: true },
+    /** Orden barajado de las respuestas de cada pregunta (ausente en intentos anteriores: orden de la autora). */
+    answerOrder: {
+      type: [
+        new Schema(
+          {
+            questionId: { type: String, required: true },
+            answerIds: { type: [String], required: true },
+          },
+          { _id: false },
+        ),
+      ],
+      default: undefined,
+    },
     answers: {
       type: [
         new Schema(

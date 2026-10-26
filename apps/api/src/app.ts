@@ -11,6 +11,7 @@ import type { Logger } from './lib/logger.js';
 import { createGuards, type Guards } from './middleware/auth.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error.js';
 import { createRequireUnlocked } from './middleware/unlocked.js';
+import { configureCloudinaryAccount } from './lib/images.js';
 import { createImageProvider, type ImageProvider } from './providers/images/ImageProvider.js';
 import { S3StorageProvider, s3ConfigFromEnv } from './providers/storage/S3StorageProvider.js';
 import {
@@ -22,6 +23,7 @@ import type { MailProvider } from './providers/mail/MailProvider.js';
 import { createMailProvider } from './providers/mail/createMailProvider.js';
 import { createApiRouter } from './routes/index.js';
 import { createAccessService } from './services/access.service.js';
+import { createLibraryService } from './services/library.service.js';
 import { createPublicBookService } from './services/publicBook.service.js';
 import { createAdminMetricsService } from './services/adminMetrics.service.js';
 import { createAdminUsersService } from './services/adminUsers.service.js';
@@ -43,6 +45,7 @@ import { createQuizService } from './services/quiz.service.js';
 import { createQuizPublishService } from './services/quizPublish.service.js';
 import { createBookService } from './services/book.service.js';
 import { createQuizAdminService } from './services/quizAdmin.service.js';
+import { createQuizAppearanceService } from './services/quizAppearance.service.js';
 import { createWikiService } from './services/wiki.service.js';
 import { createTokenService } from './services/token.service.js';
 
@@ -151,6 +154,7 @@ export function createApp(
 
   const progress = createProgressService({ requireQrUnlock: deps.env.REQUIRE_QR_UNLOCK });
   const quizzes = createQuizService({ progress, clock, random: deps.random ?? cryptoRandomInt });
+  const library = createLibraryService({ progress, quizzes });
   const game = createGameService({ progress, clock });
   const quizPublisher = createQuizPublishService({ clock, quizzes });
   const requireUnlocked = createRequireUnlocked(progress);
@@ -158,6 +162,12 @@ export function createApp(
   const books = createBookService();
   const wiki = createWikiService();
   const images = deps.images ?? createImageProvider(deps.env);
+  // Las URLs de contenido solo valen si son de nuestra cuenta de Cloudinary (y `demo` fuera de producción).
+  configureCloudinaryAccount({
+    cloudName: deps.env.CLOUDINARY_CLOUD_NAME,
+    production: deps.env.NODE_ENV === 'production',
+  });
+  const quizAppearance = createQuizAppearanceService({ clock, images });
   const s3 = s3ConfigFromEnv(deps.env);
   const storage =
     deps.storage ?? (s3 ? new S3StorageProvider({ ...s3, clock }) : new MemoryStorageProvider());
@@ -213,6 +223,7 @@ export function createApp(
       progress,
       quizPublisher,
       quizAdmin,
+      quizAppearance,
       books,
       wiki,
       images,
@@ -220,6 +231,7 @@ export function createApp(
       extras,
       welcome,
       publicBooks,
+      library,
       publicWiki,
       posts,
       fanArts,

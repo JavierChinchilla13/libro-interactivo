@@ -18,6 +18,8 @@
     "seed:admin": "tsx --env-file-if-exists=.env scripts/seed-admin.ts",
     "mail:test": "tsx --env-file-if-exists=.env scripts/send-test-mail.ts",
     "repair:progress": "tsx --env-file-if-exists=.env scripts/repair-progress.ts",
+    "cleanup:orphans": "tsx --env-file-if-exists=.env scripts/cleanup-orphans.ts",
+    "migrate:accents": "tsx --env-file-if-exists=.env scripts/migrate-accents.ts",
     "load:smoke": "tsx scripts/load-smoke.ts"
   },
   "devDependencies": {

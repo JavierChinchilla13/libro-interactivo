@@ -1,0 +1,113 @@
+/* Celebración del resultado de un quiz: solo `transform` y `opacity`, una vez, y quieta con «reducir movimiento». */
+@layer components {
+  .celebration {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 3.5rem;
+  }
+  .celebration-orb {
+    position: relative;
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    border: 1px solid color-mix(in srgb, var(--token-accent) 55%, var(--token-line));
+    background: radial-gradient(120% 120% at 20% 10%, var(--token-primary), var(--token-sunken));
+  }
+  .celebration-orb[data-key='rain'] {
+    background: radial-gradient(120% 120% at 70% 0%, #0b3a4f, var(--token-sunken));
+  }
+  .celebration-orb[data-key='neural'] {
+    background: radial-gradient(120% 120% at 20% 20%, #17306b, var(--token-sunken));
+  }
+  .celebration-orb[data-key='constellation'] {
+    background: radial-gradient(120% 120% at 50% 0%, #2a2766, var(--token-sunken));
+  }
+  .celebration-orb[data-key='gradient'] {
+    background: linear-gradient(135deg, #123057, #2a2766 60%, #0e4a5c);
+  }
+  .celebration-orb[data-key='field'] {
+    background: radial-gradient(120% 120% at 30% 100%, #0e4a4a, var(--token-sunken));
+  }
+  .celebration-orb[data-key='neon'] {
+    background: radial-gradient(120% 120% at 50% 50%, #1d1a4d, var(--token-sunken));
+  }
+  .celebration-seal {
+    margin: 0;
+    font-weight: 600;
+  }
+  .celebration-ring,
+  .celebration-spark {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .celebration-ring {
+    left: 0;
+    top: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-top: -1.25rem;
+    border-radius: 9999px;
+    border: 2px solid var(--token-primary);
+  }
+  .celebration-spark {
+    left: 1.25rem;
+    top: 50%;
+    width: 0.375rem;
+    height: 0.375rem;
+    margin: -0.1875rem 0 0 -0.1875rem;
+    border-radius: 9999px;
+    background: var(--token-primary);
+  }
+  .celebration-spark:nth-child(3n + 2) {
+    background: var(--token-accent);
+  }
+  .celebration-spark:nth-child(3n) {
+    background: var(--token-warning);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .celebration-seal {
+      animation: celebration-seal 280ms var(--token-ease-out) both;
+    }
+    .celebration-ring {
+      animation: celebration-ring 700ms ease-out both;
+    }
+    .celebration-spark {
+      animation: celebration-spark 900ms cubic-bezier(0.23, 1, 0.32, 1) both;
+      animation-delay: calc(var(--i) * 25ms);
+    }
+  }
+  @keyframes celebration-seal {
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes celebration-ring {
+    from {
+      opacity: 0.6;
+      transform: scale(0.6);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.6);
+    }
+  }
+  @keyframes celebration-spark {
+    from {
+      opacity: 1;
+      transform: translate(0, 0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translate(var(--dx), var(--dy)) scale(0.4);
+    }
+  }
+}

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { imageRefSchema, objectIdSchema } from './common.js';
+import { readerAppearanceSchema, readerQuestionAppearanceSchema } from './quizAppearance.js';
+import { publicBookSummarySchema } from './site.js';
 import { fieldSlugSchema, fieldVisualKeySchema } from './wiki.js';
 
 /**
@@ -59,6 +61,8 @@ export const answerDefSchema = z.object({
   text: z.string().min(1).max(500),
   /** Resultado al que suma esta respuesta; debe existir en los `results` de la misma etapa. */
   resultKey: quizIdSchema,
+  /** «Dejar al final»: al barajar las respuestas, esta se queda al final (p. ej. «Ninguna de las anteriores»). */
+  pinLast: z.boolean().optional(),
 });
 
 export const questionDefSchema = z.object({
@@ -73,6 +77,11 @@ export const stageDefSchema = z.object({
   order: z.number().int().min(1),
   title: z.string().min(1).max(120).optional(),
   shuffleQuestions: z.boolean().default(true),
+  /**
+   * Las respuestas de cada pregunta se barajan (por intento: el orden se decide al iniciar la etapa y se guarda). Un
+   * quiz publicado sin este campo se lee como `true`.
+   */
+  shuffleAnswers: z.boolean().default(true),
   /** Etapa condicional: solo se ejecuta si el resultado de `conditionStageId` fue `conditionResultKey`. */
   conditionStageId: quizIdSchema.optional(),
   conditionResultKey: quizIdSchema.optional(),
@@ -122,6 +131,8 @@ export const readerQuestionSchema = z.object({
   text: z.string(),
   image: imageRefSchema.optional(),
   answers: z.array(readerAnswerSchema),
+  /** Fondo, velo y acento propios de esta pregunta (solo si la autora los personalizó): decoración. */
+  appearance: readerQuestionAppearanceSchema.optional(),
 });
 export const stagePayloadSchema = z.object({
   stageId: quizIdSchema,
@@ -166,6 +177,11 @@ export const quizIntroResponseSchema = z.object({
   inProgressAttemptId: objectIdSchema.optional(),
   /** `false` en un quiz de una sola vez que ya se completó. */
   canStart: z.boolean(),
+  /**
+   * Solo decoración (fondo, velo y acento). Viaja únicamente aquí —con sesión y desbloqueo en cada petición—: nunca en
+   * listas, en `/books*` ni en los payloads de intento o resultado. Sin `resultKey` ni nada que revele un resultado.
+   */
+  appearance: readerAppearanceSchema.optional(),
 });
 export type QuizIntroResponse = z.infer<typeof quizIntroResponseSchema>;
 
@@ -237,6 +253,8 @@ export const resultsListResponseSchema = z.object({
       completedAt: z.string(),
       resultTitle: z.string(),
       media: mediaSchema.optional(),
+      /** Campo del resultado vigente (solo clave visual y nombre), igual que en el detalle del resultado. */
+      visual: z.object({ key: fieldVisualKeySchema, fieldName: z.string() }).optional(),
     }),
   ),
 });
@@ -298,3 +316,38 @@ export const publishQuizResponseSchema = z.object({
   warnings: z.array(quizIssueSchema),
 });
 export type PublishQuizResponse = z.infer<typeof publishQuizResponseSchema>;
+
+// --- «Tus libros» del panel de la lectora ---
+
+/**
+ * Cómo se muestra un libro en «Tus libros»:
+ * - `open`: publicado y ya abierto (canjeó el QR de su primer quiz): portada, progreso y entrada.
+ * - `locked`: publicado pero sin abrir: solo portada y título (públicos) con candado; nada más.
+ * - `upcoming`: «próximamente», solo si la autora lo encendió para el panel; con cuenta atrás si hay fecha.
+ */
+export const libraryAccessSchema = z.enum(['open', 'locked', 'upcoming']);
+export type LibraryAccess = z.infer<typeof libraryAccessSchema>;
+
+export const readerLibraryResponseSchema = z.object({
+  books: z.array(
+    z.object({
+      /** Solo datos públicos del libro (portada, título, lema, fecha, tema). */
+      book: publicBookSummarySchema,
+      access: libraryAccessSchema,
+      /** Solo si `access === 'open'`: avance y siguiente paso (id, tipo y título; nada de contenido). */
+      progress: z
+        .object({
+          done: z.number().int().min(0),
+          total: z.number().int().min(0),
+          nextExperience: z
+            .object({ kind: z.enum(['quiz', 'game']), id: objectIdSchema, title: z.string() })
+            .optional(),
+          bookCompleted: z.boolean(),
+        })
+        .optional(),
+      /** Solo si `access === 'open'` y ya completó un quiz con campo: «Tu campo» más reciente. Sin `fieldSlug`. */
+      field: z.object({ key: fieldVisualKeySchema, fieldName: z.string() }).optional(),
+    }),
+  ),
+});
+export type ReaderLibraryResponse = z.infer<typeof readerLibraryResponseSchema>;

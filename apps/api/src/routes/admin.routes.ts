@@ -6,6 +6,8 @@ import {
   quizDraftSchema,
   quizListQuerySchema,
   quizParamsSchema,
+  revertQuizAppearanceRequestSchema,
+  updateQuizAppearanceRequestSchema,
   updateQuizMetaRequestSchema,
   wikiEntryInputSchema,
   wikiListQuerySchema,
@@ -67,6 +69,19 @@ export function mountQuizEditorRoutes(
   );
   router.get('/:quizId/versions', params, controller.versions);
   router.post('/:quizId/archive', params, controller.archive);
+  // Apariencia en vivo (regla 5, excepción acotada): no crea versión. Cualquier editora o administradora.
+  router.get('/:quizId/appearance', params, controller.getAppearance);
+  router.get('/:quizId/appearance/history', params, controller.appearanceHistory);
+  router.put(
+    '/:quizId/appearance',
+    validate({ params: quizParamsSchema, body: updateQuizAppearanceRequestSchema }),
+    controller.updateAppearance,
+  );
+  router.post(
+    '/:quizId/appearance/revert',
+    validate({ params: quizParamsSchema, body: revertQuizAppearanceRequestSchema }),
+    controller.revertAppearance,
+  );
 }
 
 /** `/admin/wiki`: CRUD de la wiki unificada + reordenar. */

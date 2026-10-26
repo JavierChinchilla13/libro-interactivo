@@ -1,0 +1,71 @@
+/* «Cómo funciona»: hilo con un nodo por paso. Por defecto todo está visible y encendido (sin JS, sin soporte de
+   `animation-timeline` y con «reducir movimiento»); el nodo se enciende al entrar en pantalla solo si hay movimiento. */
+@layer components {
+  .how-steps {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .how-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding-left: 2rem;
+    border-left: 1px solid color-mix(in srgb, var(--token-primary) 45%, var(--token-line));
+  }
+  .how-step::before {
+    content: '';
+    position: absolute;
+    left: -0.4375rem;
+    top: 0.3rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 9999px;
+    border: 2px solid var(--token-primary);
+    background: var(--token-bg);
+  }
+  .how-step-number {
+    font-family: var(--token-font-display);
+    font-size: 1.75rem;
+    line-height: 1;
+    color: var(--token-primary);
+  }
+  @media (min-width: 64rem) {
+    .how-steps {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1.5rem;
+    }
+    .how-step {
+      padding: 1.5rem 0 0;
+      border-left: 0;
+      border-top: 1px solid color-mix(in srgb, var(--token-primary) 45%, var(--token-line));
+    }
+    .how-step::before {
+      left: 0;
+      top: -0.4375rem;
+    }
+  }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .how-step::before {
+        animation: how-node linear both;
+        animation-timeline: view();
+        animation-range: entry calc(var(--i, 0) * 6%) entry calc(60% + var(--i, 0) * 6%);
+      }
+    }
+  }
+  @keyframes how-node {
+    from {
+      border-color: var(--token-line);
+      background: var(--token-surface-alt);
+    }
+    to {
+      border-color: var(--token-primary);
+      background: var(--token-bg);
+    }
+  }
+}

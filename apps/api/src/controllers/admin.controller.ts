@@ -3,6 +3,8 @@ import type {
   CreateQuizRequest,
   ImageSignatureRequest,
   QuizDraft,
+  RevertQuizAppearanceRequest,
+  UpdateQuizAppearanceRequest,
   UpdateQuizMetaRequest,
   WikiEntryInput,
   WikiReorderRequest,
@@ -14,6 +16,7 @@ import { getInput } from '../middleware/validate.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
 import type { BookService } from '../services/book.service.js';
 import type { QuizAdminService } from '../services/quizAdmin.service.js';
+import type { QuizAppearanceService } from '../services/quizAppearance.service.js';
 import type { WikiListFilter, WikiService } from '../services/wiki.service.js';
 
 interface BookParams {
@@ -45,7 +48,10 @@ export function createAdminBookController(books: BookService) {
   return { list, get, create, replace };
 }
 
-export function createAdminQuizEditorController(quizzes: QuizAdminService) {
+export function createAdminQuizEditorController(
+  quizzes: QuizAdminService,
+  appearance: QuizAppearanceService,
+) {
   const list: RequestHandler = async (_req, res) => {
     const { query } = getInput<
       unknown,
@@ -77,7 +83,37 @@ export function createAdminQuizEditorController(quizzes: QuizAdminService) {
     const { params } = getInput<unknown, unknown, QuizParams>(res);
     res.json(await quizzes.versions(params.quizId));
   };
-  return { list, get, create, saveDraft, updateMeta, archive, versions };
+  // Apariencia en vivo (fuera de las versiones): cualquier editora o administradora.
+  const getAppearance: RequestHandler = async (_req, res) => {
+    const { params } = getInput<unknown, unknown, QuizParams>(res);
+    res.json(await appearance.get(params.quizId));
+  };
+  const appearanceHistory: RequestHandler = async (_req, res) => {
+    const { params } = getInput<unknown, unknown, QuizParams>(res);
+    const { rev, history } = await appearance.get(params.quizId);
+    res.json({ rev, history });
+  };
+  const updateAppearance: RequestHandler = async (_req, res) => {
+    const { body, params } = getInput<UpdateQuizAppearanceRequest, unknown, QuizParams>(res);
+    res.json(await appearance.update(params.quizId, getAuth(res), body));
+  };
+  const revertAppearance: RequestHandler = async (_req, res) => {
+    const { body, params } = getInput<RevertQuizAppearanceRequest, unknown, QuizParams>(res);
+    res.json(await appearance.revert(params.quizId, getAuth(res), body));
+  };
+  return {
+    list,
+    get,
+    create,
+    saveDraft,
+    updateMeta,
+    archive,
+    versions,
+    getAppearance,
+    appearanceHistory,
+    updateAppearance,
+    revertAppearance,
+  };
 }
 
 export function createAdminWikiController(wiki: WikiService) {

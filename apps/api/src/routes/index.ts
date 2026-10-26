@@ -41,6 +41,7 @@ import {
 } from '../controllers/site.controller.js';
 import type { Clock } from '../lib/clock.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
+import type { LibraryService } from '../services/library.service.js';
 import type { PublicBookService } from '../services/publicBook.service.js';
 import type { FanArtService, ReviewService } from '../services/community.service.js';
 import type { AdminMetricsService } from '../services/adminMetrics.service.js';
@@ -53,6 +54,7 @@ import type { AccessService } from '../services/access.service.js';
 import type { ExtraService } from '../services/extra.service.js';
 import type { BookService } from '../services/book.service.js';
 import type { QuizAdminService } from '../services/quizAdmin.service.js';
+import type { QuizAppearanceService } from '../services/quizAppearance.service.js';
 import type { WikiService } from '../services/wiki.service.js';
 import type { Guards } from '../middleware/auth.js';
 import type { RequireUnlocked } from '../middleware/unlocked.js';
@@ -113,8 +115,10 @@ export interface RouteDeps {
   contact: ContactService;
   quizzes: QuizService;
   progress: ProgressService;
+  library: LibraryService;
   quizPublisher: QuizPublishService;
   quizAdmin: QuizAdminService;
+  quizAppearance: QuizAppearanceService;
   books: BookService;
   wiki: WikiService;
   images: ImageProvider;
@@ -141,7 +145,7 @@ export interface RouteDeps {
 /** Router raíz de `/api`. Cada módulo (auth, quizzes, …) monta aquí su propio router. */
 export function createApiRouter(deps: RouteDeps): Router {
   const accountController = createAccountController(deps.account, deps.env);
-  const quizController = createQuizController(deps.quizzes, deps.progress);
+  const quizController = createQuizController(deps.quizzes, deps.progress, deps.library);
   const router = Router();
   router.use('/health', createHealthRouter(deps.isDbUp));
   router.use(
@@ -205,7 +209,7 @@ export function createApiRouter(deps: RouteDeps): Router {
     '/admin/quizzes',
     createAdminQuizRouter(
       createAdminQuizController(deps.quizPublisher),
-      createAdminQuizEditorController(deps.quizAdmin),
+      createAdminQuizEditorController(deps.quizAdmin, deps.quizAppearance),
       deps.guards,
     ),
   );

@@ -27,6 +27,7 @@ export function toBookResponse(book: NonNullable<BookLean>): BookResponse {
     order: book.order,
     status: book.status,
     ...(book.releaseDate ? { releaseDate: book.releaseDate.toISOString().slice(0, 10) } : {}),
+    showInReaderPanel: book.showInReaderPanel === true,
     purchaseLinks: (book.purchaseLinks ?? []) as BookResponse['purchaseLinks'],
     wikiSections: (book.wikiSections ?? []) as WikiSection[],
     ...(book.theme ? { theme: book.theme as BookResponse['theme'] } : {}),
@@ -74,6 +75,7 @@ export function createBookService() {
       order: input.order,
       status: input.status,
       releaseDate: input.releaseDate ? new Date(`${input.releaseDate}T00:00:00.000Z`) : undefined,
+      showInReaderPanel: input.showInReaderPanel,
       purchaseLinks: input.purchaseLinks,
       wikiSections: input.wikiSections.map((section) => ({
         ...section,

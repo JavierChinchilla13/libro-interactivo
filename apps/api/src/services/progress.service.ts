@@ -112,6 +112,24 @@ export function createProgressService(deps: ProgressDeps) {
     return story;
   }
 
+  /**
+   * Qué libros publicados tiene «abiertos» la persona: canjeó algún QR del libro (el de su primer quiz o el del juego)
+   * o ya completó algo. El personal del sitio los tiene todos abiertos, y sin exigencia de QR no hay nada que canjear.
+   * Solo ids: ningún contenido.
+   */
+  async function openedBooks(actor: Actor, bookIds: string[]): Promise<Set<string>> {
+    if (isStaff(actor.role) || !deps.requireQrUnlock) return new Set(bookIds);
+    if (bookIds.length === 0) return new Set();
+    const progress = await UserProgress.find({ userId: actor.userId, bookId: { $in: bookIds } })
+      .select('bookId completed unlocked')
+      .lean();
+    return new Set(
+      progress
+        .filter((doc) => (doc.unlocked ?? []).length > 0 || (doc.completed ?? []).length > 0)
+        .map((doc) => doc.bookId.toString()),
+    );
+  }
+
   /** Estado de cada quiz del libro para el dashboard (solo nombres y orden: nada de contenido). */
   async function getProgress(userId: string, bookId: string): Promise<ProgressResponse> {
     const book = await Book.findById(bookId).select('status').lean();
@@ -408,6 +426,7 @@ export function createProgressService(deps: ProgressDeps) {
     assertQuizAccess,
     assertGameAccess,
     getProgress,
+    openedBooks,
     recordQuizCompletion,
     recordGameCompletion,
     unlock,

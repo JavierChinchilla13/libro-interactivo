@@ -60,8 +60,8 @@ const detail = {
     { kind: 'term', title: 'Glosario', locked: false },
   ],
   experiences: [
-    { kind: 'quiz', id: '670000000000000000000021', order: 1, title: '[PLACEHOLDER] Quiz uno' },
-    { kind: 'quiz', id: '670000000000000000000022', order: 2, title: '[PLACEHOLDER] Quiz dos' },
+    { kind: 'quiz', order: 1 },
+    { kind: 'quiz', order: 2 },
   ],
 };
 const books = {
@@ -303,14 +303,16 @@ describe('landing: con contenido', () => {
     expect(items[2]).not.toHaveTextContent('Bloqueado');
   });
 
-  it('las experiencias muestran solo el nombre y «bloqueado»; con sesión remiten al panel', async () => {
+  it('las experiencias muestran solo su tipo y posición (nunca el título) y «bloqueado»; con sesión remiten al panel', async () => {
     mockApi(full, NO_SESSION);
     const visitor = renderAt('/');
     const section = await screen.findByRole('region', { name: /experiencia inmersiva/ });
     expect(within(section).getAllByText('[PLACEHOLDER] Sigue leyendo')).toHaveLength(1);
     expect(within(section).getByText('Se abre con el QR de tu libro')).toBeInTheDocument();
     expect(within(section).getByText('Antes, completa el Quiz 1')).toBeInTheDocument();
-    expect(within(section).getByText('[PLACEHOLDER] Quiz dos')).toBeInTheDocument();
+    expect(within(section).getByText('Experiencia 1')).toBeInTheDocument();
+    expect(within(section).getByText('Quiz 2')).toBeInTheDocument();
+    expect(within(section).queryByText(/Quiz uno|Quiz dos/)).not.toBeInTheDocument();
     expect(within(section).queryByRole('link', { name: 'Ver mi avance' })).not.toBeInTheDocument();
     visitor.unmount();
 
@@ -346,8 +348,7 @@ describe('landing: con contenido', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('los títulos de experiencia van en la letra de texto, sea cual sea su largo', async () => {
-    const longTitle = '[PLACEHOLDER] Quiz uno: se juega una sola vez y sin repetir';
+  it('el nombre de cada experiencia («Quiz 2», «Juego») va en la letra de texto', async () => {
     mockApi(
       {
         ...full,
@@ -355,8 +356,8 @@ describe('landing: con contenido', () => {
           json({
             ...detail,
             experiences: [
-              { kind: 'quiz', id: '670000000000000000000021', order: 1, title: longTitle },
-              { kind: 'quiz', id: '670000000000000000000022', order: 2, title: 'Quiz dos' },
+              { kind: 'quiz', order: 1 },
+              { kind: 'game', order: 2 },
             ],
           }),
       },
@@ -364,8 +365,8 @@ describe('landing: con contenido', () => {
     );
     renderAt('/');
     const section = await screen.findByRole('region', { name: /experiencia inmersiva/ });
-    expect(within(section).getByText(longTitle).className).not.toContain('font-display');
-    expect(within(section).getByText('Quiz dos').className).not.toContain('font-display');
+    expect(within(section).getByText('Quiz 1').className).not.toContain('font-display');
+    expect(within(section).getByText('Juego').className).not.toContain('font-display');
   });
 
   it('con un solo libro no hay secuencia de publicación', async () => {
@@ -619,9 +620,7 @@ describe('landing: composición nueva', () => {
   it('el mosaico limita la tarjeta grande a 2 filas y reparte el resto en filas completas', async () => {
     const experiences = Array.from({ length: 5 }, (_, i) => ({
       kind: i === 4 ? 'game' : 'quiz',
-      id: `67000000000000000000002${i}`,
       order: i + 1,
-      title: `[PLACEHOLDER] Experiencia ${i + 1}`,
     }));
     mockApi(
       {

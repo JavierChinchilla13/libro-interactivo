@@ -62,6 +62,7 @@ export async function publishDirect(
     version,
     title: content.title,
     instructionsHtml: content.instructionsHtml,
+    ...(content.image ? { image: content.image } : {}),
     settings: content.settings,
     stages: content.stages,
     results: content.results,

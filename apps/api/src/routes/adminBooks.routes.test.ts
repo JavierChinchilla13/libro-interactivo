@@ -67,6 +67,26 @@ describe('POST /api/admin/books', () => {
     expect(book.purchaseLinks[1]?.url).toBeUndefined(); // «compras presenciales» no lleva enlace
   });
 
+  it('«mostrar en el panel» viene apagado y se guarda al encenderlo', async () => {
+    const { editor } = await staffWorld();
+    const off = await editor.post('/api/admin/books').send(validBook()).expect(201);
+    expect(bookResponseSchema.parse(off.body).showInReaderPanel).toBe(false);
+    const on = await editor
+      .post('/api/admin/books')
+      .send(
+        validBook({
+          slug: 'libro-2',
+          order: 2,
+          status: 'upcoming',
+          cover: image('portada'),
+          showInReaderPanel: true,
+        }),
+      )
+      .expect(201);
+    expect(bookResponseSchema.parse(on.body).showInReaderPanel).toBe(true);
+    expect((await Book.findOne({ slug: 'libro-2' }).lean())?.showInReaderPanel).toBe(true);
+  });
+
   it('sanea el HTML (sinopsis, advertencia y texto de las pestañas de la wiki)', async () => {
     const { editor } = await staffWorld();
     const res = await editor

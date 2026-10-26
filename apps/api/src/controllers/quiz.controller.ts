@@ -2,6 +2,7 @@ import type { SubmitAnswersRequest } from '@libro/shared';
 import type { RequestHandler } from 'express';
 import { getAuth } from '../middleware/auth.js';
 import { getInput } from '../middleware/validate.js';
+import type { LibraryService } from '../services/library.service.js';
 import type { ProgressService } from '../services/progress.service.js';
 import type { QuizService } from '../services/quiz.service.js';
 import type { QuizPublishService } from '../services/quizPublish.service.js';
@@ -13,15 +14,25 @@ interface BookQuery {
   bookId: string;
 }
 
-export function createQuizController(quizzes: QuizService, progress: ProgressService) {
+export function createQuizController(
+  quizzes: QuizService,
+  progress: ProgressService,
+  library: LibraryService,
+) {
   const getIntro: RequestHandler = async (_req, res) => {
     const { params } = getInput<unknown, unknown, QuizParams>(res);
-    res.json(await quizzes.getIntro(getAuth(res), params.quizId));
+    const intro = await quizzes.getIntro(getAuth(res), params.quizId);
+    // Depende de la sesión y del desbloqueo: ninguna caché compartida debe guardarlo.
+    res.set('Cache-Control', 'private, no-store');
+    res.json(intro);
   };
 
   const startAttempt: RequestHandler = async (_req, res) => {
     const { params } = getInput<unknown, unknown, QuizParams>(res);
-    res.json(await quizzes.startAttempt(getAuth(res), params.quizId));
+    const attempt = await quizzes.startAttempt(getAuth(res), params.quizId);
+    // La etapa lleva ajustes de apariencia propios de la lectora y su desbloqueo: ninguna caché compartida debe guardarla.
+    res.set('Cache-Control', 'private, no-store');
+    res.json(attempt);
   };
 
   const submitAnswers: RequestHandler = async (_req, res) => {
@@ -30,7 +41,9 @@ export function createQuizController(quizzes: QuizService, progress: ProgressSer
       unknown,
       { attemptId: string; stageId: string }
     >(res);
-    res.json(await quizzes.submitAnswers(getAuth(res), params.attemptId, params.stageId, body));
+    const next = await quizzes.submitAnswers(getAuth(res), params.attemptId, params.stageId, body);
+    res.set('Cache-Control', 'private, no-store');
+    res.json(next);
   };
 
   const listResults: RequestHandler = async (_req, res) => {
@@ -48,7 +61,19 @@ export function createQuizController(quizzes: QuizService, progress: ProgressSer
     res.json(await progress.getProgress(getAuth(res).userId, query.bookId));
   };
 
-  return { getIntro, startAttempt, submitAnswers, listResults, getQuizResults, getProgress };
+  const getLibrary: RequestHandler = async (_req, res) => {
+    res.json(await library.getLibrary(getAuth(res)));
+  };
+
+  return {
+    getIntro,
+    startAttempt,
+    submitAnswers,
+    listResults,
+    getQuizResults,
+    getProgress,
+    getLibrary,
+  };
 }
 
 export function createAdminQuizController(publisher: QuizPublishService) {

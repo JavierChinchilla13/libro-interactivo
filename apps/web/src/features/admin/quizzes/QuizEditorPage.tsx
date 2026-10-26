@@ -7,13 +7,14 @@ import { Alert, Badge, Loading, PageHeader, TabPanel, Tabs } from '../../../shar
 import { keys, quizzesApi } from '../api';
 import { errorMessage } from '../errors';
 import type { Draft } from './draft';
+import { AppearanceTab } from './AppearanceTab';
 import { GeneralTab } from './GeneralTab';
 import { PreviewPanel } from './PreviewPanel';
 import { ResultsTab } from './ResultsTab';
 import { StagesTab } from './StagesTab';
 import { VersionsTab } from './VersionsTab';
 
-type Tab = 'general' | 'etapas' | 'resultados' | 'versiones';
+type Tab = 'general' | 'etapas' | 'resultados' | 'apariencia' | 'versiones';
 
 const snapshot = (draft: Draft) => JSON.stringify(draft);
 
@@ -21,7 +22,7 @@ const snapshot = (draft: Draft) => JSON.stringify(draft);
 export function QuizEditorPage() {
   const { quizId = '' } = useParams();
   const detail = useQuery({ queryKey: keys.quiz(quizId), queryFn: () => quizzesApi.get(quizId) });
-  if (detail.isError) return <Alert>{errorMessage(detail.error)}</Alert>;
+  if (!detail.data && detail.isError) return <Alert>{errorMessage(detail.error)}</Alert>;
   if (!detail.data) return <Loading />;
   return <QuizEditor key={quizId} quizId={quizId} quiz={detail.data} />;
 }
@@ -32,6 +33,11 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   const [draft, setDraft] = useState<Draft>(quiz.draft);
   const [saved, setSaved] = useState(() => snapshot(quiz.draft));
   const [tab, setTab] = useState<Tab>('general');
+  const [appearanceOpened, setAppearanceOpened] = useState(false);
+  const openTab = (next: Tab) => {
+    if (next === 'apariencia') setAppearanceOpened(true);
+    setTab(next);
+  };
   const [report, setReport] = useState<QuizValidationResponse | null>(null);
   const [notice, setNotice] = useState<{ tone: 'success' | 'warning'; text: string } | null>(null);
   const [previewing, setPreviewing] = useState(false);
@@ -198,17 +204,23 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
       <Tabs
         label="Secciones del quiz"
         active={tab}
-        onChange={setTab}
+        onChange={openTab}
         tabs={[
           { id: 'general', label: 'General' },
           { id: 'etapas', label: 'Etapas y preguntas' },
           { id: 'resultados', label: 'Resultados' },
+          { id: 'apariencia', label: 'Apariencia' },
           { id: 'versiones', label: 'Versiones' },
         ]}
       />
       <fieldset disabled={archived} className="contents">
         <TabPanel id="general" active={tab}>
-          <GeneralTab quiz={quiz} draft={draft} onChange={setDraft} />
+          <GeneralTab
+            quiz={quiz}
+            draft={draft}
+            onChange={setDraft}
+            onOpenAppearance={() => openTab('apariencia')}
+          />
         </TabPanel>
         <TabPanel id="etapas" active={tab}>
           <StagesTab draft={draft} onChange={setDraft} />
@@ -217,6 +229,17 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           <ResultsTab draft={draft} bookId={quiz.bookId} onChange={setDraft} />
         </TabPanel>
       </fieldset>
+      {/* Una vez abierta se queda montada (oculta): cambiar de pestaña no debe tirar lo que está sin guardar. */}
+      {appearanceOpened ? (
+        <div
+          role="tabpanel"
+          id="panel-apariencia"
+          aria-labelledby="tab-apariencia"
+          hidden={tab !== 'apariencia'}
+        >
+          <AppearanceTab quiz={quiz} archived={archived} title={draft.title} />
+        </div>
+      ) : null}
       <TabPanel id="versiones" active={tab}>
         <VersionsTab quizId={quizId} archived={archived} />
       </TabPanel>

@@ -3,6 +3,7 @@ import {
   progressResponseSchema,
   publicBookDetailSchema,
   publicBookListResponseSchema,
+  readerLibraryResponseSchema,
   quizIntroResponseSchema,
   quizResultsResponseSchema,
   readerExtraResponseSchema,
@@ -21,6 +22,8 @@ export const booksApi = {
 };
 
 export const readerApi = {
+  /** «Tus libros»: estado de cada libro (abierto, bloqueado o próximamente) y avance de los abiertos. */
+  library: () => apiRequest('/me/library', readerLibraryResponseSchema),
   progress: (bookId: string) => apiRequest(`/me/progress?bookId=${bookId}`, progressResponseSchema),
   results: (bookId: string) =>
     apiRequest(`/me/results?bookId=${bookId}`, resultsListResponseSchema),
@@ -46,6 +49,7 @@ export const readerApi = {
 };
 
 export const readerKeys = {
+  library: ['reader', 'library'] as const,
   books: ['reader', 'books'] as const,
   progress: (bookId: string) => ['reader', 'progress', bookId] as const,
   results: (bookId: string) => ['reader', 'results', bookId] as const,

@@ -1,11 +1,47 @@
 import type { ResultPayload } from '@libro/shared';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 import { thumbUrl } from '../../shared/lib/cloudinary';
+import { useBackgroundPlayback } from '../../shared/lib/useBackgroundPlayback';
 import { FieldStage } from '../../shared/ui/FieldStage';
+import { LoopVideo, PlaybackToggle, type LoopVideoSource } from '../../shared/ui/LoopVideo';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 
 /** Cada bloque entra un poco después del anterior (se apaga con «reducir movimiento»). */
 const step = (index: number) => ({ animationDelay: `${index * 140}ms` });
+
+/**
+ * Clip corto y mudo del resultado. Corre solo en la pantalla del resultado; en una lista (historial) nunca se descarga
+ * hasta que la persona lo pulsa. Con «reducir movimiento» o ahorro de datos solo se ve el póster. Pausa fuera de
+ * pantalla y con la pestaña oculta, y no corre a la vez que otro elemento animado.
+ */
+function ResultVideo({
+  video,
+  autoplay,
+  style,
+}: {
+  video: LoopVideoSource;
+  autoplay: boolean;
+  style: CSSProperties;
+}) {
+  const { attachRoot, attachVideo, state } = useBackgroundPlayback({ autoplay });
+  return (
+    <figure
+      ref={attachRoot}
+      style={style}
+      className="result-video fade-up img-frame self-start rounded-token-xs"
+    >
+      <LoopVideo
+        source={video}
+        attachVideo={attachVideo}
+        canAnimate={state.canAnimate}
+        width={900}
+        className="result-video-media"
+        posterAlt={video.alt}
+      />
+      <PlaybackToggle state={state} label="video del resultado" className="result-video-toggle" />
+    </figure>
+  );
+}
 
 /**
  * Resultado de un quiz: título, imagen o video corto, descripción, datos y, si el quiz lo pide,
@@ -57,18 +93,7 @@ export function ResultView({
         />
       ) : null}
       {media?.kind === 'video' ? (
-        // Clip corto y mudo: se repite solo, pero con controles para quien prefiera pausarlo (reducir movimiento).
-        <video
-          src={media.video.url}
-          poster={media.video.posterUrl}
-          muted
-          loop
-          playsInline
-          controls
-          aria-label={media.video.alt}
-          style={step(1)}
-          className="img-frame fade-up max-h-96 max-w-full self-start rounded-token-xs"
-        />
+        <ResultVideo video={media.video} autoplay={asPage} style={step(1)} />
       ) : null}
 
       {result.description ? (

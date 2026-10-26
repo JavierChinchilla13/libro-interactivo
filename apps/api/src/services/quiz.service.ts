@@ -1,4 +1,5 @@
 import {
+  quizAppearanceSchema,
   quizContentSchema,
   type AttemptResponse,
   type QuizContent,
@@ -21,7 +22,10 @@ import {
   firstStage,
   nextStage,
   pickWinner,
+  answerOrderFor,
   questionOrderFor,
+  type AnswerOrder,
+  type QuestionAppearances,
   resolveStageAnswers,
   tallyAnswers,
   toResultPayload,
@@ -82,10 +86,30 @@ export function createQuizService(deps: QuizServiceDeps) {
     return { quiz, version, content: contentOf(version) };
   }
 
+  /**
+   * Ajustes de apariencia por pregunta (fondo, velo y acento) guardados en el quiz, sin las entradas vacías. Son
+   * decoración y viajan CON la etapa (no en la introducción), para no adelantar el fondo de preguntas que aún no se ven.
+   */
+  function questionAppearancesOf(raw: unknown): QuestionAppearances | undefined {
+    const parsed = quizAppearanceSchema.safeParse(raw);
+    const entries = Object.entries(parsed.success ? (parsed.data.questions ?? {}) : {}).filter(
+      ([, entry]) => Object.keys(entry).length > 0,
+    );
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+  }
+
   /** Etapa en curso de un intento abierto, lista para entregar. */
   function currentStagePayload(
-    attempt: { _id: Types.ObjectId; stages: { stageId: string; questionOrder: string[] }[] },
+    attempt: {
+      _id: Types.ObjectId;
+      stages: {
+        stageId: string;
+        questionOrder: string[];
+        answerOrder?: AnswerOrder | null | undefined;
+      }[];
+    },
     content: QuizContent,
+    questionAppearance?: QuestionAppearances,
   ): AttemptResponse {
     const entry = attempt.stages[attempt.stages.length - 1];
     const stage = content.stages.find((candidate) => candidate.id === entry?.stageId);
@@ -93,7 +117,7 @@ export function createQuizService(deps: QuizServiceDeps) {
     return {
       attemptId: attempt._id.toString(),
       status: 'in_progress',
-      stage: toStagePayload(stage, entry.questionOrder),
+      stage: toStagePayload(stage, entry.questionOrder, entry.answerOrder, questionAppearance),
     };
   }
 
@@ -107,12 +131,27 @@ export function createQuizService(deps: QuizServiceDeps) {
         .lean(),
     ]);
     const allowRetake = content.settings.allowRetake;
+    // La apariencia (fuera de las versiones) manda solo en lo que define: lo que no trae, lo toma del snapshot.
+    // `introHtml: ''` es «quitar a propósito» y sale vacío. Solo viajan fondo, velo y acento: nunca historial,
+    // revisión ni quién editó.
+    const parsed = quizAppearanceSchema.safeParse(quiz.appearance);
+    const appearance = parsed.success ? parsed.data : undefined;
+    const cover = appearance?.cover ?? content.image;
     return {
       id: quiz._id.toString(),
       bookId: quiz.bookId.toString(),
       title: content.title,
-      instructionsHtml: content.instructionsHtml,
-      ...(content.image ? { image: content.image } : {}),
+      instructionsHtml: appearance?.introHtml ?? content.instructionsHtml,
+      ...(cover ? { image: cover } : {}),
+      ...(appearance
+        ? {
+            appearance: {
+              ...(appearance.background ? { background: appearance.background } : {}),
+              overlay: appearance.overlay,
+              ...(appearance.accent ? { accent: appearance.accent } : {}),
+            },
+          }
+        : {}),
       allowRetake,
       status: completedCount > 0 ? 'completed' : 'available',
       completedCount,
@@ -136,7 +175,7 @@ export function createQuizService(deps: QuizServiceDeps) {
       const openContent = open.quizVersionId.equals(version._id)
         ? content
         : (await loadVersionById(open.quizVersionId)).content;
-      return currentStagePayload(open, openContent);
+      return currentStagePayload(open, openContent, questionAppearancesOf(quiz.appearance));
     }
 
     if (!isTest && !content.settings.allowRetake) {
@@ -153,6 +192,7 @@ export function createQuizService(deps: QuizServiceDeps) {
       .lean();
     const now = clock();
     const order = questionOrderFor(first, random);
+    const answerOrder = answerOrderFor(first, random);
     try {
       const attempt = await QuizAttempt.create({
         userId: actor.userId,
@@ -162,18 +202,24 @@ export function createQuizService(deps: QuizServiceDeps) {
         version: version.version,
         attemptNumber: (last?.attemptNumber ?? 0) + 1,
         status: 'in_progress',
-        stages: [{ stageId: first.id, questionOrder: order }],
+        stages: [
+          { stageId: first.id, questionOrder: order, ...(answerOrder ? { answerOrder } : {}) },
+        ],
         isTest,
         startedAt: now,
         expireAt: addDays(now, IN_PROGRESS_TTL_DAYS),
       });
-      return currentStagePayload({ _id: attempt._id, stages: attempt.stages }, content);
+      return currentStagePayload(
+        { _id: attempt._id, stages: attempt.stages },
+        content,
+        questionAppearancesOf(quiz.appearance),
+      );
     } catch (error) {
       if (!isDuplicateKey(error)) throw error;
       // Dos "iniciar" a la vez: gana uno; el otro reanuda el intento que quedó abierto.
       const winner = await QuizAttempt.findOne({ ...mine, status: 'in_progress' }).lean();
       if (!winner) throw error;
-      return currentStagePayload(winner, content);
+      return currentStagePayload(winner, content, questionAppearancesOf(quiz.appearance));
     }
   }
 
@@ -185,16 +231,61 @@ export function createQuizService(deps: QuizServiceDeps) {
    * ese campo siga bloqueada en la wiki. Es lo mismo que ya sabe por el título de su resultado; el cuerpo de la ficha
    * sigue bloqueado y no sale de aquí.
    */
+  async function visualOfResult(
+    content: QuizContent,
+    resultKey: string,
+    bookId: Types.ObjectId | string,
+  ): Promise<NonNullable<ResultPayload['visual']> | undefined> {
+    const fieldSlug = findResult(content, resultKey)?.fieldSlug;
+    if (!fieldSlug) return undefined;
+    const field = (await findPublishedFields(bookId, [fieldSlug])).get(fieldSlug);
+    return field?.visualKey ? { key: field.visualKey, fieldName: field.name } : undefined;
+  }
+
   async function withVisual(
     payload: ResultPayload,
     content: QuizContent,
     bookId: Types.ObjectId | string,
   ): Promise<ResultPayload> {
-    const fieldSlug = findResult(content, payload.key)?.fieldSlug;
-    if (!fieldSlug) return payload;
-    const field = (await findPublishedFields(bookId, [fieldSlug])).get(fieldSlug);
-    if (!field?.visualKey) return payload;
-    return { ...payload, visual: { key: field.visualKey, fieldName: field.name } };
+    const visual = await visualOfResult(content, payload.key, bookId);
+    return visual ? { ...payload, visual } : payload;
+  }
+
+  /**
+   * «Tu campo» más reciente por libro: el del último intento completado (no de prueba) cuyo resultado tiene campo con
+   * fondo. Solo clave visual y nombre; nunca el `fieldSlug` ni la `resultKey`.
+   */
+  async function latestFields(
+    userId: string,
+    bookIds: string[],
+  ): Promise<Map<string, NonNullable<ResultPayload['visual']>>> {
+    const found = new Map<string, NonNullable<ResultPayload['visual']>>();
+    if (bookIds.length === 0) return found;
+    const attempts = await QuizAttempt.find({
+      userId,
+      bookId: { $in: bookIds },
+      status: 'completed',
+      isTest: false,
+    })
+      .sort({ completedAt: -1 })
+      .lean();
+    const versions = new Map<string, QuizContent>();
+    const wanted = [...new Set(attempts.map((a) => a.quizVersionId.toString()))];
+    if (wanted.length > 0) {
+      for (const version of await QuizVersion.find({ _id: { $in: wanted } }).lean()) {
+        versions.set(version._id.toString(), contentOf(version));
+      }
+    }
+    for (const attempt of attempts) {
+      const bookId = attempt.bookId.toString();
+      if (found.has(bookId) || !attempt.finalResultKey) continue;
+      const content = versions.get(attempt.quizVersionId.toString());
+      const visual = content
+        ? await visualOfResult(content, attempt.finalResultKey, bookId)
+        : undefined;
+      if (visual) found.set(bookId, visual);
+    }
+    return found;
   }
 
   /**
@@ -230,6 +321,7 @@ export function createQuizService(deps: QuizServiceDeps) {
     const closed = {
       stageId: entry.stageId,
       questionOrder: entry.questionOrder,
+      ...(entry.answerOrder ? { answerOrder: entry.answerOrder } : {}),
       answers: checked.answers.map(({ questionId, answerId }) => ({
         questionId,
         answerId,
@@ -293,7 +385,12 @@ export function createQuizService(deps: QuizServiceDeps) {
     const next = nextStage(content, stage.id, winner.resultKey);
     if (!next)
       throw new AppError('INTERNAL', 'El quiz no tiene cómo continuar desde este resultado');
-    const nextEntry = { stageId: next.id, questionOrder: questionOrderFor(next, random) };
+    const nextAnswerOrder = answerOrderFor(next, random);
+    const nextEntry = {
+      stageId: next.id,
+      questionOrder: questionOrderFor(next, random),
+      ...(nextAnswerOrder ? { answerOrder: nextAnswerOrder } : {}),
+    };
     const advanced = await QuizAttempt.findOneAndUpdate(
       stillOpen,
       {
@@ -308,7 +405,14 @@ export function createQuizService(deps: QuizServiceDeps) {
     return {
       attemptId: advanced._id.toString(),
       status: 'in_progress',
-      stage: toStagePayload(next, nextEntry.questionOrder),
+      stage: toStagePayload(
+        next,
+        nextEntry.questionOrder,
+        nextAnswerOrder,
+        questionAppearancesOf(
+          (await Quiz.findById(attempt.quizId).select('appearance').lean())?.appearance,
+        ),
+      ),
     };
   }
 
@@ -335,24 +439,32 @@ export function createQuizService(deps: QuizServiceDeps) {
     const orderOf = new Map(quizzes.map((quiz) => [quiz._id.toString(), quiz.order]));
     const contentOfVersion = new Map(versions.map((v) => [v._id.toString(), contentOf(v)]));
 
-    const results = [...latest.values()].flatMap((attempt) => {
-      const content = contentOfVersion.get(attempt.quizVersionId.toString());
-      const result =
-        content && attempt.finalResultKey ? findResult(content, attempt.finalResultKey) : undefined;
-      if (!content || !result || !attempt.completedAt) return [];
-      const quizId = attempt.quizId.toString();
-      return [
-        {
-          quizId,
-          title: content.title,
-          order: orderOf.get(quizId) ?? 0,
-          attemptsCompleted: counts.get(quizId) ?? 1,
-          completedAt: attempt.completedAt.toISOString(),
-          resultTitle: result.title,
-          ...(result.media ? { media: result.media } : {}),
-        },
-      ];
-    });
+    const results = (
+      await Promise.all(
+        [...latest.values()].map(async (attempt) => {
+          const content = contentOfVersion.get(attempt.quizVersionId.toString());
+          const result =
+            content && attempt.finalResultKey
+              ? findResult(content, attempt.finalResultKey)
+              : undefined;
+          if (!content || !result || !attempt.completedAt || !attempt.finalResultKey) return [];
+          const quizId = attempt.quizId.toString();
+          const visual = await visualOfResult(content, attempt.finalResultKey, bookId);
+          return [
+            {
+              quizId,
+              title: content.title,
+              order: orderOf.get(quizId) ?? 0,
+              attemptsCompleted: counts.get(quizId) ?? 1,
+              completedAt: attempt.completedAt.toISOString(),
+              resultTitle: result.title,
+              ...(result.media ? { media: result.media } : {}),
+              ...(visual ? { visual } : {}),
+            },
+          ];
+        }),
+      )
+    ).flat();
     return { results: results.sort((a, b) => a.order - b.order) };
   }
 
@@ -416,7 +528,7 @@ export function createQuizService(deps: QuizServiceDeps) {
     };
   }
 
-  return { getIntro, startAttempt, submitAnswers, listResults, getQuizResults };
+  return { getIntro, startAttempt, submitAnswers, listResults, getQuizResults, latestFields };
 }
 
 export type QuizService = ReturnType<typeof createQuizService>;

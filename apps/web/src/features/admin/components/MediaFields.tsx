@@ -18,12 +18,18 @@ export function ImageField({
   onChange,
   purpose,
   hint,
+  altMaxLength,
+  removable = true,
 }: {
   label: string;
   value: ImageRefInput | undefined;
   onChange: (value: ImageRefInput | undefined) => void;
   purpose: Purpose;
   hint?: string;
+  /** Tope del texto alternativo (si el servidor lo tiene). */
+  altMaxLength?: number;
+  /** Falso: no se ofrece «Quitar» (solo cambiar). */
+  removable?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [alt, setAlt] = useState(value?.alt ?? '');
@@ -59,6 +65,7 @@ export function ImageField({
       <TextField
         label="Texto alternativo (describe la imagen)"
         value={value ? value.alt : alt}
+        {...(altMaxLength ? { maxLength: altMaxLength } : {})}
         onChange={(event) => {
           setAlt(event.target.value);
           if (value) onChange({ ...value, alt: event.target.value });
@@ -76,7 +83,7 @@ export function ImageField({
         <Button variant="secondary" loading={busy} onClick={() => input.current?.click()}>
           {value ? 'Cambiar imagen' : 'Subir imagen'}
         </Button>
-        {value ? (
+        {value && removable ? (
           <Button variant="ghost" onClick={() => onChange(undefined)}>
             Quitar
           </Button>

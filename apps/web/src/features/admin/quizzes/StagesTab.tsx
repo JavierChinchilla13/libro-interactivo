@@ -141,6 +141,12 @@ function StageEditor({
           onChange={(value) => onChange(updateStage(draft, stage.id, { shuffleQuestions: value }))}
         />
         <CheckField
+          label="Barajar las respuestas de cada pregunta"
+          hint="Cada intento las ve en otro orden (así la posición no delata el resultado). Cambiarlo exige publicar una versión nueva."
+          checked={stage.shuffleAnswers ?? true}
+          onChange={(value) => onChange(updateStage(draft, stage.id, { shuffleAnswers: value }))}
+        />
+        <CheckField
           label="El resultado de esta etapa es el resultado final del quiz"
           hint="Desactívalo si después sigue otra etapa."
           checked={stage.producesFinal}
@@ -316,39 +322,57 @@ function QuestionEditor({
       <fieldset className="flex flex-col gap-3">
         <legend className="text-sm font-medium">Respuestas y el resultado al que suman</legend>
         {question.answers.map((answer, position) => (
-          <div key={answer.id} className="grid gap-2 sm:grid-cols-[1fr_14rem_auto] sm:items-end">
-            <TextField
-              label={`Respuesta ${position + 1}`}
-              value={answer.text}
-              maxLength={500}
-              onChange={(event) =>
-                onChange(
-                  updateAnswer(draft, stage.id, question.id, answer.id, {
-                    text: event.target.value,
-                  }),
-                )
-              }
-            />
-            <SelectField
-              label="Suma al resultado"
-              value={answer.resultKey}
-              placeholder="Sin resultado"
-              options={resultOptions}
-              onChange={(event) =>
-                onChange(
-                  updateAnswer(draft, stage.id, question.id, answer.id, {
-                    resultKey: event.target.value,
-                  }),
-                )
-              }
-            />
-            <Button
-              variant="ghost"
-              aria-label={`Quitar la respuesta ${position + 1}`}
-              onClick={() => onChange(removeAnswer(draft, stage.id, question.id, answer.id))}
-            >
-              ✕
-            </Button>
+          <div key={answer.id} className="flex flex-col gap-1">
+            <div className="grid gap-2 sm:grid-cols-[1fr_14rem_auto] sm:items-end">
+              <TextField
+                label={`Respuesta ${position + 1}`}
+                value={answer.text}
+                maxLength={500}
+                onChange={(event) =>
+                  onChange(
+                    updateAnswer(draft, stage.id, question.id, answer.id, {
+                      text: event.target.value,
+                    }),
+                  )
+                }
+              />
+              <SelectField
+                label="Suma al resultado"
+                value={answer.resultKey}
+                placeholder="Sin resultado"
+                options={resultOptions}
+                onChange={(event) =>
+                  onChange(
+                    updateAnswer(draft, stage.id, question.id, answer.id, {
+                      resultKey: event.target.value,
+                    }),
+                  )
+                }
+              />
+              <Button
+                variant="ghost"
+                aria-label={`Quitar la respuesta ${position + 1}`}
+                onClick={() => onChange(removeAnswer(draft, stage.id, question.id, answer.id))}
+              >
+                ✕
+              </Button>
+            </div>
+            {(stage.shuffleAnswers ?? true) ? (
+              <CheckField
+                label={`Dejar la respuesta ${position + 1} al final`}
+                hint={
+                  position === 0
+                    ? 'Se queda al final aunque se barajen las demás (p. ej. «Ninguna de las anteriores»).'
+                    : undefined
+                }
+                checked={answer.pinLast ?? false}
+                onChange={(value) =>
+                  onChange(
+                    updateAnswer(draft, stage.id, question.id, answer.id, { pinLast: value }),
+                  )
+                }
+              />
+            ) : null}
           </div>
         ))}
         <Button

@@ -1,220 +1,222 @@
-import type { ProgressResponse } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
+import type { CSSProperties } from 'react';
 import { Link } from 'react-router';
-import { Alert, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
-import { ThreadItem, ThreadList } from '../../shared/ui/ThreadList';
 import { errorMessage } from '../../shared/api/messages';
+import { heightUrl } from '../../shared/lib/cloudinary';
+import { Alert, EmptyState } from '../../shared/ui/layout';
+import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { useSession } from '../auth/session';
-import { readerApi, readerKeys } from './api';
-import { useSelectedBook } from './useBook';
-import { LockIcon } from '../../shared/ui/icons';
+import { publicApi, publicKeys } from '../home/api';
+import { HowItWorks } from './HowItWorks';
+import { LibraryBookCard, type LibraryEntry } from './LibraryBookCard';
+import { nextHref } from './nextStep';
+import { useLibrary } from './useLibrary';
 
-type Experience = ProgressResponse['experiences'][number];
-
-/** Texto cuando algo está bloqueado: nunca revela contenido, solo qué falta. */
-export function lockedMessage(experience: Experience): string {
-  if (experience.lockedBy?.reason === 'order') {
-    return `Primero completa «${experience.lockedBy.waitingFor}».`;
-  }
-  return 'Sigue avanzando en tu lectura.';
+/** Orden de «Tus libros»: primero lo que tiene un paso por hacer, luego lo abierto, lo bloqueado y lo que viene. */
+export function sortLibrary(entries: readonly LibraryEntry[]): LibraryEntry[] {
+  const rank = (entry: LibraryEntry) =>
+    entry.access === 'open'
+      ? entry.progress?.nextExperience
+        ? 0
+        : 1
+      : entry.access === 'locked'
+        ? 2
+        : 3;
+  return [...entries].sort((a, b) => rank(a) - rank(b) || a.book.order - b.book.order);
 }
 
-const linkButton = 'btn';
-
-/** Un paso del hilo: el punto está encendido si ya se abrió (disponible o completado) y apagado si sigue bloqueado. */
-function ExperienceStep({
-  experience,
-  primary,
-  bookId,
-}: {
-  experience: Experience;
-  primary: boolean;
-  bookId: string;
-}) {
-  const isGame = experience.kind === 'game';
-  const playTo = isGame ? `/panel/juego/${bookId}` : `/panel/quiz/${experience.id}`;
+function GridSkeleton() {
   return (
-    <ThreadItem state={experience.status === 'locked' ? 'unlit' : 'lit'}>
-      <p className="label tabular-nums">{isGame ? 'Juego' : `Quiz ${experience.order}`}</p>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <h3 className="text-lg font-semibold">{experience.title}</h3>
-        {experience.status === 'completed' ? (
-          <span className="label !text-success">Completado</span>
-        ) : null}
-        {experience.status === 'available' ? (
-          <span className="label !text-primary">Disponible</span>
-        ) : null}
-        {experience.status === 'locked' ? <span className="label">Bloqueado</span> : null}
-      </div>
-
-      {experience.status === 'locked' ? (
-        <p className="mt-2 flex items-start gap-2 text-sm text-muted">
-          <LockIcon className="mt-0.5 size-4" />
-          {lockedMessage(experience)}
-        </p>
-      ) : null}
-
-      {experience.status === 'available' ? (
-        <Link
-          to={playTo}
-          className={`${linkButton} mt-3 ${primary ? 'btn-primary' : 'btn-secondary'}`}
-        >
-          {experience.inProgress ? 'Continuar' : isGame ? 'Jugar' : 'Empezar'}
-          <span className="sr-only"> {experience.title}</span>
-        </Link>
-      ) : null}
-
-      {experience.status === 'completed' ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {isGame ? null : (
-            <Link
-              to={`/panel/resultados/${experience.id}`}
-              className={`${linkButton} btn-secondary`}
-            >
-              Ver mi resultado<span className="sr-only"> de {experience.title}</span>
-            </Link>
-          )}
-          {experience.allowRetake ? (
-            <Link to={playTo} className={`${linkButton} text-muted underline`}>
-              {isGame ? 'Jugar de nuevo' : 'Repetir'}
-              <span className="sr-only"> {experience.title}</span>
-            </Link>
-          ) : (
-            <span className="text-xs text-muted">Solo se juega una vez</span>
-          )}
-        </div>
-      ) : null}
-    </ThreadItem>
+    <div
+      aria-hidden="true"
+      className="h-[27rem] animate-pulse motion-reduce:animate-none rounded-token-xl border border-line bg-surface md:h-[19rem]"
+    />
   );
 }
 
-/** Panel del lector: cómo va en el libro y qué puede hacer ahora. */
+/**
+ * Columnas de la cuadrícula según cuántas tarjetas pequeñas hay (la grande ocupa la fila entera): con una sola la
+ * tarjeta es horizontal; con dos, dos columnas que llenan la fila; con tres o más, tres desde pantallas anchas.
+ */
+export function gridColumns(smallCount: number): string {
+  if (smallCount <= 1) return 'grid-cols-1';
+  if (smallCount === 2) return 'grid-cols-1 sm:grid-cols-2';
+  return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+}
+
+const shortcut =
+  'flex items-center justify-between gap-4 border-t border-line py-4 transition-colors first:border-t-0 hover:text-primary active:bg-surface-alt/40';
+
+/**
+ * Entrada del panel de la lectora: saludo con su avance, «Tus libros» (cada libro con el estado que decide el
+ * servidor), qué es Universo Memorias y atajos. El hilo de experiencias de cada libro vive en `/panel/libros/:slug`.
+ */
 export function DashboardPage() {
   const session = useSession();
-  const { books, book, select, isPending, error } = useSelectedBook();
-  const bookId = book?.id ?? '';
-  const progress = useQuery({
-    queryKey: readerKeys.progress(bookId),
-    queryFn: () => readerApi.progress(bookId),
-    enabled: bookId !== '',
-    // Al volver de un quiz el avance debe estar al día.
-    staleTime: 0,
-  });
+  const library = useLibrary();
+  const site = useQuery({ queryKey: publicKeys.site, queryFn: publicApi.site, retry: false });
 
-  if (isPending) return <Loading />;
-  if (error) return <Alert>{errorMessage(error)}</Alert>;
+  const entries = sortLibrary(library.data?.books ?? []);
+  const open = entries.filter((entry) => entry.access === 'open');
+  const done = open.reduce((sum, entry) => sum + (entry.progress?.done ?? 0), 0);
+  const total = open.reduce((sum, entry) => sum + (entry.progress?.total ?? 0), 0);
+  const next = open.find((entry) => entry.progress?.nextExperience);
+  const nextStep = next?.progress?.nextExperience;
+  const href = next ? nextHref(next) : undefined;
 
-  const experiences = progress.data?.experiences ?? [];
-  const done = experiences.filter((e) => e.status === 'completed').length;
-  const nothingOpen = experiences.length > 0 && experiences.every((e) => e.status === 'locked');
-  // El único botón primario de la vista es el siguiente paso: el primer quiz disponible.
-  const nextId = experiences.find((e) => e.status === 'available')?.id;
+  const subtitle = library.data
+    ? open.length > 0
+      ? `${done} de ${total} experiencias abiertas en ${open.length === 1 ? 'tu libro' : `${open.length} libros`}`
+      : entries.length > 0
+        ? 'Escanea el QR de tu libro para abrir el primer quiz.'
+        : undefined
+    : undefined;
+
+  const universe = site.data?.universe;
+  const hasUniverse = Boolean(universe?.headline || universe?.introHtml);
+  // La primera imagen de la autora es el ambiente del saludo; la segunda (si hay) acompaña «Qué es el universo».
+  const ambient = universe?.headerImages?.[0];
+  const image = universe?.headerImages?.[1];
+  const noneOpen = library.data !== undefined && open.length === 0;
+  const hasLead = entries[0]?.access === 'open';
+  const smallCount = hasLead ? entries.length - 1 : entries.length;
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title={`Hola, ${session.data?.name ?? ''}`}
-        subtitle={book && books.length <= 1 ? book.title : undefined}
-        actions={
-          book && books.length > 1 ? (
-            <label className="flex min-w-0 max-w-full items-center gap-2 text-sm text-muted">
-              <span>Libro</span>
-              <select
-                value={book.id}
-                onChange={(event) => select(event.target.value)}
-                className="min-h-11 min-w-0 max-w-full rounded-token border border-border bg-surface px-2 text-text"
-              >
-                {books.map((candidate) => (
-                  <option key={candidate.id} value={candidate.id}>
-                    {candidate.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : undefined
-        }
-      />
-
-      {!book ? (
-        <EmptyState title="Todavía no hay libros disponibles">Vuelve pronto.</EmptyState>
-      ) : null}
-
-      {progress.isPending && book ? <Loading /> : null}
-      {progress.isError ? <Alert>{errorMessage(progress.error)}</Alert> : null}
-
-      {progress.data ? (
-        <>
-          <section aria-label="Avance" className="flex flex-col gap-2">
-            <p className="text-sm font-medium">
-              Progreso: {done} de {experiences.length}
-            </p>
-            <div
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={experiences.length}
-              aria-valuenow={done}
-              aria-label="Avance en el libro"
-              className="meter"
-            >
-              <div
-                className="meter-fill"
-                style={{ width: `${experiences.length ? (done / experiences.length) * 100 : 0}%` }}
-              />
-            </div>
-          </section>
-
-          {nothingOpen ? (
-            <Alert tone="warning" title="Aún no tienes experiencias abiertas">
-              Sigue leyendo y busca las pistas del libro: ahí empieza la aventura.
-            </Alert>
+    <div className="flex flex-col gap-14 md:gap-20">
+      <div className="flex flex-col gap-8">
+        <div className="fade-up greeting-block relative isolate">
+          {ambient ? (
+            <img
+              src={heightUrl(ambient.url, 360)}
+              alt=""
+              width={ambient.width}
+              height={ambient.height}
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
+              className="greeting-ambient"
+            />
           ) : null}
-
-          {experiences.length === 0 ? (
-            <EmptyState title="Este libro todavía no tiene quizzes publicados" />
-          ) : (
-            <ThreadList label="Experiencias del libro">
-              {experiences.map((experience) => (
-                <ExperienceStep
-                  key={experience.id}
-                  experience={experience}
-                  primary={experience.id === nextId}
-                  bookId={bookId}
-                />
-              ))}
-            </ThreadList>
-          )}
-
-          <section className="flex flex-col gap-2 border-t border-line pt-6">
-            <h2 className="text-lg font-semibold">Capítulos extra</h2>
-            {progress.data.bookCompleted ? (
-              <>
-                <p className="text-sm">
-                  ¡Completaste todo el libro! Ya puedes abrir los capítulos extra.
-                </p>
-                <Link to="/panel/extras" className={`${linkButton} self-start btn-secondary`}>
-                  Ver los extras
-                </Link>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-muted">
-                  Se desbloquean al completar todos los quizzes y el juego de este libro.
-                </p>
-                <span>
-                  <span className="label">Bloqueados</span>
-                </span>
-              </>
-            )}
-          </section>
-
-          <section className="flex flex-col gap-2 border-t border-line pt-6">
-            <h2 className="text-lg font-semibold">Mis resultados</h2>
-            <p className="text-sm text-muted">Todo lo que has descubierto.</p>
-            <Link to="/panel/resultados" className={`${linkButton} btn-secondary self-start`}>
-              Ver mis resultados
+          <h1 className="page-title greeting-title">{`Hola, ${session.data?.name ?? ''}`}</h1>
+          {subtitle ? <p className="mt-2 text-base text-muted">{subtitle}</p> : null}
+          {nextStep && href ? (
+            <Link to={href} className="btn btn-primary btn-lg mt-6">
+              Seguir con {nextStep.title}
             </Link>
-          </section>
-        </>
+          ) : null}
+        </div>
+
+        {noneOpen && entries.length > 0 ? <HowItWorks /> : null}
+
+        <section aria-labelledby="tus-libros" className="flex flex-col gap-4">
+          <h2 id="tus-libros" className="section-title text-2xl">
+            Tus libros
+          </h2>
+          {library.isPending ? <GridSkeleton /> : null}
+          {library.isError ? (
+            <div className="flex flex-col items-start gap-3">
+              <Alert>{errorMessage(library.error)}</Alert>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => void library.refetch()}
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : null}
+          {library.data && entries.length === 0 ? (
+            <EmptyState title="Todavía no hay libros disponibles">Vuelve pronto.</EmptyState>
+          ) : null}
+          {entries.length === 1 && entries[0] ? (
+            <LibraryBookCard entry={entries[0]} featured priority />
+          ) : null}
+          {entries.length > 1 ? (
+            <ul className={`grid gap-4 ${gridColumns(smallCount)}`} aria-label="Tus libros">
+              {entries.map((entry, index) => {
+                const lead = index === 0 && entry.access === 'open';
+                // Una sola tarjeta pequeña junto a la grande: horizontal y de ancho completo (sin hueco a la derecha).
+                const horizontal = !lead && hasLead && smallCount === 1;
+                return (
+                  // La tarjeta grande puede ser lo primero que se pinta: no se anima. Las demás entran escalonadas.
+                  <li
+                    key={entry.book.id}
+                    className={lead ? 'col-span-full' : index === 0 ? '' : 'reveal'}
+                    style={
+                      index > 0 ? ({ '--i': Math.min(index - 1, 4) } as CSSProperties) : undefined
+                    }
+                  >
+                    <LibraryBookCard
+                      entry={entry}
+                      featured={lead}
+                      horizontal={horizontal}
+                      priority={index === 0}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </section>
+      </div>
+
+      {library.data && !noneOpen ? <HowItWorks /> : null}
+
+      <nav aria-label="Atajos" className="border-t border-line pt-2">
+        <ul>
+          <li>
+            <Link to="/panel/resultados" className={shortcut}>
+              <span>
+                <span className="block font-semibold">Mis resultados</span>
+                <span className="text-sm text-muted">Todo lo que has descubierto.</span>
+              </span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          </li>
+          <li>
+            <Link to="/wiki" className={shortcut}>
+              <span>
+                <span className="block font-semibold">Wiki del universo</span>
+                <span className="text-sm text-muted">Personajes, campos y lugares.</span>
+              </span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          </li>
+          <li>
+            <Link to="/panel/extras" className={shortcut}>
+              <span>
+                <span className="block font-semibold">Capítulos extra</span>
+                <span className="text-sm text-muted">Se abren al terminar un libro.</span>
+              </span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          </li>
+        </ul>
+      </nav>
+      {hasUniverse && universe ? (
+        <section
+          aria-labelledby="que-es"
+          className="grid grid-cols-1 items-center gap-6 border-t border-line pt-8 md:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] md:gap-10"
+        >
+          <div className="flex flex-col gap-3">
+            <p className="label">El universo</p>
+            <h2 id="que-es" className="section-title text-2xl">
+              {universe.headline ?? 'Universo Memorias'}
+            </h2>
+            {universe.introHtml ? <SafeHtml html={universe.introHtml} /> : null}
+          </div>
+          {image ? (
+            <img
+              src={heightUrl(image.url, 420)}
+              alt={image.alt}
+              width={image.width}
+              height={image.height}
+              loading="lazy"
+              decoding="async"
+              className="max-h-72 w-full rounded-token-xl border border-line object-cover"
+            />
+          ) : null}
+        </section>
       ) : null}
     </div>
   );

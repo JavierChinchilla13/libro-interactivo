@@ -41,11 +41,23 @@ function Cell({ label, value, vapor }: { label: string; value: string; vapor: bo
  * oculta. Al llegar la fecha desaparece. Los lectores de pantalla reciben una frase que cambia cada minuto, no cada
  * segundo.
  */
-export function Countdown({ target, dateLabel }: { target: Date; dateLabel: string }) {
+export function Countdown({
+  target,
+  dateLabel,
+  animated = true,
+  compact = false,
+}: {
+  target: Date;
+  dateLabel: string;
+  /** `false`: sin lienzo de partículas (la regla de animaciones solo lo permite en la ficha del libro). */
+  animated?: boolean;
+  /** Cifras más pequeñas, para una tarjeta. */
+  compact?: boolean;
+}) {
   const root = useRef<HTMLElement>(null);
   const [now, setNow] = useState(() => Date.now());
   const [inView, setInView] = useState(false);
-  const vapor = inView && !reducedMotion();
+  const vapor = animated && inView && !reducedMotion();
 
   useEffect(() => {
     const element = root.current;
@@ -79,7 +91,11 @@ export function Countdown({ target, dateLabel }: { target: Date; dateLabel: stri
   );
   if (parts.done) return null;
   return (
-    <section ref={root} aria-label="Cuenta atrás para la salida del libro" className="countdown">
+    <section
+      ref={root}
+      aria-label="Cuenta atrás para la salida del libro"
+      className={`countdown ${compact ? 'countdown-compact' : ''}`}
+    >
       <p className="label">Sale el {dateLabel}</p>
       <div role="timer" aria-live="off">
         <p className="sr-only">{spoken}</p>

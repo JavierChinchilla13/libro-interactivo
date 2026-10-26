@@ -4,13 +4,16 @@ import {
   publishQuizResponseSchema,
   quizValidationResponseSchema,
 } from '@libro/shared';
+import { Types } from 'mongoose';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
+import type { QuizContent } from '@libro/shared';
 import { Quiz } from '../models/Quiz.js';
 import { QuizAttempt } from '../models/QuizAttempt.js';
 import { QuizVersion } from '../models/QuizVersion.js';
 import { UserProgress } from '../models/UserProgress.js';
 import { createTestHarness } from '../test-utils/app.js';
+import { hashQuizContent } from '../services/quizPublish.service.js';
 import { createUser, loginAgent } from '../test-utils/auth.js';
 import { useTestDb } from '../test-utils/db.js';
 import {
@@ -234,5 +237,156 @@ describe('quizVersions es inmutable', () => {
     version.title = 'otro';
     await version.save();
     expect((await QuizVersion.findById(version._id))?.title).toBe(simpleContent().title);
+  });
+});
+
+describe('opciones de barajado de respuestas en el panel', () => {
+  it('el borrador guarda shuffleAnswers y «Dejar al final», se publican y rigen en los intentos', async () => {
+    const { editor, reader, book } = await world();
+    const quiz = await createQuiz({ bookId: book._id, order: 1, content: simpleContent() });
+    const id = quiz._id.toString();
+    const detail = (await editor.get(`/api/admin/quizzes/${id}`).expect(200)).body;
+
+    const draft = {
+      ...detail.draft,
+      stages: detail.draft.stages.map((stage: { questions: { answers: object[] }[] }) => ({
+        ...stage,
+        shuffleAnswers: true,
+        questions: stage.questions.map((question) => ({
+          ...question,
+          answers: question.answers.map((answer, index, all) =>
+            index === all.length - 1 ? { ...answer, text: 'Ninguna', pinLast: true } : answer,
+          ),
+        })),
+      })),
+    };
+    const saved = await editor.put(`/api/admin/quizzes/${id}/draft`).send(draft).expect(200);
+    expect(saved.body.draft.stages[0].questions[0].answers.at(-1).pinLast).toBe(true);
+    await editor.post(`/api/admin/quizzes/${id}/publish`).expect(201);
+
+    for (let round = 0; round < 3; round += 1) {
+      const attempt = attemptResponseSchema.parse(
+        (await reader.post(`/api/quizzes/${id}/attempts`).expect(200)).body,
+      );
+      if (attempt.status !== 'in_progress') throw new Error('Se esperaba una etapa');
+      for (const question of attempt.stage.questions) {
+        expect(question.answers.at(-1)?.text).toBe('Ninguna');
+      }
+      await reader
+        .post(`/api/attempts/${attempt.attemptId}/stages/${attempt.stage.stageId}/answers`)
+        .send({
+          answers: attempt.stage.questions.map((q) => ({
+            questionId: q.id,
+            answerId: q.answers[0]!.id,
+          })),
+        })
+        .expect(200);
+    }
+
+    // Apagar la opción exige publicar otra versión: lo ya publicado sigue barajando hasta entonces.
+    const off = {
+      ...draft,
+      stages: draft.stages.map((stage: object) => ({ ...stage, shuffleAnswers: false })),
+    };
+    await editor.put(`/api/admin/quizzes/${id}/draft`).send(off).expect(200);
+    expect((await QuizVersion.countDocuments({ quizId: quiz._id })) as number).toBe(1);
+  });
+});
+
+describe('el hash del contenido ignora los valores por defecto añadidos después', () => {
+  /** Contenido como lo guardaban las versiones publicadas antes de existir `shuffleAnswers` y `pinLast`. */
+  const legacyContent = (): QuizContent => {
+    const content = JSON.parse(JSON.stringify(simpleContent())) as QuizContent;
+    for (const stage of content.stages) {
+      delete (stage as { shuffleAnswers?: boolean }).shuffleAnswers;
+    }
+    return content;
+  };
+  const publishedBefore = async (content: QuizContent) => {
+    const w = await world();
+    const quiz = await createQuiz({
+      bookId: w.book._id,
+      order: 1,
+      content,
+      publishedBy: new Types.ObjectId(),
+    });
+    const id = quiz._id.toString();
+    const pending = async () =>
+      (await w.editor.get(`/api/admin/quizzes/${id}`).expect(200)).body.hasUnpublishedChanges;
+    return { ...w, quiz, id, pending };
+  };
+
+  it('un quiz publicado antes del cambio no muestra cambios pendientes y republicar igual no crea versión', async () => {
+    const { editor, id, pending, quiz } = await publishedBefore(legacyContent());
+    expect(await pending()).toBe(false);
+    const again = await editor.post(`/api/admin/quizzes/${id}/publish`);
+    expect(again.status).toBe(409);
+    expect(await QuizVersion.countDocuments({ quizId: quiz._id })).toBe(1);
+    // El snapshot guardado no se tocó: sigue sin el campo.
+    const stored = await QuizVersion.findOne({ quizId: quiz._id }).lean();
+    expect((stored?.stages as { shuffleAnswers?: boolean }[])[0]).not.toHaveProperty(
+      'shuffleAnswers',
+    );
+  });
+
+  it('escribir los valores por defecto de forma explícita tampoco cambia el hash', async () => {
+    const { quiz, pending } = await publishedBefore(legacyContent());
+    await Quiz.updateOne(
+      { _id: quiz._id },
+      {
+        $set: {
+          'draft.stages.0.shuffleAnswers': true,
+          'draft.stages.0.questions.0.answers.0.pinLast': false,
+        },
+      },
+    );
+    expect(await pending()).toBe(false);
+  });
+
+  it('apagar el barajado o marcar «Dejar al final» sí es un cambio, y publicarlo crea la versión 2', async () => {
+    const off = await publishedBefore(legacyContent());
+    await Quiz.updateOne(
+      { _id: off.quiz._id },
+      { $set: { 'draft.stages.0.shuffleAnswers': false } },
+    );
+    expect(await off.pending()).toBe(true);
+    await off.editor.post(`/api/admin/quizzes/${off.id}/publish`).expect(201);
+    expect(await off.pending()).toBe(false);
+    expect(await QuizVersion.countDocuments({ quizId: off.quiz._id })).toBe(2);
+  });
+
+  it('marcar «Dejar al final» en una respuesta es un cambio', async () => {
+    const { quiz, pending } = await publishedBefore(legacyContent());
+    await Quiz.updateOne(
+      { _id: quiz._id },
+      { $set: { 'draft.stages.0.questions.0.answers.2.pinLast': true } },
+    );
+    expect(await pending()).toBe(true);
+  });
+
+  it('las versiones publicadas mientras el hash aún incluía los valores por defecto siguen siendo válidas', async () => {
+    const content = legacyContent();
+    for (const stage of content.stages) stage.shuffleAnswers = true;
+    const { pending, editor, id } = await publishedBefore(content); // su hash se calculó con `shuffleAnswers: true` dentro
+    expect(await pending()).toBe(false);
+    expect((await editor.post(`/api/admin/quizzes/${id}/publish`)).status).toBe(409);
+  });
+
+  it('hashQuizContent: igual con o sin los valores por defecto, distinto con los contrarios, y no modifica su entrada', () => {
+    const plain = legacyContent();
+    const explicit = JSON.parse(JSON.stringify(plain)) as QuizContent;
+    for (const stage of explicit.stages) {
+      stage.shuffleAnswers = true;
+      for (const question of stage.questions) question.answers.forEach((a) => (a.pinLast = false));
+    }
+    const before = JSON.stringify(explicit);
+    expect(hashQuizContent(explicit)).toBe(hashQuizContent(plain));
+    expect(JSON.stringify(explicit)).toBe(before);
+    const off = JSON.parse(before) as QuizContent;
+    off.stages[0]!.shuffleAnswers = false;
+    expect(hashQuizContent(off)).not.toBe(hashQuizContent(plain));
+    const pinned = JSON.parse(before) as QuizContent;
+    pinned.stages[0]!.questions[0]!.answers[0]!.pinLast = true;
+    expect(hashQuizContent(pinned)).not.toBe(hashQuizContent(plain));
   });
 });

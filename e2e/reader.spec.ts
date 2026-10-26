@@ -108,7 +108,9 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     playwright,
     baseURL,
   }) => {
-    const stamp = String(Date.now());
+    // Es un recorrido largo (registro, quiz, resultado y extras): con la suite entera en paralelo el margen estándar de 30 s no alcanza.
+    test.setTimeout(90_000);
+    const stamp = `${Date.now()}-${test.info().project.name}`;
     const admin = await playwright.request.newContext({ baseURL });
     expect(
       (
@@ -164,13 +166,13 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await dialog.getByRole('button', { name: '¡A la aventura!' }).click();
     await expect(dialog).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Hola, Lectora E2E' })).toBeVisible();
-    await expect(page.getByText('Progreso: 0 de 1')).toBeVisible();
+    await expect(page.getByText('0 de 1 experiencias abiertas en tu libro')).toBeVisible();
     // Los extras siguen cerrados y no revelan nada.
-    await expect(page.getByText('Bloqueados')).toBeVisible();
+    await expect(page.getByText('Se abren al terminar un libro')).toBeVisible();
     await expect(page.getByText(seeded.extraTitle)).toHaveCount(0);
 
     // 4) Hace el quiz: intro → preguntas (con «Atrás») → revelado → resultado con porcentajes y datos.
-    await page.getByRole('link', { name: new RegExp(`Empezar\\s*${seeded.quizTitle}`) }).click();
+    await page.getByRole('link', { name: new RegExp(`Seguir con\\s*${seeded.quizTitle}`) }).click();
     await expect(page.getByRole('heading', { name: seeded.quizTitle })).toBeVisible();
     await expect(page.getByText('Elige lo que más va contigo.')).toBeVisible();
     await page.getByRole('button', { name: 'Comenzar' }).click();
@@ -195,6 +197,12 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await page.getByRole('link', { name: 'Volver a mi panel' }).click();
 
     // 5) El panel refleja el avance y se abren los extras (libro completo).
+    await expect(page.getByText('1 de 1 experiencias abiertas en tu libro')).toBeVisible();
+    // La tarjeta entera es el enlace: se abre pulsando en cualquier parte de ella (aquí, una esquina).
+    const card = page.getByRole('article', { name: seeded.bookTitle });
+    await expect(card.getByRole('link')).toHaveCount(1);
+    await card.click({ position: { x: 12, y: 12 } });
+    await expect(page).toHaveURL(/\/panel\/libros\/libro-lector-/);
     await expect(page.getByText('Progreso: 1 de 1')).toBeVisible();
     await expect(page.getByText(/Completaste todo el libro/)).toBeVisible();
     await page.getByRole('link', { name: 'Ver los extras' }).click();
@@ -211,7 +219,9 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
       );
       expect(overflow, `desborde en ${path}`).toBeLessThanOrEqual(1);
     }
+    // La dirección antigua lleva a los resultados del libro.
     await page.goto('/panel/resultados');
+    await expect(page).toHaveURL(/\/panel\/libros\/[^/]+\/resultados$/);
     await expect(page.getByRole('heading', { name: 'Eres de los que se quedan' })).toBeVisible();
 
     // 7) Cerrar sesión: el panel vuelve a pedir ingresar.
