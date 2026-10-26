@@ -104,7 +104,7 @@ export function AccentField({
               const text = event.target.value;
               const hex = parseHex(text);
               if (hex) choose(hex);
-              else if (text.trim() === '') choose(undefined);
+              else if (text.trim() === '' && allowDefault) choose(undefined);
               else setTyped(text);
             }}
             onBlur={() => setTyped(null)}

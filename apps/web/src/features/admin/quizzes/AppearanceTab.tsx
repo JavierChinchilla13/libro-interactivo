@@ -154,8 +154,6 @@ function AppearanceEditor({
   const measuring = sampleUrl !== undefined && measurement?.url !== sampleUrl;
   const measured = measurement?.url === sampleUrl ? measurement?.hex : undefined;
 
-  // Colores reales de los acentos (tokens del sitio) para avisar si alguno no se lee.
-
   // Modo automático: la intensidad sigue a la medida (sin medida, el piso 0,78, que es seguro).
   const strength =
     form.kind === 'none'
@@ -371,7 +369,9 @@ function AppearanceEditor({
         <QuestionsSection
           stages={stages}
           form={form}
-          onChange={(questions) => patch({ questions })}
+          onChange={(update) =>
+            setForm((current) => ({ ...current, questions: update(current.questions) }))
+          }
           disabled={disabled}
         />
 
