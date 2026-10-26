@@ -1,0 +1,105 @@
+/* Solo el panel de la lectora (se descarga con su código, no con la portada). */
+@layer components {
+  /* «Tu campo»: el mismo degradado de cada campo, pero estático y pequeño (sin lienzo, sin brillo). */
+  .field-emblem {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+  }
+  .field-emblem-orb {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    border: 1px solid color-mix(in srgb, var(--token-accent) 55%, var(--token-line));
+    background: radial-gradient(120% 120% at 20% 10%, #123057, var(--token-sunken));
+  }
+  .field-emblem[data-key='rain'] .field-emblem-orb {
+    background: radial-gradient(120% 120% at 70% 0%, #0b3a4f, var(--token-sunken));
+  }
+  .field-emblem[data-key='neural'] .field-emblem-orb {
+    background: radial-gradient(120% 120% at 20% 20%, #17306b, var(--token-sunken));
+  }
+  .field-emblem[data-key='constellation'] .field-emblem-orb {
+    background: radial-gradient(120% 120% at 50% 0%, #2a2766, var(--token-sunken));
+  }
+  .field-emblem[data-key='gradient'] .field-emblem-orb {
+    background: linear-gradient(135deg, #123057, #2a2766 60%, #0e4a5c);
+  }
+  .field-emblem[data-key='field'] .field-emblem-orb {
+    background: radial-gradient(120% 120% at 30% 100%, #0e4a4a, var(--token-sunken));
+  }
+  .field-emblem[data-key='neon'] .field-emblem-orb {
+    background: radial-gradient(120% 120% at 50% 50%, #1d1a4d, var(--token-sunken));
+  }
+
+  /* Silueta de lo que sigue: barras apagadas donde irá el contenido; es solo forma, nunca contenido. */
+  .silhouette-bar {
+    display: block;
+    height: 0.625rem;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--token-line) 70%, transparent);
+  }
+
+  /* Entrada del panel: saludo más contenido que el libro, imagen de la autora como ambiente y tarjeta abierta con color. */
+  .greeting-title {
+    font-size: clamp(2rem, 1.1rem + 3.2vw, 3.25rem);
+  }
+  .greeting-block {
+    padding-block: 1rem 2rem;
+  }
+  .greeting-ambient {
+    position: absolute;
+    inset: 0 -1rem;
+    z-index: -1;
+    width: calc(100% + 2rem);
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.28;
+    pointer-events: none;
+    /* Se desvanece por los cuatro lados: sin borde duro y sin tocar la barra ni «Tus libros». */
+    -webkit-mask-image:
+      linear-gradient(to bottom, transparent, #000 30%, #000 60%, transparent),
+      linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+    mask-image:
+      linear-gradient(to bottom, transparent, #000 30%, #000 60%, transparent),
+      linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+  .book-card-open {
+    border-color: color-mix(in srgb, var(--token-accent) 30%, var(--token-line));
+    background-image: radial-gradient(
+      60% 80% at 18% 30%,
+      color-mix(in srgb, var(--token-primary) 14%, transparent),
+      transparent 70%
+    );
+    transition:
+      border-color 150ms ease-out,
+      background-color 150ms ease-out,
+      transform 120ms ease-out;
+  }
+  .book-card-open:active {
+    transform: scale(0.99);
+  }
+  /* Barra de avance que crece con `transform` (no con `width`): una vez, al aparecer. */
+  .meter-scale {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--token-primary);
+    transform: scaleX(var(--p, 0));
+    transform-origin: left;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .meter-scale {
+      animation: meter-grow 600ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    }
+  }
+  @keyframes meter-grow {
+    from {
+      transform: scaleX(0);
+    }
+  }
+}

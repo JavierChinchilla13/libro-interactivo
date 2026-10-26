@@ -745,12 +745,165 @@
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    border: 1px solid var(--token-line);
+    border: 1px solid var(--quiz-accent, var(--token-line));
     border-radius: var(--token-radius-xl);
     background:
       radial-gradient(90% 120% at 15% 0%, rgb(168 155 255 / 0.28), transparent 60%),
       radial-gradient(80% 100% at 90% 100%, rgb(63 216 255 / 0.18), transparent 60%),
       var(--token-surface);
+  }
+  /*
+   * Fondo de un quiz (apariencia): capa fija detrás de todo, sin mover el contenido. Debajo siempre hay un color liso
+   * (si el fondo no carga se ve ese) y encima un velo del color del sitio cuya intensidad calcula el cliente para que
+   * el texto atenuado cumpla AA. Solo se anima la opacidad (fundido de entrada).
+   */
+  .quiz-bg {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 100%;
+    height: 100lvh;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--token-bg);
+    contain: layout paint;
+  }
+  /* Vista previa del editor: la misma capa, pero dentro de su caja (no fija a la pantalla). */
+  .quiz-bg[data-contained] {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    z-index: 0;
+  }
+  .quiz-preview {
+    position: relative;
+    isolation: isolate;
+    height: 100%;
+    overflow: hidden;
+    background: var(--token-bg);
+    color: var(--token-text);
+  }
+  /* A 375 px las medidas fluidas (vw) deben dar lo del celular, no lo de la ventana del editor. */
+  .quiz-preview[data-size='movil'] {
+    --token-text-h1: 1.95rem;
+    --token-text-h2: 1.875rem;
+  }
+  .quiz-preview[data-size='movil'] .quiz-hero-content {
+    padding: 1.25rem;
+  }
+  .quiz-preview-page {
+    position: relative;
+    z-index: 1;
+  }
+  /* Cambio de fondo entre preguntas: la capa nueva entra con un fundido de opacidad sobre la anterior. */
+  .quiz-bg {
+    transition: opacity var(--token-dur-slow) var(--token-ease-out);
+  }
+  .quiz-bg[data-entering],
+  .quiz-bg[data-fading] {
+    opacity: 0;
+  }
+  .quiz-bg-media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity var(--token-dur-slow) var(--token-ease-out);
+  }
+  .quiz-bg[data-loaded] img.quiz-bg-media,
+  .quiz-bg[data-loaded] video.quiz-bg-media[data-started] {
+    opacity: 1;
+  }
+  .quiz-bg-veil {
+    position: absolute;
+    inset: 0;
+    /* Mismo color que usa el cálculo de contraste (PALETTE.bg). */
+    background: #06142b;
+    opacity: var(--quiz-veil, 0.78);
+    transition: opacity var(--token-dur-slow) var(--token-ease-out);
+  }
+  /* Video corto en bucle: invisible hasta que corre; una vez que corrió, pausado se queda el fotograma. */
+  .loop-video {
+    opacity: 0;
+    transition: opacity var(--token-dur-slow) var(--token-ease-out);
+  }
+  .loop-video[data-started] {
+    opacity: 1;
+  }
+  /* Acento de la apariencia: solo títulos grandes, bordes y controles (3:1), nunca texto corrido. */
+  .quiz-accent-fill {
+    background: var(--quiz-accent, var(--token-primary));
+    transition: background-color var(--token-dur-base) var(--token-ease-out);
+  }
+  .quiz-accent-title {
+    color: var(--quiz-accent, inherit);
+  }
+  /* Botón de pausa del video: 44 px, con texto, en el flujo de la página. */
+  .playback-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0 0.9rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-pill);
+    background: color-mix(in srgb, var(--token-surface) 88%, transparent);
+    color: var(--token-text);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition:
+      transform var(--token-dur-press) var(--token-ease-out),
+      background-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .playback-toggle:active {
+    transform: scale(0.96);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .playback-toggle:hover {
+      background: var(--token-surface-alt);
+    }
+  }
+  /* Video del resultado: el póster fija el tamaño y el video se apila encima (misma celda). */
+  .result-video {
+    display: grid;
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+    min-width: min(100%, 16rem);
+    min-height: 9rem;
+    margin: 0;
+    overflow: hidden;
+    background: var(--token-sunken);
+  }
+  .result-video-media {
+    grid-area: 1 / 1;
+    max-width: 100%;
+    max-height: 24rem;
+  }
+  .result-video video.result-video-media {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .result-video-toggle {
+    grid-area: 1 / 1;
+    align-self: end;
+    justify-self: end;
+    margin: 0.5rem;
+    z-index: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .quiz-bg,
+    .quiz-bg-media,
+    .quiz-bg-veil,
+    .loop-video {
+      transition: none;
+    }
   }
   .quiz-hero-img {
     position: absolute;
@@ -875,7 +1028,11 @@
     margin: 0;
     border-radius: calc(var(--review-radius) - var(--review-gap));
     background:
-      linear-gradient(160deg, color-mix(in srgb, var(--token-accent) 11%, transparent), transparent 55%),
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--token-accent) 11%, transparent),
+        transparent 55%
+      ),
       var(--token-surface-alt);
     padding: 1.5rem;
   }
@@ -1049,6 +1206,13 @@
     display: flex;
     flex-wrap: wrap;
     gap: clamp(0.75rem, 3vw, 1.75rem);
+  }
+  .countdown-compact .countdown-row {
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+  }
+  .countdown-compact .countdown-digits {
+    font-size: clamp(1.625rem, 6vw, 2.25rem);
   }
   .countdown-cell {
     display: flex;
@@ -1880,6 +2044,33 @@
     background: var(--token-glass);
     -webkit-backdrop-filter: blur(16px) saturate(1.3);
     backdrop-filter: blur(16px) saturate(1.3);
+  }
+  /* Acciones del quiz: la misma píldora que la barra superior, flotando con aire y espacio seguro en celular. El vidrio es
+     solo del contenedor (los botones son sólidos); sobre cualquier fondo velado el texto queda a más de 9:1. */
+  .quiz-actions {
+    position: sticky;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    z-index: 10;
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding: 0.375rem;
+  }
+  .quiz-actions > .btn:disabled {
+    cursor: not-allowed;
+  }
+  @media (max-width: 639px) {
+    .quiz-actions {
+      -webkit-backdrop-filter: blur(8px) saturate(1.3);
+      backdrop-filter: blur(8px) saturate(1.3);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .quiz-actions {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background: var(--token-surface);
+    }
   }
   .nav-menu {
     border: 1px solid var(--token-line);

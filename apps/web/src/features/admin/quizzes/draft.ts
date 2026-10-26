@@ -58,6 +58,7 @@ export function addStage(draft: Draft): Draft {
     id,
     order: draft.stages.length + 1,
     shuffleQuestions: true,
+    shuffleAnswers: true,
     // Por defecto la etapa da el resultado final; al volverse padre de otra se apaga sola (`setCondition`).
     producesFinal: true,
     questions: [],

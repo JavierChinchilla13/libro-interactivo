@@ -15,10 +15,12 @@ export function GeneralTab({
   quiz,
   draft,
   onChange,
+  onOpenAppearance,
 }: {
   quiz: QuizDetailResponse;
   draft: Draft;
   onChange: (draft: Draft) => void;
+  onOpenAppearance: () => void;
 }) {
   const client = useQueryClient();
   const [slug, setSlug] = useState(quiz.slug);
@@ -40,20 +42,35 @@ export function GeneralTab({
           value={draft.title}
           onChange={(event) => onChange({ ...draft, title: event.target.value })}
         />
-        <RichTextEditor
-          label="Instrucciones"
-          value={draft.instructionsHtml ?? ''}
-          onChange={(html) => onChange({ ...draft, instructionsHtml: html })}
-        />
-        <ImageField
-          label="Imagen del quiz (opcional)"
-          purpose="quiz"
-          value={draft.image}
-          onChange={(image) => {
-            const { image: _removed, ...rest } = draft;
-            onChange(image ? { ...rest, image } : rest);
-          }}
-        />
+        {quiz.appearance ? (
+          // Con apariencia, la introducción y la portada viven allí (se aplican sin publicar una versión nueva).
+          <div className="flex flex-col items-start gap-2 rounded-token border border-border p-3">
+            <p className="text-sm">
+              La introducción y la portada se editan en la pestaña <strong>Apariencia</strong> (se
+              aplican sin publicar una versión nueva).
+            </p>
+            <Button variant="secondary" onClick={onOpenAppearance}>
+              Ir a Apariencia
+            </Button>
+          </div>
+        ) : (
+          <>
+            <RichTextEditor
+              label="Instrucciones"
+              value={draft.instructionsHtml ?? ''}
+              onChange={(html) => onChange({ ...draft, instructionsHtml: html })}
+            />
+            <ImageField
+              label="Imagen del quiz (opcional)"
+              purpose="quiz"
+              value={draft.image}
+              onChange={(image) => {
+                const { image: _removed, ...rest } = draft;
+                onChange(image ? { ...rest, image } : rest);
+              }}
+            />
+          </>
+        )}
       </Card>
 
       <div className="flex flex-col gap-5">

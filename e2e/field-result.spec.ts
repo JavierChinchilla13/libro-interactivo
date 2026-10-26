@@ -103,7 +103,7 @@ async function startQuiz(page: Page, seeded: { token: string; quizTitle: string 
   const { show } = (await (await welcome).json()) as { show: boolean };
   await expect(page.getByRole('heading', { name: /^Hola, / })).toBeVisible();
   if (show) await page.getByRole('button', { name: '¡A la aventura!' }).click();
-  await page.getByRole('link', { name: new RegExp(`Empezar\\s*${seeded.quizTitle}`) }).click();
+  await page.getByRole('link', { name: new RegExp(`Seguir con\\s*${seeded.quizTitle}`) }).click();
   await page.getByRole('button', { name: 'Comenzar' }).click();
 }
 

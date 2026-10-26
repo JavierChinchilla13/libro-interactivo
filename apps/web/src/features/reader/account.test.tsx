@@ -280,7 +280,7 @@ describe('extras del lector', () => {
       [extrasKey]: () => json({ locked: true }),
       [`GET /api/me/progress?bookId=${BOOK_ID}`]: progress,
     });
-    renderAt('/panel/extras');
+    renderAt('/panel/libros/libro-1/extras');
     expect(await screen.findByText('Aún están bloqueados')).toBeInTheDocument();
     expect(await screen.findByText('1 de 3')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Abrir/ })).not.toBeInTheDocument();
@@ -311,7 +311,7 @@ describe('extras del lector', () => {
         }),
       [`GET /api/me/progress?bookId=${BOOK_ID}`]: progress,
     });
-    renderAt('/panel/extras');
+    renderAt('/panel/libros/libro-1/extras');
     expect(
       await screen.findByRole('heading', { name: '[PLACEHOLDER] Capítulo extra 1' }),
     ).toBeInTheDocument();
@@ -387,22 +387,25 @@ describe('resultados del lector', () => {
               attemptsCompleted: 2,
               completedAt: '2026-10-06T12:00:00.000Z',
               resultTitle: '[PLACEHOLDER] Resultado B',
+              visual: { key: 'rain', fieldName: 'Agitación' },
             },
           ],
         }),
     });
-    renderAt('/panel/resultados');
+    renderAt('/panel/libros/libro-1/resultados');
     expect(
       await screen.findByRole('heading', { name: '[PLACEHOLDER] Resultado B' }),
     ).toBeInTheDocument();
     expect(screen.getByText(/2 intentos/)).toBeInTheDocument();
+    expect(screen.getByText('Tu campo')).toBeInTheDocument();
+    expect(screen.getByText('Agitación')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Ver/ })).toHaveAttribute(
       'href',
       `/panel/resultados/${quizId}`,
     );
     vi.unstubAllGlobals();
     mockApi({ [`GET /api/me/results?bookId=${BOOK_ID}`]: () => json({ results: [] }) });
-    renderAt('/panel/resultados');
+    renderAt('/panel/libros/libro-1/resultados');
     expect(await screen.findAllByText('Todavía no tienes resultados')).not.toHaveLength(0);
   });
 

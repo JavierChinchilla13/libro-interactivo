@@ -17,3 +17,21 @@ export function heightUrl(url: string, height = 560): string {
     ? url.replace('/upload/', `/upload/f_auto,q_auto,c_limit,h_${height}/`)
     : url;
 }
+
+/**
+ * Video de fondo reducido: formato (mp4 o webm según el navegador) y calidad automáticos, ancho acotado sin ampliar.
+ * Una URL que no es de video de Cloudinary se devuelve igual.
+ */
+export function videoUrl(url: string, width = 720): string {
+  return url.includes('/video/upload/')
+    ? url.replace('/video/upload/', `/video/upload/f_auto,q_auto,c_limit,w_${width}/`)
+    : url;
+}
+
+/**
+ * Póster de un video (su primer fotograma, ya como imagen) con el ancho acotado. Se encadena una transformación
+ * antes de la que ya trae el póster. Una URL que no es de Cloudinary se devuelve igual.
+ */
+export function posterUrl(url: string, width = 720): string {
+  return url.includes('/upload/') ? url.replace('/upload/', `/upload/c_limit,w_${width}/`) : url;
+}

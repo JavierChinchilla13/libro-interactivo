@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useMatch, useNavigate } from 'react-router';
+import { Link, Outlet, useLocation, useMatch, useNavigate } from 'react-router';
 import { useLogout } from '../../features/auth/session';
 import { WelcomeModal } from '../../features/reader/WelcomeModal';
 import { Button } from '../../shared/ui/controls';
@@ -8,11 +8,30 @@ import { bottomTab, MAIN_ID, navTab, SkipLink } from '../../shared/ui/nav';
 import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
 
 const ITEMS = [
-  { to: '/panel', label: 'Panel', end: true },
-  { to: '/panel/resultados', label: 'Resultados', end: false },
-  { to: '/panel/extras', label: 'Extras', end: false },
-  { to: '/panel/cuenta', label: 'Cuenta', end: false },
+  { to: '/panel', label: 'Panel', section: 'panel' },
+  { to: '/panel/resultados', label: 'Resultados', section: 'resultados' },
+  { to: '/panel/extras', label: 'Extras', section: 'extras' },
+  { to: '/panel/cuenta', label: 'Cuenta', section: 'cuenta' },
 ] as const;
+
+type Section = (typeof ITEMS)[number]['section'];
+
+/**
+ * A qué pestaña pertenece una dirección. Resultados y extras viven ahora dentro de cada libro
+ * (`/panel/libros/:slug/resultados`), así que se reconocen también ahí; la página del libro cuenta como «Panel».
+ */
+export function sectionOf(pathname: string): Section | null {
+  const path = pathname.replace(/\/+$/, '');
+  if (path === '/panel' || /^\/panel\/libros\/[^/]+$/.test(path)) return 'panel';
+  if (path.startsWith('/panel/resultados') || /^\/panel\/libros\/[^/]+\/resultados/.test(path)) {
+    return 'resultados';
+  }
+  if (path.startsWith('/panel/extras') || /^\/panel\/libros\/[^/]+\/extras/.test(path)) {
+    return 'extras';
+  }
+  if (path.startsWith('/panel/cuenta')) return 'cuenta';
+  return null;
+}
 
 /**
  * Marco del panel del lector: navegación inferior en el celular, superior en escritorio.
@@ -21,6 +40,7 @@ const ITEMS = [
 export function PanelLayout() {
   const logout = useLogout();
   const navigate = useNavigate();
+  const current = sectionOf(useLocation().pathname);
   // En el quiz solo queda la marca: sin «Salir» ni pestañas que cierren la sesión o abandonen sin querer.
   const inQuiz = useMatch('/panel/quiz/:quizId') !== null;
   const inGame = useMatch('/panel/juego/:bookId') !== null;
@@ -37,15 +57,15 @@ export function PanelLayout() {
             <>
               <nav aria-label="Panel" className="hidden gap-1 sm:flex">
                 {ITEMS.map((item) => (
-                  <NavLink
+                  <Link
                     key={item.to}
                     to={item.to}
-                    end={item.end}
                     viewTransition
-                    className={navTab}
+                    aria-current={current === item.section ? 'page' : undefined}
+                    className={navTab({ isActive: current === item.section })}
                   >
                     {item.label}
-                  </NavLink>
+                  </Link>
                 ))}
               </nav>
               <div className="flex items-center gap-2">
@@ -87,9 +107,14 @@ export function PanelLayout() {
           className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-bg sm:hidden"
         >
           {ITEMS.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className={bottomTab}>
+            <Link
+              key={item.to}
+              to={item.to}
+              aria-current={current === item.section ? 'page' : undefined}
+              className={bottomTab({ isActive: current === item.section })}
+            >
               {item.label}
-            </NavLink>
+            </Link>
           ))}
         </nav>
       )}

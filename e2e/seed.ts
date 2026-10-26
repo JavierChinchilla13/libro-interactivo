@@ -4,7 +4,7 @@ import { expect, type APIRequestContext } from '@playwright/test';
 export async function seedPublishedQuiz(
   api: APIRequestContext,
   stamp: number,
-  options: { bookOrder?: number } = {},
+  options: { bookOrder?: number; questions?: number } = {},
 ) {
   const cover = {
     provider: 'cloudinary',
@@ -14,6 +14,7 @@ export async function seedPublishedQuiz(
     height: 100,
     alt: 'Portada',
   };
+  const count = options.questions ?? 1;
   const bookTitle = `Libro QR ${stamp}`;
   const bookResponse = await api.post('/api/admin/books', {
     data: {
@@ -46,7 +47,13 @@ export async function seedPublishedQuiz(
           id: 'etapa-1',
           order: 1,
           producesFinal: true,
-          questions: [{ id: 'p1', text: '¿Cuál?', answers: answers('p1') }],
+          // Con varias preguntas el orden se fija: la prueba sabe cuál es la 2.ª.
+          ...(count > 1 ? { shuffleQuestions: false } : {}),
+          questions: Array.from({ length: count }, (_, index) => ({
+            id: `p${index + 1}`,
+            text: count > 1 ? `¿Cuál es la ${index + 1}?` : '¿Cuál?',
+            answers: answers(`p${index + 1}`),
+          })),
         },
       ],
       results: [

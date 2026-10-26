@@ -45,8 +45,7 @@ export function ArrowUpRightIcon({ className = 'size-5' }: { className?: string 
   );
 }
 
-const STAR_PATH =
-  'M12 3.2l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.5l6-.8z';
+const STAR_PATH = 'M12 3.2l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.5l6-.8z';
 
 /**
  * Valoración de 1 a 5 con estrellas dibujadas (SVG, no emoji) en el ámbar de `--token-warning`. Las estrellas son
@@ -74,5 +73,34 @@ export function StarRating({ rating, className = '' }: { rating: number; classNa
       </span>
       <span className="sr-only">{value} de 5 estrellas</span>
     </p>
+  );
+}
+
+/** Pausa: dos barras. */
+export function PauseIcon({ className = 'size-5' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={`shrink-0 ${className}`}
+      fill="currentColor"
+    >
+      <rect x="6" y="5" width="4" height="14" rx="1" />
+      <rect x="14" y="5" width="4" height="14" rx="1" />
+    </svg>
+  );
+}
+
+/** Reproducir: triángulo. */
+export function PlayIcon({ className = 'size-5' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={`shrink-0 ${className}`}
+      fill="currentColor"
+    >
+      <path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z" />
+    </svg>
   );
 }

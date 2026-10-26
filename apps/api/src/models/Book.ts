@@ -26,6 +26,7 @@ const bookSchema = new Schema(
     order: { type: Number, required: true, min: 1 },
     status: { type: String, enum: [...BOOK_STATUSES], required: true, default: 'draft' },
     releaseDate: { type: Date },
+    showInReaderPanel: { type: Boolean, default: false },
     purchaseLinks: { type: [Schema.Types.Mixed], default: [] },
     wikiSections: { type: [Schema.Types.Mixed], default: [] },
     theme: { type: Schema.Types.Mixed },

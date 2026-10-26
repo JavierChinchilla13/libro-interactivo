@@ -281,6 +281,7 @@ export function FeaturedBookCard({ book }: { book: PublicBookDetail }) {
         <div className="book-card-cover">
           <Plate
             cover={book.cover}
+            title={book.title}
             className="mx-auto w-3/5 max-w-60 lg:w-full lg:max-w-none"
             landscapeClassName="mx-auto w-full max-w-md lg:max-w-none"
             sizes="(min-width: 1024px) 380px, 60vw"
@@ -404,18 +405,18 @@ export function Experiences({
         }}
         data-count={experiences.length}
       >
-        {experiences.map((experience) => {
+        {experiences.map((experience, index) => {
           const opensFirst = !signedIn && experience.order === first;
           return (
             <li
-              key={experience.id}
+              key={`${experience.kind}-${experience.order}`}
               className="exp-card"
               data-state={signedIn ? 'neutral' : opensFirst ? 'lit' : 'locked'}
             >
-              <p className="label tabular-nums">
+              <p className="label tabular-nums">Experiencia {index + 1}</p>
+              <p className="exp-title">
                 {experience.kind === 'game' ? 'Juego' : `Quiz ${experience.order}`}
               </p>
-              <p className="exp-title">{experience.title}</p>
               {signedIn ? null : (
                 <p
                   className={`mt-auto flex items-center gap-2 pt-4 text-sm ${opensFirst ? 'text-primary' : 'text-muted'}`}

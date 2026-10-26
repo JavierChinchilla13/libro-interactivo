@@ -221,6 +221,8 @@ describe('quiz: preguntas', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Terminar' }));
 
     await screen.findByRole('heading', { name: '[PLACEHOLDER] Resultado A' });
+    // La celebración llega con el resultado (nunca antes) y es un sello con texto, no solo movimiento.
+    expect(screen.getByRole('status')).toHaveTextContent('Quiz completado');
     const sent = called(`POST /api/attempts/${ATTEMPT}/stages/etapa-1/answers`);
     expect(sent).toHaveLength(1);
     expect(sent[0]?.body).toEqual({
@@ -439,10 +441,15 @@ describe('vista del resultado', () => {
       />,
     );
     const video = container.querySelector('video');
-    expect(video).toHaveAttribute('aria-label', 'Descripción del video');
+    // Decorativo para lectores de pantalla: el texto alternativo va en el contenedor, una sola vez.
+    expect(screen.getByRole('img', { name: 'Descripción del video' })).toBeInTheDocument();
+    expect(video).toHaveAttribute('aria-hidden', 'true');
     expect(video?.muted).toBe(true);
     expect(video).toHaveAttribute('loop');
-    expect(video).toHaveAttribute('controls');
+    expect(video).toHaveAttribute('playsinline');
+    expect(video).not.toHaveAttribute('controls');
+    expect(video).toHaveAttribute('preload', 'none');
+    expect(screen.getByRole('button', { name: /video del resultado/i })).toBeInTheDocument();
     rerender(
       <ResultView
         result={{

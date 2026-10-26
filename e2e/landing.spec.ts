@@ -76,9 +76,10 @@ test.describe('landing pública', () => {
     await expect(wiki.getByRole('listitem').filter({ hasText: 'Glosario' })).toContainText(
       'Abierto para todos',
     );
-    // Solo el nombre del quiz, nunca su contenido.
+    // Solo el tipo y la posición, nunca el título del quiz ni su contenido.
     const experiences = page.getByRole('region', { name: /experiencia inmersiva/ });
-    await expect(experiences.getByText('Quiz con código', { exact: true })).toBeVisible();
+    await expect(experiences.getByText('Quiz 1', { exact: true })).toBeVisible();
+    await expect(experiences.getByText('Quiz con código')).toHaveCount(0);
     await expect(page.getByText('¿Cuál?')).toHaveCount(0);
 
     const buy = page.getByRole('region', { name: 'Cómo comprar el libro' });

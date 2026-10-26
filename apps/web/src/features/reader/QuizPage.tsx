@@ -9,7 +9,9 @@ import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Button } from '../../shared/ui/controls';
 import { Alert, Loading } from '../../shared/ui/layout';
 import { readerApi, readerKeys } from './api';
-import { lockedMessage } from './DashboardPage';
+import { lockedMessage } from './ExperienceStep';
+import { Celebration } from './Celebration';
+import { useQuizBackdrop } from './QuizBackdrop';
 import { ResultView } from './ResultView';
 import { RevealSequence } from './RevealSequence';
 
@@ -99,6 +101,25 @@ export function QuizPage() {
     retry: false,
     staleTime: 0,
   });
+  // Fondo de la apariencia (si el quiz la tiene): solo llega con el quiz ya desbloqueado.
+  // En el revelado y en el resultado el fondo es solo el póster: ahí corren la celebración, el campo animado y el video
+  // del resultado (un solo elemento animado a la vez) y el fondo no debe moverse sin botón de pausa.
+  const stageQuestions = view.phase === 'stage' ? view.stage.questions : [];
+  const stageIndex = view.phase === 'stage' ? view.index : 0;
+  const { backdrop, toggle, accentStyle } = useQuizBackdrop(intro.data?.appearance, {
+    staticOnly: view.phase === 'reveal' || view.phase === 'result',
+    // Fondo, velo y acento propios de la pregunta que se ve (lo que no traiga es el general) y, de la siguiente, solo
+    // se precalienta la imagen o el póster.
+    question: stageQuestions[stageIndex]?.appearance,
+    nextQuestion: stageQuestions[stageIndex + 1]?.appearance,
+  });
+  // Un solo árbol: el fondo es siempre el primer hijo y no se desmonta al cambiar de fase.
+  const shell = (node: ReactNode) => (
+    <>
+      {backdrop}
+      {node}
+    </>
+  );
   const bookId = intro.data?.bookId ?? '';
   const progress = useQuery({
     queryKey: readerKeys.progress(bookId),
@@ -199,9 +220,12 @@ export function QuizPage() {
 
   if (view.phase === 'intro') {
     const startError = start.error instanceof ApiClientError ? start.error : null;
-    return (
-      <div className="mx-auto flex max-w-xl flex-col gap-5">
-        <LeaveButton unsaved={false} />
+    return shell(
+      <div className="mx-auto flex max-w-xl flex-col gap-5" style={accentStyle}>
+        <div className="flex items-center justify-between gap-3">
+          <LeaveButton unsaved={false} />
+          {toggle}
+        </div>
         <div className="quiz-hero">
           {quiz.image ? (
             <img
@@ -216,7 +240,9 @@ export function QuizPage() {
                 Quiz {position + 1} de {experiences.length}
               </p>
             ) : null}
-            <PhaseHeading className="page-title text-h2">{quiz.title}</PhaseHeading>
+            <PhaseHeading className="page-title quiz-accent-title text-h2">
+              {quiz.title}
+            </PhaseHeading>
           </div>
         </div>
         {quiz.instructionsHtml ? <SafeHtml html={quiz.instructionsHtml} /> : null}
@@ -259,7 +285,7 @@ export function QuizPage() {
                 : 'Comenzar'}
           </Button>
         ) : null}
-      </div>
+      </div>,
     );
   }
 
@@ -272,10 +298,14 @@ export function QuizPage() {
     const patch = (next: Partial<Extract<View, { phase: 'stage' }>>) =>
       setView({ ...view, ...next });
 
-    return (
-      <div className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-xl flex-col gap-5">
-        <div className="flex items-center justify-between text-sm">
+    return shell(
+      <div
+        className="mx-auto flex min-h-[calc(100dvh-7rem)] max-w-xl flex-col gap-5"
+        style={accentStyle}
+      >
+        <div className="flex items-center justify-between gap-3 text-sm [&>*]:whitespace-nowrap">
           <LeaveButton unsaved={Object.keys(answers).length > 0} />
+          {toggle}
           <span aria-hidden="true">
             Pregunta {index + 1} de {stage.questions.length}
           </span>
@@ -297,7 +327,7 @@ export function QuizPage() {
             <span
               key={item.id}
               aria-hidden="true"
-              className={`h-1.5 flex-1 rounded-full transition-colors duration-(--token-dur-fast) ease-token-out ${position <= index ? 'bg-primary' : 'bg-unlit/40'}`}
+              className={`h-1.5 flex-1 rounded-full transition-colors duration-(--token-dur-fast) ease-token-out ${position <= index ? 'quiz-accent-fill' : 'bg-unlit/40'}`}
             />
           ))}
         </div>
@@ -326,8 +356,8 @@ export function QuizPage() {
           ))}
         </fieldset>
         {submit.isError ? <Alert>{errorMessage(submit.error)}</Alert> : null}
-        {/* Las acciones quedan abajo, al alcance del pulgar, y ocupan el ancho. */}
-        <div className="sticky bottom-0 z-10 -mx-4 mt-auto flex gap-3 border-t border-line bg-bg px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+        {/* Las acciones flotan abajo, al alcance del pulgar, como la barra de arriba (píldora, borde y vidrio por tokens). */}
+        <div className="nav-pill quiz-actions">
           <Button
             variant="secondary"
             size="lg"
@@ -357,18 +387,18 @@ export function QuizPage() {
             </Button>
           )}
         </div>
-      </div>
+      </div>,
     );
   }
 
   if (view.phase === 'reveal') {
     const lines = [...(view.result.revealIntro?.lines ?? []), ...(view.result.reveal?.lines ?? [])];
     const effect = view.result.reveal?.effect ?? view.result.revealIntro?.effect;
-    return (
+    return shell(
       <>
         <PhaseHeading srOnly>Tus resultados se están preparando</PhaseHeading>
         <RevealSequence lines={lines} effect={effect} onDone={finishReveal} />
-      </>
+      </>,
     );
   }
 
@@ -382,8 +412,9 @@ export function QuizPage() {
       : { to: '/panel', label: 'Volver a mi panel' };
   const secondaryPanel = primary.to !== '/panel';
 
-  return (
-    <div className="mx-auto flex max-w-xl flex-col gap-6">
+  return shell(
+    <div className="mx-auto flex max-w-xl flex-col gap-6" style={accentStyle}>
+      <Celebration fieldKey={view.result.visual?.key} />
       <ResultView result={view.result} asPage />
       <div className="flex flex-col gap-3">
         <Link to={primary.to} className="btn btn-primary btn-lg w-full sm:w-auto sm:self-start">
@@ -421,6 +452,6 @@ export function QuizPage() {
           ) : null}
         </div>
       </div>
-    </div>
+    </div>,
   );
 }

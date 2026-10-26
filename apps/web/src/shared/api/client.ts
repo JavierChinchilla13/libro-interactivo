@@ -33,6 +33,14 @@ function takeEarly(path: string): Promise<Response | null> | undefined {
   return found;
 }
 
+/** Al entrar, salir o crear una cuenta, lo que se pidió antes de la app (con la sesión anterior) ya no vale. */
+const SESSION_CHANGES = ['/auth/login', '/auth/logout', '/auth/register'];
+function dropEarlySession(): void {
+  const registry = (window as unknown as { __early?: Record<string, unknown> }).__early;
+  if (!registry) return;
+  for (const key of ['/me', '/me/library']) delete registry[key];
+}
+
 /** Una sola renovación a la vez: varias peticiones que reciben 401 juntas comparten el mismo intento. */
 let refreshing: Promise<boolean> | null = null;
 
@@ -57,6 +65,7 @@ export async function apiRequest<T>(
   options: RequestOptions = {},
 ): Promise<T> {
   let response: Response | null = null;
+  if (SESSION_CHANGES.includes(path)) dropEarlySession();
   const early =
     (options.method ?? 'GET') === 'GET' && !options.retried ? takeEarly(path) : undefined;
   if (early) response = await early;

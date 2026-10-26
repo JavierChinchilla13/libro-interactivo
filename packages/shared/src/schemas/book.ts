@@ -75,6 +75,11 @@ export const bookInputSchema = z
     status: bookStatusSchema,
     /** Fecha de lanzamiento (AAAA-MM-DD). */
     releaseDate: z.iso.date().optional(),
+    /**
+     * Solo para libros «próximamente»: si la autora lo enciende, el libro aparece en «Tus libros» del panel de las
+     * lectoras (con cuenta atrás si tiene fecha). Apagado por defecto; un libro publicado no lo necesita.
+     */
+    showInReaderPanel: z.boolean().default(false),
     purchaseLinks: z.array(purchaseLinkSchema).max(12).default([]),
     wikiSections: z.array(wikiSectionSchema).max(8).default([]),
     theme: bookThemeSchema.optional(),
@@ -113,6 +118,7 @@ export const bookResponseSchema = z.object({
   order: z.number().int(),
   status: bookStatusSchema,
   releaseDate: z.string().optional(),
+  showInReaderPanel: z.boolean(),
   purchaseLinks: z.array(purchaseLinkSchema),
   wikiSections: z.array(wikiSectionSchema),
   theme: bookThemeSchema.optional(),
