@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../../shared/ui/controls';
-import { Alert, Card, EmptyState, Loading } from '../../../shared/ui/layout';
+import { Alert, Card, EmptyState } from '../../../shared/ui/layout';
 import { keys, quizzesApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { useConfirm } from '../components/ConfirmDialog';
 import { HelpTip } from '../components/HelpTip';
 import { errorMessage } from '../errors';
@@ -27,7 +28,7 @@ export function VersionsTab({ quizId, archived }: { quizId: string; archived: bo
         Cada vez que publicas se guarda una versión. Las lectoras que ya empezaron terminan con la
         que empezaron.
       </HelpTip>
-      {versions.isPending ? <Loading /> : null}
+      {versions.isPending ? <SkeletonRows rows={4} /> : null}
       {versions.isError ? <Alert>{errorMessage(versions.error)}</Alert> : null}
       {versions.data && versions.data.versions.length === 0 ? (
         <EmptyState title="Aún no hay versiones">Al publicar se guarda la primera.</EmptyState>

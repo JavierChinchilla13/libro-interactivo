@@ -2,9 +2,11 @@ import { contactSettingsSchema, type ContactSettings } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
 import { CheckField, TextField } from '../../../shared/ui/controls';
-import { Alert, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, PageHeader } from '../../../shared/ui/layout';
 import { keys, siteApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { FormSection } from '../components/FormSection';
+import { HelpTip } from '../components/HelpTip';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
 import { useFormGuard } from '../components/useFormGuard';
@@ -27,7 +29,7 @@ export function ContactSettingsPage() {
     gcTime: 0,
   });
   if (settings.isError) return <Alert>{errorMessage(settings.error)}</Alert>;
-  if (!settings.data) return <Loading />;
+  if (!settings.data) return <SkeletonRows rows={4} />;
   return <ContactFormView initial={settings.data.contact ?? DEFAULTS} />;
 }
 
@@ -75,6 +77,12 @@ function ContactFormView({ initial }: { initial: ContactSettings }) {
         title="Contacto del sitio"
         subtitle="Mensajes de contacto: adónde llegan y cuánto tiempo se conservan."
       />
+      <div className="mb-4">
+        <HelpTip>
+          Lo que escribe alguien en el formulario de contacto del sitio llega a este correo. Si
+          además guardas los mensajes aquí, los verás en «Mensajes» para marcarlos como atendidos.
+        </HelpTip>
+      </div>
       <FormSection
         title="Cómo llegan los mensajes"
         help="A qué correo llegan y cuánto tiempo se guardan en el panel."

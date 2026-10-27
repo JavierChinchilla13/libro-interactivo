@@ -7,6 +7,7 @@ import { keys, messagesApi } from '../api';
 import { useConfirm } from '../components/ConfirmDialog';
 import { ListPage } from '../components/ListPage';
 import { StatusBadge } from '../components/StatusBadge';
+import { useToast } from '../components/Toast';
 import { errorMessage } from '../errors';
 
 const EMPTY_TITLE: Record<string, string> = {
@@ -18,6 +19,7 @@ const EMPTY_TITLE: Record<string, string> = {
 /** Mensajes de contacto (solo administradoras): bandeja con «atendido». */
 export function MessagesPage() {
   const client = useQueryClient();
+  const toast = useToast();
   const [status, setStatus] = useState('unhandled');
   const [page, setPage] = useState(1);
   const list = useQuery({
@@ -30,10 +32,19 @@ export function MessagesPage() {
   const toggle = useMutation({
     mutationFn: ({ id, handled }: { id: string; handled: boolean }) =>
       messagesApi.setHandled(id, handled),
-    onSuccess: refresh,
+    onSuccess: async (_result, variables) => {
+      await refresh();
+      toast.success(variables.handled ? 'Marcado como atendido' : 'Marcado como sin atender');
+    },
   });
   const confirm = useConfirm();
-  const remove = useMutation({ mutationFn: messagesApi.remove, onSuccess: refresh });
+  const remove = useMutation({
+    mutationFn: messagesApi.remove,
+    onSuccess: async () => {
+      await refresh();
+      toast.success('Mensaje eliminado');
+    },
+  });
   const data = list.data;
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
   const actionError = toggle.error ?? remove.error;

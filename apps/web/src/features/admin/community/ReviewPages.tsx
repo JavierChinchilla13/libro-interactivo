@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { SelectField, TextAreaField, TextField } from '../../../shared/ui/controls';
-import { Alert, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, PageHeader } from '../../../shared/ui/layout';
 import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
@@ -17,6 +17,7 @@ import { DataList, type Column } from '../components/DataList';
 import { ListPage, useRowSearch } from '../components/ListPage';
 import { StatusBadge } from '../components/StatusBadge';
 import { booksApi, keys, reviewsApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { errorMessage, fieldErrors } from '../errors';
 
 const STATUS_LABEL: Record<ReviewStatus, string> = { published: 'Publicada', hidden: 'Oculta' };
@@ -170,7 +171,7 @@ export function ReviewFormPage() {
 
   if (editing) {
     if (review.isError) return <Alert>{errorMessage(review.error)}</Alert>;
-    if (!review.data) return <Loading />;
+    if (!review.data) return <SkeletonRows rows={4} />;
     return (
       <ReviewFormView
         key={review.data.id}
@@ -180,7 +181,7 @@ export function ReviewFormPage() {
     );
   }
   if (all.isError) return <Alert>{errorMessage(all.error)}</Alert>;
-  if (!all.data) return <Loading />;
+  if (!all.data) return <SkeletonRows rows={4} />;
   return <ReviewFormView key="nueva" initial={emptyForm(all.data.reviews.length + 1)} />;
 }
 

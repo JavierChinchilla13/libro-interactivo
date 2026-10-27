@@ -8,10 +8,14 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { formatDateTime, formatShortDate } from '../../../shared/lib/dates';
 import { Button, SelectField, TextField } from '../../../shared/ui/controls';
-import { Alert, Badge, Card, EmptyState, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, Badge, Card, EmptyState, PageHeader } from '../../../shared/ui/layout';
 import { useSession } from '../../auth/session';
 import { keys, usersApi } from '../api';
+import { useCrumbLeaf } from '../components/Breadcrumbs';
 import { useConfirm } from '../components/ConfirmDialog';
+import { FormSection } from '../components/FormSection';
+import { SkeletonRows } from '../components/Skeleton';
+import { useToast } from '../components/Toast';
 import { DataList, type Column } from '../components/DataList';
 import { ListPage } from '../components/ListPage';
 import { StatusBadge } from '../components/StatusBadge';
@@ -33,12 +37,14 @@ function AccountStatus({ status }: { status: AdminUser['status'] }) {
 
 function CreateStaffForm({ onDone }: { onDone: () => void }) {
   const client = useQueryClient();
+  const toast = useToast();
   const [form, setForm] = useState<CreateStaffUserRequest>({ name: '', email: '', role: 'EDITOR' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const create = useMutation({
     mutationFn: usersApi.create,
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: keys.users });
+      toast.success('Invitación enviada');
       onDone();
     },
   });
@@ -55,13 +61,11 @@ function CreateStaffForm({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <Card>
-      <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-        <h2 className="font-semibold">Nueva cuenta del equipo</h2>
-        <p className="text-sm text-muted">
-          La persona recibe un correo con un enlace para elegir su propia contraseña. Tú nunca la
-          conoces.
-        </p>
+    <form onSubmit={submit} noValidate>
+      <FormSection
+        title="Nueva cuenta del equipo"
+        help="La persona recibe un correo con un enlace para elegir su propia contraseña. Tú nunca la conoces."
+      >
         <div className="grid gap-4 sm:grid-cols-3">
           <TextField
             label="Nombre"
@@ -97,8 +101,8 @@ function CreateStaffForm({ onDone }: { onDone: () => void }) {
             Cancelar
           </Button>
         </div>
-      </form>
-    </Card>
+      </FormSection>
+    </form>
   );
 }
 
@@ -271,6 +275,7 @@ export function UserDetailPage() {
   const navigate = useNavigate();
   const client = useQueryClient();
   const session = useSession();
+  const toast = useToast();
   const detail = useQuery({
     queryKey: keys.user(userId),
     queryFn: () => usersApi.get(userId),
@@ -280,6 +285,7 @@ export function UserDetailPage() {
     mutationFn: (body: Parameters<typeof usersApi.update>[1]) => usersApi.update(userId, body),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: keys.users });
+      toast.success('Guardado');
     },
   });
   const confirm = useConfirm();
@@ -287,30 +293,24 @@ export function UserDetailPage() {
     mutationFn: () => usersApi.remove(userId),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: keys.users });
+      toast.success('Cuenta eliminada');
       void navigate('/admin/usuarios', { replace: true });
     },
   });
 
+  useCrumbLeaf(detail.data?.user.name);
   if (detail.isError) return <Alert>{errorMessage(detail.error)}</Alert>;
-  if (!detail.data) return <Loading />;
+  if (!detail.data) return <SkeletonRows rows={3} />;
   const { user, books } = detail.data;
+
   const isSelf = session.data?.id === user.id;
   const error = update.error ?? remove.error;
 
   return (
     <>
-      <PageHeader
-        title={user.name}
-        subtitle={user.email}
-        actions={
-          <Link to="/admin/usuarios" className="btn btn-secondary">
-            Volver a usuarios
-          </Link>
-        }
-      />
+      <PageHeader title={user.name} subtitle={user.email} />
       <div className="flex max-w-3xl flex-col gap-5">
-        <Card className="flex flex-col gap-3">
-          <h2 className="font-semibold">Cuenta</h2>
+        <FormSection title="Cuenta" help="Rol, estado y acciones de esta persona.">
           <p className="flex flex-wrap items-center gap-2 text-sm">
             <RoleBadge role={user.role} />
             <AccountStatus status={user.status} />
@@ -384,7 +384,7 @@ export function UserDetailPage() {
               )}
             </div>
           )}
-        </Card>
+        </FormSection>
 
         {books.length === 0 ? <EmptyState title="Todavía no hay libros publicados" /> : null}
         {books.map((book) => (

@@ -10,7 +10,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { thumbUrl } from '../../../shared/lib/cloudinary';
 import { CheckField, SelectField, TextAreaField, TextField } from '../../../shared/ui/controls';
-import { Alert, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, PageHeader } from '../../../shared/ui/layout';
 import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
@@ -19,6 +19,7 @@ import { DataList, type Column } from '../components/DataList';
 import { ListPage, useRowSearch } from '../components/ListPage';
 import { StatusBadge } from '../components/StatusBadge';
 import { booksApi, fanArtsApi, keys } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { ImageField } from '../components/MediaFields';
 import { errorMessage, fieldErrors } from '../errors';
 
@@ -190,11 +191,11 @@ export function FanArtFormPage() {
 
   if (editing) {
     if (art.isError) return <Alert>{errorMessage(art.error)}</Alert>;
-    if (!art.data) return <Loading />;
+    if (!art.data) return <SkeletonRows rows={4} />;
     return <FanArtFormView key={art.data.id} fanArtId={fanArtId} initial={formFromArt(art.data)} />;
   }
   if (all.isError) return <Alert>{errorMessage(all.error)}</Alert>;
-  if (!all.data) return <Loading />;
+  if (!all.data) return <SkeletonRows rows={4} />;
   return <FanArtFormView key="nuevo" initial={emptyForm(all.data.fanArts.length + 1)} />;
 }
 

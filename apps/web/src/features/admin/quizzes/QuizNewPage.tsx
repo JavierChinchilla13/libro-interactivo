@@ -3,8 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { Button, CheckField, SelectField, TextField } from '../../../shared/ui/controls';
-import { Alert, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, PageHeader } from '../../../shared/ui/layout';
 import { booksApi, keys, quizzesApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { errorMessage, fieldErrors, slugify } from '../errors';
@@ -51,7 +52,7 @@ export function QuizNewPage() {
     create.mutate(parsed.data);
   }
 
-  if (books.isPending) return <Loading />;
+  if (books.isPending) return <SkeletonRows rows={4} />;
   if (books.isError) return <Alert>{errorMessage(books.error)}</Alert>;
 
   return (

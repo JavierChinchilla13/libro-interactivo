@@ -14,12 +14,13 @@ import {
   TextAreaField,
   TextField,
 } from '../../../shared/ui/controls';
-import { Alert, Loading, PageHeader, TabPanel, Tabs } from '../../../shared/ui/layout';
+import { Alert, PageHeader, TabPanel, Tabs } from '../../../shared/ui/layout';
 import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
 import { useFormGuard } from '../components/useFormGuard';
 import { booksApi, keys, quizzesApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { ImageField } from '../components/MediaFields';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { errorMessage, fieldErrors, slugify } from '../errors';
@@ -55,11 +56,11 @@ export function BookFormPage() {
 
   if (editing) {
     if (book.isError) return <Alert>{errorMessage(book.error)}</Alert>;
-    if (!book.data) return <Loading />;
+    if (!book.data) return <SkeletonRows rows={4} />;
     return <BookFormView key={book.data.id} bookId={bookId} initial={formFromBook(book.data)} />;
   }
   if (all.isError) return <Alert>{errorMessage(all.error)}</Alert>;
-  if (!all.data) return <Loading />;
+  if (!all.data) return <SkeletonRows rows={4} />;
   return <BookFormView key="nuevo" initial={emptyBookForm(all.data.books.length + 1)} />;
 }
 

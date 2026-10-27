@@ -16,12 +16,13 @@ import {
   TextAreaField,
   TextField,
 } from '../../../shared/ui/controls';
-import { Alert, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, PageHeader } from '../../../shared/ui/layout';
 import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
 import { useFormGuard } from '../components/useFormGuard';
 import { booksApi, keys, quizzesApi, wikiApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { ImageField } from '../components/MediaFields';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { errorMessage, fieldErrors, slugify } from '../errors';
@@ -50,7 +51,7 @@ export function WikiFormPage() {
 
   if (editing) {
     if (entry.isError) return <Alert>{errorMessage(entry.error)}</Alert>;
-    if (!entry.data) return <Loading />;
+    if (!entry.data) return <SkeletonRows rows={4} />;
     return (
       <WikiFormView key={entry.data.id} entryId={entryId} initial={formFromEntry(entry.data)} />
     );
