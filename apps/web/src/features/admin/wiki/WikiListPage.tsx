@@ -113,7 +113,7 @@ export function WikiListPage() {
   const columns: Column<WikiEntryResponse>[] = [
     {
       id: 'order',
-      header: 'Orden',
+      header: 'Orden manual',
       role: 'table',
       cell: (entry) => (
         <span className="flex gap-1">

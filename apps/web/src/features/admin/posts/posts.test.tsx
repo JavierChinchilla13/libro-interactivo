@@ -133,7 +133,7 @@ describe('nueva actualización', () => {
       await screen.findByRole('textbox', { name: /^Título/ }),
       'Feria del Libro 2027',
     );
-    expect(screen.getByLabelText('Dirección web (slug)')).toHaveValue('feria-del-libro-2027');
+    expect(screen.getByLabelText('Dirección web')).toHaveValue('feria-del-libro-2027');
     await userEvent.type(screen.getByLabelText('Lugar'), '  Librería Central ');
     fireEvent.change(screen.getByLabelText('Inicia'), { target: { value: '2027-03-20T16:00' } });
     await userEvent.click(screen.getByRole('button', { name: 'Publicar' }));

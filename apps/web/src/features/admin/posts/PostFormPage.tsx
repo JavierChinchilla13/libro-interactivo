@@ -233,9 +233,9 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
               }}
             />
             <TextField
-              label="Dirección web (slug)"
+              label="Dirección web"
               maxLength={80}
-              hint="Se genera sola a partir del título."
+              hint="La parte final del enlace. Se arma sola con el título."
               value={form.slug}
               error={error('slug')}
               onChange={(event) => {

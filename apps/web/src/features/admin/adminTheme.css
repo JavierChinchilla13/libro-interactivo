@@ -571,6 +571,71 @@
     margin: 0;
   }
 
+  /* ---- Preguntas plegables ---- */
+  .admin-fold {
+    display: flex;
+    width: 100%;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.625rem;
+    border-radius: var(--token-radius-sm);
+    text-align: left;
+    color: inherit;
+  }
+  .admin-fold > svg {
+    transition: transform var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-fold-summary {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--token-muted);
+  }
+
+  /* ---- Frase bajo las pestañas ---- */
+  .admin-tab-help {
+    margin: -0.75rem 0 1.25rem;
+    font-size: 0.875rem;
+    color: var(--token-muted);
+  }
+
+  /* ---- Estado único del quiz ---- */
+  .admin-status-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  /* ---- Bloque «Avanzado» plegado ---- */
+  .admin-advanced > summary {
+    display: flex;
+    min-height: 2.75rem;
+    cursor: pointer;
+    align-items: center;
+    border-radius: var(--token-radius-sm);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--token-muted);
+    list-style: none;
+  }
+  .admin-advanced > summary::-webkit-details-marker {
+    display: none;
+  }
+  .admin-advanced > summary::before {
+    content: '›';
+    display: inline-block;
+    width: 1.25rem;
+    transition: transform var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-advanced[open] > summary::before {
+    transform: rotate(90deg);
+  }
+
   /* ---- Barra de guardado ---- */
   .admin-savebar {
     position: sticky;

@@ -109,7 +109,9 @@ describe('pestaña Apariencia', () => {
   it('sin apariencia, el editor viejo sigue mostrando instrucciones e imagen', async () => {
     mockApi(base(), { session: ADMIN });
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
-    expect(await screen.findByRole('textbox', { name: 'Instrucciones' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('textbox', { name: 'Instrucciones para la lectora' }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/se editan en la pestaña/)).toBeNull();
   });
 
@@ -298,7 +300,7 @@ describe('pestaña Apariencia', () => {
     const user = await openTab();
     await user.click(await screen.findByRole('radio', { name: /Verde/ }));
     expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();
-    await user.click(screen.getByRole('tab', { name: 'General' }));
+    await user.click(screen.getByRole('tab', { name: 'Datos' }));
     await user.click(screen.getByRole('tab', { name: 'Apariencia' }));
     expect(screen.getByRole('radio', { name: /Verde/ })).toBeChecked();
     expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();

@@ -30,9 +30,7 @@ export function VersionsTab({ quizId, archived }: { quizId: string; archived: bo
       {versions.isPending ? <Loading /> : null}
       {versions.isError ? <Alert>{errorMessage(versions.error)}</Alert> : null}
       {versions.data && versions.data.versions.length === 0 ? (
-        <EmptyState title="Todavía no se ha publicado">
-          La primera publicación crea la versión 1.
-        </EmptyState>
+        <EmptyState title="Aún no hay versiones">Al publicar se guarda la primera.</EmptyState>
       ) : null}
       {versions.data && versions.data.versions.length > 0 ? (
         <div className="overflow-x-auto rounded-token-lg border border-border bg-surface">

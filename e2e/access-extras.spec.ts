@@ -50,8 +50,11 @@ test.describe('códigos QR y capítulos extra', () => {
     expect(pdf.headers()['content-type']).toBe('application/pdf');
     expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
 
-    page.once('dialog', (dialog) => void dialog.accept());
     await card.getByRole('button', { name: 'Revocar' }).click();
+    await page
+      .getByRole('dialog', { name: '¿Revocar este código?' })
+      .getByRole('button', { name: 'Revocar' })
+      .click();
     await expect(card.getByText('Revocado')).toBeVisible();
     await expect(card.getByRole('link', { name: /Descargar PDF/ })).toHaveCount(0);
   });

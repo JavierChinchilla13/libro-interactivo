@@ -230,7 +230,7 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
             }}
           />
           <TextField
-            label="Dirección (slug)"
+            label="Dirección web"
             required
             value={form.slug}
             error={errors['slug']}
@@ -258,7 +258,7 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
               onChange={(event) => set('status', event.target.value as ExtraForm['status'])}
             />
             <TextField
-              label="Orden"
+              label="Posición"
               type="number"
               min={1}
               value={form.order}

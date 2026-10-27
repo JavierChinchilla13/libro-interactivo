@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { Button, CheckField, TextField } from '../../../shared/ui/controls';
 import { Alert, Card } from '../../../shared/ui/layout';
 import { quizzesApi } from '../api';
+import { FormSection } from '../components/FormSection';
 import { ImageField } from '../components/MediaFields';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { StringListEditor } from '../components/StringListEditor';
+import { useToast } from '../components/Toast';
 import { errorMessage } from '../errors';
 import type { Draft } from './draft';
 
-/** Pestaña «General»: título, instrucciones, reglas del quiz, secuencia de revelado común y posición. */
+/** Pestaña «Datos»: título, instrucciones, reglas del quiz, secuencia de revelado común y posición. */
 export function GeneralTab({
   quiz,
   draft,
@@ -23,12 +25,14 @@ export function GeneralTab({
   onOpenAppearance: () => void;
 }) {
   const client = useQueryClient();
+  const toast = useToast();
   const [slug, setSlug] = useState(quiz.slug);
   const [order, setOrder] = useState(String(quiz.order));
   const meta = useMutation({
     mutationFn: () => quizzesApi.updateMeta(quiz.id, { slug, order: Number(order) }),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ['admin', 'quizzes'] });
+      toast.success('Posición actualizada');
     },
   });
   const intro = draft.settings.revealIntro ?? { lines: [] };
@@ -56,7 +60,7 @@ export function GeneralTab({
         ) : (
           <>
             <RichTextEditor
-              label="Instrucciones"
+              label="Instrucciones para la lectora"
               value={draft.instructionsHtml ?? ''}
               onChange={(html) => onChange({ ...draft, instructionsHtml: html })}
             />
@@ -74,18 +78,21 @@ export function GeneralTab({
       </Card>
 
       <div className="flex flex-col gap-5">
-        <Card className="flex flex-col gap-4">
-          <h2 className="font-semibold">Reglas del quiz</h2>
+        <FormSection
+          title="Reglas del quiz"
+          help="Cuántas veces se juega y qué se muestra al final."
+        >
           <CheckField
             label="Se puede repetir"
-            hint="Si está desactivado, el quiz se juega una sola vez."
+            hint="Si lo apagas, cada lectora lo juega una sola vez."
             checked={draft.settings.allowRetake ?? true}
             onChange={(value) =>
               onChange({ ...draft, settings: { ...draft.settings, allowRetake: value } })
             }
           />
           <CheckField
-            label="Mostrar el porcentaje de cada resultado al terminar"
+            label="Mostrar el porcentaje de cada resultado"
+            hint="Al terminar, la lectora ve cuánto de cada resultado sacó."
             checked={draft.settings.showBreakdown ?? false}
             onChange={(value) =>
               onChange({ ...draft, settings: { ...draft.settings, showBreakdown: value } })
@@ -94,12 +101,12 @@ export function GeneralTab({
           <p className="text-xs text-muted">
             Los cambios de reglas rigen desde la siguiente publicación.
           </p>
-        </Card>
+        </FormSection>
 
         <Card className="flex flex-col gap-4">
-          <h2 className="font-semibold">Secuencia de revelado común</h2>
+          <h2 className="font-semibold">Líneas que aparecen antes del resultado</h2>
           <p className="text-sm text-muted">
-            Líneas que aparecen una a una antes de mostrar el resultado (iguales para todos los
+            Se muestran una por una mientras se calcula el resultado (iguales para todos los
             resultados).
           </p>
           <StringListEditor
@@ -119,8 +126,8 @@ export function GeneralTab({
             }
           />
           <TextField
-            label="Efecto visual"
-            hint="Nombre del efecto (se define con la autora)."
+            label="Animación de la espera"
+            hint="Se elige entre las animaciones disponibles."
             value={intro.effect ?? ''}
             maxLength={60}
             onChange={(event) =>
@@ -138,31 +145,34 @@ export function GeneralTab({
           />
         </Card>
 
-        <Card className="flex flex-col gap-4">
-          <h2 className="font-semibold">Dirección y posición</h2>
-          <TextField
-            label="Dirección (slug)"
-            value={slug}
-            onChange={(event) => setSlug(event.target.value)}
-          />
-          <TextField
-            label="Posición en la secuencia"
-            type="number"
-            min={1}
-            value={order}
-            onChange={(event) => setOrder(event.target.value)}
-          />
-          {meta.isError ? <Alert>{errorMessage(meta.error)}</Alert> : null}
-          {meta.isSuccess ? <Alert tone="success" title="Posición actualizada" /> : null}
-          <Button
-            variant="secondary"
-            className="self-start"
-            loading={meta.isPending}
-            onClick={() => meta.mutate()}
-          >
-            Guardar posición
-          </Button>
-        </Card>
+        <details className="admin-advanced">
+          <summary>Avanzado: dirección web y posición</summary>
+          <div className="admin-card mt-3 flex flex-col gap-4">
+            <TextField
+              label="Dirección web"
+              hint="La parte final del enlace. Se arma sola con el título."
+              value={slug}
+              onChange={(event) => setSlug(event.target.value)}
+            />
+            <TextField
+              label="Posición"
+              hint="El quiz 2 se abre al completar el 1. Aquí eliges el lugar de este."
+              type="number"
+              min={1}
+              value={order}
+              onChange={(event) => setOrder(event.target.value)}
+            />
+            {meta.isError ? <Alert>{errorMessage(meta.error)}</Alert> : null}
+            <Button
+              variant="secondary"
+              className="self-start"
+              loading={meta.isPending}
+              onClick={() => meta.mutate()}
+            >
+              Guardar posición
+            </Button>
+          </div>
+        </details>
       </div>
     </div>
   );

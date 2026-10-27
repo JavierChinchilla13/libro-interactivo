@@ -167,8 +167,8 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
               }}
             />
             <TextField
-              label="Dirección web (slug)"
-              hint="Se genera del título; editable. Solo minúsculas, números y guiones."
+              label="Dirección web"
+              hint="La parte final del enlace. Se arma sola; solo minúsculas, números y guiones."
               required
               value={form.slug}
               error={err('slug')}
@@ -178,7 +178,7 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
               }}
             />
             <TextField
-              label="Lema"
+              label="Frase corta (lema)"
               value={form.tagline}
               error={err('tagline')}
               onChange={(event) => set('tagline', event.target.value)}
@@ -212,19 +212,19 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
             />
             {form.status === 'upcoming' ? (
               <CheckField
-                label="Mostrar en el panel de lectoras como «próximamente»"
+                label="Mostrarlo a las lectoras como «próximamente»"
                 hint="Apagado por defecto. Si lo enciendes, las lectoras con sesión lo ven en «Tus libros» (con cuenta atrás si hay fecha, o con «Próximamente»), solo con portada y título."
                 checked={form.showInReaderPanel}
                 onChange={(value) => set('showInReaderPanel', value)}
               />
             ) : null}
             <TextField
-              label="Posición en la saga"
+              label="Lugar en la saga"
               type="number"
               min={1}
               value={form.order}
               error={err('order')}
-              hint="También es el orden del carrusel «Secuencia de publicación»."
+              hint="Define el orden de los libros en la página."
               onChange={(event) => set('order', event.target.value)}
             />
             <ImageField
@@ -244,7 +244,7 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
               onChange={(event) => set('genres', event.target.value)}
             />
             <RichTextEditor
-              label="Advertencia de contenido sensible"
+              label="Aviso de contenido sensible"
               value={form.contentWarning}
               onChange={(html) => set('contentWarning', html)}
             />
@@ -342,14 +342,14 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
 
           <FormSection title="Tema del libro" help="Color y fondo propios de la página del libro.">
             <TextField
-              label="Color principal"
+              label="Color del libro"
               placeholder="#444444"
               value={form.primaryColor}
               error={err('theme.primaryColor')}
               onChange={(event) => set('primaryColor', event.target.value)}
             />
             <SelectField
-              label="Fondo"
+              label="Fondo de la página del libro"
               hint="Solo color o imagen (sin video)."
               value={form.background}
               options={[

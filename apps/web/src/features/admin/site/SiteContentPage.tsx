@@ -308,7 +308,7 @@ function SiteContentForm({ initial }: { initial: FormState }) {
           help="Lo que ve una lectora ante algo que aún no puede abrir."
         >
           <TextField
-            label="Lo que ve el visitante en lo que aún no puede abrir"
+            label="Mensaje de lo que aún está bloqueado"
             maxLength={200}
             hint="Si lo dejas vacío se muestra «Bloqueado: avanza en tu lectura»."
             value={form.lockMessage}
