@@ -76,9 +76,9 @@ describe('menú y permisos del panel', () => {
     const menu = await screen.findByRole('navigation', { name: 'Administración' });
     for (const [name, href] of [
       ['Usuarios', '/admin/usuarios'],
-      ['Mensajes de contacto', '/admin/mensajes'],
+      ['Mensajes', '/admin/mensajes'],
       ['Estadísticas', '/admin/estadisticas'],
-      ['Ajustes del sitio', '/admin/ajustes'],
+      ['Contacto del sitio', '/admin/ajustes'],
     ] as const) {
       expect(within(menu).getByRole('link', { name })).toHaveAttribute('href', href);
     }

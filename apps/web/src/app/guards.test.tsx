@@ -57,12 +57,15 @@ describe('guards de /admin (solo mejoran la experiencia; la seguridad es del API
     expect(screen.queryByRole('navigation', { name: 'Administración' })).not.toBeInTheDocument();
   });
 
-  it('una editora entra al panel y NO ve la sección «Solo administradores»', async () => {
+  it('una editora entra al panel y NO ve el grupo «Administración» ni nada bloqueado', async () => {
     mockApi('EDITOR');
     renderAt('/admin');
     expect(await screen.findByRole('heading', { name: 'Inicio del panel' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Libros' })).toBeInTheDocument();
-    expect(screen.queryByText('Solo administradores')).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Administración' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Usuarios' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Mensajes' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Contacto del sitio' })).not.toBeInTheDocument();
     // El rol vive ahora dentro del menú de usuario.
     await userEvent.click(screen.getByRole('button', { name: 'Persona' }));
     expect(screen.getByText('Editora')).toBeInTheDocument();
@@ -71,7 +74,7 @@ describe('guards de /admin (solo mejoran la experiencia; la seguridad es del API
   it('una administradora ve además Códigos QR, Usuarios, Mensajes, Estadísticas y Ajustes', async () => {
     mockApi('ADMIN');
     renderAt('/admin');
-    expect(await screen.findByText('Solo administradores')).toBeInTheDocument();
+    expect(await screen.findByRole('group', { name: 'Administración' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Códigos QR' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Usuarios' })).toHaveAttribute(
       'href',
