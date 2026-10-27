@@ -148,11 +148,11 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
             }}
           />
           <TextField
-            label="Dirección (slug)"
+            label="Dirección web"
             required
             value={form.slug}
             error={errors['slug']}
-            hint="Se genera del nombre; editable."
+            hint="La parte final del enlace. Se arma sola con el nombre."
             onChange={(event) => {
               set('slugTouched', true);
               set('slug', event.target.value);
@@ -177,7 +177,7 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
 
           {kind === 'power_field' ? (
             <SelectField
-              label="Fondo animado del campo"
+              label="Animación del campo"
               value={form.visualKey}
               placeholder="Sin animación"
               hint="Se ve en la ficha del campo y en el resultado del quiz de quien pertenece a este campo."
@@ -349,7 +349,7 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
             hasta que el lector complete un quiz.
           </p>
           <SelectField
-            label="Oculta hasta completar…"
+            label="Se muestra tras completar…"
             value={form.unlockQuizId}
             placeholder="Siempre visible"
             disabled={form.bookId === ''}
@@ -361,7 +361,7 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
           />
           {form.unlockQuizId ? (
             <SelectField
-              label="Mientras esté bloqueada"
+              label="Qué ve la lectora mientras tanto"
               value={form.lockedDisplay}
               options={[
                 { value: 'show', label: 'Mostrarla como «bloqueada» (sin contenido)' },

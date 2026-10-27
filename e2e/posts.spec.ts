@@ -67,14 +67,13 @@ test.describe('actualizaciones (escritorio)', () => {
     // La vista previa ya muestra la plantilla con lo escrito.
     await expect(
       page
-        .getByRole('heading', { name: 'Vista previa' })
-        .locator('..')
+        .locator('section', { has: page.getByRole('heading', { name: 'Vista previa' }) })
         .getByText('Librería Central'),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Publicar' }).click();
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
+    await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
     await page.waitForTimeout(400);
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
+    await expect(page.getByText('Todo guardado')).toBeVisible();
 
     // La lista del panel la muestra publicada y destacada.
     await page.goto('/admin/actualizaciones');

@@ -1,10 +1,16 @@
 import type { QuizDetailResponse, QuizValidationResponse } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useState } from 'react';
+import { useParams } from 'react-router';
 import { Button } from '../../../shared/ui/controls';
-import { Alert, Badge, Loading, PageHeader, TabPanel, Tabs } from '../../../shared/ui/layout';
+import { Alert, Loading, PageHeader, TabPanel, Tabs } from '../../../shared/ui/layout';
 import { keys, quizzesApi } from '../api';
+import { useCrumbLeaf } from '../components/Breadcrumbs';
+import { HelpTip } from '../components/HelpTip';
+import { SaveBar } from '../components/SaveBar';
+import { StatusBadge } from '../components/StatusBadge';
+import { useToast } from '../components/Toast';
+import { useUnsavedChanges } from '../components/useUnsavedChanges';
 import { errorMessage } from '../errors';
 import type { Draft } from './draft';
 import { AppearanceTab } from './AppearanceTab';
@@ -15,6 +21,27 @@ import { StagesTab } from './StagesTab';
 import { VersionsTab } from './VersionsTab';
 
 type Tab = 'general' | 'etapas' | 'resultados' | 'apariencia' | 'versiones';
+
+/** Nombre de cada pestaña y la frase que dice qué se hace en ella. */
+const TABS: readonly { id: Tab; label: string; help: string }[] = [
+  { id: 'general', label: 'Datos', help: 'Nombre, reglas y posición del quiz.' },
+  {
+    id: 'etapas',
+    label: 'Preguntas',
+    help: 'Etapas, preguntas y a qué resultado suma cada respuesta.',
+  },
+  { id: 'resultados', label: 'Resultados', help: 'Qué descubre la lectora al terminar.' },
+  {
+    id: 'apariencia',
+    label: 'Apariencia',
+    help: 'Fondo, color y portada; se aplica sin publicar.',
+  },
+  {
+    id: 'versiones',
+    label: 'Versiones',
+    help: 'Historial de lo publicado y cuántas lectoras lo usaron.',
+  },
+];
 
 const snapshot = (draft: Draft) => JSON.stringify(draft);
 
@@ -27,9 +54,22 @@ export function QuizEditorPage() {
   return <QuizEditor key={quizId} quizId={quizId} quiz={detail.data} />;
 }
 
-/** Editor de quizzes: guardar borrador, vista previa, validar y publicar. */
+/** Una sola etiqueta con el estado del quiz: «Borrador», «Publicado · v2» o «Publicado · v2 con cambios sin publicar». */
+function QuizState({ quiz }: { quiz: QuizDetailResponse }) {
+  if (quiz.status === 'archived') return <StatusBadge status="archived" />;
+  if (quiz.status === 'draft' || quiz.currentVersion < 1) return <StatusBadge status="draft" />;
+  const label = `Publicado · v${quiz.currentVersion}`;
+  return quiz.hasUnpublishedChanges ? (
+    <StatusBadge status="changes" label={`${label} con cambios sin publicar`} />
+  ) : (
+    <StatusBadge status="published" label={label} />
+  );
+}
+
+/** Editor de quizzes: guardar el borrador, revisarlo, probarlo y publicarlo. */
 function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse }) {
   const client = useQueryClient();
+  const toast = useToast();
   const [draft, setDraft] = useState<Draft>(quiz.draft);
   const [saved, setSaved] = useState(() => snapshot(quiz.draft));
   const [tab, setTab] = useState<Tab>('general');
@@ -43,14 +83,9 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   const [previewing, setPreviewing] = useState(false);
 
   const dirty = snapshot(draft) !== saved;
-
-  // Avisar antes de cerrar la pestaña con cambios sin guardar.
-  useEffect(() => {
-    if (!dirty) return undefined;
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
+  useCrumbLeaf(draft.title.trim() || 'Quiz');
+  // Avisa antes de salir con cambios sin guardar (cerrar la pestaña o ir a otra pantalla).
+  useUnsavedChanges(dirty);
 
   function adopt(result: QuizDetailResponse) {
     client.setQueryData(keys.quiz(quizId), result);
@@ -70,7 +105,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   const publish = useMutation({
     mutationFn: () => quizzesApi.publish(quizId),
     onSuccess: async (result) => {
-      setNotice({ tone: 'success', text: `Publicada como versión ${result.version}.` });
+      toast.success(`Publicado: ya es la versión ${result.version} y las lectoras la ven.`);
       setReport({ valid: true, errors: [], warnings: result.warnings });
       await client.invalidateQueries({ queryKey: ['admin', 'quizzes'] });
     },
@@ -89,7 +124,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
 
   async function onSave() {
     setNotice(null);
-    if (await ensureSaved()) setNotice({ tone: 'success', text: 'Borrador guardado.' });
+    if (await ensureSaved()) toast.success('Borrador guardado');
   }
 
   async function onValidate() {
@@ -108,7 +143,10 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   async function onPreview() {
     setNotice(null);
     if (quiz.currentVersion < 1) {
-      setNotice({ tone: 'warning', text: 'Publica el quiz al menos una vez para poder probarlo.' });
+      setNotice({
+        tone: 'warning',
+        text: 'Todavía no hay nada publicado que probar. Publica el quiz una vez y vuelve.',
+      });
       return;
     }
     if (dirty) {
@@ -123,62 +161,35 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   const archived = quiz.status === 'archived';
   const busy = save.isPending || check.isPending || publish.isPending;
   const error = save.error ?? check.error ?? publish.error;
+  // Tras revisar, si hay cosas por arreglar y nada cambió desde entonces, Publicar se apaga y dice por qué.
+  const blockedBy = report && !report.valid && !dirty ? report.errors.length : 0;
+  const activeTab = TABS.find((item) => item.id === tab) ?? TABS[0];
 
   return (
     <>
-      <p className="mb-2 text-sm">
-        <Link to="/admin/quizzes" className="underline">
-          ← Quizzes
-        </Link>
-      </p>
       <PageHeader
         title={draft.title || 'Quiz'}
-        subtitle={
-          quiz.currentVersion > 0 ? `Última publicada: v${quiz.currentVersion}` : 'Nunca publicado'
-        }
-        actions={
-          <>
-            <Button
-              variant="secondary"
-              disabled={busy || archived || !dirty}
-              loading={save.isPending}
-              onClick={() => void onSave()}
-            >
-              Guardar borrador
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={busy || archived}
-              onClick={() => void onPreview()}
-            >
-              Vista previa
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={busy || archived}
-              loading={check.isPending}
-              onClick={() => void onValidate()}
-            >
-              Validar
-            </Button>
-            <Button
-              disabled={busy || archived}
-              loading={publish.isPending}
-              onClick={() => void onPublish()}
-            >
-              Publicar
-            </Button>
-          </>
-        }
+        subtitle="Lo que editas aquí es un borrador: las lectoras no lo ven hasta que lo publiques."
       />
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Badge tone={archived ? 'warning' : quiz.status === 'published' ? 'success' : 'neutral'}>
-          {archived ? 'Archivado' : quiz.status === 'published' ? 'Publicado' : 'Borrador'}
-        </Badge>
-        {dirty ? <Badge tone="warning">Cambios sin guardar</Badge> : null}
-        {!dirty && quiz.hasUnpublishedChanges && quiz.currentVersion > 0 ? (
-          <Badge tone="warning">Cambios sin publicar</Badge>
-        ) : null}
+      <div className="admin-status-line">
+        <QuizState quiz={quiz} />
+        <HelpTip title="¿Qué hace cada botón?">
+          <ul className="list-disc pl-5">
+            <li>
+              <strong>Guardar borrador</strong>: guarda lo que escribiste; las lectoras no ven nada
+              todavía.
+            </li>
+            <li>
+              <strong>Revisar</strong>: comprueba que no falte nada antes de publicar.
+            </li>
+            <li>
+              <strong>Vista previa</strong>: pruébalo como lectora; no cuenta en estadísticas.
+            </li>
+            <li>
+              <strong>Publicar</strong>: crea una versión nueva y las lectoras la ven.
+            </li>
+          </ul>
+        </HelpTip>
       </div>
 
       {archived ? (
@@ -193,11 +204,6 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           <Alert tone={notice.tone}>{notice.text}</Alert>
         </div>
       ) : null}
-      {error ? (
-        <div className="mb-4">
-          <Alert>{errorMessage(error)}</Alert>
-        </div>
-      ) : null}
       {report ? <ValidationReport report={report} /> : null}
       {previewing ? <PreviewPanel quizId={quizId} onClose={() => setPreviewing(false)} /> : null}
 
@@ -205,14 +211,9 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
         label="Secciones del quiz"
         active={tab}
         onChange={openTab}
-        tabs={[
-          { id: 'general', label: 'General' },
-          { id: 'etapas', label: 'Etapas y preguntas' },
-          { id: 'resultados', label: 'Resultados' },
-          { id: 'apariencia', label: 'Apariencia' },
-          { id: 'versiones', label: 'Versiones' },
-        ]}
+        tabs={TABS.map(({ id, label }) => ({ id, label }))}
       />
+      {activeTab ? <p className="admin-tab-help">{activeTab.help}</p> : null}
       <fieldset disabled={archived} className="contents">
         <TabPanel id="general" active={tab}>
           <GeneralTab
@@ -243,18 +244,62 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
       <TabPanel id="versiones" active={tab}>
         <VersionsTab quizId={quizId} archived={archived} />
       </TabPanel>
+
+      {tab === 'apariencia' || tab === 'versiones' ? null : (
+        <SaveBar
+          dirty={dirty && !archived}
+          saving={save.isPending}
+          error={error ? errorMessage(error) : null}
+          onSave={() => void onSave()}
+          saveLabel="Guardar borrador"
+          saveVariant="secondary"
+          savedLabel={archived ? 'Solo lectura' : 'Todo guardado'}
+          after={
+            <Button
+              disabled={busy || archived || blockedBy > 0}
+              loading={publish.isPending}
+              onClick={() => void onPublish()}
+            >
+              Publicar
+            </Button>
+          }
+          disabledReason={
+            blockedBy > 0
+              ? `Hay ${blockedBy} ${blockedBy === 1 ? 'cosa' : 'cosas'} por arreglar antes de publicar (mira el aviso de arriba).`
+              : undefined
+          }
+        >
+          <Button
+            variant="secondary"
+            disabled={busy || archived}
+            loading={check.isPending}
+            title="Comprueba que no falte nada antes de publicar"
+            onClick={() => void onValidate()}
+          >
+            Revisar
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={busy || archived}
+            title="Pruébalo como lectora; no cuenta en estadísticas"
+            onClick={() => void onPreview()}
+          >
+            Vista previa
+          </Button>
+        </SaveBar>
+      )}
     </>
   );
 }
 
 function ValidationReport({ report }: { report: QuizValidationResponse }) {
   return (
-    <div className="mb-4 flex flex-col gap-3" aria-label="Resultado de la validación">
+    <div className="mb-4 flex flex-col gap-3" aria-label="Resultado de la revisión">
       {report.valid && report.errors.length === 0 ? (
         <Alert tone="success" title="El quiz está completo y se puede publicar" />
       ) : (
         <Alert
-          title={`${report.errors.length} ${report.errors.length === 1 ? 'error' : 'errores'} (impiden publicar)`}
+          title={`Hay ${report.errors.length} ${report.errors.length === 1 ? 'cosa' : 'cosas'} por arreglar antes de publicar`}
         >
           <ul className="mt-1 list-disc pl-5">
             {report.errors.map((issue, index) => (
@@ -266,7 +311,7 @@ function ValidationReport({ report }: { report: QuizValidationResponse }) {
       {report.warnings.length > 0 ? (
         <Alert
           tone="warning"
-          title={`${report.warnings.length} ${report.warnings.length === 1 ? 'aviso' : 'avisos'}`}
+          title={`${report.warnings.length} ${report.warnings.length === 1 ? 'sugerencia' : 'sugerencias'} (no impiden publicar)`}
         >
           <ul className="mt-1 list-disc pl-5">
             {report.warnings.map((issue, index) => (

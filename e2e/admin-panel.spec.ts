@@ -99,12 +99,14 @@ test.describe('panel de administración', () => {
     await expect(page).toHaveURL(/\/admin\/quizzes\/[0-9a-f]{24}$/);
     await expect(page.getByRole('heading', { name: 'Quiz E2E' })).toBeVisible();
 
-    // Un quiz vacío no se puede publicar: validar lo explica.
-    await page.getByRole('button', { name: 'Validar' }).click();
-    await expect(page.getByLabel('Resultado de la validación')).toContainText('impiden publicar');
+    // Un quiz vacío no se puede publicar: revisar lo explica.
+    await page.getByRole('button', { name: 'Revisar' }).click();
+    await expect(page.getByLabel('Resultado de la revisión')).toContainText(
+      'por arreglar antes de publicar',
+    );
 
     // Etapa 1 y dos resultados.
-    await page.getByRole('tab', { name: 'Etapas y preguntas' }).click();
+    await page.getByRole('tab', { name: 'Preguntas' }).click();
     await page.getByRole('button', { name: '+ Agregar etapa' }).click();
     await page.getByRole('tab', { name: 'Resultados' }).click();
     await page.getByRole('button', { name: '+ Resultado en esta etapa' }).click();
@@ -113,22 +115,22 @@ test.describe('panel de administración', () => {
     await page.getByRole('textbox', { name: 'Título' }).nth(1).fill('Resultado B');
 
     // Una pregunta: nace con una respuesta por resultado (la i apunta al resultado i).
-    await page.getByRole('tab', { name: 'Etapas y preguntas' }).click();
-    await page.getByRole('button', { name: '+ Pregunta' }).click();
+    await page.getByRole('tab', { name: 'Preguntas' }).click();
+    await page.getByRole('button', { name: '+ Agregar pregunta' }).click();
     await page.getByRole('textbox', { name: 'Texto de la pregunta' }).fill('¿Qué eliges?');
     await page.getByRole('textbox', { name: 'Respuesta 1' }).fill('Lo primero');
     await page.getByRole('textbox', { name: 'Respuesta 2' }).fill('Lo segundo');
-    await expect(page.getByLabel('Suma al resultado').nth(0)).toHaveValue('r1');
-    await expect(page.getByLabel('Suma al resultado').nth(1)).toHaveValue('r2');
+    await expect(page.getByLabel('Resultado al que suma esta respuesta').nth(0)).toHaveValue('r1');
+    await expect(page.getByLabel('Resultado al que suma esta respuesta').nth(1)).toHaveValue('r2');
 
     await page.getByRole('button', { name: 'Guardar borrador' }).click();
-    await expect(page.getByText('Borrador guardado.')).toBeVisible();
+    await expect(page.getByText('Borrador guardado', { exact: true })).toBeVisible();
 
-    // Validar y publicar.
-    await page.getByRole('button', { name: 'Validar' }).click();
+    // Revisar y publicar.
+    await page.getByRole('button', { name: 'Revisar' }).click();
     await expect(page.getByText('El quiz está completo y se puede publicar')).toBeVisible();
     await page.getByRole('button', { name: 'Publicar' }).click();
-    await expect(page.getByText('Publicada como versión 1.')).toBeVisible();
+    await expect(page.getByText(/Publicado: ya es la versión 1/)).toBeVisible();
 
     // Vista previa en modo prueba: se juega la versión publicada.
     await page.getByRole('button', { name: 'Vista previa' }).click();
@@ -142,7 +144,10 @@ test.describe('panel de administración', () => {
     await expect(page.getByRole('cell', { name: 'v1' })).toBeVisible();
 
     // El quiz figura como publicado en el listado.
-    await page.getByRole('link', { name: '← Quizzes' }).click();
+    await page
+      .getByRole('navigation', { name: 'Dónde estás' })
+      .getByRole('link', { name: 'Quizzes' })
+      .click();
     await page.getByRole('combobox', { name: /^Libro/ }).selectOption({ label: bookTitle });
     await expect(page.getByRole('row', { name: /Quiz E2E.*Publicado.*v1/ })).toBeVisible();
   });

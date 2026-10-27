@@ -187,8 +187,11 @@ test.describe('apariencia del quiz: editor y lectora', () => {
     await expect(readerPage.locator('.quiz-bg')).toHaveCount(0);
 
     // 7) Revertir con el historial: «Volver a antes» en el cambio más reciente deshace el quitar.
-    page.once('dialog', (dialog) => void dialog.accept());
     await page.getByRole('button', { name: 'Volver a antes' }).first().click();
+    await page
+      .getByRole('dialog', { name: '¿Volver a la apariencia anterior?' })
+      .getByRole('button', { name: 'Volver a esta apariencia' })
+      .click();
     await expect(page.getByText(/Se volvió al estado anterior a ese cambio/)).toBeVisible();
     await readerPage.reload();
     await expect(readerPage.locator('.quiz-bg')).toHaveCount(1);

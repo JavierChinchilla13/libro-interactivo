@@ -51,8 +51,11 @@ test.describe('administración: usuarios, mensajes y borrado de cuenta (escritor
     await page.getByRole('link', { name: `Lectora Ops ${stamp}` }).click();
     await expect(page.getByRole('heading', { name: `Lectora Ops ${stamp}` })).toBeVisible();
 
-    page.once('dialog', (dialog) => void dialog.accept());
     await page.getByRole('button', { name: 'Desactivar cuenta' }).click();
+    await page
+      .getByRole('dialog', { name: '¿Desactivar la cuenta?' })
+      .getByRole('button', { name: 'Desactivar cuenta' })
+      .click();
     await expect(page.getByText('Desactivada').first()).toBeVisible();
 
     // Una persona desactivada ya no puede ingresar.
