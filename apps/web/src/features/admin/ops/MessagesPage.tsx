@@ -28,7 +28,12 @@ export function MessagesPage() {
     placeholderData: (previous) => previous,
     staleTime: 0,
   });
-  const refresh = () => client.invalidateQueries({ queryKey: keys.messages });
+  // Los mensajes y los números del inicio (estadísticas) se actualizan juntos.
+  const refresh = () =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: keys.messages }),
+      client.invalidateQueries({ queryKey: keys.stats }),
+    ]);
   const toggle = useMutation({
     mutationFn: ({ id, handled }: { id: string; handled: boolean }) =>
       messagesApi.setHandled(id, handled),
@@ -116,7 +121,14 @@ export function MessagesPage() {
                     status={message.handled ? 'read' : 'unread'}
                     label={message.handled ? 'Atendido' : 'Sin atender'}
                   />
-                  {formatDateTime(message.createdAt)}
+                  <time dateTime={message.createdAt} title={formatDateTime(message.createdAt)}>
+                    {new Date(message.createdAt).toLocaleString('es', {
+                      day: 'numeric',
+                      month: 'short',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
+                  </time>
                 </p>
               </div>
               {/* Texto plano: se muestra tal cual, nunca como HTML. */}

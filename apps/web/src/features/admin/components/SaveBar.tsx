@@ -42,7 +42,6 @@ function MoreMenu({ items, note }: { items: readonly SaveBarItem[]; note?: strin
         ref={trigger}
         type="button"
         className="btn btn-secondary"
-        aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((value) => !value)}
@@ -51,13 +50,12 @@ function MoreMenu({ items, note }: { items: readonly SaveBarItem[]; note?: strin
         <AdminIcon name="chevron" className="size-4 -rotate-90" />
       </button>
       {open ? (
-        <div id={id} role="menu" className="admin-more-menu">
+        <div id={id} role="group" aria-label="Más acciones" className="admin-more-menu">
           {note ? <p className="admin-more-note">{note}</p> : null}
           {items.map((item) => (
             <button
               key={item.label}
               type="button"
-              role="menuitem"
               disabled={item.disabled}
               title={item.title}
               onClick={() => {
@@ -151,6 +149,12 @@ export function SaveBar({
         </p>
         <div className="ml-auto flex items-center gap-2">
           <MoreMenu items={moreItems} note={disabledReason} />
+          {/* Guardar es lo más frecuente: con cambios se ve a mano, sin abrir «Más». */}
+          {dirty && !saving && !blocked ? (
+            <button type="button" className="btn btn-secondary" onClick={onSave}>
+              Guardar
+            </button>
+          ) : null}
           {after}
         </div>
       </div>

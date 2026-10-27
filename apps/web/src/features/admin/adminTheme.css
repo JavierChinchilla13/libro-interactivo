@@ -5,6 +5,23 @@
  * Se carga con el layout de /admin (ruta perezosa): el resto del sitio no descarga este archivo.
  */
 @layer components {
+  /* El pie fijo de guardado no debe tapar lo que recibe el foco al tabular. */
+  html:has(.admin-savebar) {
+    scroll-padding-bottom: 7rem;
+  }
+  .admin-shell button,
+  .admin-shell a,
+  .admin-shell summary {
+    touch-action: manipulation;
+  }
+  .admin-shell {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* Pulsado un poco más marcado que el del sitio (0.96) en los botones de la administración. */
+  .admin-shell .btn:active:not(:disabled) {
+    transform: scale(0.96);
+  }
   .admin-shell {
     --admin-sidebar-w: 17rem;
     --admin-radius: var(--token-radius-md);
@@ -79,15 +96,6 @@
     color: var(--token-primary);
     font-weight: 600;
   }
-  .admin-link[aria-current='page']::before {
-    content: '';
-    position: absolute;
-    inset-block: 0.5rem;
-    left: 0;
-    width: 0.1875rem;
-    border-radius: 9999px;
-    background: var(--token-primary);
-  }
   .admin-link-count {
     margin-left: auto;
     min-width: 1.5rem;
@@ -100,6 +108,19 @@
     line-height: 1.375rem;
     color: #2a1a00;
     font-variant-numeric: tabular-nums;
+  }
+
+  @media (min-width: 1024px) and (max-height: 860px) {
+    .admin-link {
+      min-height: 2.25rem;
+      font-size: 0.875rem;
+    }
+    .admin-nav-group-label {
+      padding: 0.75rem 0.75rem 0.25rem;
+    }
+    .admin-nav-scroll {
+      scrollbar-width: thin;
+    }
   }
 
   /* ---- Barra superior ---- */
@@ -160,6 +181,7 @@
     min-width: 0;
   }
   .admin-crumbs a {
+    position: relative;
     color: inherit;
     text-decoration: none;
     border-radius: 0.25rem;
@@ -170,6 +192,12 @@
       text-decoration: underline;
       text-underline-offset: 3px;
     }
+  }
+  /* Zona táctil ampliada sin mover nada (el texto es pequeño). */
+  .admin-crumbs a::after {
+    content: '';
+    position: absolute;
+    inset: -0.75rem -0.375rem;
   }
   .admin-crumbs [aria-current='page'] {
     color: var(--token-text);
@@ -286,8 +314,7 @@
     min-height: 3.5rem;
     align-items: center;
     gap: 0.875rem;
-    border: 1px solid var(--token-line);
-    border-left: 3px solid var(--token-warning);
+    border: 1px solid color-mix(in srgb, var(--token-warning) 38%, var(--token-line));
     border-radius: var(--token-radius-md);
     background: var(--token-surface);
     padding: 0.5rem 1rem;
@@ -298,6 +325,13 @@
   }
   .admin-attn a > svg:first-child {
     color: var(--token-warning);
+  }
+  /* Información (un lanzamiento próximo), no una tarea: sin tinte de aviso. */
+  .admin-attn a[data-kind='info'] {
+    border-color: var(--token-line);
+  }
+  .admin-attn a[data-kind='info'] > svg:first-child {
+    color: var(--token-muted);
   }
   .admin-attn a:active {
     background: var(--token-surface-alt);
@@ -595,20 +629,37 @@
     color: var(--token-muted);
   }
 
+  /* Estadísticas y tarjetas de números: en celular, de dos en dos (cuatro ceros apilados ocupaban media pantalla). */
+  @media (max-width: 639.98px) {
+    .admin-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  /* Las barras de resultados son datos, no una acción: neutras (el cian queda para acción y estado). */
+  .admin-shell .meter-fill {
+    background: color-mix(in srgb, var(--token-text) 45%, transparent);
+  }
+  /* En un vacío, la acción de crear no compite con el botón principal del encabezado. */
+  .admin-shell .admin-empty-action .btn-primary {
+    border: 1px solid var(--token-primary);
+    background: transparent;
+    color: var(--token-primary);
+  }
+
   /* ---- Pestañas que no caben: degradado en el borde que aún tiene más ---- */
-  .tabs-scroll {
+  .admin-shell .tabs-scroll {
     scrollbar-width: none;
   }
-  .tabs-scroll::-webkit-scrollbar {
+  .admin-shell .tabs-scroll::-webkit-scrollbar {
     display: none;
   }
-  .tabs-scroll[data-edge='end'] {
+  .admin-shell .tabs-scroll[data-edge='end'] {
     mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
   }
-  .tabs-scroll[data-edge='start'] {
+  .admin-shell .tabs-scroll[data-edge='start'] {
     mask-image: linear-gradient(to left, #000 calc(100% - 2.5rem), transparent);
   }
-  .tabs-scroll[data-edge='both'] {
+  .admin-shell .tabs-scroll[data-edge='both'] {
     mask-image: linear-gradient(
       to right,
       transparent,
@@ -631,9 +682,11 @@
     min-width: 13rem;
     flex-direction: column;
     border: 1px solid var(--token-line);
-    border-radius: var(--token-radius-md);
+    /* Radio concéntrico: el de los elementos (0.625rem) más el relleno (0.25rem). */
+    border-radius: 0.875rem;
     background: var(--token-surface-alt);
     padding: 0.25rem;
+    overscroll-behavior: contain;
     box-shadow: var(--token-elev-2);
     animation: admin-toast-in var(--token-dur-fast) var(--token-ease-out);
   }
@@ -690,6 +743,12 @@
     align-items: center;
     gap: 0.5rem 0.75rem;
     margin-bottom: 1rem;
+  }
+
+  /* Miniaturas en listas: filete de 1 px casi invisible que las asienta sobre la tarjeta. */
+  .admin-thumb {
+    outline: 1px solid oklch(1 0 0 / 0.1);
+    outline-offset: -1px;
   }
 
   /* ---- Bloque «Avanzado» plegado ---- */
@@ -791,8 +850,7 @@
   .admin-help-body {
     max-width: 60ch;
     margin-top: 0.25rem;
-    border-left: 2px solid var(--token-line);
-    padding: 0.25rem 0 0.25rem 0.875rem;
+    padding: 0.25rem 0 0.25rem 1.5rem;
     color: var(--token-muted);
   }
 
@@ -812,8 +870,8 @@
     display: flex;
     align-items: flex-start;
     gap: 0.625rem;
-    border: 1px solid var(--token-line);
-    border-left: 3px solid var(--admin-tone, var(--token-success));
+    border: 1px solid
+      color-mix(in srgb, var(--admin-tone, var(--token-success)) 45%, var(--token-line));
     border-radius: var(--token-radius-sm);
     background: var(--token-surface-alt);
     padding: 0.75rem 0.75rem 0.75rem 0.875rem;
@@ -856,6 +914,9 @@
     padding: 0;
     color: var(--token-text);
     box-shadow: var(--token-elev-2);
+  }
+  .admin-dialog {
+    overscroll-behavior: contain;
   }
   .admin-dialog::backdrop {
     background: rgb(2 8 20 / 0.72);
@@ -919,8 +980,13 @@
       animation: none;
     }
     .admin-toast,
+    .admin-more-menu,
     .admin-dialog[open] {
       animation: none;
+    }
+    .admin-fold > svg,
+    .admin-advanced > summary::before {
+      transition: none;
     }
     @media (max-width: 1023.98px) {
       .admin-sidebar {

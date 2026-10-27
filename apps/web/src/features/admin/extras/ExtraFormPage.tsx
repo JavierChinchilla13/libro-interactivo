@@ -183,7 +183,7 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
             Vista previa (no cuenta como «visto»)
           </p>
           {preview.kind === 'text' ? <SafeHtml html={preview.bodyHtml ?? ''} /> : null}
-          {preview.kind !== 'text' && preview.url ? (
+          {preview.kind !== 'text' && preview.url && /^https?:\/\//.test(preview.url) ? (
             <a href={preview.url} target="_blank" rel="noopener noreferrer" className="underline">
               Abrir {KIND_LABEL[preview.kind]} (el enlace caduca en{' '}
               {Math.round((preview.expiresIn ?? 300) / 60)} minutos)

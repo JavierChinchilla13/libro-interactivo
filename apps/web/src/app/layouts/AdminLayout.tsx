@@ -139,6 +139,10 @@ export function AdminLayout() {
               id="admin-sidebar"
               className="admin-sidebar lg:sticky lg:top-0 lg:h-dvh"
               data-open={open}
+              // Abierto (solo en celular) es modal: el resto de la página queda inerte para teclado y lectores.
+              role={open ? 'dialog' : undefined}
+              aria-modal={open || undefined}
+              aria-label={open ? 'Menú de administración' : undefined}
               onKeyDown={onDrawerKeyDown}
             >
               <div className="flex items-center justify-between gap-2 px-4 pb-1 pt-3">
@@ -192,11 +196,13 @@ export function AdminLayout() {
                               <AdminIcon name={item.icon} />
                               <span className="min-w-0">{item.label}</span>
                               {counts[item.id] ? (
-                                <span
-                                  className="admin-link-count"
-                                  aria-label={`${counts[item.id]} ${item.id === 'mensajes' ? 'sin leer' : 'en borrador'}`}
-                                >
-                                  {counts[item.id]}
+                                <span className="admin-link-count">
+                                  <span aria-hidden="true">{counts[item.id]}</span>
+                                  <span className="sr-only">
+                                    {' '}
+                                    {counts[item.id]}{' '}
+                                    {item.id === 'mensajes' ? 'sin atender' : 'en borrador'}
+                                  </span>
                                 </span>
                               ) : null}
                             </NavLink>
@@ -209,7 +215,7 @@ export function AdminLayout() {
               </nav>
             </aside>
 
-            <div className="flex min-w-0 flex-col">
+            <div className="flex min-w-0 flex-col" inert={open || undefined}>
               <header className="admin-topbar">
                 <button
                   ref={menuButton}

@@ -62,7 +62,8 @@ export function ListPage({
   children: ReactNode;
 }) {
   let body: ReactNode;
-  if (state.isError) {
+  // Si ya hay filas (un refetch en segundo plano falló), la lista se queda: el error solo manda cuando no hay nada.
+  if (state.isError && count === undefined) {
     body = (
       <Alert title="No pudimos cargar la lista">
         <p className="mt-1">{errorMessage(state.error)}</p>
@@ -96,7 +97,7 @@ export function ListPage({
       <EmptyState
         icon={<AdminIcon name={empty.icon ?? 'empty'} className="size-7" />}
         title={empty.title}
-        action={empty.action}
+        action={empty.action ? <div className="admin-empty-action">{empty.action}</div> : undefined}
       >
         {empty.text}
       </EmptyState>

@@ -37,7 +37,8 @@ export function AccessPage() {
   });
 
   const refresh = async () => {
-    await client.invalidateQueries({ queryKey: keys.access(bookId) });
+    // También el inicio («Genera el código QR» se marca solo).
+    await client.invalidateQueries({ queryKey: ['admin', 'access'] });
   };
   const create = useMutation({
     mutationFn: () => accessApi.create({ kind: 'quiz', refId: quizId }),

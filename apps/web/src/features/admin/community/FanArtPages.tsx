@@ -49,7 +49,7 @@ const fanArtColumns: Column<FanArtRow>[] = [
         <img
           src={thumbUrl(art.image.url, 96)}
           alt=""
-          className="size-12 shrink-0 rounded-token object-cover"
+          className="admin-thumb size-12 shrink-0 rounded-token object-cover"
         />
         <span className="min-w-0">
           <span className="admin-cell-title">{art.title ?? 'Sin título'}</span>

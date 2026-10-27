@@ -155,8 +155,13 @@ export function Tabs<T extends string>({
       observer?.disconnect();
     };
   }, [tabs.length]);
-  // La pestaña activa se acerca a la vista (en celular puede quedar fuera del borde).
+  // La pestaña activa se acerca a la vista (en celular puede quedar fuera del borde); no al montar.
+  const mounted = useRef(false);
   useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
     const el = list.current?.querySelector<HTMLElement>('[aria-selected="true"]');
     if (el && typeof el.scrollIntoView === 'function') {
       el.scrollIntoView({ block: 'nearest', inline: 'nearest' });

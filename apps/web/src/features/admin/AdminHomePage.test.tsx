@@ -168,8 +168,8 @@ describe('inicio de la administración · cuenta con datos', () => {
   it('lista lo que necesita atención con enlace directo, sin contar los archivados', async () => {
     mockApi(withData, { session: ADMIN });
     renderAt('/admin');
-    await screen.findByRole('link', { name: '3 mensajes sin leer' });
-    expect(screen.getByRole('link', { name: '3 mensajes sin leer' })).toHaveAttribute(
+    await screen.findByRole('link', { name: '3 mensajes sin atender' });
+    expect(screen.getByRole('link', { name: '3 mensajes sin atender' })).toHaveAttribute(
       'href',
       '/admin/mensajes',
     );
@@ -206,8 +206,10 @@ describe('inicio de la administración · cuenta con datos', () => {
     renderAt('/admin');
     const menu = await screen.findByRole('navigation', { name: 'Administración' });
     expect(await within(menu).findByRole('link', { name: /Mensajes/ })).toHaveTextContent('3');
-    expect(within(menu).getByLabelText('3 sin leer')).toBeInTheDocument();
-    expect(await within(menu).findByLabelText('2 en borrador')).toBeInTheDocument();
+    expect(within(menu).getByRole('link', { name: /Mensajes.*3 sin atender/ })).toBeInTheDocument();
+    expect(
+      await within(menu).findByRole('link', { name: /Fan arts.*2 en borrador/ }),
+    ).toBeInTheDocument();
   });
 });
 
@@ -216,7 +218,7 @@ describe('inicio de la administración · editora', () => {
     const { called } = mockApi(withData, { session: EDITOR });
     renderAt('/admin');
     await screen.findByRole('link', { name: '1 quiz con cambios sin publicar' });
-    expect(screen.queryByRole('link', { name: /mensajes? sin leer/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /mensajes? sin atender/ })).toBeNull();
     expect(screen.queryByText('Lectoras')).toBeNull();
     expect(screen.queryByRole('link', { name: /Ver códigos QR/ })).toBeNull();
     const steps = await screen.findByRole('region', { name: 'Primeros pasos' });

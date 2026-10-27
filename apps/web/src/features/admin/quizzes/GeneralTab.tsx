@@ -1,6 +1,5 @@
 import type { QuizDetailResponse } from '@libro/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { Button, CheckField, TextField } from '../../../shared/ui/controls';
 import { Alert, Card } from '../../../shared/ui/layout';
 import { quizzesApi } from '../api';
@@ -17,17 +16,23 @@ export function GeneralTab({
   quiz,
   draft,
   onChange,
+  values,
+  onValuesChange,
   onOpenAppearance,
 }: {
   quiz: QuizDetailResponse;
   draft: Draft;
   onChange: (draft: Draft) => void;
+  /** Dirección web y posición viven en el editor: no se pierden al cambiar de pestaña. */
+  values: { slug: string; order: string };
+  onValuesChange: (values: { slug: string; order: string }) => void;
   onOpenAppearance: () => void;
 }) {
   const client = useQueryClient();
   const toast = useToast();
-  const [slug, setSlug] = useState(quiz.slug);
-  const [order, setOrder] = useState(String(quiz.order));
+  const { slug, order } = values;
+  const setSlug = (value: string) => onValuesChange({ ...values, slug: value });
+  const setOrder = (value: string) => onValuesChange({ ...values, order: value });
   const meta = useMutation({
     mutationFn: () => quizzesApi.updateMeta(quiz.id, { slug, order: Number(order) }),
     onSuccess: async () => {

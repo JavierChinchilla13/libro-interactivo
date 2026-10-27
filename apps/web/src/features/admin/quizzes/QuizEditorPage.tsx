@@ -1,6 +1,6 @@
 import type { QuizDetailResponse, QuizValidationResponse } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { Button } from '../../../shared/ui/controls';
 import { Alert, PageHeader, TabPanel, Tabs } from '../../../shared/ui/layout';
@@ -87,22 +87,35 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   const savedRef = useRef(snapshot(quiz.draft));
   const [notice, setNotice] = useState<{ tone: 'success' | 'warning'; text: string } | null>(null);
   const [previewing, setPreviewing] = useState(false);
+  const [meta, setMeta] = useState({ slug: quiz.slug, order: String(quiz.order) });
 
-  const dirty = snapshot(draft) !== saved;
+  const current = useMemo(() => snapshot(draft), [draft]);
+  const dirty = current !== saved;
+  const draftRef = useRef(current);
+  useEffect(() => {
+    draftRef.current = current;
+  }, [current]);
+  // Apariencia vive en su propia pestaña (montada aunque esté oculta): su estado sucio sube aquí para que haya UN solo aviso.
+  const [appearanceDirty, setAppearanceDirty] = useState(false);
   useCrumbLeaf(draft.title.trim() || 'Quiz');
-  // Avisa antes de salir con cambios sin guardar (cerrar la pestaña o ir a otra pantalla).
-  useUnsavedChanges(dirty);
+  // Avisa antes de salir con cambios sin guardar (cerrar la pestaña o ir a otra pantalla). Un archivado no se edita.
+  useUnsavedChanges((dirty || appearanceDirty) && quiz.status !== 'archived');
 
   function adopt(result: QuizDetailResponse) {
     client.setQueryData(keys.quiz(quizId), result);
     void client.invalidateQueries({ queryKey: ['admin', 'quizzes', 'list'] });
-    setDraft(result.draft);
+    // Si se siguió escribiendo mientras viajaba el guardado, se conserva lo tecleado (queda como cambio sin guardar).
+    if (draftRef.current === sentRef.current) setDraft(result.draft);
     setSaved(snapshot(result.draft));
     savedRef.current = snapshot(result.draft);
   }
 
+  const sentRef = useRef('');
   const save = useMutation({
-    mutationFn: (value: Draft) => quizzesApi.saveDraft(quizId, value),
+    mutationFn: (value: Draft) => {
+      sentRef.current = snapshot(value);
+      return quizzesApi.saveDraft(quizId, value);
+    },
     onSuccess: adopt,
   });
   const check = useMutation({
@@ -132,18 +145,26 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
     }
   }
 
-  async function onSave() {
+  /** Cada acción nueva borra el error de la anterior (la barra solo muestra lo último que pasó). */
+  const clearErrors = () => {
+    save.reset();
+    check.reset();
+    publish.reset();
     setNotice(null);
+  };
+
+  async function onSave() {
+    clearErrors();
     if (await ensureSaved()) toast.success('Borrador guardado');
   }
 
   async function onValidate() {
-    setNotice(null);
+    clearErrors();
     if (await ensureSaved()) await check.mutateAsync().catch(() => undefined);
   }
 
   async function onPublish() {
-    setNotice(null);
+    clearErrors();
     if (!(await ensureSaved())) return;
     const result = await check.mutateAsync().catch(() => null);
     if (!result?.valid) return;
@@ -172,7 +193,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   const busy = save.isPending || check.isPending || publish.isPending;
   const error = save.error ?? check.error ?? publish.error;
   // Tras revisar, si hay cosas por arreglar y nada cambió desde entonces, Publicar se apaga y dice por qué.
-  const stale = reviewed !== null && reviewed.at !== snapshot(draft);
+  const stale = reviewed !== null && reviewed.at !== current;
   const report = reviewed?.report ?? null;
   const blockedBy = report && !report.valid && !stale ? report.errors.length : 0;
   const activeTab = TABS.find((item) => item.id === tab) ?? TABS[0];
@@ -239,6 +260,8 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
             quiz={quiz}
             draft={draft}
             onChange={setDraft}
+            values={meta}
+            onValuesChange={setMeta}
             onOpenAppearance={() => openTab('apariencia')}
           />
         </TabPanel>
@@ -257,7 +280,12 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           aria-labelledby="tab-apariencia"
           hidden={tab !== 'apariencia'}
         >
-          <AppearanceTab quiz={quiz} archived={archived} title={draft.title} />
+          <AppearanceTab
+            quiz={quiz}
+            archived={archived}
+            title={draft.title}
+            onDirtyChange={setAppearanceDirty}
+          />
         </div>
       ) : null}
       <TabPanel id="versiones" active={tab}>

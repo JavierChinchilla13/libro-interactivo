@@ -140,6 +140,7 @@ function StageEditor({
         .map((result) => ({ value: result.key, label: result.title || result.key })),
     [draft.results, stage.id],
   );
+  const allOpen = stage.questions.every((question) => openIds.has(question.id));
   const answersCount = stage.questions.reduce((sum, question) => sum + question.answers.length, 0);
   const parents = draft.stages.filter((candidate) => candidate.id !== stage.id);
   const parentResults = stage.conditionStageId ? resultsOfStage(draft, stage.conditionStageId) : [];
@@ -277,13 +278,11 @@ function StageEditor({
               variant="ghost"
               onClick={() =>
                 setOpenIds(
-                  openIds.size === stage.questions.length
-                    ? new Set()
-                    : new Set(stage.questions.map((question) => question.id)),
+                  allOpen ? new Set() : new Set(stage.questions.map((question) => question.id)),
                 )
               }
             >
-              {openIds.size === stage.questions.length ? 'Plegar todas' : 'Abrir todas'}
+              {allOpen ? 'Plegar todas' : 'Abrir todas'}
             </Button>
           ) : null}
         </div>
@@ -357,7 +356,6 @@ const QuestionEditor = memo(function QuestionEditor({
             type="button"
             className="admin-fold"
             aria-expanded={open}
-            aria-label={`Pregunta ${index + 1}`}
             onClick={() => onToggle(question.id)}
           >
             <AdminIcon name="chevron" className={`size-4 shrink-0 ${open ? 'rotate-90' : ''}`} />
@@ -399,6 +397,7 @@ const QuestionEditor = memo(function QuestionEditor({
           </Button>
           <Button
             variant="ghost"
+            className="text-danger"
             onClick={() => update((current) => removeQuestion(current, stageId, question.id))}
           >
             Eliminar

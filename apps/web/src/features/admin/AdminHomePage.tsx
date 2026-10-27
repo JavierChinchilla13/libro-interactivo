@@ -62,7 +62,7 @@ export function AdminHomePage() {
       id: 'mensajes',
       to: '/admin/mensajes',
       icon: 'mail',
-      text: plural(overview.unhandledMessages, 'mensaje sin leer', 'mensajes sin leer'),
+      text: plural(overview.unhandledMessages, 'mensaje sin atender', 'mensajes sin atender'),
     });
   if (quizzes.withChanges)
     attention.push({
@@ -282,6 +282,19 @@ export function AdminHomePage() {
               <Skeleton className="h-14 w-full rounded-token-md" />
               <Skeleton className="h-14 w-full rounded-token-md" />
             </div>
+          ) : attention.length === 0 && overview.partialFailure ? (
+            <Alert tone="warning" title="No pudimos revisar todo">
+              <p className="mt-1">
+                Algunas cosas no cargaron, así que no podemos decir que esté todo al día.
+              </p>
+              <button
+                type="button"
+                className="btn btn-secondary mt-3"
+                onClick={overview.refetchAll}
+              >
+                Reintentar
+              </button>
+            </Alert>
           ) : attention.length === 0 ? (
             <EmptyState icon={<AdminIcon name="check" className="size-7" />} title="Todo al día">
               No hay nada pendiente por revisar.
@@ -290,7 +303,7 @@ export function AdminHomePage() {
             <ul className="admin-attn">
               {attention.map((item) => (
                 <li key={item.id}>
-                  <Link to={item.to}>
+                  <Link to={item.to} data-kind={item.id === 'lanzamiento' ? 'info' : 'task'}>
                     <AdminIcon name={item.icon} />
                     <span className="min-w-0 flex-1">{item.text}</span>
                     <AdminIcon name="chevron" className="size-4 text-muted" />
