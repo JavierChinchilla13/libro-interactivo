@@ -49,23 +49,54 @@ test.describe('menú de usuario (celular y escritorio)', () => {
     await expect(page).toHaveURL(/\/ingresar/);
   });
 
-  test('la administradora tiene el menú en la administración, con las zonas dentro (y sueltas solo en pantallas muy anchas)', async ({
+  test('la administradora tiene el mismo menú en la administración: Ver sitio, Mi panel, Admin, Ajustes y Salir a 1920 px', async ({
     page,
   }) => {
     const login = await page.request.post('/api/auth/login', {
       data: { email: E2E_ADMIN.email, password: E2E_ADMIN.password },
     });
     expect(login.status()).toBe(200);
+    await page.request.post('/api/me/welcome-seen');
+    for (const [path, current] of [
+      ['/admin', 'Admin'],
+      ['/panel', 'Mi panel'],
+    ] as const) {
+      await page.setViewportSize({ width: 1920, height: 900 });
+      await page.goto(path);
+      await expect(page.getByRole('navigation', { name: 'Cambiar de zona' })).toHaveCount(0);
+      await page.getByRole('button', { name: E2E_ADMIN.name }).click();
+      await expect(page.getByText('Administradora')).toBeVisible();
+      await expect(page.getByRole('menuitem')).toHaveText([
+        'Ver sitio',
+        'Mi panel',
+        'Admin',
+        'Ajustes',
+        'Salir',
+      ]);
+      await expect(page.getByRole('menuitem', { name: current })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+      await page.keyboard.press('Escape');
+    }
     await page.goto('/admin');
-    await expect(page.getByRole('navigation', { name: 'Cambiar de zona' })).toBeHidden();
     await page.getByRole('button', { name: E2E_ADMIN.name }).click();
-    await expect(page.getByText('Administradora')).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: 'Admin' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
     await page.getByRole('menuitem', { name: 'Salir' }).click();
     await expect(page).toHaveURL(/\/ingresar$/);
+  });
+
+  test('una lectora (USER) no ve las tres zonas a 1920 px', async ({ page }) => {
+    const stamp = `${Date.now()}-${test.info().project.name}`;
+    const register = await page.request.post('/api/auth/register', {
+      data: { name: 'Lectora Zonas', email: `zonas-${stamp}@ejemplo.com`, password: PASSWORD },
+    });
+    expect(register.status(), await register.text()).toBe(201);
+    await page.request.post('/api/me/welcome-seen');
+    await page.setViewportSize({ width: 1920, height: 900 });
+    await page.goto('/panel');
+    await page.getByRole('button', { name: 'Lectora Zonas' }).click();
+    await expect(page.getByRole('menuitem')).toHaveText(['Ajustes', 'Salir']);
+    await expect(page.getByRole('menuitem', { name: 'Admin' })).toHaveCount(0);
   });
 
   const NAMES = [

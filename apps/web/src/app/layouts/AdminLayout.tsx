@@ -16,7 +16,6 @@ import { ToastProvider } from '../../features/admin/components/Toast';
 import { useSession } from '../../features/auth/session';
 import { AdminIcon } from '../../shared/ui/adminIcons';
 import { MAIN_ID, SkipLink } from '../../shared/ui/nav';
-import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
 import { UserMenu } from '../../shared/ui/UserMenu';
 
 const WIDE = '(min-width: 1024px)';
@@ -226,8 +225,7 @@ export function AdminLayout() {
                 <p className="min-w-0 flex-1 truncate text-base font-semibold lg:hidden">
                   {where?.item.label ?? 'Administración'}
                 </p>
-                <StaffSwitcher className="hidden 2xl:inline-flex" />
-                <UserMenu className="ml-auto lg:ml-auto" />
+                <UserMenu className="ml-auto" looseZones={false} />
               </header>
               <main
                 id={MAIN_ID}
