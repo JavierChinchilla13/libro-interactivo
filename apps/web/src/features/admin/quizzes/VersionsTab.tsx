@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../../shared/ui/controls';
 import { Alert, Card, EmptyState, Loading } from '../../../shared/ui/layout';
 import { keys, quizzesApi } from '../api';
+import { useConfirm } from '../components/ConfirmDialog';
+import { HelpTip } from '../components/HelpTip';
 import { errorMessage } from '../errors';
 
 /** Pestaña «Versiones»: cada publicación queda congelada; los lectores terminan con la versión con la que empezaron. */
@@ -11,6 +13,7 @@ export function VersionsTab({ quizId, archived }: { quizId: string; archived: bo
     queryKey: keys.versions(quizId),
     queryFn: () => quizzesApi.versions(quizId),
   });
+  const confirm = useConfirm();
   const archive = useMutation({
     mutationFn: () => quizzesApi.archive(quizId),
     onSuccess: async () => {
@@ -20,6 +23,10 @@ export function VersionsTab({ quizId, archived }: { quizId: string; archived: bo
 
   return (
     <div className="flex flex-col gap-5">
+      <HelpTip>
+        Cada vez que publicas se guarda una versión. Las lectoras que ya empezaron terminan con la
+        que empezaron.
+      </HelpTip>
       {versions.isPending ? <Loading /> : null}
       {versions.isError ? <Alert>{errorMessage(versions.error)}</Alert> : null}
       {versions.data && versions.data.versions.length === 0 ? (
@@ -70,9 +77,15 @@ export function VersionsTab({ quizId, archived }: { quizId: string; archived: bo
           className="self-start"
           disabled={archived}
           loading={archive.isPending}
-          onClick={() => {
-            if (window.confirm('¿Archivar este quiz? Los lectores dejarán de verlo.'))
-              archive.mutate();
+          onClick={async () => {
+            const ok = await confirm({
+              title: '¿Archivar este quiz?',
+              message:
+                'Las lectoras dejarán de verlo y de poder jugarlo. Se conservan sus intentos, resultados y versiones publicadas, y se libera su posición en la secuencia.',
+              confirmLabel: 'Archivar',
+              tone: 'danger',
+            });
+            if (ok) archive.mutate();
           }}
         >
           {archived ? 'Ya está archivado' : 'Archivar quiz'}

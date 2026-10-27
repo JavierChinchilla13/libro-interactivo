@@ -29,6 +29,7 @@ export function ListPage({
   title,
   subtitle,
   primaryAction,
+  help,
   tabs,
   toolbar,
   state,
@@ -44,6 +45,8 @@ export function ListPage({
   title: string;
   subtitle?: string;
   primaryAction?: ReactNode;
+  /** «¿Qué es esto?» plegado bajo el título. */
+  help?: ReactNode;
   /** Pestañas que van entre el título y los filtros (la wiki). */
   tabs?: ReactNode;
   toolbar?: ReactNode;
@@ -105,6 +108,7 @@ export function ListPage({
   return (
     <>
       <PageHeader title={title} subtitle={subtitle} actions={primaryAction} />
+      {help ? <div className="mb-4">{help}</div> : null}
       {tabs}
       {toolbar ? <div className="admin-toolbar">{toolbar}</div> : null}
       {body}

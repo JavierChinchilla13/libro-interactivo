@@ -1,11 +1,15 @@
 import { extraInputSchema, type ExtraPreviewResponse } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiClientError } from '../../../shared/api/client';
 import { SafeHtml } from '../../../shared/ui/SafeHtml';
 import { Button, SelectField, TextAreaField, TextField } from '../../../shared/ui/controls';
 import { Alert, Card, Loading, PageHeader } from '../../../shared/ui/layout';
+import { FormSection } from '../components/FormSection';
+import { SaveBar } from '../components/SaveBar';
+import { useToast } from '../components/Toast';
+import { useFormGuard } from '../components/useFormGuard';
 import { booksApi, extrasApi, keys } from '../api';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { errorMessage, fieldErrors, slugify } from '../errors';
@@ -47,13 +51,12 @@ export function ExtraFormPage() {
 function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraForm }) {
   const editing = extraId !== undefined;
   const navigate = useNavigate();
-  const location = useLocation();
   const client = useQueryClient();
   const [form, setForm] = useState<ExtraForm>(initial);
+  const guard = useFormGuard(form, initial);
+  const toast = useToast();
+  const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState(
-    (location.state as { created?: boolean } | null)?.created === true,
-  );
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [preview, setPreview] = useState<ExtraPreviewResponse | null>(null);
@@ -65,9 +68,12 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
       editing ? extrasApi.replace(extraId, payload) : extrasApi.create(payload),
     onSuccess: async (result) => {
       await client.invalidateQueries({ queryKey: ['admin', 'extras'] });
-      setSaved(true);
-      if (!editing)
+      guard.markSaved(submitted.current);
+      toast.success('Guardado');
+      if (!editing) {
+        guard.allowLeave();
         void navigate(`/admin/extras/${result.id}`, { replace: true, state: { created: true } });
+      }
     },
   });
   const previewing = useMutation({
@@ -76,7 +82,6 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
   });
 
   const set = <K extends keyof ExtraForm>(key: K, value: ExtraForm[K]) => {
-    setSaved(false);
     setForm((current) => ({ ...current, [key]: value }));
   };
 
@@ -130,8 +135,8 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
     }
   }
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit(event?: FormEvent) {
+    event?.preventDefault();
     const payload = payloadFromForm(form);
     const parsed = extraInputSchema.safeParse(payload);
     if (!parsed.success) {
@@ -139,6 +144,7 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
       return;
     }
     setErrors({});
+    submitted.current = form;
     save.mutate(payload);
   }
 
@@ -154,32 +160,17 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
       <PageHeader
         title={editing ? form.title || 'Extra' : 'Nuevo extra'}
         actions={
-          <>
-            {editing ? (
-              <Button
-                variant="secondary"
-                loading={previewing.isPending}
-                onClick={() => previewing.mutate()}
-              >
-                Vista previa
-              </Button>
-            ) : null}
-            <Button type="submit" loading={save.isPending}>
-              Guardar
+          editing ? (
+            <Button
+              variant="secondary"
+              loading={previewing.isPending}
+              onClick={() => previewing.mutate()}
+            >
+              Vista previa
             </Button>
-          </>
+          ) : undefined
         }
       />
-      {saved ? (
-        <div className="mb-4">
-          <Alert tone="success" title="Cambios guardados" />
-        </div>
-      ) : null}
-      {save.isError ? (
-        <div className="mb-4">
-          <Alert>{errorMessage(save.error)}</Alert>
-        </div>
-      ) : null}
       {previewing.isError ? (
         <div className="mb-4">
           <Alert>{errorMessage(previewing.error)}</Alert>
@@ -201,7 +192,7 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
       ) : null}
 
       <div className="flex flex-col gap-5">
-        <Card className="flex flex-col gap-4">
+        <FormSection title="Datos del extra" help="A qué libro pertenece y cómo se llama.">
           <SelectField
             label="Libro"
             required
@@ -275,9 +266,9 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
               onChange={(event) => set('order', event.target.value)}
             />
           </div>
-        </Card>
+        </FormSection>
 
-        <Card className="flex flex-col gap-4">
+        <FormSection title="Contenido" help="El texto o el archivo que verá la lectora al abrirlo.">
           {isFile ? (
             <fieldset className="flex flex-col gap-3">
               <legend className="font-semibold">
@@ -327,8 +318,20 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
               {errors['bodyHtml'] ? <Alert>{errors['bodyHtml']}</Alert> : null}
             </>
           )}
-        </Card>
+        </FormSection>
       </div>
+      <SaveBar
+        dirty={guard.dirty || !editing}
+        dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}
+        saving={save.isPending}
+        error={save.isError ? errorMessage(save.error) : null}
+        onSave={() => submit()}
+        onDiscard={() => {
+          setForm(guard.saved);
+          setErrors({});
+        }}
+        saveLabel="Guardar extra"
+      />
     </form>
   );
 }

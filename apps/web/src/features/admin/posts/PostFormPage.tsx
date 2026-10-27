@@ -10,11 +10,15 @@ import {
   type PostTemplate,
 } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
+import { useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { PostView } from '../../posts/templates';
 import { Button, CheckField, SelectField, TextField } from '../../../shared/ui/controls';
 import { Alert, Card, Loading, PageHeader } from '../../../shared/ui/layout';
+import { FormSection } from '../components/FormSection';
+import { SaveBar } from '../components/SaveBar';
+import { useToast } from '../components/Toast';
+import { useFormGuard } from '../components/useFormGuard';
 import { booksApi, keys, postsApi } from '../api';
 import { ImageField } from '../components/MediaFields';
 import { errorMessage, fieldErrors, slugify } from '../errors';
@@ -37,8 +41,7 @@ function TemplatePicker({
   onCancel?: () => void;
 }) {
   return (
-    <Card className="flex flex-col gap-4">
-      <h2 className="font-semibold">1. Elige una plantilla</h2>
+    <FormSection title="1. Elige una plantilla">
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {POST_TEMPLATES.map((template) => (
           <li key={template}>
@@ -58,7 +61,7 @@ function TemplatePicker({
           Cancelar
         </Button>
       ) : null}
-    </Card>
+    </FormSection>
   );
 }
 
@@ -98,13 +101,12 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
   const editing = postId !== undefined;
   const navigate = useNavigate();
   const client = useQueryClient();
-  const location = useLocation();
   const [form, setForm] = useState<PostForm>(initial);
+  const guard = useFormGuard(form, initial);
+  const toast = useToast();
+  const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [changing, setChanging] = useState(false);
-  const [saved, setSaved] = useState(
-    (location.state as { created?: boolean } | null)?.created === true,
-  );
   const books = useQuery({ queryKey: keys.books, queryFn: booksApi.list });
 
   const save = useMutation({
@@ -112,8 +114,10 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
       editing ? postsApi.replace(postId, payload) : postsApi.create(payload),
     onSuccess: async (result) => {
       await client.invalidateQueries({ queryKey: keys.posts });
-      setSaved(true);
+      guard.markSaved(submitted.current);
+      toast.success('Guardado');
       if (!editing) {
+        guard.allowLeave();
         void navigate(`/admin/actualizaciones/${result.id}`, {
           replace: true,
           state: { created: true },
@@ -123,13 +127,12 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
   });
 
   const set = <K extends keyof PostForm>(key: K, value: PostForm[K]) => {
-    setSaved(false);
     setForm((current) => ({ ...current, [key]: value }));
   };
   const setData = (key: string, value: unknown) => set('data', { ...form.data, [key]: value });
 
-  function submit(event: FormEvent, status: PostStatus = form.status) {
-    event.preventDefault();
+  function submit(event?: FormEvent, status: PostStatus = form.status) {
+    event?.preventDefault();
     const next = { ...form, status };
     const payload = payloadFromForm(next);
     const parsed = postInputSchema.safeParse(payload);
@@ -139,12 +142,12 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
     }
     setErrors({});
     setForm(next);
+    submitted.current = form;
     save.mutate(payload);
   }
 
   function pickTemplate(template: PostTemplate) {
     const fresh = emptyPostForm(template);
-    setSaved(false);
     setForm((current) => ({
       ...current,
       template,
@@ -178,41 +181,17 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
       <PageHeader
         title={editing ? form.title || 'Actualización' : 'Nueva actualización'}
         actions={
-          <>
-            <Button
-              type="button"
-              variant="secondary"
-              loading={save.isPending}
-              onClick={(event) => submit(event, 'draft')}
+          editing && form.status === 'published' ? (
+            <Link
+              to={`/actualizaciones/${form.slug}`}
+              className="btn btn-secondary"
+              target="_blank"
             >
-              Guardar borrador
-            </Button>
-            <Button
-              type="button"
-              loading={save.isPending}
-              onClick={(event) => submit(event, 'published')}
-            >
-              Publicar
-            </Button>
-          </>
+              Ver en el sitio
+            </Link>
+          ) : undefined
         }
       />
-      {saved ? (
-        <div className="mb-4">
-          <Alert tone="success" title="Cambios guardados">
-            {form.status === 'published' ? (
-              <Link to={`/actualizaciones/${form.slug}`} className="underline" target="_blank">
-                Ver la publicación
-              </Link>
-            ) : null}
-          </Alert>
-        </div>
-      ) : null}
-      {save.isError ? (
-        <div className="mb-4">
-          <Alert>{errorMessage(save.error)}</Alert>
-        </div>
-      ) : null}
       {Object.keys(errors).length > 0 ? (
         <div className="mb-4">
           <Alert title="Revisa estos campos">
@@ -246,7 +225,6 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
               error={error('title')}
               onChange={(event) => {
                 const title = event.target.value;
-                setSaved(false);
                 setForm((current) => ({
                   ...current,
                   title,
@@ -261,15 +239,13 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
               value={form.slug}
               error={error('slug')}
               onChange={(event) => {
-                setSaved(false);
                 setForm((current) => ({ ...current, slug: event.target.value, slugTouched: true }));
               }}
             />
             <Fields data={form.data} set={setData} errors={errors} />
           </Card>
 
-          <Card className="flex flex-col gap-4">
-            <h2 className="font-semibold">Publicación</h2>
+          <FormSection title="Publicación" help="Estado, fecha y dónde se ve.">
             <div className="grid gap-4 sm:grid-cols-2">
               <SelectField
                 label="Tipo"
@@ -316,19 +292,39 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
               hint="Si la dejas vacía se usa la primera imagen de la publicación."
               onChange={(value) => set('thumbnail', value)}
             />
-          </Card>
+          </FormSection>
 
-          <Card className="flex flex-col gap-3">
-            <h2 className="font-semibold">Vista previa</h2>
+          <FormSection title="Vista previa">
             <p className="text-sm text-muted">
               Así se verá la plantilla «{postTemplates[form.template].label}».
             </p>
             <div className="rounded-token border border-dashed border-border p-4">
               <PostView post={preview} preview />
             </div>
-          </Card>
+          </FormSection>
         </div>
       )}
+      <SaveBar
+        dirty={guard.dirty || !editing}
+        dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}
+        saving={save.isPending}
+        error={save.isError ? errorMessage(save.error) : null}
+        onSave={() => submit(undefined)}
+        saveVariant={form.status === 'draft' ? 'secondary' : 'primary'}
+        after={
+          form.status === 'draft' ? (
+            <Button loading={save.isPending} onClick={() => submit(undefined, 'published')}>
+              Publicar
+            </Button>
+          ) : undefined
+        }
+        onDiscard={() => {
+          setForm(guard.saved);
+          setErrors({});
+        }}
+        saveLabel={form.status === 'draft' ? 'Guardar borrador' : 'Guardar cambios'}
+        savedLabel="Todo guardado"
+      />
     </form>
   );
 }

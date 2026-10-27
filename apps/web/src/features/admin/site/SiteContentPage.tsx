@@ -4,9 +4,13 @@ import {
   type SiteSettingsResponse,
 } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { Button, TextField } from '../../../shared/ui/controls';
-import { Alert, Card, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, Loading, PageHeader } from '../../../shared/ui/layout';
+import { FormSection } from '../components/FormSection';
+import { SaveBar } from '../components/SaveBar';
+import { useToast } from '../components/Toast';
+import { useFormGuard } from '../components/useFormGuard';
 import { keys, siteApi } from '../api';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { ImageField } from '../components/MediaFields';
@@ -142,26 +146,28 @@ function NewHeaderImage({ onAdd }: { onAdd: (image: ImageRefInput) => void }) {
 function SiteContentForm({ initial }: { initial: FormState }) {
   const client = useQueryClient();
   const [form, setForm] = useState<FormState>(initial);
+  const guard = useFormGuard(form, initial);
+  const toast = useToast();
+  const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState(false);
   const save = useMutation({
     mutationFn: siteApi.update,
     onSuccess: async (response) => {
-      setSaved(true);
+      guard.markSaved(submitted.current);
+      toast.success('Guardado');
       // Sin recargar: el formulario sigue siendo el mismo y conserva el aviso «Cambios guardados».
       client.setQueryData(keys.site, response);
       await client.invalidateQueries({ queryKey: ['public'] });
     },
   });
   const set = (patch: Partial<FormState>) => {
-    setSaved(false);
     setForm((current) => ({ ...current, ...patch }));
   };
   const setLink = (index: number, patch: Partial<FormState['social'][number]>) =>
     set({ social: form.social.map((link, i) => (i === index ? { ...link, ...patch } : link)) });
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit(event?: FormEvent) {
+    event?.preventDefault();
     const parsed = updateSiteSettingsRequestSchema.safeParse({
       universe: {
         headline: form.headline.trim() || undefined,
@@ -183,6 +189,7 @@ function SiteContentForm({ initial }: { initial: FormState }) {
       return;
     }
     setErrors({});
+    submitted.current = form;
     save.mutate(parsed.data);
   }
 
@@ -191,25 +198,12 @@ function SiteContentForm({ initial }: { initial: FormState }) {
       <PageHeader
         title="Portada y autora"
         subtitle="Lo que ven los visitantes en la página principal y en el pie."
-        actions={
-          <Button type="submit" loading={save.isPending}>
-            Guardar
-          </Button>
-        }
       />
-      {saved ? (
-        <div className="mb-4">
-          <Alert tone="success" title="Cambios guardados" />
-        </div>
-      ) : null}
-      {save.isError ? (
-        <div className="mb-4">
-          <Alert>{errorMessage(save.error)}</Alert>
-        </div>
-      ) : null}
       <div className="flex flex-col gap-5">
-        <Card className="flex flex-col gap-4">
-          <h2 className="font-semibold">Presentación del universo</h2>
+        <FormSection
+          title="Presentación del universo"
+          help="La frase y el texto que ven los visitantes al entrar."
+        >
           <TextField
             label="Frase principal del sitio"
             maxLength={200}
@@ -233,10 +227,9 @@ function SiteContentForm({ initial }: { initial: FormState }) {
             error={errors['universe.headerImages']}
             onChange={(headerImages) => set({ headerImages })}
           />
-        </Card>
+        </FormSection>
 
-        <Card className="flex flex-col gap-4">
-          <h2 className="font-semibold">Conoce a la autora</h2>
+        <FormSection title="Conoce a la autora" help="Foto, biografía y contacto público.">
           <TextField
             label="Nombre"
             maxLength={120}
@@ -263,10 +256,12 @@ function SiteContentForm({ initial }: { initial: FormState }) {
             error={errors['author.publicEmail']}
             onChange={(event) => set({ publicEmail: event.target.value })}
           />
-        </Card>
+        </FormSection>
 
-        <Card className="flex flex-col gap-4">
-          <h2 className="font-semibold">Redes sociales (pie de página y autora)</h2>
+        <FormSection
+          title="Redes sociales (pie de página y autora)"
+          help="Enlaces que salen en el pie de página."
+        >
           {form.social.map((link, index) => (
             <div key={index} className="flex flex-wrap items-end gap-2">
               <TextField
@@ -306,10 +301,12 @@ function SiteContentForm({ initial }: { initial: FormState }) {
               + Agregar red
             </Button>
           ) : null}
-        </Card>
+        </FormSection>
 
-        <Card className="flex flex-col gap-4">
-          <h2 className="font-semibold">Texto de «bloqueado»</h2>
+        <FormSection
+          title="Texto de «bloqueado»"
+          help="Lo que ve una lectora ante algo que aún no puede abrir."
+        >
           <TextField
             label="Lo que ve el visitante en lo que aún no puede abrir"
             maxLength={200}
@@ -318,8 +315,20 @@ function SiteContentForm({ initial }: { initial: FormState }) {
             error={errors['lock.message']}
             onChange={(event) => set({ lockMessage: event.target.value })}
           />
-        </Card>
+        </FormSection>
       </div>
+      <SaveBar
+        dirty={guard.dirty}
+        dirtyLabel={undefined}
+        saving={save.isPending}
+        error={save.isError ? errorMessage(save.error) : null}
+        onSave={() => submit()}
+        onDiscard={() => {
+          setForm(guard.saved);
+          setErrors({});
+        }}
+        saveLabel="Guardar cambios"
+      />
     </form>
   );
 }

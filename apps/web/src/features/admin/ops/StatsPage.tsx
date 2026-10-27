@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { Alert, Card, EmptyState, Loading, PageHeader } from '../../../shared/ui/layout';
+import { HelpTip } from '../components/HelpTip';
 import { keys, statsApi } from '../api';
 import { errorMessage } from '../errors';
 
@@ -27,6 +28,9 @@ export function StatsPage() {
         title="Estadísticas"
         subtitle="Sin contar los intentos de prueba de las administradoras."
       />
+      <div className="mb-4">
+        <HelpTip>Solo cuentan intentos reales, no las pruebas del equipo.</HelpTip>
+      </div>
       <div className="flex flex-col gap-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Figure

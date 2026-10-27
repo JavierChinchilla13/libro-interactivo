@@ -8,7 +8,9 @@ async function login(page: Page) {
   await page.getByLabel('Correo').fill(E2E_ADMIN.email);
   await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
   await page.getByRole('button', { name: 'Ingresar' }).click();
-  await expect(page.getByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ }),
+  ).toBeVisible();
 }
 
 test.describe('panel de administración', () => {
@@ -66,13 +68,21 @@ test.describe('panel de administración', () => {
     await expect(page.getByRole('textbox', { name: /^Dirección web/ })).toHaveValue(
       `libro-e2e-${stamp}`,
     );
-    await page.getByRole('button', { name: 'Guardar' }).click();
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
+    await page
+      .getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      })
+      .click();
+    await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
     await expect(page).toHaveURL(/\/admin\/libros\/[0-9a-f]{24}$/);
 
     // Un libro publicado necesita portada: lo dice el formulario (sin llegar al servidor).
     await page.getByLabel('Estado').selectOption('published');
-    await page.getByRole('button', { name: 'Guardar' }).click();
+    await page
+      .getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      })
+      .click();
     await expect(
       page.getByText('Un libro publicado o «próximamente» necesita portada').first(),
     ).toBeVisible();
@@ -145,8 +155,12 @@ test.describe('panel de administración', () => {
     await page.getByRole('link', { name: '+ Nueva entrada' }).click();
     await page.getByRole('textbox', { name: /^Nombre/ }).fill(name);
     await page.getByLabel('Estado').selectOption('published');
-    await page.getByRole('button', { name: 'Guardar' }).click();
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
+    await page
+      .getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      })
+      .click();
+    await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
 
     await page.getByRole('link', { name: '← Wiki' }).click();
     await page.getByRole('textbox', { name: 'Buscar por nombre' }).fill(name.toLowerCase());
@@ -155,7 +169,11 @@ test.describe('panel de administración', () => {
     await page.getByRole('tab', { name: 'Campos y poderes' }).click();
     await page.getByRole('link', { name: '+ Nuevo poder' }).click();
     await page.getByRole('textbox', { name: /^Nombre/ }).fill('Poder sin campo');
-    await page.getByRole('button', { name: 'Guardar' }).click();
+    await page
+      .getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      })
+      .click();
     await expect(page.getByText('Todo poder pertenece a un campo')).toBeVisible();
   });
 });

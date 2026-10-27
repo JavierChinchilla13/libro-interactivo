@@ -1,14 +1,21 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useBlocker } from 'react-router';
 import { useConfirm } from './ConfirmDialog';
 
 /**
  * Avisa antes de perder cambios sin guardar: al cerrar o recargar la pestaña (aviso del navegador) y al ir a otra
  * pantalla dentro de la app (cuadro propio con «Seguir editando» / «Salir sin guardar»).
+ * Devuelve `allowLeave`: llamarla justo antes de navegar a propósito (por ejemplo, tras crear algo) para no avisar.
  */
 export function useUnsavedChanges(dirty: boolean) {
   const confirm = useConfirm();
-  const blocker = useBlocker(dirty);
+  const skip = useRef(false);
+  const current = useRef(dirty);
+  useEffect(() => {
+    current.current = dirty;
+  }, [dirty]);
+  // Se decide al navegar (no al dibujar): así `allowLeave()` surte efecto aunque no haya vuelto a dibujarse.
+  const blocker = useBlocker(() => current.current && !skip.current);
 
   useEffect(() => {
     if (!dirty) return;
@@ -37,4 +44,9 @@ export function useUnsavedChanges(dirty: boolean) {
       alive = false;
     };
   }, [blocker, confirm]);
+
+  const allowLeave = useCallback(() => {
+    skip.current = true;
+  }, []);
+  return { allowLeave };
 }

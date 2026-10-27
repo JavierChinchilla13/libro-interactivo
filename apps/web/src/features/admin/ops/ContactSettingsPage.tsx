@@ -1,14 +1,24 @@
 import { contactSettingsSchema, type ContactSettings } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
-import { Button, CheckField, TextField } from '../../../shared/ui/controls';
-import { Alert, Card, Loading, PageHeader } from '../../../shared/ui/layout';
+import { useRef, useState, type FormEvent } from 'react';
+import { CheckField, TextField } from '../../../shared/ui/controls';
+import { Alert, Loading, PageHeader } from '../../../shared/ui/layout';
 import { keys, siteApi } from '../api';
+import { FormSection } from '../components/FormSection';
+import { SaveBar } from '../components/SaveBar';
+import { useToast } from '../components/Toast';
+import { useFormGuard } from '../components/useFormGuard';
 import { errorMessage, fieldErrors } from '../errors';
 
 const DEFAULTS: ContactSettings = { storeMessages: true, retentionDays: 365 };
 
-/** Ajustes del sitio (solo administradoras): adónde llegan los mensajes de contacto y cuánto se guardan. */
+interface ContactForm {
+  email: string;
+  store: boolean;
+  days: string;
+}
+
+/** Contacto del sitio (solo administradoras): adónde llegan los mensajes y cuánto se guardan. */
 export function ContactSettingsPage() {
   const settings = useQuery({
     queryKey: keys.site,
@@ -18,95 +28,93 @@ export function ContactSettingsPage() {
   });
   if (settings.isError) return <Alert>{errorMessage(settings.error)}</Alert>;
   if (!settings.data) return <Loading />;
-  return <ContactForm initial={settings.data.contact ?? DEFAULTS} />;
+  return <ContactFormView initial={settings.data.contact ?? DEFAULTS} />;
 }
 
-function ContactForm({ initial }: { initial: ContactSettings }) {
+function ContactFormView({ initial }: { initial: ContactSettings }) {
   const client = useQueryClient();
-  const [email, setEmail] = useState(initial.recipientEmail ?? '');
-  const [store, setStore] = useState(initial.storeMessages);
-  const [days, setDays] = useState(String(initial.retentionDays));
+  const toast = useToast();
+  const start: ContactForm = {
+    email: initial.recipientEmail ?? '',
+    store: initial.storeMessages,
+    days: String(initial.retentionDays),
+  };
+  const [form, setForm] = useState<ContactForm>(start);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState(false);
+  const guard = useFormGuard(form, start);
+  const submitted = useRef(form);
   const save = useMutation({
     mutationFn: siteApi.update,
     onSuccess: (response) => {
-      setSaved(true);
+      guard.markSaved(submitted.current);
+      toast.success('Guardado');
       client.setQueryData(keys.site, response);
     },
   });
+  const set = (patch: Partial<ContactForm>) => setForm((current) => ({ ...current, ...patch }));
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit(event?: FormEvent) {
+    event?.preventDefault();
     const parsed = contactSettingsSchema.safeParse({
-      ...(email.trim() ? { recipientEmail: email.trim() } : {}),
-      storeMessages: store,
-      retentionDays: Number(days),
+      ...(form.email.trim() ? { recipientEmail: form.email.trim() } : {}),
+      storeMessages: form.store,
+      retentionDays: Number(form.days),
     });
     if (!parsed.success) {
       setErrors(fieldErrors(parsed.error.issues));
       return;
     }
     setErrors({});
+    submitted.current = form;
     save.mutate({ contact: parsed.data });
   }
 
   return (
     <form onSubmit={submit} noValidate className="max-w-2xl">
       <PageHeader
-        title="Ajustes del sitio"
+        title="Contacto del sitio"
         subtitle="Mensajes de contacto: adónde llegan y cuánto tiempo se conservan."
-        actions={
-          <Button type="submit" loading={save.isPending}>
-            Guardar
-          </Button>
-        }
       />
-      {saved ? (
-        <div className="mb-4">
-          <Alert tone="success" title="Cambios guardados" />
-        </div>
-      ) : null}
-      {save.isError ? (
-        <div className="mb-4">
-          <Alert>{errorMessage(save.error)}</Alert>
-        </div>
-      ) : null}
-      <Card className="flex flex-col gap-4">
+      <FormSection
+        title="Cómo llegan los mensajes"
+        help="A qué correo llegan y cuánto tiempo se guardan en el panel."
+      >
         <TextField
           label="Correo donde llegan los mensajes"
           type="email"
-          value={email}
+          value={form.email}
           hint="Si lo dejas vacío se usa el configurado por el desarrollador. No se muestra en el sitio."
           error={errors['recipientEmail']}
-          onChange={(event) => {
-            setSaved(false);
-            setEmail(event.target.value);
-          }}
+          onChange={(event) => set({ email: event.target.value })}
         />
         <CheckField
-          label="Guardar los mensajes en el panel"
-          hint="Apagado, los mensajes solo llegan al correo y no quedan en «Mensajes de contacto»."
-          checked={store}
-          onChange={(value) => {
-            setSaved(false);
-            setStore(value);
-          }}
+          label="Guardar los mensajes aquí en el panel"
+          hint="Apagado, los mensajes solo llegan al correo y no quedan en «Mensajes»."
+          checked={form.store}
+          onChange={(value) => set({ store: value })}
         />
         <TextField
           label="Días que se guardan los mensajes"
           type="number"
           min={1}
           max={3650}
-          value={days}
+          value={form.days}
           hint="Pasado ese tiempo se borran solos (datos personales: conviene no guardarlos de más)."
           error={errors['retentionDays']}
-          onChange={(event) => {
-            setSaved(false);
-            setDays(event.target.value);
-          }}
+          onChange={(event) => set({ days: event.target.value })}
         />
-      </Card>
+      </FormSection>
+      <SaveBar
+        dirty={guard.dirty}
+        saving={save.isPending}
+        error={save.isError ? errorMessage(save.error) : null}
+        onSave={() => submit()}
+        onDiscard={() => {
+          setForm(guard.saved);
+          setErrors({});
+        }}
+        saveLabel="Guardar cambios"
+      />
     </form>
   );
 }
