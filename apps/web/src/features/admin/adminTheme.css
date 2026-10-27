@@ -652,6 +652,24 @@
     padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
     box-shadow: 0 -10px 24px -14px rgb(0 0 0 / 0.7);
   }
+  @media (max-width: 639.98px) {
+    .admin-savebar {
+      gap: 0.5rem;
+      padding: 0.625rem 0.75rem calc(0.625rem + env(safe-area-inset-bottom, 0px));
+    }
+    /* Sin cambios, el estado no ocupa una fila (lo siguen anunciando los lectores de pantalla). */
+    .admin-savebar[data-tone='ok'] .admin-savebar-status {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    .admin-savebar .btn {
+      padding-inline: 1rem;
+    }
+  }
   .admin-savebar-status {
     display: flex;
     min-width: 0;
