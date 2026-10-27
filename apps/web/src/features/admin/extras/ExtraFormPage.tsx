@@ -5,12 +5,13 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiClientError } from '../../../shared/api/client';
 import { SafeHtml } from '../../../shared/ui/SafeHtml';
 import { Button, SelectField, TextAreaField, TextField } from '../../../shared/ui/controls';
-import { Alert, Card, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, Card, PageHeader } from '../../../shared/ui/layout';
 import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
 import { useFormGuard } from '../components/useFormGuard';
 import { booksApi, extrasApi, keys } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { errorMessage, fieldErrors, slugify } from '../errors';
 import {
@@ -36,13 +37,13 @@ export function ExtraFormPage() {
 
   if (editing) {
     if (extra.isError) return <Alert>{errorMessage(extra.error)}</Alert>;
-    if (!extra.data) return <Loading />;
+    if (!extra.data) return <SkeletonRows rows={4} />;
     return (
       <ExtraFormView key={extra.data.id} extraId={extraId} initial={formFromExtra(extra.data)} />
     );
   }
   if (books.isError) return <Alert>{errorMessage(books.error)}</Alert>;
-  if (!books.data) return <Loading />;
+  if (!books.data) return <SkeletonRows rows={4} />;
   const bookId = params.get('libro') ?? books.data.books[0]?.id ?? '';
   return <ExtraFormView key={bookId} initial={emptyExtraForm(bookId)} />;
 }

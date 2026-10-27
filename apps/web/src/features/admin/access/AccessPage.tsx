@@ -1,10 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { Button, SelectField } from '../../../shared/ui/controls';
-import { Alert, Badge, Card, EmptyState, Loading, PageHeader } from '../../../shared/ui/layout';
+import { AdminIcon } from '../../../shared/ui/adminIcons';
+import { Alert, Card, EmptyState, PageHeader } from '../../../shared/ui/layout';
 import { accessApi, booksApi, keys, quizzesApi } from '../api';
 import { useConfirm } from '../components/ConfirmDialog';
+import { FormSection } from '../components/FormSection';
 import { HelpTip } from '../components/HelpTip';
+import { SkeletonRows } from '../components/Skeleton';
+import { StatusBadge } from '../components/StatusBadge';
+import { useToast } from '../components/Toast';
 import { errorMessage } from '../errors';
 
 /**
@@ -13,6 +19,7 @@ import { errorMessage } from '../errors';
  */
 export function AccessPage() {
   const client = useQueryClient();
+  const toast = useToast();
   const books = useQuery({ queryKey: keys.books, queryFn: booksApi.list });
   const [chosen, setChosen] = useState('');
   const [quizId, setQuizId] = useState('');
@@ -37,16 +44,23 @@ export function AccessPage() {
     onSuccess: async () => {
       setQuizId('');
       await refresh();
+      toast.success('Código creado');
     },
   });
   const revoke = useMutation({
     mutationFn: (id: string) => accessApi.revoke(id),
-    onSuccess: refresh,
+    onSuccess: async () => {
+      await refresh();
+      toast.success('Código revocado');
+    },
   });
   const confirm = useConfirm();
   const rotate = useMutation({
     mutationFn: (id: string) => accessApi.rotate(id),
-    onSuccess: refresh,
+    onSuccess: async () => {
+      await refresh();
+      toast.success('Código nuevo creado: descárgalo para imprimirlo');
+    },
   });
 
   const covered = new Set(
@@ -70,10 +84,20 @@ export function AccessPage() {
           crear uno nuevo; quienes ya lo usaron conservan el acceso.
         </HelpTip>
       </div>
-      {books.isPending ? <Loading /> : null}
+      {books.isPending ? <SkeletonRows rows={3} /> : null}
       {books.isError ? <Alert>{errorMessage(books.error)}</Alert> : null}
       {books.data && books.data.books.length === 0 ? (
-        <EmptyState title="Primero crea un libro y un quiz" />
+        <EmptyState
+          icon={<AdminIcon name="qr" className="size-7" />}
+          title="Primero crea un libro y un quiz"
+          action={
+            <Link to="/admin/libros/nuevo" className="btn btn-primary">
+              Crear libro
+            </Link>
+          }
+        >
+          Cada código desbloquea un quiz publicado.
+        </EmptyState>
       ) : null}
       {books.data && books.data.books.length > 0 ? (
         <div className="flex flex-col gap-5">
@@ -88,12 +112,10 @@ export function AccessPage() {
             }}
           />
 
-          <Card className="flex flex-col gap-3">
-            <h2 className="font-semibold">Crear un código</h2>
-            <p className="text-sm text-muted">
-              Solo quizzes publicados que todavía no tengan un código activo. El del juego se podrá
-              crear cuando exista el juego.
-            </p>
+          <FormSection
+            title="Crear un código"
+            help="Solo quizzes publicados que todavía no tengan un código activo. El del juego se podrá crear cuando exista el juego."
+          >
             <div className="flex flex-wrap items-end gap-3">
               <SelectField
                 label="Quiz"
@@ -115,13 +137,18 @@ export function AccessPage() {
                 Crear código
               </Button>
             </div>
-          </Card>
+          </FormSection>
 
           {error ? <Alert>{errorMessage(error)}</Alert> : null}
-          {tokens.isPending ? <Loading /> : null}
+          {tokens.isPending ? <SkeletonRows rows={2} /> : null}
           {tokens.isError ? <Alert>{errorMessage(tokens.error)}</Alert> : null}
           {tokens.data && tokens.data.tokens.length === 0 ? (
-            <EmptyState title="Este libro todavía no tiene códigos" />
+            <EmptyState
+              icon={<AdminIcon name="qr" className="size-7" />}
+              title="Este libro todavía no tiene códigos"
+            >
+              Crea uno arriba para un quiz publicado y descárgalo para imprimirlo.
+            </EmptyState>
           ) : null}
           {tokens.data && tokens.data.tokens.length > 0 ? (
             <ul className="flex flex-col gap-3" aria-label="Códigos del libro">
@@ -139,9 +166,10 @@ export function AccessPage() {
                       <div className="min-w-0">
                         <p className="font-medium">{token.label}</p>
                         <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
-                          <Badge tone={token.status === 'active' ? 'success' : 'warning'}>
-                            {token.status === 'active' ? 'Activo' : 'Revocado'}
-                          </Badge>
+                          <StatusBadge
+                            status={token.status === 'active' ? 'active' : 'inactive'}
+                            label={token.status === 'active' ? 'Activo' : 'Revocado'}
+                          />
                           <span>{token.redeemCount} desbloqueos</span>
                           {token.revokedReason ? <span>· {token.revokedReason}</span> : null}
                         </p>

@@ -14,12 +14,13 @@ import { useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { PostView } from '../../posts/templates';
 import { Button, CheckField, SelectField, TextField } from '../../../shared/ui/controls';
-import { Alert, Card, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, Card, PageHeader } from '../../../shared/ui/layout';
 import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
 import { useFormGuard } from '../components/useFormGuard';
 import { booksApi, keys, postsApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { ImageField } from '../components/MediaFields';
 import { errorMessage, fieldErrors, slugify } from '../errors';
 import {
@@ -81,7 +82,7 @@ export function PostFormPage() {
 
   if (editing) {
     if (post.isError) return <Alert>{errorMessage(post.error)}</Alert>;
-    if (!post.data) return <Loading />;
+    if (!post.data) return <SkeletonRows rows={4} />;
     return <PostFormView key={post.data.id} postId={postId} initial={formFromPost(post.data)} />;
   }
   const template = postTemplateSchema.safeParse(params.get('plantilla'));

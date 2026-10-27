@@ -3,8 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { Button } from '../../../shared/ui/controls';
-import { Alert, Loading, PageHeader, TabPanel, Tabs } from '../../../shared/ui/layout';
+import { Alert, PageHeader, TabPanel, Tabs } from '../../../shared/ui/layout';
 import { keys, quizzesApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { useCrumbLeaf } from '../components/Breadcrumbs';
 import { HelpTip } from '../components/HelpTip';
 import { SaveBar } from '../components/SaveBar';
@@ -50,7 +51,7 @@ export function QuizEditorPage() {
   const { quizId = '' } = useParams();
   const detail = useQuery({ queryKey: keys.quiz(quizId), queryFn: () => quizzesApi.get(quizId) });
   if (!detail.data && detail.isError) return <Alert>{errorMessage(detail.error)}</Alert>;
-  if (!detail.data) return <Loading />;
+  if (!detail.data) return <SkeletonRows rows={4} />;
   return <QuizEditor key={quizId} quizId={quizId} quiz={detail.data} />;
 }
 

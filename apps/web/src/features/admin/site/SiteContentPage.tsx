@@ -6,12 +6,13 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
 import { Button, TextField } from '../../../shared/ui/controls';
-import { Alert, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, PageHeader } from '../../../shared/ui/layout';
 import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
 import { useFormGuard } from '../components/useFormGuard';
 import { keys, siteApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { ImageField } from '../components/MediaFields';
 import { errorMessage, fieldErrors } from '../errors';
@@ -55,7 +56,7 @@ export function SiteContentPage() {
     gcTime: 0,
   });
   if (settings.isError) return <Alert>{errorMessage(settings.error)}</Alert>;
-  if (!settings.data) return <Loading />;
+  if (!settings.data) return <SkeletonRows rows={4} />;
   return <SiteContentForm initial={fromSettings(settings.data)} />;
 }
 

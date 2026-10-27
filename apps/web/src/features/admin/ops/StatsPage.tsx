@@ -1,17 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { Alert, Card, EmptyState, Loading, PageHeader } from '../../../shared/ui/layout';
+import { AdminIcon } from '../../../shared/ui/adminIcons';
+import { Alert, Card, EmptyState, PageHeader } from '../../../shared/ui/layout';
 import { HelpTip } from '../components/HelpTip';
+import { SkeletonRows } from '../components/Skeleton';
 import { keys, statsApi } from '../api';
 import { errorMessage } from '../errors';
 
 function Figure({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
-    <Card as="div" className="flex flex-col gap-1">
+    <div className="admin-stat">
       <p className="text-sm text-muted">{label}</p>
       <p className="font-display text-3xl font-bold tabular-nums">{value}</p>
       {hint ? <p className="text-xs text-muted">{hint}</p> : null}
-    </Card>
+    </div>
   );
 }
 
@@ -19,7 +21,7 @@ function Figure({ label, value, hint }: { label: string; value: ReactNode; hint?
 export function StatsPage() {
   const stats = useQuery({ queryKey: keys.stats, queryFn: statsApi.get, staleTime: 0 });
   if (stats.isError) return <Alert>{errorMessage(stats.error)}</Alert>;
-  if (!stats.data) return <Loading />;
+  if (!stats.data) return <SkeletonRows rows={4} />;
   const data = stats.data;
 
   return (
@@ -56,7 +58,12 @@ export function StatsPage() {
             Resultados por quiz
           </h2>
           {data.quizzes.length === 0 ? (
-            <EmptyState title="Todavía no hay quizzes publicados" />
+            <EmptyState
+              icon={<AdminIcon name="chart" className="size-7" />}
+              title="Todavía no hay quizzes publicados"
+            >
+              Cuando publiques uno y lo jueguen, aquí verás qué resultados salen.
+            </EmptyState>
           ) : null}
           {data.quizzes.map((quiz) => {
             const max = Math.max(1, ...quiz.results.map((result) => result.count));
