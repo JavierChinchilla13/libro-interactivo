@@ -3,7 +3,7 @@ import { E2E_ADMIN } from './global-setup';
 
 const PASSWORD = 'Nube-Azul-Cuatro-87';
 const LONG_NAME = 'Alejandra Montserrat-Wiśniewska de la Vega y Fernández 🌙';
-const WIDTHS = [360, 375, 768, 900, 940, 1024, 1100, 1280, 1440, 1600];
+const WIDTHS = [360, 375, 768, 900, 940, 1024, 1100, 1280, 1440, 1536, 1600, 1920];
 
 /**
  * Mide la cabecera de la página: nada se parte, nada se desborda y nada se pisa. Un enlace «partido» es el que tiene su
@@ -121,10 +121,8 @@ test.describe('cabeceras a todos los anchos', () => {
           }
         }
         if (who === 'admin' && path !== '/') {
-          // El selector de zonas va suelto solo en pantallas anchas; antes vive dentro del menú de usuario.
-          const loose = page.getByRole('navigation', { name: 'Cambiar de zona' });
-          if (width >= 1536) await expect(loose).toBeVisible();
-          else await expect(loose).toBeHidden();
+          // Las zonas viven siempre dentro del menú de usuario, a cualquier ancho (sin selector suelto).
+          await expect(page.getByRole('navigation', { name: 'Cambiar de zona' })).toHaveCount(0);
         }
       }
       await page.close();

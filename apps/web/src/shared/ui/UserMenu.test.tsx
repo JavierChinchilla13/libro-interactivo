@@ -185,13 +185,20 @@ describe('UserMenu en el panel', { timeout: 30_000 }, () => {
     expect(screen.getByRole('menuitem', { name: 'Salir' })).toBeInTheDocument();
   });
 
-  it('muestra el rol de editoras y administradoras dentro del menú y el selector de zona sigue a su lado', async () => {
+  it('muestra el rol de editoras y administradoras dentro del menú, con las tres zonas y sin selector suelto', async () => {
     mockApi({}, { session: withName('Admin Prueba', 'ADMIN') });
     renderAt('/admin');
     const user = userEvent.setup();
     await user.click(await trigger('Admin Prueba'));
     expect(screen.getByText('Administradora')).toBeInTheDocument();
-    expect(screen.getByRole('navigation', { name: 'Cambiar de zona' })).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Cambiar de zona' })).toBeNull();
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Ver sitio',
+      'Mi panel',
+      'Admin',
+      'Ajustes',
+      'Salir',
+    ]);
   });
 });
 
