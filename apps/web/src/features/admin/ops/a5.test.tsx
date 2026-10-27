@@ -111,6 +111,32 @@ describe('códigos QR · confirmaciones y avisos', { timeout: 30_000 }, () => {
     expect(screen.getByText('¿Qué es esto?').closest('details')).not.toHaveAttribute('open');
   });
 
+  it('«Crear código» apagado explica por qué: «Elige un quiz primero» o que ya están todos cubiertos', async () => {
+    mockApi({ ...base, [accessKey]: () => json({ tokens: [] }) }, { session: ADMIN });
+    const view = renderAt('/admin/qr');
+    const button = await screen.findByRole('button', { name: 'Crear código' });
+    expect(button).toBeDisabled();
+    expect(await screen.findByText('Elige un quiz primero.')).toBeInTheDocument();
+    expect(button).toHaveAccessibleDescription('Elige un quiz primero.');
+    view.unmount();
+
+    mockApi(base, { session: ADMIN });
+    renderAt('/admin/qr');
+    expect(
+      await screen.findByText(
+        'Todos los quizzes publicados de este libro ya tienen un código activo.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('«Revocar» lleva borde rojo y sin relleno, igual que las demás acciones destructivas', async () => {
+    mockApi(base, { session: ADMIN });
+    renderAt('/admin/qr');
+    const revoke = await screen.findByRole('button', { name: 'Revocar' });
+    expect(revoke).toHaveClass('btn-outline-danger');
+    expect(revoke.className).not.toContain('bg-danger');
+  });
+
   it('sin libros invita a crear uno', async () => {
     mockApi({ 'GET /api/admin/books': () => json({ books: [] }) }, { session: ADMIN });
     renderAt('/admin/qr');
