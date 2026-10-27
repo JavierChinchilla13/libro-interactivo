@@ -413,6 +413,158 @@
     }
   }
 
+  /* ---- Listas: barra de filtros, tabla (desde 768 px) y tarjetas (celular) ---- */
+  .admin-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .admin-toolbar > * {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+  @media (min-width: 640px) {
+    .admin-toolbar > * {
+      flex: 0 1 16rem;
+    }
+  }
+  .admin-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--token-line);
+    border-radius: var(--admin-radius);
+    background: var(--token-surface);
+  }
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+    text-align: left;
+  }
+  .admin-table th {
+    background: color-mix(in srgb, var(--token-surface-alt) 55%, transparent);
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--token-muted);
+  }
+  .admin-table td {
+    border-top: 1px solid var(--token-line);
+    padding: 0.625rem 1rem;
+    vertical-align: middle;
+  }
+  .admin-table tbody tr {
+    transition: background-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-table tbody tr:hover {
+      background: color-mix(in srgb, var(--token-surface-alt) 35%, transparent);
+    }
+  }
+  .admin-table .admin-actions-cell {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .admin-cell-title {
+    display: block;
+    min-width: 12rem;
+    max-width: 38rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  .admin-cell-sub {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--token-muted);
+    overflow-wrap: anywhere;
+  }
+  .admin-cell-num {
+    width: 1%;
+    white-space: nowrap;
+    color: var(--token-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .admin-edit-link {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    border-radius: var(--token-radius-sm);
+    padding: 0 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--token-primary);
+    text-decoration: none;
+    transition: background-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-edit-link:active {
+    background: color-mix(in srgb, var(--token-primary) 16%, transparent);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-edit-link:hover {
+      background: color-mix(in srgb, var(--token-primary) 12%, transparent);
+    }
+  }
+  .admin-card-list {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    flex-direction: column;
+    gap: 0.75rem;
+    list-style: none;
+  }
+  .admin-row-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--admin-radius);
+    background: var(--token-surface);
+    padding: 1rem;
+  }
+  .admin-row-meta {
+    display: grid;
+    margin: 0;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+  }
+  .admin-row-meta > div {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .admin-row-meta dt {
+    flex-shrink: 0;
+    color: var(--token-muted);
+  }
+  .admin-row-meta dt::after {
+    content: ':';
+  }
+  .admin-row-meta dd {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .admin-row-action {
+    width: 100%;
+    white-space: nowrap;
+  }
+  .admin-list-more {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: var(--token-muted);
+  }
+  .admin-list-more p {
+    margin: 0;
+  }
+
   /* ---- Barra de guardado ---- */
   .admin-savebar {
     position: sticky;
