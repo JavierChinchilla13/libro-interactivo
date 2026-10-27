@@ -132,7 +132,7 @@ describe('editor de quizzes · preguntas plegables (60 preguntas)', { timeout: 6
     expect(screen.getByText('60 preguntas · 240 respuestas')).toBeInTheDocument();
     // Ninguna abierta: solo hay 60 cabeceras y ningún campo de texto de pregunta.
     expect(screen.queryAllByRole('textbox', { name: 'Texto de la pregunta' })).toHaveLength(0);
-    const folds = screen.getAllByRole('button', { name: /^Pregunta \d+$/ });
+    const folds = screen.getAllByRole('button', { name: /^Pregunta \d+/ });
     expect(folds).toHaveLength(60);
     expect(folds[0]).toHaveAttribute('aria-expanded', 'false');
 
@@ -151,7 +151,7 @@ describe('editor de quizzes · preguntas plegables (60 preguntas)', { timeout: 6
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
     await screen.findByRole('heading', { name: 'Quiz grande' });
     await userEvent.click(screen.getByRole('tab', { name: 'Preguntas' }));
-    const first = screen.getAllByRole('button', { name: /^Pregunta \d+$/ })[0] as HTMLElement;
+    const first = screen.getAllByRole('button', { name: /^Pregunta \d+/ })[0] as HTMLElement;
     expect(first.textContent).toContain('🌙');
     expect(first.querySelector('.admin-fold-summary')).not.toBeNull();
     await userEvent.click(first);
@@ -291,20 +291,20 @@ describe('editor de quizzes · retoques de celular y de la revisión', { timeout
     expect(screen.queryByRole('button', { name: 'Revisar' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Vista previa' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Más' }));
-    const menu = screen.getByRole('menu');
+    const menu = screen.getByRole('group', { name: 'Más acciones' });
     expect(
       within(menu)
-        .getAllByRole('menuitem')
+        .getAllByRole('button')
         .map((item) => item.textContent),
     ).toEqual(['Revisar', 'Vista previa', 'Guardar borrador']);
-    expect(within(menu).getByRole('menuitem', { name: 'Guardar borrador' })).toBeDisabled();
+    expect(within(menu).getByRole('button', { name: 'Guardar borrador' })).toBeDisabled();
     await userEvent.keyboard('{Escape}');
-    expect(screen.queryByRole('menu')).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Más acciones' })).toBeNull();
     // Con cambios, el estado corto aparece en la misma fila y «Guardar borrador» se habilita.
     await userEvent.type(screen.getByRole('textbox', { name: /^Título/ }), ' 2');
     expect(screen.getByText('Sin guardar')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Más' }));
-    expect(screen.getByRole('menuitem', { name: 'Guardar borrador' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Guardar borrador' })).toBeEnabled();
   });
 
   it('la revisión deja de valer en cuanto se edita algo: pide «Vuelve a revisar»', async () => {

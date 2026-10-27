@@ -13,9 +13,15 @@ export function useUnsavedChanges(dirty: boolean) {
   const current = useRef(dirty);
   useEffect(() => {
     current.current = dirty;
+    // `allowLeave` vale para una sola salida: si se vuelve a editar o se guardó, el aviso se rearma.
+    skip.current = false;
   }, [dirty]);
   // Se decide al navegar (no al dibujar): así `allowLeave()` surte efecto aunque no haya vuelto a dibujarse.
   const blocker = useBlocker(() => current.current && !skip.current);
+  const latest = useRef(blocker);
+  useEffect(() => {
+    latest.current = blocker;
+  }, [blocker]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -37,13 +43,13 @@ export function useUnsavedChanges(dirty: boolean) {
       tone: 'danger',
     }).then((leave) => {
       if (!alive) return;
-      if (leave) blocker.proceed();
-      else blocker.reset();
+      if (leave) latest.current.proceed?.();
+      else latest.current.reset?.();
     });
     return () => {
       alive = false;
     };
-  }, [blocker, confirm]);
+  }, [blocker.state, confirm]);
 
   const allowLeave = useCallback(() => {
     skip.current = true;

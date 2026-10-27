@@ -13,12 +13,12 @@ import { posterUrl, thumbUrl } from '../../../shared/lib/cloudinary';
 import { measureBackdrop } from '../../../shared/lib/measureBackdrop';
 import { accentBackdrop } from '../../../shared/lib/quizAppearance';
 import { Button } from '../../../shared/ui/controls';
-import { Alert, Card, Loading } from '../../../shared/ui/layout';
+import { Alert, Card } from '../../../shared/ui/layout';
 import { appearanceApi, keys, quizzesApi } from '../api';
 import { useConfirm } from '../components/ConfirmDialog';
 import { HelpTip } from '../components/HelpTip';
+import { SkeletonRows } from '../components/Skeleton';
 import { SaveBar } from '../components/SaveBar';
-import { useUnsavedChanges } from '../components/useUnsavedChanges';
 import { AccentField, Chip } from './AccentField';
 import { QuestionsSection, type StageQuestions } from './QuestionsSection';
 import { ContrastNotice } from './ContrastNotice';
@@ -53,9 +53,12 @@ export function AppearanceTab({
   quiz,
   archived,
   title,
+  onDirtyChange,
 }: {
   quiz: QuizDetailResponse;
   archived: boolean;
+  /** El editor suma este estado al suyo para tener un único aviso de salida. */
+  onDirtyChange?: (dirty: boolean) => void;
   /** Título que se muestra en la vista previa (el del borrador). */
   title: string;
 }) {
@@ -69,7 +72,7 @@ export function AppearanceTab({
   // Un fallo al refrescar no debe tirar un editor con cambios: el error solo manda si no hay nada que mostrar.
   if (!query.data && query.isError) return <Alert>{errorMessage(query.error)}</Alert>;
   // No se arranca con datos viejos del caché: otra persona pudo guardar mientras esta pestaña estaba cerrada.
-  if (!query.data || !query.isFetchedAfterMount) return <Loading />;
+  if (!query.data || !query.isFetchedAfterMount) return <SkeletonRows rows={3} />;
   return (
     <AppearanceEditor
       // Solo se remonta al recargar a propósito: guardar no debe borrar el aviso de «Guardado».
@@ -77,6 +80,7 @@ export function AppearanceTab({
       quiz={quiz}
       archived={archived}
       title={title}
+      onDirtyChange={onDirtyChange}
       server={query.data}
       onReload={async () => {
         await query.refetch();
@@ -90,12 +94,14 @@ function AppearanceEditor({
   quiz,
   archived,
   title,
+  onDirtyChange,
   server,
   onReload,
 }: {
   quiz: QuizDetailResponse;
   archived: boolean;
   title: string;
+  onDirtyChange?: ((dirty: boolean) => void) | undefined;
   server: QuizAppearanceResponse;
   onReload: () => Promise<void>;
 }) {
@@ -171,7 +177,10 @@ function AppearanceEditor({
   const dirty = formKey(effective) !== savedKey;
 
   // Aviso antes de salir con cambios sin guardar (cerrar la pestaña o ir a otra pantalla).
-  useUnsavedChanges(dirty && !archived);
+  useEffect(() => {
+    onDirtyChange?.(dirty && !archived);
+    return () => onDirtyChange?.(false);
+  }, [dirty, archived, onDirtyChange]);
   // El acento se lee contra el fondo ya velado (o, sin fondo de quiz, contra el color liso del sitio); si no se leería a
   // 3:1, se aclara lo mínimo. La autora ve el antes y el después; se guarda lo que ella eligió.
   // Igual que el lector: solo en modo automático mide el fondo; en manual cuenta el peor caso (un punto blanco).

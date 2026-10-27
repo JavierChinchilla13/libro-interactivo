@@ -36,6 +36,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<Pending | null>(null);
   const ref = useRef<HTMLDialogElement>(null);
   const settle = useRef<((ok: boolean) => void) | null>(null);
+  const opener = useRef<HTMLElement | null>(null);
 
   const confirm = useCallback<Confirm>(
     (options) =>
@@ -43,6 +44,9 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         // Si ya hay una abierta, la anterior se cancela: nunca quedan promesas colgadas.
         settle.current?.(false);
         settle.current = resolve;
+        if (!opener.current && document.activeElement instanceof HTMLElement) {
+          opener.current = document.activeElement;
+        }
         setPending({ ...options, resolve });
       }),
     [],
@@ -64,6 +68,10 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     settle.current = null;
     setPending(null);
     current.resolve(ok);
+    // El foco vuelve al botón que abrió el cuadro (si sigue en la página).
+    const back = opener.current;
+    opener.current = null;
+    if (back?.isConnected) window.setTimeout(() => back.focus(), 0);
   };
 
   const api = useMemo(() => confirm, [confirm]);
@@ -96,12 +104,18 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               </div>
             ) : null}
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" className="btn btn-secondary" onClick={() => close(false)}>
+              <button
+                type="button"
+                // En una acción que borra o quita, el foco empieza en «Cancelar»: Enter no destruye por error.
+                autoFocus={pending.tone === 'danger'}
+                className="btn btn-secondary"
+                onClick={() => close(false)}
+              >
                 {pending.cancelLabel ?? 'Cancelar'}
               </button>
               <button
                 type="button"
-                autoFocus
+                autoFocus={pending.tone !== 'danger'}
                 className={`btn ${pending.tone === 'danger' ? 'btn-danger' : 'btn-primary'}`}
                 onClick={() => close(true)}
               >

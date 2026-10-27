@@ -1,5 +1,11 @@
 import type { WikiEntryResponse, WikiKind } from '@libro/shared';
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { Button, SelectField, TextField } from '../../../shared/ui/controls';
@@ -57,6 +63,8 @@ export function WikiListPage() {
   const lists = useQueries({
     queries: kinds.map((kind) => ({
       queryKey: [...keys.wiki, 'list', kind, bookId, q, letter],
+      // Al teclear en el buscador se conserva la lista anterior mientras llega la nueva (sin parpadeo de esqueletos).
+      placeholderData: keepPreviousData,
       queryFn: () =>
         wikiApi.list({
           kind,
@@ -114,7 +122,7 @@ export function WikiListPage() {
     {
       id: 'order',
       header: 'Orden manual',
-      role: 'table',
+      role: 'meta',
       cell: (entry) => (
         <span className="flex gap-1">
           <Button

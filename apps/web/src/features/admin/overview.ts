@@ -117,6 +117,15 @@ export function useAdminOverview(role: Role | undefined, now: Date = new Date())
     loading: books.isPending,
     failed: books.isError,
     refetch: () => void books.refetch(),
+    /** Algún origen secundario falló: no se puede afirmar «Todo al día». */
+    partialFailure: [fanArts, posts, ...quizQueries, ...(isAdmin ? [stats] : [])].some(
+      (query) => query.isError,
+    ),
+    refetchAll: () => {
+      for (const query of [fanArts, posts, ...quizQueries, ...(isAdmin ? [stats] : [])]) {
+        if (query.isError) void query.refetch();
+      }
+    },
     books: {
       total: bookList?.length ?? 0,
       published: bookList?.filter((book) => book.status === 'published').length ?? 0,

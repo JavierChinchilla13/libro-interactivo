@@ -20,10 +20,11 @@ export function CrumbLeafProvider({
 export function useCrumbLeaf(label: string | null | undefined) {
   const setLeaf = useContext(LeafContext);
   useEffect(() => {
-    if (!setLeaf || !label) return;
-    setLeaf(label);
-    return () => setLeaf(null);
+    if (setLeaf && label) setLeaf(label);
   }, [setLeaf, label]);
+  useEffect(() => {
+    return () => setLeaf?.(null);
+  }, [setLeaf]);
 }
 
 /** Migas «Grupo › Pantalla › Detalle»: el grupo es solo contexto (no es una página), el resto enlaza. */

@@ -187,6 +187,7 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
               to={`/actualizaciones/${form.slug}`}
               className="btn btn-secondary"
               target="_blank"
+              rel="noopener noreferrer"
             >
               Ver en el sitio
             </Link>
