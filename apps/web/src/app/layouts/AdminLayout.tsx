@@ -151,7 +151,7 @@ export function AdminLayout() {
                   end
                   className="flex min-h-11 min-w-0 flex-col justify-center rounded-token-sm"
                 >
-                  <span className="font-display text-lg font-bold leading-tight tracking-wide">
+                  <span className="whitespace-nowrap font-display text-[1.0625rem] font-bold leading-tight tracking-wide">
                     Universo Memorias
                   </span>
                   <span className="text-xs text-muted">Administración</span>
