@@ -64,6 +64,18 @@ const LONG =
 const EMOJI = '🌙✨ Noche de luna — 夜の物語 👩🏽‍🚀';
 
 describe('listas de la administración (patrón único)', { timeout: 30_000 }, () => {
+  it('con cero libros «Nuevo quiz» queda deshabilitado con su motivo y el vacío lleva a crear el libro', async () => {
+    mockApi({ 'GET /api/admin/books': () => json({ books: [] }) }, { session: ADMIN });
+    renderAt('/admin/quizzes');
+    expect(await screen.findByText('Crea un libro antes de agregar quizzes')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '+ Nuevo quiz' })).toBeDisabled();
+    expect(screen.queryByRole('link', { name: '+ Nuevo quiz' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Crear libro' })).toHaveAttribute(
+      'href',
+      '/admin/libros/nuevo',
+    );
+  });
+
   it('con 0 elementos distingue «todavía no hay nada» y ofrece crear el primero', async () => {
     mockApi(base([]), { session: ADMIN });
     renderAt('/admin/quizzes');

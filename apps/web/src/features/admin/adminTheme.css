@@ -209,6 +209,12 @@
     --admin-tone: var(--token-primary);
   }
 
+  /* ---- Botones deshabilitados: se ven apagados y no parecen pulsables ---- */
+  .admin-shell .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
   /* ---- Botón de acción que quita o descarta ---- */
   .btn-danger {
     background-color: var(--token-danger);

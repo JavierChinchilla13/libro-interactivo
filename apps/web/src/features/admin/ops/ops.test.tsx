@@ -143,9 +143,7 @@ describe('usuarios', () => {
       { session: ADMIN },
     );
     renderAt('/admin/usuarios');
-    await userEvent.click(
-      await screen.findByRole('button', { name: 'Nueva cuenta del equipo' }),
-    );
+    await userEvent.click(await screen.findByRole('button', { name: 'Nueva cuenta del equipo' }));
     await userEvent.click(screen.getByRole('button', { name: 'Crear y enviar invitación' }));
     expect((await screen.findAllByText(/Escribe el nombre/)).length).toBeGreaterThan(0);
     expect(called('POST /api/admin/users')).toHaveLength(0);

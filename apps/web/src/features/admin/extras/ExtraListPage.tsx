@@ -62,15 +62,25 @@ export function ExtraListPage() {
       title="Capítulos extra"
       subtitle="Se abren cuando el lector completa todos los quizzes del libro. No llevan QR."
       primaryAction={
-        <Link to={newExtra} className="btn btn-primary">
-          + Nuevo extra
-        </Link>
+        noBooks ? (
+          <span className="flex flex-col items-start gap-1 sm:items-end">
+            <button type="button" className="btn btn-primary" disabled>
+              + Nuevo extra
+            </button>
+            <span className="text-xs text-muted">Crea un libro antes de agregar extras</span>
+          </span>
+        ) : (
+          <Link to={newExtra} className="btn btn-primary">
+            + Nuevo extra
+          </Link>
+        )
       }
       toolbar={
         books.data && !noBooks ? (
           <>
             <SelectField
               label="Libro"
+              wrapperClassName="sm:basis-[28rem] sm:max-w-full"
               value={bookId}
               options={books.data.books.map((book) => ({ value: book.id, label: book.title }))}
               onChange={(event) => setChosen(event.target.value)}
