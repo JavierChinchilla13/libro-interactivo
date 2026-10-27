@@ -132,11 +132,19 @@ export function AccessPage() {
               <Button
                 disabled={quizId === ''}
                 loading={create.isPending}
+                aria-describedby={quizId === '' ? 'crear-codigo-motivo' : undefined}
                 onClick={() => create.mutate()}
               >
                 Crear código
               </Button>
             </div>
+            {quizId === '' ? (
+              <p id="crear-codigo-motivo" className="text-sm text-muted">
+                {free.length === 0
+                  ? 'Todos los quizzes publicados de este libro ya tienen un código activo.'
+                  : 'Elige un quiz primero.'}
+              </p>
+            ) : null}
           </FormSection>
 
           {error ? <Alert>{errorMessage(error)}</Alert> : null}
@@ -199,7 +207,7 @@ export function AccessPage() {
                           Rotar
                         </Button>
                         <Button
-                          variant="danger"
+                          variant="danger-outline"
                           loading={revoke.isPending && revoke.variables === token.id}
                           onClick={async () => {
                             const ok = await confirm({

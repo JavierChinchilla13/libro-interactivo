@@ -130,7 +130,7 @@ export function MessagesPage() {
                   {message.handled ? 'Marcar sin atender' : 'Marcar atendido'}
                 </Button>
                 <Button
-                  variant="danger"
+                  variant="danger-outline"
                   loading={remove.isPending && remove.variables === message.id}
                   onClick={async () => {
                     const ok = await confirm({

@@ -362,7 +362,7 @@ export function UserDetailPage() {
               </Button>
               {user.role === 'USER' ? (
                 <Button
-                  variant="danger"
+                  variant="danger-outline"
                   loading={remove.isPending}
                   onClick={async () => {
                     const ok = await confirm({

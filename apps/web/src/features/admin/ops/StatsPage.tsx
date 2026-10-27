@@ -46,11 +46,7 @@ export function StatsPage() {
             hint={`${data.attempts.inProgress} en curso`}
           />
           <Figure label="Libros terminados" value={data.booksCompleted} />
-          <Figure
-            label="Mensajes sin atender"
-            value={data.unhandledMessages}
-            hint={`${data.staff} cuentas de administración`}
-          />
+          <Figure label="Mensajes sin atender" value={data.unhandledMessages} />
         </div>
 
         <section aria-labelledby="stats-quizzes" className="flex flex-col gap-3">

@@ -72,7 +72,7 @@ export function VersionsTab({ quizId, archived }: { quizId: string; archived: bo
         </p>
         {archive.isError ? <Alert>{errorMessage(archive.error)}</Alert> : null}
         <Button
-          variant="danger"
+          variant="danger-outline"
           className="self-start"
           disabled={archived}
           loading={archive.isPending}
