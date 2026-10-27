@@ -78,18 +78,27 @@ export function EmptyState({
   title,
   children,
   action,
+  icon,
 }: {
   title: string;
   children?: ReactNode;
+  /** Un icono propio (decorativo) en lugar del punto neutro; los vacíos de la administración lo usan. */
+  icon?: ReactNode;
   /** Una salida (enlace o botón) para que la persona no se quede en un callejón. */
   action?: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center rounded-token-md bg-surface p-8 text-center">
-      <span
-        aria-hidden="true"
-        className="mb-4 size-3.5 rounded-full border-2 border-unlit bg-surface"
-      />
+      {icon ? (
+        <span aria-hidden="true" className="mb-4 text-muted">
+          {icon}
+        </span>
+      ) : (
+        <span
+          aria-hidden="true"
+          className="mb-4 size-3.5 rounded-full border-2 border-unlit bg-surface"
+        />
+      )}
       <p className="font-medium">{title}</p>
       {children ? <div className="mt-2 text-sm text-muted">{children}</div> : null}
       {action ? <div className="mt-5">{action}</div> : null}
