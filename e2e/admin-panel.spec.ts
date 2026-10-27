@@ -39,7 +39,7 @@ test.describe('panel de administración', () => {
     }
     if (isMobile) {
       await page.goto('/admin');
-      const menu = page.getByRole('button', { name: 'Menú' });
+      const menu = page.getByRole('button', { name: 'Abrir el menú' });
       await menu.click();
       await expect(menu).toHaveAttribute('aria-expanded', 'true');
       await expect(page.getByRole('link', { name: 'Quizzes' })).toBeVisible();
@@ -83,7 +83,7 @@ test.describe('panel de administración', () => {
     await page.getByRole('link', { name: '+ Nuevo quiz' }).click();
     // La pantalla se descarga al entrar (código dividido): hay que esperarla antes de tocar sus campos.
     await expect(page.getByRole('heading', { name: 'Nuevo quiz' })).toBeVisible();
-    await page.getByLabel('Libro').selectOption({ label: bookTitle });
+    await page.getByRole('combobox', { name: /^Libro/ }).selectOption({ label: bookTitle });
     await page.getByRole('textbox', { name: /^Título/ }).fill('Quiz E2E');
     await page.getByRole('button', { name: 'Crear quiz' }).click();
     await expect(page).toHaveURL(/\/admin\/quizzes\/[0-9a-f]{24}$/);
@@ -133,7 +133,7 @@ test.describe('panel de administración', () => {
 
     // El quiz figura como publicado en el listado.
     await page.getByRole('link', { name: '← Quizzes' }).click();
-    await page.getByLabel('Libro').selectOption({ label: bookTitle });
+    await page.getByRole('combobox', { name: /^Libro/ }).selectOption({ label: bookTitle });
     await expect(page.getByRole('row', { name: /Quiz E2E.*Publicado.*v1/ })).toBeVisible();
   });
 
