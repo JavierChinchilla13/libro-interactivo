@@ -81,15 +81,25 @@ export function QuizListPage() {
       title="Quizzes"
       subtitle="Se juegan en orden: el quiz 2 se abre al completar el 1, y así."
       primaryAction={
-        <Link to={newQuiz} className="btn btn-primary">
-          + Nuevo quiz
-        </Link>
+        noBooks ? (
+          <span className="flex flex-col items-start gap-1 sm:items-end">
+            <button type="button" className="btn btn-primary" disabled>
+              + Nuevo quiz
+            </button>
+            <span className="text-xs text-muted">Crea un libro antes de agregar quizzes</span>
+          </span>
+        ) : (
+          <Link to={newQuiz} className="btn btn-primary">
+            + Nuevo quiz
+          </Link>
+        )
       }
       toolbar={
         books.data && !noBooks ? (
           <>
             <SelectField
               label="Libro"
+              wrapperClassName="sm:basis-[28rem] sm:max-w-full"
               value={bookId}
               options={books.data.books.map((book) => ({ value: book.id, label: book.title }))}
               onChange={(event) => setChosen(event.target.value)}
