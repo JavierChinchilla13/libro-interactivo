@@ -4,6 +4,7 @@ import { formatDateTime } from '../../../shared/lib/dates';
 import { Button, SelectField } from '../../../shared/ui/controls';
 import { Alert, Card } from '../../../shared/ui/layout';
 import { keys, messagesApi } from '../api';
+import { useConfirm } from '../components/ConfirmDialog';
 import { ListPage } from '../components/ListPage';
 import { StatusBadge } from '../components/StatusBadge';
 import { errorMessage } from '../errors';
@@ -31,6 +32,7 @@ export function MessagesPage() {
       messagesApi.setHandled(id, handled),
     onSuccess: refresh,
   });
+  const confirm = useConfirm();
   const remove = useMutation({ mutationFn: messagesApi.remove, onSuccess: refresh });
   const data = list.data;
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
@@ -119,9 +121,14 @@ export function MessagesPage() {
                 <Button
                   variant="danger"
                   loading={remove.isPending && remove.variables === message.id}
-                  onClick={() => {
-                    if (window.confirm('El mensaje se borra para siempre. ¿Eliminar?'))
-                      remove.mutate(message.id);
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: '¿Eliminar este mensaje?',
+                      message: 'Se borra para siempre.',
+                      confirmLabel: 'Eliminar mensaje',
+                      tone: 'danger',
+                    });
+                    if (ok) remove.mutate(message.id);
                   }}
                 >
                   Eliminar

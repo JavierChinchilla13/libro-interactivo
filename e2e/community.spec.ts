@@ -94,21 +94,29 @@ test.describe('fan arts y reseñas (escritorio)', () => {
     await page.getByLabel('Correo').fill(E2E_ADMIN.email);
     await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
     await page.getByRole('button', { name: 'Ingresar' }).click();
-    await expect(page.getByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ }),
+    ).toBeVisible();
     await page.getByRole('link', { name: 'Reseñas' }).click();
     await page.getByRole('link', { name: '+ Nueva reseña' }).click();
     await page.getByLabel(/^Reseña/).fill(`Una historia que no suelto ${stamp} <b>negrita</b>`);
     await page.getByLabel(/Nombre del lector/).fill(`Lector E2E ${stamp}`);
     await page.getByLabel('Dónde se publicó (opcional)').fill('Goodreads');
     await page.getByLabel('Calificación (opcional)').selectOption('5');
-    await page.getByRole('button', { name: 'Guardar' }).click();
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
+    await page
+      .getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      })
+      .click();
+    await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
 
     // El panel de fan arts la lista con el permiso confirmado.
     await page.getByRole('link', { name: 'Fan arts' }).first().click();
     await expect(
       page.getByRole('row', {
-        name: new RegExp(`Dibujo ${stamp}.*Artista Visible ${stamp}.*Permiso confirmado.*Publicado`),
+        name: new RegExp(
+          `Dibujo ${stamp}.*Artista Visible ${stamp}.*Permiso confirmado.*Publicado`,
+        ),
       }),
     ).toBeVisible();
 

@@ -5,10 +5,14 @@ import {
   type ReviewStatus,
 } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router';
-import { Button, SelectField, TextAreaField, TextField } from '../../../shared/ui/controls';
-import { Alert, Card, Loading, PageHeader } from '../../../shared/ui/layout';
+import { useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
+import { SelectField, TextAreaField, TextField } from '../../../shared/ui/controls';
+import { Alert, Loading, PageHeader } from '../../../shared/ui/layout';
+import { FormSection } from '../components/FormSection';
+import { SaveBar } from '../components/SaveBar';
+import { useToast } from '../components/Toast';
+import { useFormGuard } from '../components/useFormGuard';
 import { DataList, type Column } from '../components/DataList';
 import { ListPage, useRowSearch } from '../components/ListPage';
 import { StatusBadge } from '../components/StatusBadge';
@@ -184,31 +188,31 @@ function ReviewFormView({ reviewId, initial }: { reviewId?: string; initial: Rev
   const editing = reviewId !== undefined;
   const navigate = useNavigate();
   const client = useQueryClient();
-  const location = useLocation();
   const [form, setForm] = useState<ReviewForm>(initial);
+  const guard = useFormGuard(form, initial);
+  const toast = useToast();
+  const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState(
-    (location.state as { created?: boolean } | null)?.created === true,
-  );
   const books = useQuery({ queryKey: keys.books, queryFn: booksApi.list });
   const save = useMutation({
     mutationFn: (payload: ReviewInputPayload) =>
       editing ? reviewsApi.replace(reviewId, payload) : reviewsApi.create(payload),
     onSuccess: async (result) => {
       await client.invalidateQueries({ queryKey: keys.reviews });
-      setSaved(true);
+      guard.markSaved(submitted.current);
+      toast.success('Guardado');
       if (!editing) {
+        guard.allowLeave();
         void navigate(`/admin/resenas/${result.id}`, { replace: true, state: { created: true } });
       }
     },
   });
   const set = <K extends keyof ReviewForm>(key: K, value: ReviewForm[K]) => {
-    setSaved(false);
     setForm((current) => ({ ...current, [key]: value }));
   };
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit(event?: FormEvent) {
+    event?.preventDefault();
     const payload = reviewPayload(form);
     const parsed = reviewInputSchema.safeParse(payload);
     if (!parsed.success) {
@@ -216,30 +220,14 @@ function ReviewFormView({ reviewId, initial }: { reviewId?: string; initial: Rev
       return;
     }
     setErrors({});
+    submitted.current = form;
     save.mutate(payload);
   }
 
   return (
     <form onSubmit={submit} noValidate className="max-w-2xl">
-      <PageHeader
-        title={editing ? `Reseña de ${form.authorName || '…'}` : 'Nueva reseña'}
-        actions={
-          <Button type="submit" loading={save.isPending}>
-            Guardar
-          </Button>
-        }
-      />
-      {saved ? (
-        <div className="mb-4">
-          <Alert tone="success" title="Cambios guardados" />
-        </div>
-      ) : null}
-      {save.isError ? (
-        <div className="mb-4">
-          <Alert>{errorMessage(save.error)}</Alert>
-        </div>
-      ) : null}
-      <Card className="flex flex-col gap-4">
+      <PageHeader title={editing ? `Reseña de ${form.authorName || '…'}` : 'Nueva reseña'} />
+      <FormSection title="La reseña" help="Texto, autoría y si se muestra en la página principal.">
         <TextAreaField
           label="Reseña"
           required
@@ -301,7 +289,19 @@ function ReviewFormView({ reviewId, initial }: { reviewId?: string; initial: Rev
             onChange={(event) => set('status', event.target.value as ReviewStatus)}
           />
         </div>
-      </Card>
+      </FormSection>
+      <SaveBar
+        dirty={guard.dirty || !editing}
+        dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}
+        saving={save.isPending}
+        error={save.isError ? errorMessage(save.error) : null}
+        onSave={() => submit()}
+        onDiscard={() => {
+          setForm(guard.saved);
+          setErrors({});
+        }}
+        saveLabel="Guardar reseña"
+      />
     </form>
   );
 }

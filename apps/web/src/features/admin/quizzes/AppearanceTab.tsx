@@ -15,6 +15,10 @@ import { accentBackdrop } from '../../../shared/lib/quizAppearance';
 import { Button } from '../../../shared/ui/controls';
 import { Alert, Card, Loading } from '../../../shared/ui/layout';
 import { appearanceApi, keys, quizzesApi } from '../api';
+import { useConfirm } from '../components/ConfirmDialog';
+import { HelpTip } from '../components/HelpTip';
+import { SaveBar } from '../components/SaveBar';
+import { useUnsavedChanges } from '../components/useUnsavedChanges';
 import { AccentField, Chip } from './AccentField';
 import { QuestionsSection, type StageQuestions } from './QuestionsSection';
 import { ContrastNotice } from './ContrastNotice';
@@ -166,13 +170,8 @@ function AppearanceEditor({
   const effective: AppearanceForm = { ...form, strength: strength || form.strength };
   const dirty = formKey(effective) !== savedKey;
 
-  // Aviso antes de cerrar la pestaña con cambios sin guardar.
-  useEffect(() => {
-    if (!dirty) return undefined;
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
+  // Aviso antes de salir con cambios sin guardar (cerrar la pestaña o ir a otra pantalla).
+  useUnsavedChanges(dirty && !archived);
   // El acento se lee contra el fondo ya velado (o, sin fondo de quiz, contra el color liso del sitio); si no se leería a
   // 3:1, se aclara lo mínimo. La autora ve el antes y el después; se guarda lo que ella eligió.
   // Igual que el lector: solo en modo automático mide el fondo; en manual cuenta el peor caso (un punto blanco).
@@ -214,6 +213,7 @@ function AppearanceEditor({
     },
   });
 
+  const confirm = useConfirm();
   const revert = useMutation({
     mutationFn: (entryRev: number) => appearanceApi.revert(quiz.id, entryRev, rev),
     onSuccess: async (result) => {
@@ -248,6 +248,11 @@ function AppearanceEditor({
           que se ve; las preguntas y los resultados siguen su propia publicación. Esta pestaña se
           guarda aparte: no usa «Guardar borrador» ni «Publicar» de arriba.
         </p>
+
+        <HelpTip>
+          Se aplica sin publicar: las lectoras lo ven en seguida. No cambia las preguntas ni los
+          resultados.
+        </HelpTip>
 
         <Card className="flex min-w-0 flex-col gap-4">
           <h2 className="font-semibold">Fondo</h2>
@@ -439,13 +444,13 @@ function AppearanceEditor({
           history={history}
           disabled={disabled || dirty}
           pendingRev={revert.isPending ? revert.variables : undefined}
-          onRevert={(entryRev) => {
-            if (
-              !window.confirm(
-                '¿Volver al estado anterior a este cambio? Las lectoras lo verán en seguida.',
-              )
-            )
-              return;
+          onRevert={async (entryRev) => {
+            const ok = await confirm({
+              title: '¿Volver a la apariencia anterior?',
+              message: 'Las lectoras la verán en seguida.',
+              confirmLabel: 'Volver a esta apariencia',
+            });
+            if (!ok) return;
             setNotice(null);
             revert.mutate(entryRev);
           }}
@@ -457,21 +462,25 @@ function AppearanceEditor({
             poder guardar.
           </p>
         ) : null}
-        <div className="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 rounded-token-lg border border-border bg-surface p-3 shadow-[0_-8px_20px_-12px_rgb(0_0_0/0.6)]">
-          <Button
-            disabled={disabled || !dirty || Boolean(missing) || unfinished.length > 0 || measuring}
-            loading={save.isPending}
-            onClick={() => {
-              setNotice(null);
-              save.mutate({ body: toAppearance(effective), key: formKey(effective), rev });
-            }}
-          >
-            Guardar apariencia
-          </Button>
-          <span role="status" className={`text-sm ${dirty ? 'text-warning' : 'text-muted'}`}>
-            {dirty ? 'Cambios sin guardar' : archived ? 'Solo lectura' : 'Todo guardado'}
-          </span>
-        </div>
+        <SaveBar
+          dirty={dirty && !disabled}
+          saving={save.isPending}
+          onSave={() => {
+            setNotice(null);
+            save.mutate({ body: toAppearance(effective), key: formKey(effective), rev });
+          }}
+          saveLabel="Guardar apariencia"
+          savedLabel={archived ? 'Solo lectura' : 'Todo guardado'}
+          disabledReason={
+            missing && form.kind !== 'none'
+              ? 'Falta algo en el fondo (mira el aviso de arriba).'
+              : unfinished.length > 0
+                ? 'Hay preguntas con un fondo elegido pero sin archivo.'
+                : measuring
+                  ? 'Midiendo el fondo…'
+                  : undefined
+          }
+        />
       </div>
 
       <div className="min-w-0 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:self-start lg:overflow-y-auto">

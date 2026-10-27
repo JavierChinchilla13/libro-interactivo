@@ -17,6 +17,7 @@ import {
 } from './appearanceForm';
 import { ContrastNotice } from './ContrastNotice';
 import { VideoField } from './VideoField';
+import { useConfirm } from '../components/ConfirmDialog';
 
 /** Lo que el editor sabe de las preguntas del quiz (las del borrador), agrupadas por etapa. */
 /** Un cambio a los ajustes de una pregunta: el valor nuevo, o una función sobre el valor vigente. */
@@ -164,6 +165,7 @@ function QuestionRow({
   disabled: boolean;
 }) {
   const id = useId();
+  const confirm = useConfirm();
   return (
     <li className="flex min-w-0 flex-col gap-3 py-3">
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -188,18 +190,20 @@ function QuestionRow({
           <Chip
             name={`${id}-mode`}
             checked={!entry}
-            onSelect={() => {
+            onSelect={async () => {
               // Un fondo ya subido se perdería de la pregunta (y quedaría sin usar en Cloudinary): se pide confirmar.
               const hasMedia =
                 (entry?.background?.kind === 'image' && entry.background.image) ||
                 (entry?.background?.kind === 'video' && entry.background.video);
-              if (
-                hasMedia &&
-                !window.confirm(
-                  'Esta pregunta tiene un fondo propio. ¿Volver al general y descartarlo?',
-                )
-              )
-                return;
+              if (hasMedia) {
+                const ok = await confirm({
+                  title: '¿Volver al fondo general?',
+                  message:
+                    'Esta pregunta volverá a usar el fondo general. El cambio se aplica al guardar la apariencia.',
+                  confirmLabel: 'Usar el general',
+                });
+                if (!ok) return;
+              }
               onChange(undefined);
             }}
           >

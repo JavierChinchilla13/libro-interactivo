@@ -41,19 +41,31 @@ describe('libros del panel', () => {
       { session: EDITOR },
     );
     renderAt('/admin/libros/nuevo');
-    await userEvent.click(await screen.findByRole('button', { name: 'Guardar' }));
+    await userEvent.click(
+      await screen.findByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
     expect(called('POST /api/admin/books')).toHaveLength(0);
     await waitFor(() => expect(document.querySelector('[aria-invalid="true"]')).not.toBeNull());
 
     await userEvent.type(screen.getByRole('textbox', { name: /^Título/ }), 'Libro Uno');
     await userEvent.selectOptions(screen.getByLabelText(/^Estado/), 'published');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
     // «Publicado» exige portada: el navegador lo frena igual que el servidor.
     expect((await screen.findAllByText(/necesita portada/)).length).toBeGreaterThan(0);
     expect(called('POST /api/admin/books')).toHaveLength(0);
 
     await userEvent.selectOptions(screen.getByLabelText(/^Estado/), 'draft');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
     await waitFor(() => expect(called('POST /api/admin/books')).toHaveLength(1));
     expect(called('POST /api/admin/books')[0]?.body).toMatchObject({
       title: 'Libro Uno',
@@ -78,7 +90,11 @@ describe('libros del panel', () => {
     expect(title).toHaveValue('Libro Uno');
     await userEvent.clear(title);
     await userEvent.type(title, 'Libro Uno (2.ª edición)');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
     await waitFor(() => expect(called(`PUT /api/admin/books/${BOOK_ID}`)).toHaveLength(1));
     expect(called(`PUT /api/admin/books/${BOOK_ID}`)[0]?.body).toMatchObject({
       title: 'Libro Uno (2.ª edición)',
@@ -187,8 +203,12 @@ describe('mensaje de bienvenida del panel', () => {
     expect(screen.getByLabelText(/Mostrar el mensaje de bienvenida/)).toBeChecked();
     await userEvent.clear(title);
     await userEvent.type(title, 'Bienvenida nueva');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-    expect(await screen.findByText('Cambios guardados')).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
+    expect(await screen.findByText('Guardado')).toBeInTheDocument();
     expect(called('PATCH /api/admin/site-settings')[0]?.body).toMatchObject({
       welcome: { enabled: true, showMode: 'first_login', title: 'Bienvenida nueva' },
     });
@@ -209,8 +229,12 @@ describe('mensaje de bienvenida del panel', () => {
     );
     renderAt('/admin/bienvenida');
     await userEvent.click(await screen.findByLabelText(/Mostrar el mensaje de bienvenida/));
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
     expect(await screen.findByText('Escribe el mensaje antes de activarlo')).toBeInTheDocument();
-    expect(screen.queryByText('Cambios guardados')).not.toBeInTheDocument();
+    expect(screen.queryByText('Guardado')).not.toBeInTheDocument();
   });
 });

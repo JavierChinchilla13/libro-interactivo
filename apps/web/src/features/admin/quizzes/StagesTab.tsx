@@ -27,6 +27,7 @@ import {
   type DraftQuestion,
   type DraftStage,
 } from './draft';
+import { useConfirm } from '../components/ConfirmDialog';
 
 function stageLabel(draft: Draft, stage: DraftStage): string {
   const parent = draft.stages.find((candidate) => candidate.id === stage.conditionStageId);
@@ -106,6 +107,7 @@ function StageEditor({
   onChange: (draft: Draft) => void;
   onRemoved: () => void;
 }) {
+  const confirm = useConfirm();
   const results = resultsOfStage(draft, stage.id);
   const parents = draft.stages.filter((candidate) => candidate.id !== stage.id);
   const parentResults = stage.conditionStageId ? resultsOfStage(draft, stage.conditionStageId) : [];
@@ -211,15 +213,17 @@ function StageEditor({
         <Button
           variant="danger"
           className="self-start"
-          onClick={() => {
-            if (
-              window.confirm(
-                '¿Quitar esta etapa con sus preguntas, resultados y las etapas que dependen de ella?',
-              )
-            ) {
-              onChange(removeStage(draft, stage.id));
-              onRemoved();
-            }
+          onClick={async () => {
+            const ok = await confirm({
+              title: '¿Quitar esta etapa?',
+              message:
+                'Se quitan sus preguntas y resultados, y las etapas que dependen de ella. Es un cambio del borrador: puedes descartarlo antes de guardar.',
+              confirmLabel: 'Quitar etapa',
+              tone: 'danger',
+            });
+            if (!ok) return;
+            onChange(removeStage(draft, stage.id));
+            onRemoved();
           }}
         >
           Quitar etapa

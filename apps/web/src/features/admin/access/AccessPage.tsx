@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Button, SelectField } from '../../../shared/ui/controls';
 import { Alert, Badge, Card, EmptyState, Loading, PageHeader } from '../../../shared/ui/layout';
 import { accessApi, booksApi, keys, quizzesApi } from '../api';
+import { useConfirm } from '../components/ConfirmDialog';
+import { HelpTip } from '../components/HelpTip';
 import { errorMessage } from '../errors';
 
 /**
@@ -41,6 +43,7 @@ export function AccessPage() {
     mutationFn: (id: string) => accessApi.revoke(id),
     onSuccess: refresh,
   });
+  const confirm = useConfirm();
   const rotate = useMutation({
     mutationFn: (id: string) => accessApi.rotate(id),
     onSuccess: refresh,
@@ -60,6 +63,13 @@ export function AccessPage() {
         title="Códigos QR"
         subtitle="Un código por quiz, igual en todos los ejemplares. Quien lo escanea lo desbloquea en su cuenta."
       />
+      <div className="mb-4">
+        <HelpTip>
+          Un código por quiz y uno para el juego, igual en todos los ejemplares y sin caducidad.
+          Quien lo escanea lo desbloquea en su cuenta. Si un código se filtra, puedes revocarlo o
+          crear uno nuevo; quienes ya lo usaron conservan el acceso.
+        </HelpTip>
+      </div>
       {books.isPending ? <Loading /> : null}
       {books.isError ? <Alert>{errorMessage(books.error)}</Alert> : null}
       {books.data && books.data.books.length === 0 ? (
@@ -148,13 +158,14 @@ export function AccessPage() {
                         <Button
                           variant="secondary"
                           loading={rotate.isPending && rotate.variables === token.id}
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                'Rotar crea un código NUEVO y deja sin efecto el impreso. ¿Continuar?',
-                              )
-                            )
-                              rotate.mutate(token.id);
+                          onClick={async () => {
+                            const ok = await confirm({
+                              title: '¿Crear un código nuevo?',
+                              message:
+                                'Se crea un código nuevo y el anterior se revoca: ya no desbloquea a nadie. Quienes ya lo usaron conservan el acceso. Tendrás que volver a imprimir el QR.',
+                              confirmLabel: 'Crear código nuevo',
+                            });
+                            if (ok) rotate.mutate(token.id);
                           }}
                         >
                           Rotar
@@ -162,13 +173,15 @@ export function AccessPage() {
                         <Button
                           variant="danger"
                           loading={revoke.isPending && revoke.variables === token.id}
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                'Revocar impide nuevos desbloqueos con este código (los ya concedidos se conservan). ¿Revocar?',
-                              )
-                            )
-                              revoke.mutate(token.id);
+                          onClick={async () => {
+                            const ok = await confirm({
+                              title: '¿Revocar este código?',
+                              message:
+                                'Nadie podrá desbloquear con él a partir de ahora. Quienes ya lo usaron conservan el acceso.',
+                              confirmLabel: 'Revocar',
+                              tone: 'danger',
+                            });
+                            if (ok) revoke.mutate(token.id);
                           }}
                         >
                           Revocar

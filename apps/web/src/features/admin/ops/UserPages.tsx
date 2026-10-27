@@ -11,6 +11,7 @@ import { Button, SelectField, TextField } from '../../../shared/ui/controls';
 import { Alert, Badge, Card, EmptyState, Loading, PageHeader } from '../../../shared/ui/layout';
 import { useSession } from '../../auth/session';
 import { keys, usersApi } from '../api';
+import { useConfirm } from '../components/ConfirmDialog';
 import { DataList, type Column } from '../components/DataList';
 import { ListPage } from '../components/ListPage';
 import { StatusBadge } from '../components/StatusBadge';
@@ -281,6 +282,7 @@ export function UserDetailPage() {
       await client.invalidateQueries({ queryKey: keys.users });
     },
   });
+  const confirm = useConfirm();
   const remove = useMutation({
     mutationFn: () => usersApi.remove(userId),
     onSuccess: async () => {
@@ -341,15 +343,19 @@ export function UserDetailPage() {
               <Button
                 variant="secondary"
                 loading={update.isPending && update.variables?.status !== undefined}
-                onClick={() => {
+                onClick={async () => {
                   const next = user.status === 'active' ? 'disabled' : 'active';
-                  if (
-                    next === 'active' ||
-                    window.confirm(
-                      'La persona no podrá ingresar y se cerrarán sus sesiones abiertas. ¿Desactivar la cuenta?',
-                    )
-                  )
-                    update.mutate({ status: next });
+                  if (next === 'disabled') {
+                    const ok = await confirm({
+                      title: '¿Desactivar la cuenta?',
+                      message:
+                        'No podrá ingresar y se cerrarán sus sesiones abiertas. Puedes reactivarla cuando quieras.',
+                      confirmLabel: 'Desactivar cuenta',
+                      tone: 'danger',
+                    });
+                    if (!ok) return;
+                  }
+                  update.mutate({ status: next });
                 }}
               >
                 {user.status === 'active' ? 'Desactivar cuenta' : 'Reactivar cuenta'}
@@ -358,13 +364,15 @@ export function UserDetailPage() {
                 <Button
                   variant="danger"
                   loading={remove.isPending}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        'Se borran su cuenta y su progreso para siempre. Sus resultados quedan solo como estadística anónima. ¿Eliminar?',
-                      )
-                    )
-                      remove.mutate();
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: '¿Eliminar la cuenta?',
+                      message:
+                        'Se borran su cuenta, su progreso y sus intentos en curso, para siempre. Los quizzes que ya terminó se conservan sin su nombre, solo para las estadísticas.',
+                      confirmLabel: 'Eliminar cuenta',
+                      tone: 'danger',
+                    });
+                    if (ok) remove.mutate();
                   }}
                 >
                   Eliminar cuenta

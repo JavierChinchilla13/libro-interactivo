@@ -6,17 +6,15 @@ import {
   type ImageRefInput,
 } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router';
+import { useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
 import { thumbUrl } from '../../../shared/lib/cloudinary';
-import {
-  Button,
-  CheckField,
-  SelectField,
-  TextAreaField,
-  TextField,
-} from '../../../shared/ui/controls';
-import { Alert, Card, Loading, PageHeader } from '../../../shared/ui/layout';
+import { CheckField, SelectField, TextAreaField, TextField } from '../../../shared/ui/controls';
+import { Alert, Loading, PageHeader } from '../../../shared/ui/layout';
+import { FormSection } from '../components/FormSection';
+import { SaveBar } from '../components/SaveBar';
+import { useToast } from '../components/Toast';
+import { useFormGuard } from '../components/useFormGuard';
 import { DataList, type Column } from '../components/DataList';
 import { ListPage, useRowSearch } from '../components/ListPage';
 import { StatusBadge } from '../components/StatusBadge';
@@ -204,31 +202,31 @@ function FanArtFormView({ fanArtId, initial }: { fanArtId?: string; initial: Fan
   const editing = fanArtId !== undefined;
   const navigate = useNavigate();
   const client = useQueryClient();
-  const location = useLocation();
   const [form, setForm] = useState<FanArtForm>(initial);
+  const guard = useFormGuard(form, initial);
+  const toast = useToast();
+  const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState(
-    (location.state as { created?: boolean } | null)?.created === true,
-  );
   const books = useQuery({ queryKey: keys.books, queryFn: booksApi.list });
   const save = useMutation({
     mutationFn: (payload: FanArtInputPayload) =>
       editing ? fanArtsApi.replace(fanArtId, payload) : fanArtsApi.create(payload),
     onSuccess: async (result) => {
       await client.invalidateQueries({ queryKey: keys.fanArts });
-      setSaved(true);
+      guard.markSaved(submitted.current);
+      toast.success('Guardado');
       if (!editing) {
+        guard.allowLeave();
         void navigate(`/admin/fan-arts/${result.id}`, { replace: true, state: { created: true } });
       }
     },
   });
   const set = <K extends keyof FanArtForm>(key: K, value: FanArtForm[K]) => {
-    setSaved(false);
     setForm((current) => ({ ...current, [key]: value }));
   };
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit(event?: FormEvent) {
+    event?.preventDefault();
     const payload = fanArtPayload(form);
     const parsed = fanArtInputSchema.safeParse(payload);
     if (!parsed.success) {
@@ -236,30 +234,14 @@ function FanArtFormView({ fanArtId, initial }: { fanArtId?: string; initial: Fan
       return;
     }
     setErrors({});
+    submitted.current = form;
     save.mutate(payload as FanArtInputPayload);
   }
 
   return (
     <form onSubmit={submit} noValidate className="max-w-2xl">
-      <PageHeader
-        title={editing ? form.title || form.artistName || 'Fan art' : 'Nuevo fan art'}
-        actions={
-          <Button type="submit" loading={save.isPending}>
-            Guardar
-          </Button>
-        }
-      />
-      {saved ? (
-        <div className="mb-4">
-          <Alert tone="success" title="Cambios guardados" />
-        </div>
-      ) : null}
-      {save.isError ? (
-        <div className="mb-4">
-          <Alert>{errorMessage(save.error)}</Alert>
-        </div>
-      ) : null}
-      <Card className="flex flex-col gap-4">
+      <PageHeader title={editing ? form.title || form.artistName || 'Fan art' : 'Nuevo fan art'} />
+      <FormSection title="El dibujo" help="Imagen, artista y el permiso para publicarlo.">
         <div className="flex flex-col gap-1">
           <ImageField
             label="Dibujo"
@@ -341,7 +323,19 @@ function FanArtFormView({ fanArtId, initial }: { fanArtId?: string; initial: Fan
             onChange={(event) => set('status', event.target.value as FanArtStatus)}
           />
         </div>
-      </Card>
+      </FormSection>
+      <SaveBar
+        dirty={guard.dirty || !editing}
+        dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}
+        saving={save.isPending}
+        error={save.isError ? errorMessage(save.error) : null}
+        onSave={() => submit()}
+        onDiscard={() => {
+          setForm(guard.saved);
+          setErrors({});
+        }}
+        saveLabel="Guardar fan art"
+      />
     </form>
   );
 }

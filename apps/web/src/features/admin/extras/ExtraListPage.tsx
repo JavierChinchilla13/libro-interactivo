@@ -5,6 +5,7 @@ import { SelectField } from '../../../shared/ui/controls';
 import { booksApi, extrasApi, keys } from '../api';
 import { DataList, type Column } from '../components/DataList';
 import { ListPage, useRowSearch, type ListState } from '../components/ListPage';
+import { HelpTip } from '../components/HelpTip';
 import { StatusBadge } from '../components/StatusBadge';
 import { KIND_LABEL } from './extraForm';
 
@@ -61,6 +62,11 @@ export function ExtraListPage() {
     <ListPage
       title="Capítulos extra"
       subtitle="Se abren cuando el lector completa todos los quizzes del libro. No llevan QR."
+      help={
+        <HelpTip>
+          Se abren al completar todos los quizzes y el juego del libro. No llevan código QR.
+        </HelpTip>
+      }
       primaryAction={
         noBooks ? (
           <span className="flex flex-col items-start gap-1 sm:items-end">

@@ -16,6 +16,8 @@ export function SaveBar({
   savedLabel = 'Todo guardado',
   dirtyLabel = 'Tienes cambios sin guardar',
   disabledReason,
+  saveVariant = 'primary',
+  after,
   children,
 }: {
   dirty: boolean;
@@ -30,7 +32,11 @@ export function SaveBar({
   dirtyLabel?: string;
   /** Por qué no se puede guardar (se muestra junto al botón, que queda deshabilitado). */
   disabledReason?: string;
-  /** Acciones extra a la izquierda del botón principal (Vista previa, Revisar…). */
+  /** `secondary` cuando la acción principal de la pantalla es otra (por ejemplo «Publicar»). */
+  saveVariant?: 'primary' | 'secondary';
+  /** Acciones a la derecha del botón de guardar (la principal, como «Publicar»). */
+  after?: ReactNode;
+  /** Acciones extra a la izquierda del botón de guardar (Vista previa, Revisar…). */
   children?: ReactNode;
 }) {
   const blocked = Boolean(disabledReason);
@@ -73,12 +79,13 @@ export function SaveBar({
         ) : null}
         <button
           type="button"
-          className="btn btn-primary"
+          className={`btn ${saveVariant === 'primary' ? 'btn-primary' : 'btn-secondary'}`}
           disabled={!dirty || saving || blocked}
           onClick={onSave}
         >
           {saving ? savingLabel : saveLabel}
         </button>
+        {after}
       </div>
     </div>
   );

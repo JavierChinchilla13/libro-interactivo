@@ -7,8 +7,8 @@ import {
   type WikiKind,
 } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
+import { useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import {
   Button,
   CheckField,
@@ -16,7 +16,11 @@ import {
   TextAreaField,
   TextField,
 } from '../../../shared/ui/controls';
-import { Alert, Card, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, Loading, PageHeader } from '../../../shared/ui/layout';
+import { FormSection } from '../components/FormSection';
+import { SaveBar } from '../components/SaveBar';
+import { useToast } from '../components/Toast';
+import { useFormGuard } from '../components/useFormGuard';
 import { booksApi, keys, quizzesApi, wikiApi } from '../api';
 import { ImageField } from '../components/MediaFields';
 import { RichTextEditor } from '../components/RichTextEditor';
@@ -62,12 +66,10 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
   const navigate = useNavigate();
   const client = useQueryClient();
   const [form, setForm] = useState<WikiForm>(initial);
+  const guard = useFormGuard(form, initial);
+  const toast = useToast();
+  const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // Tras crear, la pantalla se vuelve a montar con la dirección del recurso nuevo y conserva el aviso.
-  const location = useLocation();
-  const [saved, setSaved] = useState(
-    (location.state as { created?: boolean } | null)?.created === true,
-  );
 
   const books = useQuery({ queryKey: keys.books, queryFn: booksApi.list });
   const bookId = form.bookId;
@@ -92,19 +94,21 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
       editing ? wikiApi.replace(entryId, payload) : wikiApi.create(payload),
     onSuccess: async (result) => {
       await client.invalidateQueries({ queryKey: keys.wiki });
-      setSaved(true);
-      if (!editing)
+      guard.markSaved(submitted.current);
+      toast.success('Guardado');
+      if (!editing) {
+        guard.allowLeave();
         void navigate(`/admin/wiki/${result.id}`, { replace: true, state: { created: true } });
+      }
     },
   });
 
   const set = <K extends keyof WikiForm>(key: K, value: WikiForm[K]) => {
-    setSaved(false);
     setForm((current) => ({ ...current, [key]: value }));
   };
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit(event?: FormEvent) {
+    event?.preventDefault();
     const payload = payloadFromForm(form);
     const parsed = wikiEntryInputSchema.safeParse(payload);
     if (!parsed.success) {
@@ -116,6 +120,7 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
       return;
     }
     setErrors({});
+    submitted.current = form;
     save.mutate(payload);
   }
 
@@ -128,27 +133,10 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
           ← Wiki
         </Link>
       </p>
-      <PageHeader
-        title={`${editing ? '' : 'Nuevo: '}${KIND_LABEL[kind]}`}
-        actions={
-          <Button type="submit" loading={save.isPending}>
-            Guardar
-          </Button>
-        }
-      />
-      {saved ? (
-        <div className="mb-4">
-          <Alert tone="success" title="Cambios guardados" />
-        </div>
-      ) : null}
-      {save.isError ? (
-        <div className="mb-4">
-          <Alert>{errorMessage(save.error)}</Alert>
-        </div>
-      ) : null}
+      <PageHeader title={`${editing ? '' : 'Nuevo: '}${KIND_LABEL[kind]}`} />
 
       <div className="flex flex-col gap-5">
-        <Card className="flex flex-col gap-4">
+        <FormSection title="Datos de la ficha" help="El nombre y lo que identifica a la entrada.">
           <TextField
             label="Nombre"
             required
@@ -244,9 +232,9 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
               onChange={(event) => set('order', event.target.value)}
             />
           </div>
-        </Card>
+        </FormSection>
 
-        <Card className="flex flex-col gap-4">
+        <FormSection title="Imagen y resumen" help="Lo que se ve en la tarjeta y en la ficha.">
           <ImageField
             label={kind === 'character' ? 'Ficha (imagen)' : 'Imagen'}
             purpose="wiki"
@@ -272,11 +260,13 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
             value={form.bodyHtml}
             onChange={(html) => set('bodyHtml', html)}
           />
-        </Card>
+        </FormSection>
 
         {kind === 'character' ? (
-          <Card className="flex flex-col gap-3">
-            <h2 className="font-semibold">Datos (opcionales)</h2>
+          <FormSection
+            title="Datos (opcionales)"
+            help="Pares como «Edad: 17» que se muestran en la ficha."
+          >
             {form.fields.map((field, index) => (
               <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
                 <TextField
@@ -324,12 +314,11 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
             >
               + Dato
             </Button>
-          </Card>
+          </FormSection>
         ) : null}
 
         {kind === 'place' ? (
-          <Card className="flex flex-col gap-3">
-            <h2 className="font-semibold">Personajes que lo usan</h2>
+          <FormSection title="Personajes que lo usan">
             {(characters.data?.entries ?? []).length === 0 ? (
               <p className="text-sm text-muted">Todavía no hay personajes para enlazar.</p>
             ) : null}
@@ -348,11 +337,13 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
                 }
               />
             ))}
-          </Card>
+          </FormSection>
         ) : null}
 
-        <Card className="flex flex-col gap-4">
-          <h2 className="font-semibold">Visibilidad</h2>
+        <FormSection
+          title="Visibilidad"
+          help="Cuándo se muestra y qué ve la lectora mientras tanto."
+        >
           <p className="text-sm text-muted">
             La pestaña completa se bloquea desde el libro. Aquí puedes ocultar solo esta entrada
             hasta que el lector complete un quiz.
@@ -381,8 +372,20 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
               }
             />
           ) : null}
-        </Card>
+        </FormSection>
       </div>
+      <SaveBar
+        dirty={guard.dirty || !editing}
+        dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}
+        saving={save.isPending}
+        error={save.isError ? errorMessage(save.error) : null}
+        onSave={() => submit()}
+        onDiscard={() => {
+          setForm(guard.saved);
+          setErrors({});
+        }}
+        saveLabel="Guardar entrada"
+      />
     </form>
   );
 }

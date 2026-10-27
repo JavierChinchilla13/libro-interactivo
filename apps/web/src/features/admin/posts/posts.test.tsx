@@ -244,15 +244,15 @@ describe('editar una actualización', () => {
     expect(screen.getByLabelText('Fecha de publicación')).toHaveValue('2026-10-01T09:00');
     await userEvent.clear(screen.getByLabelText('Lugar'));
     await userEvent.type(screen.getByLabelText('Lugar'), 'Otro lugar');
-    await userEvent.click(screen.getByRole('button', { name: 'Publicar' }));
-    expect(await screen.findByText('Cambios guardados')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    expect(await screen.findByText('Guardado')).toBeInTheDocument();
     const body = called(`PUT /api/admin/posts/${POST_ID}`)[0]?.body as Record<string, unknown>;
     expect(body).toMatchObject({
       data: { venue: 'Otro lugar', startsAt: '2027-03-20T22:00:00.000Z' },
       publishedAt: '2026-10-01T15:00:00.000Z',
       status: 'published',
     });
-    expect(screen.getByRole('link', { name: 'Ver la publicación' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Ver en el sitio' })).toHaveAttribute(
       'href',
       '/actualizaciones/feria-del-libro',
     );
