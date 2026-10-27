@@ -16,7 +16,10 @@ import {
   TextAreaField,
   TextField,
 } from '../../../shared/ui/controls';
-import { Alert, Badge, Card, EmptyState, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, Card, Loading, PageHeader } from '../../../shared/ui/layout';
+import { DataList, type Column } from '../components/DataList';
+import { ListPage, useRowSearch } from '../components/ListPage';
+import { StatusBadge } from '../components/StatusBadge';
 import { booksApi, fanArtsApi, keys } from '../api';
 import { ImageField } from '../components/MediaFields';
 import { errorMessage, fieldErrors } from '../errors';
@@ -27,90 +30,94 @@ const STATUS_LABEL: Record<FanArtStatus, string> = {
   archived: 'Archivado',
 };
 
+const useFanArts = () => useQuery({ queryKey: keys.fanArts, queryFn: () => fanArtsApi.list() });
+type FanArtRow = NonNullable<ReturnType<typeof useFanArts>['data']>['fanArts'][number];
+
+const fanArtColumns: Column<FanArtRow>[] = [
+  {
+    id: 'order',
+    header: '#',
+    role: 'table',
+    className: 'admin-cell-num',
+    cell: (art) => art.order,
+  },
+  {
+    id: 'art',
+    header: 'Dibujo',
+    role: 'title',
+    cell: (art) => (
+      <span className="flex items-center gap-3">
+        <img
+          src={thumbUrl(art.image.url, 96)}
+          alt=""
+          className="size-12 shrink-0 rounded-token object-cover"
+        />
+        <span className="min-w-0">
+          <span className="admin-cell-title">{art.title ?? 'Sin título'}</span>
+          <span className="admin-cell-sub">Por {art.artistName}</span>
+        </span>
+      </span>
+    ),
+  },
+  {
+    id: 'permission',
+    header: 'Permiso',
+    role: 'status',
+    cell: (art) =>
+      art.permissionConfirmed ? (
+        <StatusBadge status="active" label="Permiso confirmado" />
+      ) : (
+        <StatusBadge status="pending" label="Sin confirmar" />
+      ),
+  },
+  {
+    id: 'status',
+    header: 'Estado',
+    role: 'status',
+    cell: (art) => <StatusBadge status={art.status} />,
+  },
+];
+
 /** Fan arts: los carga la autora; solo se publican con el permiso del artista. */
 export function FanArtListPage() {
-  const arts = useQuery({ queryKey: keys.fanArts, queryFn: () => fanArtsApi.list() });
+  const arts = useFanArts();
+  const search = useRowSearch(arts.data?.fanArts, (art) => `${art.title ?? ''} ${art.artistName}`);
   return (
-    <>
-      <PageHeader
-        title="Fan arts"
-        subtitle="Dibujos de lectores. Solo se muestran los publicados con el permiso del artista confirmado."
-        actions={
+    <ListPage
+      title="Fan arts"
+      subtitle="Dibujos de lectores. Solo se muestran los publicados con el permiso del artista confirmado."
+      primaryAction={
+        <Link to="/admin/fan-arts/nuevo" className="btn btn-primary">
+          + Nuevo fan art
+        </Link>
+      }
+      toolbar={search.field}
+      state={arts}
+      count={search.visible?.length}
+      filtersActive={search.active}
+      onClearFilters={search.clear}
+      empty={{
+        icon: 'art',
+        title: 'Todavía no hay fan arts',
+        text: 'Carga el primero y confirma el permiso del artista para publicarlo.',
+        action: (
           <Link to="/admin/fan-arts/nuevo" className="btn btn-primary">
-            + Nuevo fan art
+            Cargar el primer fan art
           </Link>
-        }
+        ),
+      }}
+    >
+      <DataList
+        label="Fan arts"
+        rows={search.visible ?? []}
+        rowKey={(art) => art.id}
+        columns={fanArtColumns}
+        action={{
+          to: (art) => `/admin/fan-arts/${art.id}`,
+          name: (art) => `el fan art de ${art.artistName}`,
+        }}
       />
-      {arts.isPending ? <Loading /> : null}
-      {arts.isError ? <Alert>{errorMessage(arts.error)}</Alert> : null}
-      {arts.data && arts.data.fanArts.length === 0 ? (
-        <EmptyState title="Todavía no hay fan arts">
-          Carga el primero con «Nuevo fan art».
-        </EmptyState>
-      ) : null}
-      {arts.data && arts.data.fanArts.length > 0 ? (
-        <div className="overflow-x-auto rounded-token-lg border border-border bg-surface">
-          <table className="w-full min-w-[34rem] text-left text-sm">
-            <thead className="bg-surface-alt text-xs uppercase text-muted">
-              <tr>
-                <th scope="col" className="px-4 py-3">
-                  #
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Dibujo
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Permiso
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Estado
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  <span className="sr-only">Acciones</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {arts.data.fanArts.map((art) => (
-                <tr key={art.id} className="border-t border-border">
-                  <td className="px-4 py-3 text-muted">{art.order}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={thumbUrl(art.image.url, 96)}
-                        alt=""
-                        className="size-12 rounded-token object-cover"
-                      />
-                      <div>
-                        <p className="font-medium">{art.title ?? 'Sin título'}</p>
-                        <p className="text-xs text-muted">Por {art.artistName}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {art.permissionConfirmed ? (
-                      <Badge tone="success">Confirmado</Badge>
-                    ) : (
-                      <Badge tone="warning">Sin confirmar</Badge>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge tone={art.status === 'published' ? 'success' : 'neutral'}>
-                      {STATUS_LABEL[art.status]}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link to={`/admin/fan-arts/${art.id}`} className="underline">
-                      Editar<span className="sr-only"> el fan art de {art.artistName}</span>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-    </>
+    </ListPage>
   );
 }
 
