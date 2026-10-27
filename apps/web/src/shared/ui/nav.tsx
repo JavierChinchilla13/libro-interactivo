@@ -24,14 +24,6 @@ export const bottomTab = ({ isActive }: { isActive: boolean }) =>
       : 'text-muted hover:text-text'
   }`;
 
-/** Enlace del menú lateral de administración. */
-export const sideLink = ({ isActive }: { isActive: boolean }) =>
-  `relative flex min-h-11 items-center rounded-token-sm px-3 text-sm font-medium transition-colors duration-(--token-dur-fast) ease-token-out ${
-    isActive
-      ? 'bg-primary/12 text-primary before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary'
-      : 'text-muted hover:bg-surface-alt/70 hover:text-text'
-  }`;
-
 /** Id del contenido principal: el destino de «Saltar al contenido». */
 export const MAIN_ID = 'contenido';
 

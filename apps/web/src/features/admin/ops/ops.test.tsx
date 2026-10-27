@@ -76,9 +76,9 @@ describe('menú y permisos del panel', () => {
     const menu = await screen.findByRole('navigation', { name: 'Administración' });
     for (const [name, href] of [
       ['Usuarios', '/admin/usuarios'],
-      ['Mensajes de contacto', '/admin/mensajes'],
+      ['Mensajes', '/admin/mensajes'],
       ['Estadísticas', '/admin/estadisticas'],
-      ['Ajustes del sitio', '/admin/ajustes'],
+      ['Contacto del sitio', '/admin/ajustes'],
     ] as const) {
       expect(within(menu).getByRole('link', { name })).toHaveAttribute('href', href);
     }
@@ -143,9 +143,7 @@ describe('usuarios', () => {
       { session: ADMIN },
     );
     renderAt('/admin/usuarios');
-    await userEvent.click(
-      await screen.findByRole('button', { name: 'Nueva cuenta de administración' }),
-    );
+    await userEvent.click(await screen.findByRole('button', { name: 'Nueva cuenta del equipo' }));
     await userEvent.click(screen.getByRole('button', { name: 'Crear y enviar invitación' }));
     expect((await screen.findAllByText(/Escribe el nombre/)).length).toBeGreaterThan(0);
     expect(called('POST /api/admin/users')).toHaveLength(0);
@@ -178,18 +176,19 @@ describe('usuarios', () => {
       },
       { session: ADMIN },
     );
-    const confirm = vi
-      .spyOn(window, 'confirm')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(true);
     renderAt(`/admin/usuarios/${USER_ID}`);
     const button = await screen.findByRole('button', { name: 'Desactivar cuenta' });
     await userEvent.click(button);
+    const dialog = await screen.findByRole('dialog', { name: '¿Desactivar la cuenta?' });
+    expect(dialog).toHaveTextContent('se cerrarán sus sesiones abiertas');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
     expect(called(`PATCH /api/admin/users/${USER_ID}`)).toHaveLength(0);
     await userEvent.click(button);
+    await userEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Desactivar cuenta' }),
+    );
     await waitFor(() => expect(called(`PATCH /api/admin/users/${USER_ID}`)).toHaveLength(1));
     expect(called(`PATCH /api/admin/users/${USER_ID}`)[0]?.body).toEqual({ status: 'disabled' });
-    confirm.mockRestore();
   });
 
   it('cambia el rol de la persona', async () => {
@@ -215,9 +214,13 @@ describe('usuarios', () => {
       },
       { session: ADMIN },
     );
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     renderAt(`/admin/usuarios/${USER_ID}`);
     await userEvent.click(await screen.findByRole('button', { name: 'Eliminar cuenta' }));
+    const dialog = await screen.findByRole('dialog', { name: '¿Eliminar la cuenta?' });
+    // Dice lo que de verdad pasa: los intentos en curso se borran y los terminados quedan sin nombre.
+    expect(dialog).toHaveTextContent('intentos en curso');
+    expect(dialog).toHaveTextContent('sin su nombre');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Eliminar cuenta' }));
     await waitFor(() => expect(called(`DELETE /api/admin/users/${USER_ID}`)).toHaveLength(1));
     expect(await screen.findByRole('heading', { name: 'Usuarios' })).toBeInTheDocument();
   });
@@ -300,17 +303,21 @@ describe('mensajes de contacto', () => {
       },
       { session: ADMIN },
     );
-    const confirm = vi
-      .spyOn(window, 'confirm')
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(true);
     renderAt('/admin/mensajes');
     const button = await screen.findByRole('button', { name: 'Eliminar' });
     await userEvent.click(button);
+    await userEvent.click(
+      within(await screen.findByRole('dialog', { name: '¿Eliminar este mensaje?' })).getByRole(
+        'button',
+        { name: 'Cancelar' },
+      ),
+    );
     expect(called(`DELETE /api/admin/contact-messages/${id}`)).toHaveLength(0);
     await userEvent.click(button);
+    await userEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Eliminar mensaje' }),
+    );
     await waitFor(() => expect(called(`DELETE /api/admin/contact-messages/${id}`)).toHaveLength(1));
-    confirm.mockRestore();
   });
 
   it('avisa cuando la bandeja está vacía', async () => {
@@ -322,7 +329,7 @@ describe('mensajes de contacto', () => {
       { session: ADMIN },
     );
     renderAt('/admin/mensajes');
-    expect(await screen.findByText('No hay mensajes en esta bandeja')).toBeInTheDocument();
+    expect(await screen.findByText('No hay mensajes sin atender')).toBeInTheDocument();
   });
 });
 
@@ -395,11 +402,15 @@ describe('ajustes del sitio (contacto)', () => {
     renderAt('/admin/ajustes');
     const email = await screen.findByLabelText(/Correo donde llegan/);
     expect(email).toHaveValue('autora@ejemplo.com');
-    await userEvent.click(screen.getByLabelText(/Guardar los mensajes en el panel/));
+    await userEvent.click(screen.getByLabelText(/Guardar los mensajes aquí en el panel/));
     await userEvent.clear(screen.getByLabelText(/Días que se guardan/));
     await userEvent.type(screen.getByLabelText(/Días que se guardan/), '30');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-    expect(await screen.findByText('Cambios guardados')).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
+    expect(await screen.findByText('Guardado')).toBeInTheDocument();
     expect(called('PATCH /api/admin/site-settings')[0]?.body).toEqual({
       contact: { recipientEmail: 'autora@ejemplo.com', storeMessages: false, retentionDays: 30 },
     });
@@ -416,10 +427,13 @@ describe('ajustes del sitio (contacto)', () => {
       { session: ADMIN },
     );
     renderAt('/admin/ajustes');
-    await userEvent.click(await screen.findByRole('button', { name: 'Guardar' }));
-    expect(await screen.findByText('Cambios guardados')).toBeInTheDocument();
+    const days = await screen.findByLabelText(/Días que se guardan/);
+    await userEvent.clear(days);
+    await userEvent.type(days, '400');
+    await userEvent.click(screen.getByRole('button', { name: /^Guardar cambios$/ }));
+    expect(await screen.findByText('Guardado')).toBeInTheDocument();
     expect(called('PATCH /api/admin/site-settings')[0]?.body).toEqual({
-      contact: { storeMessages: true, retentionDays: 365 },
+      contact: { storeMessages: true, retentionDays: 400 },
     });
   });
 
@@ -433,7 +447,11 @@ describe('ajustes del sitio (contacto)', () => {
     );
     renderAt('/admin/ajustes');
     await userEvent.type(await screen.findByLabelText(/Correo donde llegan/), 'no-es-correo');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
     await waitFor(() => expect(screen.getAllByRole('alert').length).toBeGreaterThan(0));
     expect(called('PATCH /api/admin/site-settings')).toHaveLength(0);
   });

@@ -186,20 +186,18 @@ test.describe('barajado de respuestas', () => {
       return seedShuffledQuiz(page.request, Date.now() + 1);
     })();
     await page.goto(`/admin/quizzes/${quizId}`);
-    await page.getByRole('tab', { name: 'Etapas y preguntas' }).click();
+    await page.getByRole('tab', { name: 'Preguntas' }).click();
     await expect(
-      page.getByRole('checkbox', { name: 'Barajar las preguntas de esta etapa' }),
+      page.getByRole('checkbox', { name: 'Mezclar el orden de las preguntas' }),
     ).toBeChecked();
     await expect(
-      page.getByRole('checkbox', { name: /^Barajar las respuestas de cada pregunta/ }),
+      page.getByRole('checkbox', { name: /^Mezclar el orden de las respuestas/ }),
     ).toBeChecked();
     await expect(
       page.getByRole('checkbox', { name: /^Dejar la respuesta 4 al final/ }).first(),
     ).toBeChecked();
     // Apagar el barajado esconde «Dejar al final» y exige guardar (y publicar para que rija).
-    await page
-      .getByRole('checkbox', { name: /^Barajar las respuestas de cada pregunta/ })
-      .uncheck();
+    await page.getByRole('checkbox', { name: /^Mezclar el orden de las respuestas/ }).uncheck();
     await expect(page.getByRole('checkbox', { name: /al final/ })).toHaveCount(0);
     await expect(page.getByText('Cambios sin guardar')).toBeVisible();
   });

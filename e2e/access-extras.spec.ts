@@ -13,7 +13,9 @@ async function login(page: Page) {
   await page.getByLabel('Correo').fill(E2E_ADMIN.email);
   await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
   await page.getByRole('button', { name: 'Ingresar' }).click();
-  await expect(page.getByRole('heading', { name: 'Inicio del panel' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ }),
+  ).toBeVisible();
 }
 
 test.describe('códigos QR y capítulos extra', () => {
@@ -48,8 +50,11 @@ test.describe('códigos QR y capítulos extra', () => {
     expect(pdf.headers()['content-type']).toBe('application/pdf');
     expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
 
-    page.once('dialog', (dialog) => void dialog.accept());
     await card.getByRole('button', { name: 'Revocar' }).click();
+    await page
+      .getByRole('dialog', { name: '¿Revocar este código?' })
+      .getByRole('button', { name: 'Revocar' })
+      .click();
     await expect(card.getByText('Revocado')).toBeVisible();
     await expect(card.getByRole('link', { name: /Descargar PDF/ })).toHaveCount(0);
   });
@@ -111,8 +116,12 @@ test.describe('códigos QR y capítulos extra', () => {
     await page.getByRole('textbox', { name: /^Título/ }).fill('Extra E2E');
     await page.getByRole('textbox', { name: 'Texto del capítulo' }).fill('Texto secreto del extra');
     await page.getByLabel('Estado').selectOption('published');
-    await page.getByRole('button', { name: 'Guardar' }).click();
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
+    await page
+      .getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      })
+      .click();
+    await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Vista previa' }).click();
     await expect(page.getByText('Texto secreto del extra').last()).toBeVisible();

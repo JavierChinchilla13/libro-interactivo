@@ -13,7 +13,7 @@ import {
 export const fieldClass =
   'w-full min-w-0 max-w-full min-h-11 rounded-xl border border-border bg-bg/60 px-3.5 py-2 text-base text-text transition-[border-color,box-shadow] duration-(--token-dur-fast) ease-token-out placeholder:text-muted focus:border-primary focus:shadow-focus focus:outline-none disabled:opacity-60';
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'danger-outline' | 'ghost';
 /** `md` = 44 px; `lg` = acción principal (48 px, letra mayor); `compact` = menos relleno horizontal. */
 type ButtonSize = 'md' | 'lg' | 'compact';
 
@@ -24,6 +24,8 @@ const variants: Record<ButtonVariant, string> = {
   secondary: 'btn-secondary',
   danger:
     'bg-danger text-primary-contrast hover:bg-[color-mix(in_srgb,var(--token-danger)_85%,white)]',
+  /** Acción destructiva que no es la principal de la pantalla: borde rojo, sin relleno (en la administración). */
+  'danger-outline': 'btn-outline-danger',
   ghost: 'text-text hover:bg-surface-alt',
 };
 

@@ -4,21 +4,22 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { formatShortDate } from '../../../shared/lib/dates';
 import { SelectField, TextField } from '../../../shared/ui/controls';
-import { Alert, Badge, EmptyState, Loading, PageHeader } from '../../../shared/ui/layout';
 import { keys, postsApi } from '../api';
-import { errorMessage } from '../errors';
+import { DataList, type Column } from '../components/DataList';
+import { ListPage } from '../components/ListPage';
+import { StatusBadge, type AdminStatus } from '../components/StatusBadge';
 import { statusLabel } from './postForm';
 
-const tone = (label: string) =>
-  label === 'Publicada' ? 'success' : label === 'Programada' ? 'warning' : 'neutral';
+const STATUS: Record<string, AdminStatus> = {
+  Publicada: 'published',
+  Programada: 'scheduled',
+  Borrador: 'draft',
+  Archivada: 'archived',
+};
 
-/** Actualizaciones del sitio: filtros por estado, tipo y título. */
-export function PostListPage() {
-  const [status, setStatus] = useState('');
-  const [category, setCategory] = useState('');
-  const [text, setText] = useState('');
-  const filter = { status, category, q: text.trim() };
-  const posts = useQuery({
+type PostRow = NonNullable<ReturnType<typeof usePosts>['data']>['posts'][number];
+const usePosts = (filter: { status: string; category: string; q: string }) =>
+  useQuery({
     queryKey: [...keys.posts, filter],
     queryFn: () =>
       postsApi.list({
@@ -27,117 +28,135 @@ export function PostListPage() {
         ...(filter.q ? { q: filter.q } : {}),
       }),
   });
+
+const columns: Column<PostRow>[] = [
+  {
+    id: 'title',
+    header: 'Título',
+    role: 'title',
+    cell: (post) => (
+      <span className="admin-cell-title">
+        {post.title}
+        {post.featured ? (
+          <span
+            className="ml-2 text-xs font-normal text-muted"
+            title="Destacada en la página principal"
+          >
+            ★ Destacada
+          </span>
+        ) : null}
+      </span>
+    ),
+  },
+  {
+    id: 'template',
+    header: 'Plantilla',
+    role: 'meta',
+    cell: (post) => postTemplates[post.template].label,
+  },
+  {
+    id: 'category',
+    header: 'Tipo',
+    role: 'meta',
+    cell: (post) => POST_CATEGORY_LABELS[post.category],
+  },
+  {
+    id: 'status',
+    header: 'Estado',
+    role: 'status',
+    cell: (post) => {
+      const label = statusLabel(post);
+      return <StatusBadge status={STATUS[label] ?? 'draft'} label={label} />;
+    },
+  },
+  {
+    id: 'date',
+    header: 'Fecha',
+    role: 'meta',
+    cell: (post) => (post.publishedAt ? formatShortDate(post.publishedAt) : '—'),
+  },
+];
+
+/** Actualizaciones del sitio: filtros por estado, tipo y título. */
+export function PostListPage() {
+  const [status, setStatus] = useState('');
+  const [category, setCategory] = useState('');
+  const [text, setText] = useState('');
+  const filter = { status, category, q: text.trim() };
+  const posts = usePosts(filter);
   const filtering = Boolean(status || category || filter.q);
 
   return (
-    <>
-      <PageHeader
-        title="Actualizaciones"
-        subtitle="Ferias, eventos y novedades. Cada publicación elige una plantilla."
-        actions={
+    <ListPage
+      title="Actualizaciones"
+      subtitle="Ferias, eventos y novedades. Cada publicación elige una plantilla."
+      primaryAction={
+        <Link to="/admin/actualizaciones/nueva" className="btn btn-primary">
+          + Nueva actualización
+        </Link>
+      }
+      toolbar={
+        <>
+          <SelectField
+            label="Estado"
+            value={status}
+            placeholder="Todos"
+            options={[
+              { value: 'draft', label: 'Borrador' },
+              { value: 'published', label: 'Publicada o programada' },
+              { value: 'archived', label: 'Archivada' },
+            ]}
+            onChange={(event) => setStatus(event.target.value)}
+          />
+          <SelectField
+            label="Tipo"
+            value={category}
+            placeholder="Todos"
+            options={Object.entries(POST_CATEGORY_LABELS).map(([value, label]) => ({
+              value,
+              label,
+            }))}
+            onChange={(event) => setCategory(event.target.value)}
+          />
+          <TextField
+            label="Buscar por título"
+            type="search"
+            wrapperClassName="min-w-56 flex-1 sm:max-w-xs"
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+          />
+        </>
+      }
+      state={posts}
+      count={posts.data?.posts.length}
+      filtersActive={filtering}
+      onClearFilters={() => {
+        setStatus('');
+        setCategory('');
+        setText('');
+      }}
+      noResults="No hay actualizaciones con esos filtros"
+      empty={{
+        icon: 'news',
+        title: 'Todavía no hay actualizaciones',
+        text: 'Ferias, eventos y novedades para las lectoras. Cada una elige una plantilla.',
+        action: (
           <Link to="/admin/actualizaciones/nueva" className="btn btn-primary">
-            + Nueva actualización
+            Crear la primera actualización
           </Link>
-        }
+        ),
+      }}
+    >
+      <DataList
+        label="Actualizaciones"
+        rows={posts.data?.posts ?? []}
+        rowKey={(post) => post.id}
+        columns={columns}
+        action={{
+          to: (post) => `/admin/actualizaciones/${post.id}`,
+          name: (post) => post.title,
+        }}
       />
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <SelectField
-          label="Estado"
-          value={status}
-          placeholder="Todos"
-          options={[
-            { value: 'draft', label: 'Borrador' },
-            { value: 'published', label: 'Publicada o programada' },
-            { value: 'archived', label: 'Archivada' },
-          ]}
-          onChange={(event) => setStatus(event.target.value)}
-        />
-        <SelectField
-          label="Tipo"
-          value={category}
-          placeholder="Todos"
-          options={Object.entries(POST_CATEGORY_LABELS).map(([value, label]) => ({ value, label }))}
-          onChange={(event) => setCategory(event.target.value)}
-        />
-        <TextField
-          label="Buscar por título"
-          type="search"
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-        />
-      </div>
-      {posts.isPending ? <Loading /> : null}
-      {posts.isError ? <Alert>{errorMessage(posts.error)}</Alert> : null}
-      {posts.data && posts.data.posts.length === 0 ? (
-        <EmptyState
-          title={
-            filtering ? 'No hay actualizaciones con esos filtros' : 'Todavía no hay actualizaciones'
-          }
-        >
-          {filtering ? null : 'Crea la primera con «Nueva actualización».'}
-        </EmptyState>
-      ) : null}
-      {posts.data && posts.data.posts.length > 0 ? (
-        <div className="overflow-x-auto rounded-token-lg border border-border bg-surface">
-          <table className="w-full min-w-[40rem] text-left text-sm">
-            <thead className="bg-surface-alt text-xs uppercase text-muted">
-              <tr>
-                <th scope="col" className="px-4 py-3">
-                  Título
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Plantilla
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Tipo
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Estado
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Fecha
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  <span className="sr-only">Acciones</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {posts.data.posts.map((post) => {
-                const label = statusLabel(post);
-                return (
-                  <tr key={post.id} className="border-t border-border">
-                    <td className="px-4 py-3 font-medium">
-                      {post.title}
-                      {post.featured ? (
-                        <span
-                          className="ml-2 text-xs text-muted"
-                          title="Destacada en la página principal"
-                        >
-                          ★ Destacada
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3 text-muted">{postTemplates[post.template].label}</td>
-                    <td className="px-4 py-3 text-muted">{POST_CATEGORY_LABELS[post.category]}</td>
-                    <td className="px-4 py-3">
-                      <Badge tone={tone(label)}>{label}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-muted">
-                      {post.publishedAt ? formatShortDate(post.publishedAt) : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link to={`/admin/actualizaciones/${post.id}`} className="underline">
-                        Editar<span className="sr-only"> {post.title}</span>
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-    </>
+    </ListPage>
   );
 }

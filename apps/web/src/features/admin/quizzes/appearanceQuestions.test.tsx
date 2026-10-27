@@ -188,7 +188,7 @@ describe('Apariencia · Por pregunta', () => {
     expect(within(row).getByText('Personalizada')).toBeInTheDocument();
     await user.click(within(row).getByRole('radio', { name: 'Usar el general' }));
     expect(screen.queryByText('Personalizada')).toBeNull();
-    expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+    expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();
   });
 
   it('muestra los topes y, al llegar a 5 preguntas con fondo propio, no deja elegir otro medio', async () => {

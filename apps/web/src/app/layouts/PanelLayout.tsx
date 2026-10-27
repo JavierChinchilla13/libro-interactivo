@@ -5,7 +5,6 @@ import { WelcomeModal } from '../../features/reader/WelcomeModal';
 import { Brand } from '../../shared/ui/Brand';
 import { PageBackground } from '../../shared/ui/PageBackground';
 import { bottomTab, MAIN_ID, navTab, SkipLink } from '../../shared/ui/nav';
-import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
 import { UserMenu } from '../../shared/ui/UserMenu';
 
 const ITEMS = [
@@ -87,8 +86,7 @@ export function PanelLayout() {
                 )}
               </nav>
               <div className="flex items-center gap-2">
-                <StaffSwitcher className="hidden 2xl:inline-flex" />
-                <UserMenu />
+                <UserMenu looseZones={false} />
               </div>
             </>
           )}

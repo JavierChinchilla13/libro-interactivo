@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { READER, json, mockApi, renderAt } from '../../test/mockApi';
@@ -25,12 +25,14 @@ describe('zoneOf', () => {
   });
 });
 
-describe('StaffSwitcher', { timeout: 30_000 }, () => {
+describe('zonas dentro del menú de usuario', { timeout: 30_000 }, () => {
+  const ZONES = ['Ver sitio', 'Mi panel', 'Admin', 'Ajustes', 'Salir'];
+
   it.each([
     ['ADMIN', ADMIN],
     ['EDITOR', EDITOR],
   ])(
-    'una cuenta %s lo ve suelto en el panel y la administración con la zona marcada',
+    'una cuenta %s ve el mismo desplegable en el panel y en la administración, con la zona marcada y sin selector suelto',
     async (_role, user) => {
       for (const [path, active] of [
         ['/panel', 'Mi panel'],
@@ -38,13 +40,20 @@ describe('StaffSwitcher', { timeout: 30_000 }, () => {
       ] as const) {
         mockApi(handlers, { session: user });
         const view = renderAt(path);
-        // En el panel hay dos (una en la cabecera y otra bajo ella para el celular; el CSS muestra una según el ancho).
-        const [nav] = await screen.findAllByRole('navigation', { name: 'Cambiar de zona' });
-        if (!nav) throw new Error('Falta el selector');
-        const links = within(nav).getAllByRole('link');
-        expect(links.map((link) => link.textContent)).toEqual(['Ver sitio', 'Mi panel', 'Admin']);
-        expect(links.map((link) => link.getAttribute('href'))).toEqual(['/', '/panel', '/admin']);
-        expect(within(nav).getByRole('link', { current: 'page' })).toHaveTextContent(active);
+        await userEvent.click(await screen.findByRole('button', { name: user.name }));
+        expect(switcher()).not.toBeInTheDocument();
+        const items = screen.getAllByRole('menuitem');
+        expect(items.map((item) => item.textContent)).toEqual(ZONES);
+        expect(items.slice(0, 3).map((item) => item.getAttribute('href'))).toEqual([
+          '/',
+          '/panel',
+          '/admin',
+        ]);
+        expect(screen.getByRole('menuitem', { current: 'page' })).toHaveTextContent(active);
+        // Ninguna de las tres opciones lleva la clase que las oculta en pantallas anchas.
+        expect(items.slice(0, 3).every((item) => !item.className.includes('2xl:hidden'))).toBe(
+          true,
+        );
         view.unmount();
       }
     },
@@ -71,12 +80,18 @@ describe('StaffSwitcher', { timeout: 30_000 }, () => {
     ]);
   });
 
-  it('una lectora normal no lo ve en ninguna zona', async () => {
+  it('una lectora normal no ve las tres zonas en ninguna parte', async () => {
     for (const path of ['/', '/panel']) {
       mockApi(handlers, { session: READER });
       const view = renderAt(path);
       await screen.findByRole('banner');
       expect(switcher()).not.toBeInTheDocument();
+      const button = await screen.findByRole('button', { name: READER.name });
+      await userEvent.click(button);
+      expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+        'Ajustes',
+        'Salir',
+      ]);
       view.unmount();
     }
   });

@@ -3,8 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { Button, CheckField, SelectField, TextField } from '../../../shared/ui/controls';
-import { Alert, Card, Loading, PageHeader } from '../../../shared/ui/layout';
+import { Alert, PageHeader } from '../../../shared/ui/layout';
 import { booksApi, keys, quizzesApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
+import { FormSection } from '../components/FormSection';
+import { SaveBar } from '../components/SaveBar';
 import { errorMessage, fieldErrors, slugify } from '../errors';
 
 /** «Nuevo quiz»: la regla «¿Se puede repetir?» se elige desde el inicio. */
@@ -31,8 +34,8 @@ export function QuizNewPage() {
     },
   });
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit(event?: FormEvent) {
+    event?.preventDefault();
     const body = {
       bookId: chosen,
       slug,
@@ -49,13 +52,16 @@ export function QuizNewPage() {
     create.mutate(parsed.data);
   }
 
-  if (books.isPending) return <Loading />;
+  if (books.isPending) return <SkeletonRows rows={4} />;
   if (books.isError) return <Alert>{errorMessage(books.error)}</Alert>;
 
   return (
     <form onSubmit={submit} noValidate className="max-w-2xl">
       <PageHeader title="Nuevo quiz" />
-      <Card className="flex flex-col gap-4">
+      <FormSection
+        title="Datos del quiz"
+        help="Dónde va, cómo se llama y cuántas veces se puede jugar."
+      >
         <SelectField
           label="Libro"
           required
@@ -75,35 +81,36 @@ export function QuizNewPage() {
           }}
         />
         <TextField
-          label="Dirección (slug)"
+          label="Dirección web"
           required
           value={slug}
           error={errors['slug']}
-          hint="Se genera del título; editable."
+          hint="La parte final del enlace. Se arma sola con el título."
           onChange={(event) => {
             setSlugTouched(true);
             setSlug(event.target.value);
           }}
         />
         <TextField
-          label="Posición en la secuencia"
+          label="Posición"
           type="number"
           min={1}
           value={order}
           error={errors['order']}
-          hint="Define cuándo se desbloquea respecto a los demás quizzes."
+          hint="El quiz 2 se abre al completar el 1. Aquí eliges el lugar de este."
           onChange={(event) => setOrder(event.target.value)}
         />
         <fieldset className="flex flex-col gap-3">
           <legend className="text-sm font-medium">Reglas del quiz</legend>
           <CheckField
             label="Se puede repetir"
-            hint="Si lo desactivas, el quiz se juega una sola vez."
+            hint="Si lo apagas, cada lectora lo juega una sola vez."
             checked={allowRetake}
             onChange={setAllowRetake}
           />
           <CheckField
-            label="Mostrar el porcentaje de cada resultado al terminar"
+            label="Mostrar el porcentaje de cada resultado"
+            hint="Al terminar, la lectora ve cuánto de cada resultado sacó."
             checked={showBreakdown}
             onChange={setShowBreakdown}
           />
@@ -111,16 +118,20 @@ export function QuizNewPage() {
             Se pueden cambiar después; rigen desde la siguiente publicación.
           </p>
         </fieldset>
-        {create.isError ? <Alert>{errorMessage(create.error)}</Alert> : null}
-        <div className="flex gap-2">
-          <Button type="submit" loading={create.isPending}>
-            Crear quiz
-          </Button>
-          <Button variant="secondary" onClick={() => void navigate('/admin/quizzes')}>
-            Cancelar
-          </Button>
-        </div>
-      </Card>
+      </FormSection>
+      <SaveBar
+        dirty
+        dirtyLabel="Aún no se ha creado"
+        saving={create.isPending}
+        error={create.isError ? errorMessage(create.error) : null}
+        onSave={() => submit()}
+        saveLabel="Crear quiz"
+        savingLabel="Creando…"
+      >
+        <Button variant="secondary" onClick={() => void navigate('/admin/quizzes')}>
+          Cancelar
+        </Button>
+      </SaveBar>
     </form>
   );
 }

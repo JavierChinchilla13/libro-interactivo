@@ -41,6 +41,7 @@ const summary = (over: object = {}) => ({
   allowRetake: true,
   showBreakdown: false,
   updatedAt: stamp,
+  hasUnpublishedChanges: false,
   ...over,
 });
 const draft = (over: object = {}) => ({
@@ -141,7 +142,7 @@ describe('nuevo quiz', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Crear quiz' }));
     expect(called('POST /api/admin/quizzes')).toHaveLength(0);
     await userEvent.type(screen.getByRole('textbox', { name: /^Título/ }), '¿Qué poder tienes?');
-    expect(screen.getByLabelText(/Dirección \(slug\)/)).toHaveValue('que-poder-tienes');
+    expect(screen.getByLabelText(/Dirección web/)).toHaveValue('que-poder-tienes');
     await userEvent.click(screen.getByLabelText(/Se puede repetir/));
     await userEvent.click(screen.getByRole('button', { name: 'Crear quiz' }));
     await waitFor(() => expect(called('POST /api/admin/quizzes')).toHaveLength(1));
@@ -177,10 +178,12 @@ describe('editor de quizzes', () => {
     mockApi({ [`GET ${url}`]: () => json(detail()) }, { session: ADMIN });
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
     expect(await screen.findByRole('heading', { name: 'Quiz Uno' })).toBeInTheDocument();
-    expect(screen.getByText('Nunca publicado')).toBeInTheDocument();
+    // Una sola etiqueta de estado.
+    expect(screen.getByText('Borrador')).toBeInTheDocument();
+    expect(screen.getByText(/Lo que editas aquí es un borrador/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Guardar borrador' })).toBeDisabled();
     await userEvent.type(screen.getByRole('textbox', { name: /^Título/ }), ' 2');
-    expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+    expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Guardar borrador' })).toBeEnabled();
   });
 
@@ -196,7 +199,7 @@ describe('editor de quizzes', () => {
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
     await userEvent.type(await screen.findByRole('textbox', { name: /^Título/ }), ' 2');
     await userEvent.click(screen.getByRole('button', { name: 'Guardar borrador' }));
-    expect(await screen.findByText('Borrador guardado.')).toBeInTheDocument();
+    expect(await screen.findByText('Borrador guardado')).toBeInTheDocument();
     expect(called(`PUT ${url}/draft`)[0]?.body).toMatchObject({ title: 'Quiz Uno 2' });
   });
 
@@ -230,13 +233,23 @@ describe('editor de quizzes', () => {
     );
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
     await userEvent.click(await screen.findByRole('button', { name: 'Publicar' }));
-    expect(await screen.findByText(/1 error \(impiden publicar\)/)).toBeInTheDocument();
+    expect(
+      await screen.findByText('Hay 1 cosa por arreglar antes de publicar'),
+    ).toBeInTheDocument();
     expect(screen.getByText('La etapa 1 no tiene preguntas')).toBeInTheDocument();
     expect(called(`POST ${url}/publish`)).toHaveLength(0);
 
+    // Con cosas por arreglar y sin cambios nuevos, Publicar se apaga y dice por qué.
+    expect(screen.getByRole('button', { name: 'Publicar' })).toBeDisabled();
+    expect(
+      screen.getByText(/Hay 1 cosa por arreglar antes de publicar \(mira el aviso/),
+    ).toBeInTheDocument();
     valid = true;
-    await userEvent.click(screen.getByRole('button', { name: 'Publicar' }));
-    expect(await screen.findByText('Publicada como versión 2.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Revisar' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Publicar' }));
+    expect(
+      await screen.findByText('Publicado: ya es la versión 2 y las lectoras la ven.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Falta una imagen')).toBeInTheDocument();
     expect(called(`POST ${url}/publish`)).toHaveLength(1);
   });
@@ -246,7 +259,9 @@ describe('editor de quizzes', () => {
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
     await userEvent.click(await screen.findByRole('button', { name: 'Vista previa' }));
     expect(
-      await screen.findByText('Publica el quiz al menos una vez para poder probarlo.'),
+      await screen.findByText(
+        'Todavía no hay nada publicado que probar. Publica el quiz una vez y vuelve.',
+      ),
     ).toBeInTheDocument();
   });
 
@@ -257,28 +272,29 @@ describe('editor de quizzes', () => {
     );
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
     expect(await screen.findByText('Este quiz está archivado')).toBeInTheDocument();
-    for (const name of ['Guardar borrador', 'Validar', 'Publicar', 'Vista previa']) {
+    for (const name of ['Revisar', 'Publicar', 'Vista previa']) {
       expect(screen.getByRole('button', { name })).toBeDisabled();
     }
+    expect(screen.getByRole('button', { name: 'Guardar borrador' })).toBeDisabled();
   });
 
   it('el borrador permite agregar una etapa con su pregunta y un resultado', async () => {
     mockApi({ [`GET ${url}`]: () => json(detail()) }, { session: ADMIN });
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
     await screen.findByRole('heading', { name: 'Quiz Uno' });
-    await userEvent.click(screen.getByRole('tab', { name: 'Etapas y preguntas' }));
+    await userEvent.click(screen.getByRole('tab', { name: 'Preguntas' }));
     const panel = screen.getByRole('tabpanel');
     await userEvent.click(
       within(panel).getByRole('button', { name: /Agregar etapa|Nueva etapa|\+ Etapa/i }),
     );
-    expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+    expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('tab', { name: 'Resultados' }));
     await userEvent.click(
       within(screen.getByRole('tabpanel')).getByRole('button', {
         name: /Agregar resultado|Nuevo resultado|\+ Resultado/i,
       }),
     );
-    expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+    expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();
   });
 
   it('el interruptor de respuestas va junto al de preguntas y «Dejar al final» se guarda por respuesta', async () => {
@@ -319,10 +335,10 @@ describe('editor de quizzes', () => {
     );
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
     await screen.findByRole('heading', { name: 'Quiz Uno' });
-    await userEvent.click(screen.getByRole('tab', { name: 'Etapas y preguntas' }));
-    const questions = screen.getByRole('checkbox', { name: 'Barajar las preguntas de esta etapa' });
+    await userEvent.click(screen.getByRole('tab', { name: 'Preguntas' }));
+    const questions = screen.getByRole('checkbox', { name: 'Mezclar el orden de las preguntas' });
     const answers = screen.getByRole('checkbox', {
-      name: /^Barajar las respuestas de cada pregunta/,
+      name: /^Mezclar el orden de las respuestas/,
     });
     // Mismo grupo de opciones, una tras otra, ambas activas por defecto.
     expect(questions).toBeChecked();
@@ -333,7 +349,7 @@ describe('editor de quizzes', () => {
 
     await userEvent.click(screen.getByRole('checkbox', { name: /^Dejar la respuesta 3 al final/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Guardar borrador' }));
-    await screen.findByText('Borrador guardado.');
+    await screen.findByText('Borrador guardado');
     const saved = called(`PUT ${url}/draft`)[0]?.body as {
       stages: {
         shuffleAnswers: boolean;
@@ -349,7 +365,7 @@ describe('editor de quizzes', () => {
 
     // Con el barajado apagado ya no tiene sentido «Dejar al final»: no se ofrece.
     await userEvent.click(
-      screen.getByRole('checkbox', { name: /^Barajar las respuestas de cada pregunta/ }),
+      screen.getByRole('checkbox', { name: /^Mezclar el orden de las respuestas/ }),
     );
     expect(screen.queryByRole('checkbox', { name: /al final/ })).toBeNull();
   });

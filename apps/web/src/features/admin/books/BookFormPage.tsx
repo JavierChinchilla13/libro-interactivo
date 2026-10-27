@@ -5,8 +5,8 @@ import {
   type WikiSectionInput,
 } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { useRef, useState, type FormEvent } from 'react';
+import { useNavigate, useParams } from 'react-router';
 import {
   Button,
   CheckField,
@@ -14,8 +14,13 @@ import {
   TextAreaField,
   TextField,
 } from '../../../shared/ui/controls';
-import { Alert, Card, Loading, PageHeader, TabPanel, Tabs } from '../../../shared/ui/layout';
+import { Alert, PageHeader, TabPanel, Tabs } from '../../../shared/ui/layout';
+import { FormSection } from '../components/FormSection';
+import { SaveBar } from '../components/SaveBar';
+import { useToast } from '../components/Toast';
+import { useFormGuard } from '../components/useFormGuard';
 import { booksApi, keys, quizzesApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { ImageField } from '../components/MediaFields';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { errorMessage, fieldErrors, slugify } from '../errors';
@@ -51,11 +56,11 @@ export function BookFormPage() {
 
   if (editing) {
     if (book.isError) return <Alert>{errorMessage(book.error)}</Alert>;
-    if (!book.data) return <Loading />;
+    if (!book.data) return <SkeletonRows rows={4} />;
     return <BookFormView key={book.data.id} bookId={bookId} initial={formFromBook(book.data)} />;
   }
   if (all.isError) return <Alert>{errorMessage(all.error)}</Alert>;
-  if (!all.data) return <Loading />;
+  if (!all.data) return <SkeletonRows rows={4} />;
   return <BookFormView key="nuevo" initial={emptyBookForm(all.data.books.length + 1)} />;
 }
 
@@ -66,12 +71,10 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
   const client = useQueryClient();
   const [tab, setTab] = useState<Tab>('datos');
   const [form, setForm] = useState<BookForm>(initial);
+  const guard = useFormGuard(form, initial);
+  const toast = useToast();
+  const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // Tras crear, la pantalla se vuelve a montar con la dirección del recurso nuevo y conserva el aviso.
-  const location = useLocation();
-  const [saved, setSaved] = useState(
-    (location.state as { created?: boolean } | null)?.created === true,
-  );
 
   const quizzes = useQuery({
     queryKey: keys.quizzes(bookId ?? ''),
@@ -84,14 +87,16 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
       editing ? booksApi.replace(bookId, payload) : booksApi.create(payload),
     onSuccess: async (result) => {
       await client.invalidateQueries({ queryKey: keys.books });
-      setSaved(true);
-      if (!editing)
+      guard.markSaved(submitted.current);
+      toast.success('Guardado');
+      if (!editing) {
+        guard.allowLeave();
         void navigate(`/admin/libros/${result.id}`, { replace: true, state: { created: true } });
+      }
     },
   });
 
   const set = <K extends keyof BookForm>(key: K, value: BookForm[K]) => {
-    setSaved(false);
     setForm((current) => ({ ...current, [key]: value }));
   };
   const setSection = (index: number, patch: Partial<WikiSectionInput>) =>
@@ -105,8 +110,8 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
       form.purchaseLinks.map((link, i) => (i === index ? { ...link, ...patch } : link)),
     );
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit(event?: FormEvent) {
+    event?.preventDefault();
     const payload = payloadFromForm(form);
     const parsed = bookInputSchema.safeParse(payload);
     if (!parsed.success) {
@@ -115,6 +120,7 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
       return;
     }
     setErrors({});
+    submitted.current = form;
     save.mutate(payload);
   }
 
@@ -125,24 +131,7 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
 
   return (
     <form onSubmit={submit} noValidate>
-      <PageHeader
-        title={editing ? form.title || 'Libro' : 'Nuevo libro'}
-        actions={
-          <Button type="submit" loading={save.isPending}>
-            Guardar
-          </Button>
-        }
-      />
-      {saved ? (
-        <div className="mb-4">
-          <Alert tone="success" title="Cambios guardados" />
-        </div>
-      ) : null}
-      {save.isError ? (
-        <div className="mb-4">
-          <Alert>{errorMessage(save.error)}</Alert>
-        </div>
-      ) : null}
+      <PageHeader title={editing ? form.title || 'Libro' : 'Nuevo libro'} />
       {Object.keys(errors).length > 0 ? (
         <div className="mb-4">
           <Alert title="Revisa estos campos">
@@ -167,7 +156,7 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
 
       <TabPanel id="datos" active={tab}>
         <div className="grid gap-5 lg:grid-cols-2">
-          <Card className="flex flex-col gap-4">
+          <FormSection title="Lo básico" help="Título, dirección web, frase corta y sinopsis.">
             <TextField
               label="Título"
               required
@@ -179,8 +168,8 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
               }}
             />
             <TextField
-              label="Dirección web (slug)"
-              hint="Se genera del título; editable. Solo minúsculas, números y guiones."
+              label="Dirección web"
+              hint="La parte final del enlace. Se arma sola; solo minúsculas, números y guiones."
               required
               value={form.slug}
               error={err('slug')}
@@ -190,7 +179,7 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
               }}
             />
             <TextField
-              label="Lema"
+              label="Frase corta (lema)"
               value={form.tagline}
               error={err('tagline')}
               onChange={(event) => set('tagline', event.target.value)}
@@ -201,10 +190,9 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
               value={form.synopsis}
               onChange={(html) => set('synopsis', html)}
             />
-          </Card>
+          </FormSection>
 
-          <Card className="flex flex-col gap-4">
-            <h2 className="font-semibold">Estado y fecha</h2>
+          <FormSection title="Estado y fecha" help="Cuándo y cómo aparece el libro en la web.">
             <SelectField
               label="Estado"
               value={form.status}
@@ -225,19 +213,19 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
             />
             {form.status === 'upcoming' ? (
               <CheckField
-                label="Mostrar en el panel de lectoras como «próximamente»"
+                label="Mostrarlo a las lectoras como «próximamente»"
                 hint="Apagado por defecto. Si lo enciendes, las lectoras con sesión lo ven en «Tus libros» (con cuenta atrás si hay fecha, o con «Próximamente»), solo con portada y título."
                 checked={form.showInReaderPanel}
                 onChange={(value) => set('showInReaderPanel', value)}
               />
             ) : null}
             <TextField
-              label="Posición en la saga"
+              label="Lugar en la saga"
               type="number"
               min={1}
               value={form.order}
               error={err('order')}
-              hint="También es el orden del carrusel «Secuencia de publicación»."
+              hint="Define el orden de los libros en la página."
               onChange={(event) => set('order', event.target.value)}
             />
             <ImageField
@@ -247,10 +235,9 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
               onChange={(image) => set('cover', image)}
               hint={err('cover') ?? 'Obligatoria para publicar o poner «Próximamente».'}
             />
-          </Card>
+          </FormSection>
 
-          <Card className="flex flex-col gap-4">
-            <h2 className="font-semibold">Datos del libro</h2>
+          <FormSection title="Datos del libro" help="Géneros, edad recomendada e ISBN.">
             <TextField
               label="Géneros"
               hint="Separados por coma."
@@ -258,7 +245,7 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
               onChange={(event) => set('genres', event.target.value)}
             />
             <RichTextEditor
-              label="Advertencia de contenido sensible"
+              label="Aviso de contenido sensible"
               value={form.contentWarning}
               onChange={(html) => set('contentWarning', html)}
             />
@@ -276,10 +263,9 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
               value={form.isbn}
               onChange={(event) => set('isbn', event.target.value)}
             />
-          </Card>
+          </FormSection>
 
-          <Card className="flex flex-col gap-4">
-            <h2 className="font-semibold">Cómo comprar</h2>
+          <FormSection title="Cómo comprar" help="Enlaces para que las lectoras consigan el libro.">
             {form.purchaseLinks.map((link, index) => (
               <fieldset
                 key={index}
@@ -353,19 +339,18 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
             >
               + Agregar enlace
             </Button>
-          </Card>
+          </FormSection>
 
-          <Card className="flex flex-col gap-4">
-            <h2 className="font-semibold">Tema del libro</h2>
+          <FormSection title="Tema del libro" help="Color y fondo propios de la página del libro.">
             <TextField
-              label="Color principal"
+              label="Color del libro"
               placeholder="#444444"
               value={form.primaryColor}
               error={err('theme.primaryColor')}
               onChange={(event) => set('primaryColor', event.target.value)}
             />
             <SelectField
-              label="Fondo"
+              label="Fondo de la página del libro"
               hint="Solo color o imagen (sin video)."
               value={form.background}
               options={[
@@ -391,7 +376,7 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
                 onChange={(image) => set('backgroundImage', image)}
               />
             ) : null}
-          </Card>
+          </FormSection>
         </div>
       </TabPanel>
 
@@ -408,8 +393,7 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
         </p>
         <div className="flex flex-col gap-4">
           {form.wikiSections.map((section, index) => (
-            <Card key={section.kind} className="flex flex-col gap-4">
-              <h2 className="font-semibold">{SECTION_LABELS[section.kind]}</h2>
+            <FormSection key={section.kind} title={SECTION_LABELS[section.kind]}>
               <div className="grid gap-4 md:grid-cols-2">
                 <TextField
                   label="Nombre visible"
@@ -468,10 +452,22 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
                   }}
                 />
               ) : null}
-            </Card>
+            </FormSection>
           ))}
         </div>
       </TabPanel>
+      <SaveBar
+        dirty={guard.dirty || !editing}
+        dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}
+        saving={save.isPending}
+        error={save.isError ? errorMessage(save.error) : null}
+        onSave={() => submit()}
+        onDiscard={() => {
+          setForm(guard.saved);
+          setErrors({});
+        }}
+        saveLabel="Guardar libro"
+      />
     </form>
   );
 }

@@ -51,7 +51,9 @@ test.describe('actualizaciones (escritorio)', () => {
     await page.getByLabel('Correo').fill(E2E_ADMIN.email);
     await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
     await page.getByRole('button', { name: 'Ingresar' }).click();
-    await expect(page.getByRole('heading', { name: 'Inicio del panel' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ }),
+    ).toBeVisible();
     await page.getByRole('link', { name: 'Actualizaciones' }).click();
     await page.getByRole('link', { name: '+ Nueva actualización' }).click();
     await page.getByRole('button', { name: /Evento/ }).click();
@@ -65,14 +67,13 @@ test.describe('actualizaciones (escritorio)', () => {
     // La vista previa ya muestra la plantilla con lo escrito.
     await expect(
       page
-        .getByRole('heading', { name: 'Vista previa' })
-        .locator('..')
+        .locator('section', { has: page.getByRole('heading', { name: 'Vista previa' }) })
         .getByText('Librería Central'),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Publicar' }).click();
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
+    await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
     await page.waitForTimeout(400);
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
+    await expect(page.getByText('Todo guardado')).toBeVisible();
 
     // La lista del panel la muestra publicada y destacada.
     await page.goto('/admin/actualizaciones');

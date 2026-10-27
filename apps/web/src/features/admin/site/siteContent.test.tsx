@@ -62,8 +62,12 @@ describe('panel: portada y autora', () => {
     await userEvent.click(screen.getByRole('button', { name: '+ Agregar red' }));
     await userEvent.type(screen.getByLabelText('Red 2'), 'TikTok');
     await userEvent.type(screen.getByLabelText('Enlace 2'), 'https://tiktok.com/@placeholder');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-    expect(await screen.findByText('Cambios guardados')).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
+    expect(await screen.findByText('Guardado')).toBeInTheDocument();
     const [call] = called('PATCH /api/admin/site-settings');
     const body = call?.body as Record<string, Record<string, unknown>>;
     expect(Object.keys(body).sort()).toEqual(['author', 'lock', 'social', 'universe']);
@@ -80,7 +84,11 @@ describe('panel: portada y autora', () => {
     const link = await screen.findByLabelText('Enlace 1');
     await userEvent.clear(link);
     await userEvent.type(link, 'javascript:alert(1)');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
     expect(await screen.findByText(/http:\/\/ o https:\/\//)).toBeInTheDocument();
     expect(called('PATCH /api/admin/site-settings')).toHaveLength(0);
   });
@@ -91,8 +99,12 @@ describe('panel: portada y autora', () => {
     await userEvent.clear(await screen.findByLabelText('Nombre'));
     await userEvent.clear(screen.getByLabelText('Correo que se muestra al público'));
     await userEvent.click(screen.getByRole('button', { name: /Quitar.*red 1/ }));
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-    await screen.findByText('Cambios guardados');
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
+    await screen.findByText('Guardado');
     const body = called('PATCH /api/admin/site-settings')[0]?.body as Record<
       string,
       Record<string, unknown>

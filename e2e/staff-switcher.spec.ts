@@ -10,7 +10,9 @@ test.describe('selector de zona para administradoras y editoras (celular y escri
     await page.getByLabel('Correo').fill(E2E_ADMIN.email);
     await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
     await page.getByRole('button', { name: 'Ingresar' }).click();
-    await expect(page.getByRole('heading', { name: 'Inicio del panel' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ }),
+    ).toBeVisible();
 
     // Por debajo de 1536 px el selector de zonas vive dentro del menú de usuario (abierto, cierra al elegir).
     const trigger = () => page.getByRole('button', { name: E2E_ADMIN.name });
