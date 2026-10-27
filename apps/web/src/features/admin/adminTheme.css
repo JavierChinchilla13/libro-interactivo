@@ -242,6 +242,177 @@
     }
   }
 
+  /* ---- Inicio ---- */
+  .admin-h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+  .admin-card {
+    border: 1px solid var(--token-line);
+    border-radius: var(--admin-radius);
+    background: var(--token-surface);
+    padding: 1.25rem;
+  }
+  .admin-text-btn {
+    min-height: 2.75rem;
+    border-radius: var(--token-radius-sm);
+    padding: 0 0.5rem;
+    font-size: 0.875rem;
+    color: var(--token-muted);
+    transition: color var(--token-dur-fast) var(--token-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-text-btn:hover {
+      color: var(--token-text);
+    }
+  }
+  .admin-attn {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    flex-direction: column;
+    gap: 0.5rem;
+    list-style: none;
+  }
+  .admin-attn a {
+    display: flex;
+    min-height: 3.5rem;
+    align-items: center;
+    gap: 0.875rem;
+    border: 1px solid var(--token-line);
+    border-left: 3px solid var(--token-warning);
+    border-radius: var(--token-radius-md);
+    background: var(--token-surface);
+    padding: 0.5rem 1rem;
+    color: var(--token-text);
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-attn a > svg:first-child {
+    color: var(--token-warning);
+  }
+  .admin-attn a:active {
+    background: var(--token-surface-alt);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-attn a:hover {
+      background: var(--token-surface-alt);
+    }
+  }
+  .admin-actions {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    list-style: none;
+  }
+  .admin-actions a {
+    display: flex;
+    height: 100%;
+    min-height: 4.5rem;
+    align-items: center;
+    gap: 0.875rem;
+    border-radius: var(--token-radius-md);
+    padding: 0.875rem 1rem;
+    color: var(--token-text);
+    text-decoration: none;
+  }
+  .admin-action-icon {
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--token-radius-sm);
+    background: color-mix(in srgb, var(--token-primary) 13%, transparent);
+    color: var(--token-primary);
+  }
+  .admin-stats {
+    display: grid;
+    margin: 0;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  }
+  .admin-stat {
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-md);
+    background: var(--token-surface);
+    padding: 1rem 1.125rem;
+  }
+  .admin-stat dt {
+    font-size: 0.875rem;
+    color: var(--token-muted);
+  }
+  .admin-stat dd {
+    margin: 0.125rem 0;
+    font-family: var(--token-font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+  .admin-stat p {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--token-muted);
+  }
+  .admin-steps {
+    display: flex;
+    margin: 1rem 0 0;
+    padding: 0;
+    flex-direction: column;
+    gap: 0.25rem;
+    list-style: none;
+  }
+  .admin-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+    padding: 0.5rem 0;
+  }
+  .admin-step-mark {
+    display: inline-flex;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: 0.0625rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--token-border);
+    border-radius: 9999px;
+  }
+  .admin-steps li[data-done='true'] .admin-step-mark {
+    border-color: var(--token-success);
+    background: color-mix(in srgb, var(--token-success) 18%, transparent);
+    color: var(--token-success);
+  }
+  .admin-step-title {
+    font-weight: 600;
+  }
+  .admin-steps li[data-done='true'] .admin-step-title {
+    color: var(--token-muted);
+    font-weight: 500;
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--token-muted) 50%, transparent);
+  }
+  .admin-step-title a {
+    display: inline-flex;
+    min-height: 2rem;
+    align-items: center;
+    color: var(--token-primary);
+    text-decoration: none;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-step-title a:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
   /* ---- Barra de guardado ---- */
   .admin-savebar {
     position: sticky;

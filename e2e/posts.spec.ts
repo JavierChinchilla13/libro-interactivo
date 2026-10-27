@@ -51,7 +51,7 @@ test.describe('actualizaciones (escritorio)', () => {
     await page.getByLabel('Correo').fill(E2E_ADMIN.email);
     await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
     await page.getByRole('button', { name: 'Ingresar' }).click();
-    await expect(page.getByRole('heading', { name: 'Inicio del panel' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ })).toBeVisible();
     await page.getByRole('link', { name: 'Actualizaciones' }).click();
     await page.getByRole('link', { name: '+ Nueva actualización' }).click();
     await page.getByRole('button', { name: /Evento/ }).click();

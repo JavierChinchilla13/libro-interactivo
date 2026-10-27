@@ -41,6 +41,7 @@ const summary = (over: object = {}) => ({
   allowRetake: true,
   showBreakdown: false,
   updatedAt: stamp,
+  hasUnpublishedChanges: false,
   ...over,
 });
 const draft = (over: object = {}) => ({

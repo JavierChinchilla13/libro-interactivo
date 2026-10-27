@@ -327,7 +327,7 @@ test.describe('portada: edición en el panel', () => {
     await page.getByLabel('Correo').fill(E2E_ADMIN.email);
     await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
     await page.getByRole('button', { name: 'Ingresar' }).click();
-    await expect(page.getByRole('heading', { name: 'Inicio del panel' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ })).toBeVisible();
     // Se guarda el ajuste actual para devolverlo al terminar (la base es compartida con otras pruebas).
     const before = (await (await page.request.get('/api/admin/site-settings')).json()) as {
       universe: unknown;

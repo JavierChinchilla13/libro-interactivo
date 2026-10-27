@@ -60,7 +60,9 @@ describe('guards de /admin (solo mejoran la experiencia; la seguridad es del API
   it('una editora entra al panel y NO ve el grupo «Administración» ni nada bloqueado', async () => {
     mockApi('EDITOR');
     renderAt('/admin');
-    expect(await screen.findByRole('heading', { name: 'Inicio del panel' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Libros' })).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Administración' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Usuarios' })).not.toBeInTheDocument();
@@ -147,13 +149,17 @@ describe('ingreso', () => {
     await userEvent.type(await screen.findByLabelText(/Correo/), 'editora@ejemplo.com');
     await userEvent.type(screen.getByLabelText(/Contraseña/), 'Nube-Azul-Cuatro-87');
     await userEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
-    expect(await screen.findByRole('heading', { name: 'Inicio del panel' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ }),
+    ).toBeInTheDocument();
     await waitFor(() => expect(logged).toBe(true));
   });
 
   it('con sesión iniciada, /ingresar redirige al panel', async () => {
     mockApi('ADMIN');
     renderAt('/ingresar');
-    expect(await screen.findByRole('heading', { name: 'Inicio del panel' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ }),
+    ).toBeInTheDocument();
   });
 });
