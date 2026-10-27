@@ -1,19 +1,6 @@
-import { useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-
-/** `true` cuando la ventana es al menos tan ancha como `query` dice; sin `matchMedia` (pruebas) se asume escritorio. */
-function useWide(query: string): boolean {
-  return useSyncExternalStore(
-    (notify) => {
-      if (typeof window.matchMedia !== 'function') return () => undefined;
-      const media = window.matchMedia(query);
-      media.addEventListener('change', notify);
-      return () => media.removeEventListener('change', notify);
-    },
-    () => (typeof window.matchMedia === 'function' ? window.matchMedia(query).matches : true),
-    () => true,
-  );
-}
+import { useMediaQuery } from './useMediaQuery';
 
 /**
  * Qué papel juega una columna en la tarjeta del celular: `title` es el encabezado de la tarjeta, `status` va como
@@ -60,7 +47,7 @@ export function DataList<T>({
   action?: RowAction<T>;
   pageSize?: number;
 }) {
-  const wide = useWide(BREAKPOINT);
+  const wide = useMediaQuery(BREAKPOINT, true);
   const [shown, setShown] = useState(pageSize);
   const visible = rows.slice(0, shown);
   const more = rows.length - visible.length;

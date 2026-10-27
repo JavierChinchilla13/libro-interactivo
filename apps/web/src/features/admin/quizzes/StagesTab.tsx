@@ -244,8 +244,8 @@ function StageEditor({
           </Alert>
         ) : null}
         <Button
-          variant="danger"
-          className="self-start"
+          variant="secondary"
+          className="self-start btn-outline-danger"
           onClick={async () => {
             const ok = await confirm({
               title: '¿Quitar esta etapa?',
