@@ -9,6 +9,7 @@ import {
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { crumbsFor, documentTitle, locate, navForRole } from '../../features/admin/adminNav';
 import '../../features/admin/adminTheme.css';
+import { useNavCounts } from '../../features/admin/overview';
 import { Breadcrumbs, CrumbLeafProvider } from '../../features/admin/components/Breadcrumbs';
 import { ConfirmProvider } from '../../features/admin/components/ConfirmDialog';
 import { ToastProvider } from '../../features/admin/components/Toast';
@@ -59,6 +60,7 @@ export function AdminLayout() {
   const navScroll = useRef<HTMLElement>(null);
   const moreBelow = useMoreBelow(navScroll);
   const groups = navForRole(session.data?.role);
+  const counts = useNavCounts(session.data?.role);
   const where = locate(pathname);
 
   const close = useCallback((returnFocus: boolean) => {
@@ -190,6 +192,14 @@ export function AdminLayout() {
                             >
                               <AdminIcon name={item.icon} />
                               <span className="min-w-0">{item.label}</span>
+                              {counts[item.id] ? (
+                                <span
+                                  className="admin-link-count"
+                                  aria-label={`${counts[item.id]} ${item.id === 'mensajes' ? 'sin leer' : 'en borrador'}`}
+                                >
+                                  {counts[item.id]}
+                                </span>
+                              ) : null}
                             </NavLink>
                           </li>
                         ))}

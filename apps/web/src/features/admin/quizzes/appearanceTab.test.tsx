@@ -263,6 +263,7 @@ describe('pestaña Apariencia', () => {
       allowRetake: true,
       showBreakdown: false,
       updatedAt: stamp,
+      hasUnpublishedChanges: false,
     });
     mockApi(
       base({
