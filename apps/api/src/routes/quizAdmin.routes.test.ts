@@ -293,6 +293,50 @@ describe('opciones de barajado de respuestas en el panel', () => {
   });
 });
 
+describe('«cambios sin publicar» en el listado de quizzes', () => {
+  it('cada resumen dice si su borrador difiere de lo publicado, igual que el detalle', async () => {
+    const { editor, book } = await world();
+    const published = await createQuiz({
+      bookId: book._id,
+      order: 1,
+      content: simpleContent(),
+      publishedBy: new Types.ObjectId(),
+    });
+    const neverPublished = await createQuiz({
+      bookId: book._id,
+      order: 2,
+      content: simpleContent(),
+    });
+    const edited = await createQuiz({
+      bookId: book._id,
+      order: 3,
+      content: simpleContent(),
+      publishedBy: new Types.ObjectId(),
+    });
+    await Quiz.updateOne({ _id: edited._id }, { $set: { 'draft.results.0.title': 'Otro título' } });
+
+    const list = (await editor.get(`/api/admin/quizzes?bookId=${book._id}`).expect(200)).body
+      .quizzes as { id: string; hasUnpublishedChanges: boolean }[];
+    const flag = (id: string) => list.find((quiz) => quiz.id === id)?.hasUnpublishedChanges;
+    expect(flag(published._id.toString())).toBe(false);
+    expect(flag(neverPublished._id.toString())).toBe(true);
+    expect(flag(edited._id.toString())).toBe(true);
+
+    for (const quiz of [published, neverPublished, edited]) {
+      const detail = (await editor.get(`/api/admin/quizzes/${quiz._id}`).expect(200)).body;
+      expect(detail.hasUnpublishedChanges).toBe(flag(quiz._id.toString()));
+    }
+  });
+
+  it('un libro sin quizzes responde lista vacía y el lector sigue sin acceso', async () => {
+    const { editor, reader, book } = await world();
+    expect(
+      (await editor.get(`/api/admin/quizzes?bookId=${book._id}`).expect(200)).body.quizzes,
+    ).toEqual([]);
+    await reader.get(`/api/admin/quizzes?bookId=${book._id}`).expect(403);
+  });
+});
+
 describe('el hash del contenido ignora los valores por defecto añadidos después', () => {
   /** Contenido como lo guardaban las versiones publicadas antes de existir `shuffleAnswers` y `pinLast`. */
   const legacyContent = (): QuizContent => {
