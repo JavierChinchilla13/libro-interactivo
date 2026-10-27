@@ -362,10 +362,14 @@ const QuestionEditor = memo(function QuestionEditor({
           >
             <AdminIcon name="chevron" className={`size-4 shrink-0 ${open ? 'rotate-90' : ''}`} />
             <span className="min-w-0">
-              <span className="block">Pregunta {index + 1}</span>
+              <span className="block">
+                Pregunta {index + 1}
+                <span className="ml-2 text-xs font-normal text-muted">
+                  {plural(question.answers.length, 'respuesta', 'respuestas')}
+                </span>
+              </span>
               <span className="admin-fold-summary">
-                {question.text.trim() || 'Sin texto todavía'} ·{' '}
-                {plural(question.answers.length, 'respuesta', 'respuestas')}
+                {question.text.trim() || 'Sin texto todavía'}
               </span>
             </span>
           </button>
