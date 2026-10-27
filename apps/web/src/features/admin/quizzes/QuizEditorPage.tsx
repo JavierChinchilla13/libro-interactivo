@@ -1,6 +1,6 @@
 import type { QuizDetailResponse, QuizValidationResponse } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { Button } from '../../../shared/ui/controls';
 import { Alert, Loading, PageHeader, TabPanel, Tabs } from '../../../shared/ui/layout';
@@ -78,7 +78,12 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
     if (next === 'apariencia') setAppearanceOpened(true);
     setTab(next);
   };
-  const [report, setReport] = useState<QuizValidationResponse | null>(null);
+  // La revisión recuerda sobre qué borrador se hizo: si después se edita algo, deja de valer.
+  const [reviewed, setReviewed] = useState<{ report: QuizValidationResponse; at: string } | null>(
+    null,
+  );
+  // Lo último que el servidor guardó (la revisión se hace sobre eso, ya normalizado por el servidor).
+  const savedRef = useRef(snapshot(quiz.draft));
   const [notice, setNotice] = useState<{ tone: 'success' | 'warning'; text: string } | null>(null);
   const [previewing, setPreviewing] = useState(false);
 
@@ -92,6 +97,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
     void client.invalidateQueries({ queryKey: ['admin', 'quizzes', 'list'] });
     setDraft(result.draft);
     setSaved(snapshot(result.draft));
+    savedRef.current = snapshot(result.draft);
   }
 
   const save = useMutation({
@@ -100,13 +106,16 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   });
   const check = useMutation({
     mutationFn: () => quizzesApi.validate(quizId),
-    onSuccess: setReport,
+    onSuccess: (result) => setReviewed({ report: result, at: savedRef.current }),
   });
   const publish = useMutation({
     mutationFn: () => quizzesApi.publish(quizId),
     onSuccess: async (result) => {
       toast.success(`Publicado: ya es la versión ${result.version} y las lectoras la ven.`);
-      setReport({ valid: true, errors: [], warnings: result.warnings });
+      setReviewed({
+        report: { valid: true, errors: [], warnings: result.warnings },
+        at: savedRef.current,
+      });
       await client.invalidateQueries({ queryKey: ['admin', 'quizzes'] });
     },
   });
@@ -162,7 +171,9 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   const busy = save.isPending || check.isPending || publish.isPending;
   const error = save.error ?? check.error ?? publish.error;
   // Tras revisar, si hay cosas por arreglar y nada cambió desde entonces, Publicar se apaga y dice por qué.
-  const blockedBy = report && !report.valid && !dirty ? report.errors.length : 0;
+  const stale = reviewed !== null && reviewed.at !== snapshot(draft);
+  const report = reviewed?.report ?? null;
+  const blockedBy = report && !report.valid && !stale ? report.errors.length : 0;
   const activeTab = TABS.find((item) => item.id === tab) ?? TABS[0];
 
   return (
@@ -204,7 +215,14 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           <Alert tone={notice.tone}>{notice.text}</Alert>
         </div>
       ) : null}
-      {report ? <ValidationReport report={report} /> : null}
+      {report && stale ? (
+        <div className="mb-4">
+          <Alert tone="warning" title="Vuelve a revisar">
+            Cambiaste algo después de la última revisión: pulsa «Revisar» para comprobarlo de nuevo.
+          </Alert>
+        </div>
+      ) : null}
+      {report && !stale ? <ValidationReport report={report} /> : null}
       {previewing ? <PreviewPanel quizId={quizId} onClose={() => setPreviewing(false)} /> : null}
 
       <Tabs
@@ -254,6 +272,25 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           saveLabel="Guardar borrador"
           saveVariant="secondary"
           savedLabel={archived ? 'Solo lectura' : 'Todo guardado'}
+          moreItems={[
+            {
+              label: check.isPending ? 'Revisando…' : 'Revisar',
+              disabled: busy || archived,
+              title: 'Comprueba que no falte nada antes de publicar',
+              onClick: () => void onValidate(),
+            },
+            {
+              label: 'Vista previa',
+              disabled: busy || archived,
+              title: 'Pruébalo como lectora; no cuenta en estadísticas',
+              onClick: () => void onPreview(),
+            },
+            {
+              label: save.isPending ? 'Guardando…' : 'Guardar borrador',
+              disabled: !dirty || busy || archived,
+              onClick: () => void onSave(),
+            },
+          ]}
           after={
             <Button
               disabled={busy || archived || blockedBy > 0}

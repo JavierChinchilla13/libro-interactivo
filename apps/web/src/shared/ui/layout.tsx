@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 type Tone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
 
@@ -132,11 +132,44 @@ export function Tabs<T extends string>({
   onChange: (id: T) => void;
   label: string;
 }) {
+  const list = useRef<HTMLDivElement>(null);
+  // Si hay pestañas fuera de la vista, un degradado en ese borde avisa que se puede seguir desplazando.
+  const [edge, setEdge] = useState<'none' | 'end' | 'start' | 'both'>('none');
+  useEffect(() => {
+    const el = list.current;
+    if (!el) return;
+    const measure = () => {
+      const more = el.scrollWidth - el.clientWidth > 4;
+      const start = more && el.scrollLeft > 4;
+      const end = more && el.scrollLeft + el.clientWidth < el.scrollWidth - 4;
+      setEdge(start && end ? 'both' : end ? 'end' : start ? 'start' : 'none');
+    };
+    measure();
+    el.addEventListener('scroll', measure, { passive: true });
+    window.addEventListener('resize', measure);
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(measure) : null;
+    observer?.observe(el);
+    return () => {
+      el.removeEventListener('scroll', measure);
+      window.removeEventListener('resize', measure);
+      observer?.disconnect();
+    };
+  }, [tabs.length]);
+  // La pestaña activa se acerca a la vista (en celular puede quedar fuera del borde).
+  useEffect(() => {
+    const el = list.current?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  }, [active]);
+
   return (
     <div
+      ref={list}
       role="tablist"
       aria-label={label}
-      className="mb-5 flex gap-1 overflow-x-auto border-b border-border"
+      data-edge={edge}
+      className="tabs-scroll mb-5 flex gap-1 overflow-x-auto border-b border-border"
     >
       {tabs.map((tab) => (
         <button

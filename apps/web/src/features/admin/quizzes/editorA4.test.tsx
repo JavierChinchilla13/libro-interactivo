@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { json, mockApi, renderAt } from '../../../test/mockApi';
 
 const ADMIN = {
@@ -268,5 +268,82 @@ describe('editor de quizzes · confirmaciones', { timeout: 30_000 }, () => {
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Salir sin guardar' }),
     );
     expect(await screen.findByRole('heading', { name: 'Libros' })).toBeInTheDocument();
+  });
+});
+
+describe('editor de quizzes · retoques de celular y de la revisión', { timeout: 30_000 }, () => {
+  const narrow = () =>
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('max-width'),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('en celular la barra queda en una fila: «Publicar» a la vista y «Más» con Revisar, Vista previa y Guardar borrador', async () => {
+    narrow();
+    open(big(1));
+    renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    await screen.findByRole('heading', { name: 'Quiz grande' });
+    expect(screen.getByRole('button', { name: 'Publicar' })).toBeInTheDocument();
+    // Los botones sueltos no están: van dentro del menú.
+    expect(screen.queryByRole('button', { name: 'Revisar' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Vista previa' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Más' }));
+    const menu = screen.getByRole('menu');
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent),
+    ).toEqual(['Revisar', 'Vista previa', 'Guardar borrador']);
+    expect(within(menu).getByRole('menuitem', { name: 'Guardar borrador' })).toBeDisabled();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).toBeNull();
+    // Con cambios, el estado corto aparece en la misma fila y «Guardar borrador» se habilita.
+    await userEvent.type(screen.getByRole('textbox', { name: /^Título/ }), ' 2');
+    expect(screen.getByText('Sin guardar')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Más' }));
+    expect(screen.getByRole('menuitem', { name: 'Guardar borrador' })).toBeEnabled();
+  });
+
+  it('la revisión deja de valer en cuanto se edita algo: pide «Vuelve a revisar»', async () => {
+    mockApi(
+      {
+        [`GET ${url}`]: () => json(big(1)),
+        [`POST ${url}/validate`]: () => json({ valid: true, errors: [], warnings: [] }),
+      },
+      { session: ADMIN },
+    );
+    renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    await screen.findByRole('heading', { name: 'Quiz grande' });
+    await userEvent.click(screen.getByRole('button', { name: 'Revisar' }));
+    expect(
+      await screen.findByText('El quiz está completo y se puede publicar'),
+    ).toBeInTheDocument();
+    await userEvent.type(screen.getByRole('textbox', { name: /^Título/ }), ' 2');
+    expect(screen.queryByText('El quiz está completo y se puede publicar')).toBeNull();
+    expect(screen.getByText('Vuelve a revisar')).toBeInTheDocument();
+  });
+
+  it('«Quitar etapa» lleva borde rojo y no el relleno de la acción principal', async () => {
+    open(big(1));
+    renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    await screen.findByRole('heading', { name: 'Quiz grande' });
+    await userEvent.click(screen.getByRole('tab', { name: 'Preguntas' }));
+    const button = screen.getByRole('button', { name: 'Quitar etapa' });
+    expect(button).toHaveClass('btn-outline-danger');
+    expect(button.className).not.toContain('bg-danger');
+  });
+
+  it('las pestañas que no caben muestran un degradado en el borde que aún tiene más', async () => {
+    const width = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(520);
+    const client = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(343);
+    open(big(1));
+    renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    const tabs = await screen.findByRole('tablist', { name: 'Secciones del quiz' });
+    await waitFor(() => expect(tabs).toHaveAttribute('data-edge', 'end'));
+    width.mockRestore();
+    client.mockRestore();
   });
 });

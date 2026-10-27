@@ -595,6 +595,87 @@
     color: var(--token-muted);
   }
 
+  /* ---- Pestañas que no caben: degradado en el borde que aún tiene más ---- */
+  .tabs-scroll {
+    scrollbar-width: none;
+  }
+  .tabs-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  .tabs-scroll[data-edge='end'] {
+    mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+  }
+  .tabs-scroll[data-edge='start'] {
+    mask-image: linear-gradient(to left, #000 calc(100% - 2.5rem), transparent);
+  }
+  .tabs-scroll[data-edge='both'] {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 2.5rem,
+      #000 calc(100% - 2.5rem),
+      transparent
+    );
+  }
+
+  /* ---- Menú «Más» de la barra de guardado (celular) ---- */
+  .admin-more {
+    position: relative;
+  }
+  .admin-more-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 0.5rem);
+    z-index: 30;
+    display: flex;
+    min-width: 13rem;
+    flex-direction: column;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-md);
+    background: var(--token-surface-alt);
+    padding: 0.25rem;
+    box-shadow: var(--token-elev-2);
+    animation: admin-toast-in var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-more-menu button {
+    min-height: 2.75rem;
+    border-radius: var(--token-radius-sm);
+    padding: 0 0.875rem;
+    text-align: left;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--token-text);
+  }
+  .admin-more-menu button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .admin-more-menu button:not(:disabled):active {
+    background: color-mix(in srgb, var(--token-primary) 14%, transparent);
+  }
+  .admin-more-note {
+    margin: 0;
+    padding: 0.5rem 0.875rem;
+    max-width: 16rem;
+    font-size: 0.8125rem;
+    color: var(--token-warning);
+  }
+  .admin-savebar-narrow {
+    flex-wrap: nowrap;
+  }
+
+  /* ---- Quitar algo grande (etapa): borde rojo, sin relleno, para no competir con «Publicar» ---- */
+  .admin-shell .btn-outline-danger {
+    border: 1px solid var(--token-danger);
+    background: transparent;
+    color: var(--token-danger);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-shell .btn-outline-danger:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--token-danger) 12%, transparent);
+    }
+  }
+
   /* ---- Frase bajo las pestañas ---- */
   .admin-tab-help {
     margin: -0.75rem 0 1.25rem;
