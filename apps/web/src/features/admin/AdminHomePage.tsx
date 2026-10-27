@@ -155,8 +155,8 @@ export function AdminHomePage() {
 
   const firstSteps = showSteps ? (
     <section aria-labelledby="home-steps" className="admin-card">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
-        <div>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
           <h2 id="home-steps" className="text-lg font-semibold">
             Primeros pasos
           </h2>
