@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiError, json, mockApi, renderAt } from '../../../test/mockApi';
@@ -109,7 +109,9 @@ describe('pestaña Apariencia', () => {
   it('sin apariencia, el editor viejo sigue mostrando instrucciones e imagen', async () => {
     mockApi(base(), { session: ADMIN });
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
-    expect(await screen.findByRole('textbox', { name: 'Instrucciones' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('textbox', { name: 'Instrucciones para la lectora' }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/se editan en la pestaña/)).toBeNull();
   });
 
@@ -125,7 +127,7 @@ describe('pestaña Apariencia', () => {
     expect(
       (await screen.findAllByText('Instrucciones del snapshot')).length,
     ).toBeGreaterThanOrEqual(1);
-    expect(screen.queryByText('Cambios sin guardar')).toBeNull();
+    expect(screen.queryByText('Tienes cambios sin guardar')).toBeNull();
     expect(screen.getByRole('button', { name: 'Guardar apariencia' })).toBeDisabled();
     expect(screen.getByText('Todavía no hay cambios guardados.')).toBeInTheDocument();
   });
@@ -158,7 +160,7 @@ describe('pestaña Apariencia', () => {
     );
     const user = await openTab();
     await user.click(await screen.findByRole('radio', { name: /Verde/ }));
-    expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+    expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Guardar apariencia' }));
     await screen.findByText(/Ya lo ven las lectoras, sin publicar una versión nueva/);
     // El aviso sigue ahí tras refrescarse los datos del quiz (no se remonta la pestaña).
@@ -228,9 +230,9 @@ describe('pestaña Apariencia', () => {
     expect(screen.getByText(/Cambió: fondo, introducción/)).toBeInTheDocument();
     expect(screen.getByText(/cuenta eliminada/)).toBeInTheDocument();
     // Pide confirmación: las lectoras lo ven en seguida.
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
     await user.click(screen.getAllByRole('button', { name: 'Volver a antes' })[0] as HTMLElement);
-    expect(confirm).toHaveBeenCalledOnce();
+    const dialog = await screen.findByRole('dialog', { name: '¿Volver a la apariencia anterior?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Volver a esta apariencia' }));
     await screen.findByText(/Se volvió al estado anterior/);
     expect(called(`POST /api/admin/quizzes/${QUIZ_ID}/appearance/revert`)[0]?.body).toEqual({
       rev: 2,
@@ -263,6 +265,7 @@ describe('pestaña Apariencia', () => {
       allowRetake: true,
       showBreakdown: false,
       updatedAt: stamp,
+      hasUnpublishedChanges: false,
     });
     mockApi(
       base({
@@ -284,10 +287,10 @@ describe('pestaña Apariencia', () => {
     expect(await screen.findByText('Quiz 2 de 3')).toBeInTheDocument();
     expect(screen.getByText('Todo guardado')).toBeInTheDocument();
     await user.click(screen.getByRole('radio', { name: /Verde/ }));
-    expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Guardar apariencia' }).parentElement).toHaveClass(
-      'sticky',
-    );
+    expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Guardar apariencia' }).closest('.admin-savebar'),
+    ).not.toBeNull();
   });
 
   it('cambiar de pestaña no tira los cambios sin guardar de Apariencia', async () => {
@@ -296,11 +299,11 @@ describe('pestaña Apariencia', () => {
     });
     const user = await openTab();
     await user.click(await screen.findByRole('radio', { name: /Verde/ }));
-    expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
-    await user.click(screen.getByRole('tab', { name: 'General' }));
+    expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'Datos' }));
     await user.click(screen.getByRole('tab', { name: 'Apariencia' }));
     expect(screen.getByRole('radio', { name: /Verde/ })).toBeChecked();
-    expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+    expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();
   });
 
   describe('color de acento libre', () => {
@@ -328,7 +331,7 @@ describe('pestaña Apariencia', () => {
       await user.clear(hex);
       await user.type(hex, 'ff8fb1');
       expect(hex).toHaveValue('#FF8FB1');
-      expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+      expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: 'Guardar apariencia' }));
       await screen.findByText(/Ya lo ven las lectoras/);
       expect(called(`PUT /api/admin/quizzes/${QUIZ_ID}/appearance`)[0]?.body).toMatchObject({

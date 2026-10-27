@@ -133,7 +133,7 @@ describe('nueva actualización', () => {
       await screen.findByRole('textbox', { name: /^Título/ }),
       'Feria del Libro 2027',
     );
-    expect(screen.getByLabelText('Dirección web (slug)')).toHaveValue('feria-del-libro-2027');
+    expect(screen.getByLabelText('Dirección web')).toHaveValue('feria-del-libro-2027');
     await userEvent.type(screen.getByLabelText('Lugar'), '  Librería Central ');
     fireEvent.change(screen.getByLabelText('Inicia'), { target: { value: '2027-03-20T16:00' } });
     await userEvent.click(screen.getByRole('button', { name: 'Publicar' }));
@@ -244,15 +244,15 @@ describe('editar una actualización', () => {
     expect(screen.getByLabelText('Fecha de publicación')).toHaveValue('2026-10-01T09:00');
     await userEvent.clear(screen.getByLabelText('Lugar'));
     await userEvent.type(screen.getByLabelText('Lugar'), 'Otro lugar');
-    await userEvent.click(screen.getByRole('button', { name: 'Publicar' }));
-    expect(await screen.findByText('Cambios guardados')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    expect(await screen.findByText('Guardado')).toBeInTheDocument();
     const body = called(`PUT /api/admin/posts/${POST_ID}`)[0]?.body as Record<string, unknown>;
     expect(body).toMatchObject({
       data: { venue: 'Otro lugar', startsAt: '2027-03-20T22:00:00.000Z' },
       publishedAt: '2026-10-01T15:00:00.000Z',
       status: 'published',
     });
-    expect(screen.getByRole('link', { name: 'Ver la publicación' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Ver en el sitio' })).toHaveAttribute(
       'href',
       '/actualizaciones/feria-del-libro',
     );

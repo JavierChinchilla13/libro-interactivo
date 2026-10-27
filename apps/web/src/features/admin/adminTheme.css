@@ -1,0 +1,1005 @@
+/*
+ * Tema de la administración: solo existe dentro de `.admin-shell` (el sitio y el lector no cambian). Misma casa que
+ * el sitio —azules, Cinzel en títulos, Jost en la interfaz— pero más sobria: sin vidrio, sin brillo, sin fondos
+ * animados. El cian queda para la acción principal, el elemento activo y el foco; los estados llevan su propio color.
+ * Se carga con el layout de /admin (ruta perezosa): el resto del sitio no descarga este archivo.
+ */
+@layer components {
+  /* El pie fijo de guardado no debe tapar lo que recibe el foco al tabular. */
+  html:has(.admin-savebar) {
+    scroll-padding-bottom: 7rem;
+  }
+  .admin-shell button,
+  .admin-shell a,
+  .admin-shell summary {
+    touch-action: manipulation;
+  }
+  .admin-shell {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* Pulsado un poco más marcado que el del sitio (0.96) en los botones de la administración. */
+  .admin-shell .btn:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+  .admin-shell {
+    --admin-sidebar-w: 17rem;
+    --admin-radius: var(--token-radius-md);
+    --admin-gap: 1.25rem;
+  }
+
+  /* ---- Títulos de pantalla: sobrios, con mayúscula inicial (no el tamaño de portada del sitio) ---- */
+  .admin-shell .page-title {
+    font-size: clamp(1.5rem, 1.25rem + 0.9vw, 1.875rem);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.005em;
+  }
+  .admin-shell h2 {
+    text-wrap: balance;
+  }
+
+  /* ---- Menú lateral ---- */
+  .admin-sidebar {
+    display: flex;
+    flex-direction: column;
+    background: var(--token-bg);
+    border-right: 1px solid var(--token-line);
+  }
+  .admin-nav-scroll {
+    position: relative;
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.25rem 0.75rem 1.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--token-surface-alt) transparent;
+  }
+  /* Aviso de que el menú sigue hacia abajo: un degradado que desaparece al llegar al final. */
+  .admin-nav-scroll[data-more='true'] {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent);
+  }
+  .admin-nav-group-label {
+    padding: 1.25rem 0.75rem 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--token-muted);
+  }
+  .admin-link {
+    position: relative;
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: var(--token-radius-sm);
+    padding: 0 0.75rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--token-muted);
+    text-decoration: none;
+    transition:
+      background-color var(--token-dur-fast) var(--token-ease-out),
+      color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-link:active {
+    background-color: color-mix(in srgb, var(--token-surface-alt) 90%, transparent);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-link:hover {
+      background-color: color-mix(in srgb, var(--token-surface-alt) 70%, transparent);
+      color: var(--token-text);
+    }
+  }
+  .admin-link[aria-current='page'] {
+    background-color: color-mix(in srgb, var(--token-primary) 13%, transparent);
+    color: var(--token-primary);
+    font-weight: 600;
+  }
+  .admin-link-count {
+    margin-left: auto;
+    min-width: 1.5rem;
+    border-radius: 9999px;
+    background: var(--token-warning);
+    padding: 0 0.4rem;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.375rem;
+    color: #2a1a00;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (min-width: 1024px) and (max-height: 860px) {
+    .admin-link {
+      min-height: 2.25rem;
+      font-size: 0.875rem;
+    }
+    .admin-nav-group-label {
+      padding: 0.75rem 0.75rem 0.25rem;
+    }
+    .admin-nav-scroll {
+      scrollbar-width: thin;
+    }
+  }
+
+  /* ---- Barra superior ---- */
+  .admin-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    min-height: 3.5rem;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--token-line);
+    background: var(--token-bg);
+    padding: 0.375rem 1rem;
+  }
+  .admin-icon-btn {
+    display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--token-radius-sm);
+    color: var(--token-text);
+    transition:
+      background-color var(--token-dur-fast) var(--token-ease-out),
+      transform var(--token-dur-press) var(--token-ease-out);
+  }
+  .admin-icon-btn:active {
+    transform: scale(0.96);
+    background-color: var(--token-surface-alt);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-icon-btn:hover {
+      background-color: var(--token-surface);
+    }
+  }
+
+  /* ---- Migas ---- */
+  .admin-crumbs {
+    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--token-muted);
+  }
+  .admin-crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.125rem 0.375rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .admin-crumbs li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-width: 0;
+  }
+  .admin-crumbs a {
+    position: relative;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 0.25rem;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-crumbs a:hover {
+      color: var(--token-text);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+  /* Zona táctil ampliada sin mover nada (el texto es pequeño). */
+  .admin-crumbs a::after {
+    content: '';
+    position: absolute;
+    inset: -0.75rem -0.375rem;
+  }
+  .admin-crumbs [aria-current='page'] {
+    color: var(--token-text);
+  }
+
+  /* ---- Etiquetas de estado ---- */
+  .admin-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--admin-tone, var(--token-muted)) 12%, transparent);
+    padding: 0.125rem 0.65rem 0.125rem 0.55rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--token-text);
+  }
+  .admin-status-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    background: var(--admin-tone, var(--token-muted));
+  }
+  .admin-status[data-tone='success'] {
+    --admin-tone: var(--token-success);
+  }
+  .admin-status[data-tone='warning'] {
+    --admin-tone: var(--token-warning);
+  }
+  .admin-status[data-tone='danger'] {
+    --admin-tone: var(--token-danger);
+  }
+  .admin-status[data-tone='primary'] {
+    --admin-tone: var(--token-primary);
+  }
+
+  /* ---- Botones deshabilitados: se ven apagados y no parecen pulsables ---- */
+  .admin-shell .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* ---- Botón de acción que quita o descarta ---- */
+  .btn-danger {
+    background-color: var(--token-danger);
+    color: #2b0509;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-danger:hover:not(:disabled) {
+      background-color: color-mix(in srgb, var(--token-danger) 85%, white);
+    }
+  }
+
+  /* ---- Esqueletos de carga ---- */
+  .admin-skeleton {
+    border-radius: var(--token-radius-xs);
+    background: linear-gradient(
+      100deg,
+      var(--token-surface-alt) 30%,
+      color-mix(in srgb, var(--token-surface-alt) 60%, var(--token-text)) 50%,
+      var(--token-surface-alt) 70%
+    );
+    background-size: 220% 100%;
+    animation: admin-shimmer 1.4s linear infinite;
+    opacity: 0.55;
+  }
+  @keyframes admin-shimmer {
+    from {
+      background-position: 120% 0;
+    }
+    to {
+      background-position: -120% 0;
+    }
+  }
+
+  /* ---- Inicio ---- */
+  .admin-h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+  .admin-card {
+    border: 1px solid var(--token-line);
+    border-radius: var(--admin-radius);
+    background: var(--token-surface);
+    padding: 1.25rem;
+  }
+  .admin-text-btn {
+    min-height: 2.75rem;
+    border-radius: var(--token-radius-sm);
+    padding: 0 0.5rem;
+    font-size: 0.875rem;
+    color: var(--token-muted);
+    transition: color var(--token-dur-fast) var(--token-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-text-btn:hover {
+      color: var(--token-text);
+    }
+  }
+  .admin-attn {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    flex-direction: column;
+    gap: 0.5rem;
+    list-style: none;
+  }
+  .admin-attn a {
+    display: flex;
+    min-height: 3.5rem;
+    align-items: center;
+    gap: 0.875rem;
+    border: 1px solid color-mix(in srgb, var(--token-warning) 38%, var(--token-line));
+    border-radius: var(--token-radius-md);
+    background: var(--token-surface);
+    padding: 0.5rem 1rem;
+    color: var(--token-text);
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-attn a > svg:first-child {
+    color: var(--token-warning);
+  }
+  /* Información (un lanzamiento próximo), no una tarea: sin tinte de aviso. */
+  .admin-attn a[data-kind='info'] {
+    border-color: var(--token-line);
+  }
+  .admin-attn a[data-kind='info'] > svg:first-child {
+    color: var(--token-muted);
+  }
+  .admin-attn a:active {
+    background: var(--token-surface-alt);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-attn a:hover {
+      background: var(--token-surface-alt);
+    }
+  }
+  .admin-actions {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    list-style: none;
+  }
+  .admin-actions a {
+    display: flex;
+    height: 100%;
+    min-height: 4.5rem;
+    align-items: center;
+    gap: 0.875rem;
+    border-radius: var(--token-radius-md);
+    padding: 0.875rem 1rem;
+    color: var(--token-text);
+    text-decoration: none;
+  }
+  .admin-action-icon {
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--token-radius-sm);
+    background: color-mix(in srgb, var(--token-primary) 13%, transparent);
+    color: var(--token-primary);
+  }
+  .admin-stats {
+    display: grid;
+    margin: 0;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  }
+  .admin-stat {
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-md);
+    background: var(--token-surface);
+    padding: 1rem 1.125rem;
+  }
+  .admin-stat dt {
+    font-size: 0.875rem;
+    color: var(--token-muted);
+  }
+  .admin-stat dd {
+    margin: 0.125rem 0;
+    font-family: var(--token-font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+  .admin-stat p {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--token-muted);
+  }
+  .admin-steps {
+    display: flex;
+    margin: 1rem 0 0;
+    padding: 0;
+    flex-direction: column;
+    gap: 0.25rem;
+    list-style: none;
+  }
+  .admin-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+    padding: 0.5rem 0;
+  }
+  .admin-step-mark {
+    display: inline-flex;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: 0.0625rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--token-border);
+    border-radius: 9999px;
+  }
+  .admin-steps li[data-done='true'] .admin-step-mark {
+    border-color: var(--token-success);
+    background: color-mix(in srgb, var(--token-success) 18%, transparent);
+    color: var(--token-success);
+  }
+  .admin-step-title {
+    font-weight: 600;
+  }
+  .admin-steps li[data-done='true'] .admin-step-title {
+    color: var(--token-muted);
+    font-weight: 500;
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--token-muted) 50%, transparent);
+  }
+  .admin-step-title a {
+    display: inline-flex;
+    min-height: 2rem;
+    align-items: center;
+    color: var(--token-primary);
+    text-decoration: none;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-step-title a:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
+  /* ---- Listas: barra de filtros, tabla (desde 768 px) y tarjetas (celular) ---- */
+  .admin-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .admin-toolbar > * {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+  @media (min-width: 640px) {
+    .admin-toolbar > * {
+      flex: 0 1 16rem;
+    }
+  }
+  .admin-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--token-line);
+    border-radius: var(--admin-radius);
+    background: var(--token-surface);
+  }
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+    text-align: left;
+  }
+  .admin-table th {
+    background: color-mix(in srgb, var(--token-surface-alt) 55%, transparent);
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--token-muted);
+  }
+  .admin-table td {
+    border-top: 1px solid var(--token-line);
+    padding: 0.625rem 1rem;
+    vertical-align: middle;
+  }
+  .admin-table tbody tr {
+    transition: background-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-table tbody tr:hover {
+      background: color-mix(in srgb, var(--token-surface-alt) 35%, transparent);
+    }
+  }
+  .admin-table .admin-actions-cell {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .admin-cell-title {
+    display: block;
+    min-width: 12rem;
+    max-width: 38rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  .admin-cell-sub {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--token-muted);
+    overflow-wrap: anywhere;
+  }
+  .admin-cell-num {
+    width: 1%;
+    white-space: nowrap;
+    color: var(--token-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .admin-edit-link {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    border-radius: var(--token-radius-sm);
+    padding: 0 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--token-primary);
+    text-decoration: none;
+    transition: background-color var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-edit-link:active {
+    background: color-mix(in srgb, var(--token-primary) 16%, transparent);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-edit-link:hover {
+      background: color-mix(in srgb, var(--token-primary) 12%, transparent);
+    }
+  }
+  .admin-card-list {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    flex-direction: column;
+    gap: 0.75rem;
+    list-style: none;
+  }
+  .admin-row-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--admin-radius);
+    background: var(--token-surface);
+    padding: 1rem;
+  }
+  .admin-row-meta {
+    display: grid;
+    margin: 0;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+  }
+  .admin-row-meta > div {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .admin-row-meta dt {
+    flex-shrink: 0;
+    color: var(--token-muted);
+  }
+  .admin-row-meta dt::after {
+    content: ':';
+  }
+  .admin-row-meta dd {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .admin-row-action {
+    width: 100%;
+    white-space: nowrap;
+  }
+  .admin-list-more {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: var(--token-muted);
+  }
+  .admin-list-more p {
+    margin: 0;
+  }
+
+  /* ---- Preguntas plegables ---- */
+  .admin-fold {
+    display: flex;
+    width: 100%;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.625rem;
+    border-radius: var(--token-radius-sm);
+    text-align: left;
+    color: inherit;
+  }
+  .admin-fold > svg {
+    transition: transform var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-fold-summary {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--token-muted);
+  }
+
+  /* Estadísticas y tarjetas de números: en celular, de dos en dos (cuatro ceros apilados ocupaban media pantalla). */
+  @media (max-width: 639.98px) {
+    .admin-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  /* Las barras de resultados son datos, no una acción: neutras (el cian queda para acción y estado). */
+  .admin-shell .meter-fill {
+    background: color-mix(in srgb, var(--token-text) 45%, transparent);
+  }
+  /* En un vacío, la acción de crear no compite con el botón principal del encabezado. */
+  .admin-shell .admin-empty-action .btn-primary {
+    border: 1px solid var(--token-primary);
+    background: transparent;
+    color: var(--token-primary);
+  }
+
+  /* ---- Pestañas que no caben: degradado en el borde que aún tiene más ---- */
+  .admin-shell .tabs-scroll {
+    scrollbar-width: none;
+  }
+  .admin-shell .tabs-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  .admin-shell .tabs-scroll[data-edge='end'] {
+    mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+  }
+  .admin-shell .tabs-scroll[data-edge='start'] {
+    mask-image: linear-gradient(to left, #000 calc(100% - 2.5rem), transparent);
+  }
+  .admin-shell .tabs-scroll[data-edge='both'] {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 2.5rem,
+      #000 calc(100% - 2.5rem),
+      transparent
+    );
+  }
+
+  /* ---- Menú «Más» de la barra de guardado (celular) ---- */
+  .admin-more {
+    position: relative;
+  }
+  .admin-more-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 0.5rem);
+    z-index: 30;
+    display: flex;
+    min-width: 13rem;
+    flex-direction: column;
+    border: 1px solid var(--token-line);
+    /* Radio concéntrico: el de los elementos (0.625rem) más el relleno (0.25rem). */
+    border-radius: 0.875rem;
+    background: var(--token-surface-alt);
+    padding: 0.25rem;
+    overscroll-behavior: contain;
+    box-shadow: var(--token-elev-2);
+    animation: admin-toast-in var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-more-menu button {
+    min-height: 2.75rem;
+    border-radius: var(--token-radius-sm);
+    padding: 0 0.875rem;
+    text-align: left;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--token-text);
+  }
+  .admin-more-menu button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .admin-more-menu button:not(:disabled):active {
+    background: color-mix(in srgb, var(--token-primary) 14%, transparent);
+  }
+  .admin-more-note {
+    margin: 0;
+    padding: 0.5rem 0.875rem;
+    max-width: 16rem;
+    font-size: 0.8125rem;
+    color: var(--token-warning);
+  }
+  .admin-savebar-narrow {
+    flex-wrap: nowrap;
+  }
+
+  /* ---- Quitar algo grande (etapa): borde rojo, sin relleno, para no competir con «Publicar» ---- */
+  .admin-shell .btn-outline-danger {
+    border: 1px solid var(--token-danger);
+    background: transparent;
+    color: var(--token-danger);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .admin-shell .btn-outline-danger:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--token-danger) 12%, transparent);
+    }
+  }
+
+  /* ---- Frase bajo las pestañas ---- */
+  .admin-tab-help {
+    margin: -0.75rem 0 1.25rem;
+    font-size: 0.875rem;
+    color: var(--token-muted);
+  }
+
+  /* ---- Estado único del quiz ---- */
+  .admin-status-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Miniaturas en listas: filete de 1 px casi invisible que las asienta sobre la tarjeta. */
+  .admin-thumb {
+    outline: 1px solid oklch(1 0 0 / 0.1);
+    outline-offset: -1px;
+  }
+
+  /* ---- Bloque «Avanzado» plegado ---- */
+  .admin-advanced > summary {
+    display: flex;
+    min-height: 2.75rem;
+    cursor: pointer;
+    align-items: center;
+    border-radius: var(--token-radius-sm);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--token-muted);
+    list-style: none;
+  }
+  .admin-advanced > summary::-webkit-details-marker {
+    display: none;
+  }
+  .admin-advanced > summary::before {
+    content: '›';
+    display: inline-block;
+    width: 1.25rem;
+    transition: transform var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-advanced[open] > summary::before {
+    transform: rotate(90deg);
+  }
+
+  /* ---- Barra de guardado ---- */
+  .admin-savebar {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    border: 1px solid var(--token-line);
+    border-radius: var(--admin-radius);
+    background: var(--token-surface);
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -10px 24px -14px rgb(0 0 0 / 0.7);
+  }
+  @media (max-width: 639.98px) {
+    .admin-savebar {
+      gap: 0.5rem;
+      padding: 0.625rem 0.75rem calc(0.625rem + env(safe-area-inset-bottom, 0px));
+    }
+    /* Sin cambios, el estado no ocupa una fila (lo siguen anunciando los lectores de pantalla). */
+    .admin-savebar[data-tone='ok'] .admin-savebar-status {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    .admin-savebar .btn {
+      padding-inline: 1rem;
+    }
+  }
+  .admin-savebar-status {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--token-muted);
+  }
+  .admin-savebar[data-tone='dirty'] .admin-savebar-status {
+    color: var(--token-warning);
+  }
+  .admin-savebar[data-tone='error'] .admin-savebar-status {
+    color: var(--token-danger);
+  }
+  .admin-savebar[data-tone='ok'] .admin-savebar-status {
+    color: var(--token-success);
+  }
+
+  /* ---- Ayuda en contexto ---- */
+  .admin-help {
+    font-size: 0.875rem;
+  }
+  .admin-help summary {
+    display: inline-flex;
+    min-height: 2.75rem;
+    cursor: pointer;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: var(--token-radius-sm);
+    color: var(--token-primary);
+    font-weight: 500;
+    list-style: none;
+  }
+  .admin-help summary::-webkit-details-marker {
+    display: none;
+  }
+  .admin-help-body {
+    max-width: 60ch;
+    margin-top: 0.25rem;
+    padding: 0.25rem 0 0.25rem 1.5rem;
+    color: var(--token-muted);
+  }
+
+  /* ---- Avisos (toasts) ---- */
+  .admin-toasts {
+    position: fixed;
+    inset: auto 1rem calc(1rem + env(safe-area-inset-bottom, 0px)) auto;
+    z-index: 60;
+    display: flex;
+    max-width: min(24rem, calc(100vw - 2rem));
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+  }
+  .admin-toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    border: 1px solid
+      color-mix(in srgb, var(--admin-tone, var(--token-success)) 45%, var(--token-line));
+    border-radius: var(--token-radius-sm);
+    background: var(--token-surface-alt);
+    padding: 0.75rem 0.75rem 0.75rem 0.875rem;
+    box-shadow: var(--token-elev-2);
+    animation: admin-toast-in var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-toast[data-tone='danger'] {
+    --admin-tone: var(--token-danger);
+  }
+  .admin-toast svg:first-child {
+    margin-top: 0.125rem;
+    color: var(--admin-tone, var(--token-success));
+  }
+  .admin-toast-close {
+    display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: -0.625rem -0.5rem -0.5rem 0;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--token-radius-sm);
+    color: var(--token-muted);
+  }
+  @keyframes admin-toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+  }
+
+  /* ---- Cuadro de confirmación ---- */
+  .admin-dialog {
+    width: min(28rem, calc(100vw - 2rem));
+    max-width: none;
+    margin: auto;
+    border: 1px solid var(--token-line);
+    border-radius: var(--token-radius-lg);
+    background: var(--token-surface);
+    padding: 0;
+    color: var(--token-text);
+    box-shadow: var(--token-elev-2);
+  }
+  .admin-dialog {
+    overscroll-behavior: contain;
+  }
+  .admin-dialog::backdrop {
+    background: rgb(2 8 20 / 0.72);
+  }
+  .admin-dialog[open] {
+    animation: admin-dialog-in var(--token-dur-fast) var(--token-ease-out);
+  }
+  .admin-dialog-card {
+    padding: 1.5rem;
+  }
+  @keyframes admin-dialog-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+
+  /* ---- Cajón del celular ---- */
+  .admin-scrim {
+    display: none;
+  }
+  @media (max-width: 1023.98px) {
+    .admin-sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 50;
+      width: min(20rem, 88vw);
+      transform: translateX(-100%);
+      visibility: hidden;
+      box-shadow: var(--token-elev-2);
+      transition:
+        transform 200ms var(--token-ease-out),
+        visibility 0s linear 200ms;
+    }
+    .admin-sidebar[data-open='true'] {
+      transform: none;
+      visibility: visible;
+      transition-delay: 0s;
+    }
+    .admin-scrim {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgb(2 8 20 / 0.72);
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        opacity 200ms var(--token-ease-out),
+        visibility 0s linear 200ms;
+    }
+    .admin-scrim[data-open='true'] {
+      opacity: 1;
+      visibility: visible;
+      transition-delay: 0s;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .admin-skeleton {
+      animation: none;
+    }
+    .admin-toast,
+    .admin-more-menu,
+    .admin-dialog[open] {
+      animation: none;
+    }
+    .admin-fold > svg,
+    .admin-advanced > summary::before {
+      transition: none;
+    }
+    @media (max-width: 1023.98px) {
+      .admin-sidebar {
+        transform: none !important;
+        opacity: 0;
+        transition:
+          opacity 120ms linear,
+          visibility 0s linear 120ms !important;
+      }
+      .admin-sidebar[data-open='true'] {
+        opacity: 1;
+        transition-delay: 0s !important;
+      }
+    }
+  }
+}

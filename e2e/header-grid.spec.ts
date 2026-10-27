@@ -327,7 +327,9 @@ test.describe('portada: edición en el panel', () => {
     await page.getByLabel('Correo').fill(E2E_ADMIN.email);
     await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
     await page.getByRole('button', { name: 'Ingresar' }).click();
-    await expect(page.getByRole('heading', { name: 'Inicio del panel' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ }),
+    ).toBeVisible();
     // Se guarda el ajuste actual para devolverlo al terminar (la base es compartida con otras pruebas).
     const before = (await (await page.request.get('/api/admin/site-settings')).json()) as {
       universe: unknown;
@@ -342,11 +344,11 @@ test.describe('portada: edición en el panel', () => {
       await page.getByRole('button', { name: '+ Agregar red' }).click();
       await page.getByLabel('Red 1').fill('Instagram E2E');
       await page.getByLabel('Enlace 1').fill('https://instagram.com/e2e');
-      await page.getByRole('button', { name: 'Guardar' }).click();
-      // El aviso no desaparece solo (el formulario no se recarga).
-      await expect(page.getByText('Cambios guardados')).toBeVisible();
+      await page.getByRole('button', { name: /^Guardar cambios$/ }).click();
+      // El aviso breve «Guardado» sigue ahí un rato (el formulario no se recarga) y la barra dice «Todo guardado».
+      await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
       await page.waitForTimeout(500);
-      await expect(page.getByText('Cambios guardados')).toBeVisible();
+      await expect(page.getByText('Todo guardado')).toBeVisible();
 
       const visitor = await browser.newContext();
       const view = await visitor.newPage();

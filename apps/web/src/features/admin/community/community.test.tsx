@@ -70,7 +70,7 @@ describe('fan arts del panel', () => {
     );
     renderAt('/admin/fan-arts');
     expect(
-      await screen.findByRole('row', { name: /Mi dibujo.*Por Ana.*Confirmado.*Publicado/ }),
+      await screen.findByRole('row', { name: /Mi dibujo.*Por Ana.*Permiso confirmado.*Publicado/ }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('row', { name: /Sin título.*Por Beto.*Sin confirmar.*Borrador/ }),
@@ -98,7 +98,11 @@ describe('fan arts del panel', () => {
     );
     renderAt(`/admin/fan-arts/${ID}`);
     await userEvent.selectOptions(await screen.findByLabelText('Estado'), 'published');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
     expect(
       (
         await screen.findAllByText(
@@ -123,7 +127,11 @@ describe('fan arts del panel', () => {
     renderAt('/admin/fan-arts/nuevo');
     await userEvent.type(await screen.findByLabelText(/Nombre del artista/), 'Ana');
     await userEvent.type(screen.getByLabelText(/Enlace al perfil/), 'javascript:alert(1)');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
     expect((await screen.findAllByText(/debe empezar con http/i)).length).toBeGreaterThan(0);
     expect(called('POST /api/admin/fan-arts')).toHaveLength(0);
   });
@@ -143,8 +151,12 @@ describe('fan arts del panel', () => {
     expect(screen.getByLabelText(/Nota sobre el permiso/)).toHaveValue('Por correo');
     await userEvent.clear(screen.getByLabelText(/Nombre del artista/));
     await userEvent.type(screen.getByLabelText(/Nombre del artista/), 'Ana María');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-    expect(await screen.findByText('Cambios guardados')).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
+    expect(await screen.findByText('Guardado')).toBeInTheDocument();
     const body = called(`PUT /api/admin/fan-arts/${ID}`)[0]?.body as Record<string, unknown>;
     expect(body).toMatchObject({
       artistName: 'Ana María',
@@ -225,7 +237,11 @@ describe('reseñas del panel', () => {
     await userEvent.type(await screen.findByLabelText(/^Reseña/), 'Muy buena <b>historia</b>');
     await userEvent.type(screen.getByLabelText(/Nombre del lector/), 'Lector');
     await userEvent.selectOptions(screen.getByLabelText('Calificación (opcional)'), '4');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
     await waitFor(() => expect(called('POST /api/admin/reviews')).toHaveLength(1));
     const body = called('POST /api/admin/reviews')[0]?.body as Record<string, unknown>;
     expect(body).toEqual({
@@ -246,7 +262,11 @@ describe('reseñas del panel', () => {
       { session: EDITOR },
     );
     renderAt('/admin/resenas/nueva');
-    await userEvent.click(await screen.findByRole('button', { name: 'Guardar' }));
+    await userEvent.click(
+      await screen.findByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
     expect(await screen.findAllByText('Escribe la reseña')).not.toHaveLength(0);
     expect(screen.getAllByText('Escribe el nombre del lector').length).toBeGreaterThan(0);
     expect(called('POST /api/admin/reviews')).toHaveLength(0);
@@ -263,8 +283,12 @@ describe('reseñas del panel', () => {
     );
     renderAt(`/admin/resenas/${ID}`);
     await userEvent.selectOptions(await screen.findByLabelText('Estado'), 'hidden');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-    expect(await screen.findByText('Cambios guardados')).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      }),
+    );
+    expect(await screen.findByText('Guardado')).toBeInTheDocument();
     expect(called(`PUT /api/admin/reviews/${ID}`)[0]?.body).toMatchObject({
       status: 'hidden',
       rating: 5,

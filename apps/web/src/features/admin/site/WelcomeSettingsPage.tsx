@@ -1,10 +1,15 @@
 import { welcomeSettingsSchema, type WelcomeSettings } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { SafeHtml } from '../../../shared/ui/SafeHtml';
-import { Button, CheckField, SelectField, TextField } from '../../../shared/ui/controls';
-import { Alert, Card, Loading, PageHeader } from '../../../shared/ui/layout';
+import { CheckField, SelectField, TextField } from '../../../shared/ui/controls';
+import { Alert, Card, PageHeader } from '../../../shared/ui/layout';
+import { FormSection } from '../components/FormSection';
+import { SaveBar } from '../components/SaveBar';
+import { useToast } from '../components/Toast';
+import { useFormGuard } from '../components/useFormGuard';
 import { keys, siteApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { errorMessage, fieldErrors } from '../errors';
 
@@ -18,30 +23,32 @@ export function WelcomeSettingsPage() {
     gcTime: 0,
   });
   if (settings.isError) return <Alert>{errorMessage(settings.error)}</Alert>;
-  if (!settings.data) return <Loading />;
+  if (!settings.data) return <SkeletonRows rows={4} />;
   return <WelcomeForm initial={settings.data.welcome} />;
 }
 
 function WelcomeForm({ initial }: { initial: WelcomeSettings }) {
   const client = useQueryClient();
   const [form, setForm] = useState<WelcomeSettings>(initial);
+  const guard = useFormGuard(form, initial);
+  const toast = useToast();
+  const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState(false);
   const save = useMutation({
     mutationFn: siteApi.update,
     onSuccess: async (response) => {
-      setSaved(true);
+      guard.markSaved(submitted.current);
+      toast.success('Guardado');
       // Sin recargar: el formulario sigue siendo el mismo y conserva el aviso «Cambios guardados».
       client.setQueryData(keys.site, response);
     },
   });
   const set = (patch: Partial<WelcomeSettings>) => {
-    setSaved(false);
     setForm((current) => ({ ...current, ...patch }));
   };
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit(event?: FormEvent) {
+    event?.preventDefault();
     const parsed = welcomeSettingsSchema.safeParse({
       ...form,
       title: form.title?.trim() || undefined,
@@ -51,6 +58,7 @@ function WelcomeForm({ initial }: { initial: WelcomeSettings }) {
       return;
     }
     setErrors({});
+    submitted.current = form;
     save.mutate({ welcome: parsed.data });
   }
 
@@ -59,24 +67,9 @@ function WelcomeForm({ initial }: { initial: WelcomeSettings }) {
       <PageHeader
         title="Mensaje de bienvenida"
         subtitle="Lo ve el lector al iniciar sesión: el «pacto» con quien juega."
-        actions={
-          <Button type="submit" loading={save.isPending}>
-            Guardar
-          </Button>
-        }
       />
-      {saved ? (
-        <div className="mb-4">
-          <Alert tone="success" title="Cambios guardados" />
-        </div>
-      ) : null}
-      {save.isError ? (
-        <div className="mb-4">
-          <Alert>{errorMessage(save.error)}</Alert>
-        </div>
-      ) : null}
       <div className="flex flex-col gap-5">
-        <Card className="flex flex-col gap-4">
+        <FormSection title="El mensaje" help="Qué dice y cuándo se muestra.">
           <CheckField
             label="Mostrar el mensaje de bienvenida"
             hint="Apagado, nadie lo ve."
@@ -107,7 +100,7 @@ function WelcomeForm({ initial }: { initial: WelcomeSettings }) {
             onChange={(bodyHtml) => set({ bodyHtml })}
           />
           {errors['bodyHtml'] ? <Alert>{errors['bodyHtml']}</Alert> : null}
-        </Card>
+        </FormSection>
         <Card>
           <h2 className="mb-2 font-semibold">Así lo verá el lector</h2>
           {form.bodyHtml ? (
@@ -120,6 +113,18 @@ function WelcomeForm({ initial }: { initial: WelcomeSettings }) {
           )}
         </Card>
       </div>
+      <SaveBar
+        dirty={guard.dirty}
+        dirtyLabel={undefined}
+        saving={save.isPending}
+        error={save.isError ? errorMessage(save.error) : null}
+        onSave={() => submit()}
+        onDiscard={() => {
+          setForm(guard.saved);
+          setErrors({});
+        }}
+        saveLabel="Guardar mensaje"
+      />
     </form>
   );
 }

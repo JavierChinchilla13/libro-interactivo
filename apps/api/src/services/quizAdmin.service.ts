@@ -26,7 +26,14 @@ async function loadLean(id: string) {
   return Quiz.findById(id).lean();
 }
 
-function toSummary(quiz: QuizLean): QuizSummary {
+/** ¿El borrador difiere de la última versión publicada? Se compara el hash del contenido completo y saneado. */
+function differsFromPublished(quiz: QuizLean, latestHash: string | undefined): boolean {
+  if (latestHash === undefined) return true;
+  const strict = quizContentSchema.safeParse(draftContentOf(quiz));
+  return !strict.success || !isSameQuizContent(sanitizeQuizHtml(strict.data), latestHash);
+}
+
+function toSummary(quiz: QuizLean, hasUnpublishedChanges: boolean): QuizSummary {
   const settings = (quiz.settings ?? {}) as { allowRetake?: boolean; showBreakdown?: boolean };
   return {
     id: quiz._id.toString(),
@@ -40,6 +47,7 @@ function toSummary(quiz: QuizLean): QuizSummary {
     allowRetake: settings.allowRetake !== false,
     showBreakdown: settings.showBreakdown === true,
     updatedAt: quiz.updatedAt.toISOString(),
+    hasUnpublishedChanges,
   };
 }
 
@@ -76,26 +84,32 @@ export function createQuizAdminService(deps: QuizAdminDeps) {
     const quizzes = await Quiz.find({ bookId, ...(status ? { status } : {}) })
       .sort({ order: 1 })
       .lean();
-    return quizzes.map(toSummary);
+    // Una sola consulta para las últimas versiones de todos (no una por quiz).
+    const latest = quizzes.length
+      ? await QuizVersion.find({
+          $or: quizzes.map((quiz) => ({ quizId: quiz._id, version: quiz.currentVersion })),
+        })
+          .select('quizId contentHash')
+          .lean()
+      : [];
+    const hashes = new Map(
+      latest.map((version) => [version.quizId.toString(), version.contentHash]),
+    );
+    return quizzes.map((quiz) =>
+      toSummary(quiz, differsFromPublished(quiz, hashes.get(quiz._id.toString()))),
+    );
   }
 
   async function detail(quiz: QuizLean): Promise<QuizDetailResponse> {
     const draft = quizDraftSchema.parse(draftContentOf(quiz));
-    // ¿El borrador difiere de la última versión publicada? Se compara el hash del contenido completo y saneado.
-    let hasUnpublishedChanges = true;
     const latest = await QuizVersion.findOne({ quizId: quiz._id, version: quiz.currentVersion })
       .select('contentHash')
       .lean();
-    if (latest) {
-      const strict = quizContentSchema.safeParse(draftContentOf(quiz));
-      hasUnpublishedChanges =
-        !strict.success || !isSameQuizContent(sanitizeQuizHtml(strict.data), latest.contentHash);
-    }
+    const hasUnpublishedChanges = differsFromPublished(quiz, latest?.contentHash);
     const appearance = quizAppearanceSchema.safeParse(quiz.appearance);
     return {
-      ...toSummary(quiz),
+      ...toSummary(quiz, hasUnpublishedChanges),
       draft,
-      hasUnpublishedChanges,
       ...(appearance.success ? { appearance: appearance.data } : {}),
       appearanceRev: quiz.appearanceRev ?? 0,
     };

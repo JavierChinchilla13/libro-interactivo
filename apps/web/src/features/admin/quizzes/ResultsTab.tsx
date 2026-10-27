@@ -115,10 +115,10 @@ function ResultEditor({
         }}
       />
       <SelectField
-        label="Campo de poder de este resultado"
+        label="Campo de poder"
         value={result.fieldSlug ?? ''}
-        placeholder="Ninguno (sin fondo animado)"
-        hint="Al terminar el quiz, quien obtiene este resultado ve el fondo animado del campo. Se elige el fondo en la wiki."
+        placeholder="Ninguno"
+        hint="Quien obtiene este resultado ve el fondo animado de ese campo. El fondo animado se elige en la ficha del campo, en la wiki."
         options={fields.map((field) => ({ value: field.slug, label: field.name }))}
         onChange={(event) => {
           const { fieldSlug: _removed, ...rest } = result;
@@ -135,13 +135,13 @@ function ResultEditor({
         }}
       />
       <StringListEditor
-        label="Secuencia de revelado propia de este resultado"
+        label="Líneas propias antes de este resultado"
         addLabel="Línea"
         items={reveal.lines}
         onChange={(lines) => set({ reveal: { ...reveal, lines } })}
       />
       <TextField
-        label="Efecto visual de este resultado"
+        label="Animación de la espera de este resultado"
         value={reveal.effect ?? ''}
         maxLength={60}
         onChange={(event) =>
@@ -154,11 +154,13 @@ function ResultEditor({
         }
       />
       <fieldset className="flex flex-col gap-3">
-        <legend className="text-sm font-medium">Datos del resultado (p. ej. «Tu cápsula»)</legend>
+        <legend className="text-sm font-medium">
+          Datos curiosos del resultado (por ejemplo «Tu cápsula»)
+        </legend>
         {facts.map((fact, index) => (
           <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
             <TextField
-              label="Etiqueta"
+              label="Nombre del dato"
               value={fact.label}
               maxLength={80}
               onChange={(event) =>
@@ -170,7 +172,7 @@ function ResultEditor({
               }
             />
             <TextField
-              label="Valor"
+              label="Contenido"
               value={fact.value}
               maxLength={500}
               onChange={(event) =>

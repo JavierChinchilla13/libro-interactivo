@@ -9,7 +9,8 @@ import { useEffect, useRef, useState } from 'react';
 import { apiRequest } from '../../../shared/api/client';
 import { SafeHtml } from '../../../shared/ui/SafeHtml';
 import { Button } from '../../../shared/ui/controls';
-import { Alert, Card, Loading } from '../../../shared/ui/layout';
+import { SkeletonRows } from '../components/Skeleton';
+import { Alert, Card } from '../../../shared/ui/layout';
 import { quizzesApi } from '../api';
 import { thumbUrl } from '../../../shared/lib/cloudinary';
 import { errorMessage } from '../errors';
@@ -74,7 +75,7 @@ export function PreviewPanel({ quizId, onClose }: { quizId: string; onClose: () 
           </Button>
         </div>
       </div>
-      {start.isPending || submit.isPending ? <Loading /> : null}
+      {start.isPending || submit.isPending ? <SkeletonRows rows={2} /> : null}
       {start.isError ? <Alert>{errorMessage(start.error)}</Alert> : null}
       {submit.isError ? <Alert>{errorMessage(submit.error)}</Alert> : null}
       {attempt?.status === 'in_progress' ? (

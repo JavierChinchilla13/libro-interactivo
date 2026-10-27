@@ -96,14 +96,14 @@ export const quizSummarySchema = z.object({
   allowRetake: z.boolean(),
   showBreakdown: z.boolean(),
   updatedAt: z.string(),
+  /** `true` si el borrador difiere de la última versión publicada (o nunca se publicó). */
+  hasUnpublishedChanges: z.boolean(),
 });
 export type QuizSummary = z.infer<typeof quizSummarySchema>;
 export const quizListResponseSchema = z.object({ quizzes: z.array(quizSummarySchema) });
 
 export const quizDetailResponseSchema = quizSummarySchema.extend({
   draft: quizDraftSchema,
-  /** `true` si el borrador difiere de la última versión publicada (o nunca se publicó). */
-  hasUnpublishedChanges: z.boolean(),
   /** Apariencia en vivo (fuera de las versiones) y su revisión, para cargar el editor sin otra llamada. */
   appearance: quizAppearanceSchema.optional(),
   appearanceRev: z.number().int().min(0).default(0),

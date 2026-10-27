@@ -8,7 +8,9 @@ async function login(page: Page) {
   await page.getByLabel('Correo').fill(E2E_ADMIN.email);
   await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
   await page.getByRole('button', { name: 'Ingresar' }).click();
-  await expect(page.getByRole('heading', { name: 'Inicio del panel' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^Buen(os|as) (días|tardes|noches)/ }),
+  ).toBeVisible();
 }
 
 test.describe('panel de administración', () => {
@@ -39,7 +41,7 @@ test.describe('panel de administración', () => {
     }
     if (isMobile) {
       await page.goto('/admin');
-      const menu = page.getByRole('button', { name: 'Menú' });
+      const menu = page.getByRole('button', { name: 'Abrir el menú' });
       await menu.click();
       await expect(menu).toHaveAttribute('aria-expanded', 'true');
       await expect(page.getByRole('link', { name: 'Quizzes' })).toBeVisible();
@@ -66,13 +68,21 @@ test.describe('panel de administración', () => {
     await expect(page.getByRole('textbox', { name: /^Dirección web/ })).toHaveValue(
       `libro-e2e-${stamp}`,
     );
-    await page.getByRole('button', { name: 'Guardar' }).click();
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
+    await page
+      .getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      })
+      .click();
+    await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
     await expect(page).toHaveURL(/\/admin\/libros\/[0-9a-f]{24}$/);
 
     // Un libro publicado necesita portada: lo dice el formulario (sin llegar al servidor).
     await page.getByLabel('Estado').selectOption('published');
-    await page.getByRole('button', { name: 'Guardar' }).click();
+    await page
+      .getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      })
+      .click();
     await expect(
       page.getByText('Un libro publicado o «próximamente» necesita portada').first(),
     ).toBeVisible();
@@ -83,18 +93,20 @@ test.describe('panel de administración', () => {
     await page.getByRole('link', { name: '+ Nuevo quiz' }).click();
     // La pantalla se descarga al entrar (código dividido): hay que esperarla antes de tocar sus campos.
     await expect(page.getByRole('heading', { name: 'Nuevo quiz' })).toBeVisible();
-    await page.getByLabel('Libro').selectOption({ label: bookTitle });
+    await page.getByRole('combobox', { name: /^Libro/ }).selectOption({ label: bookTitle });
     await page.getByRole('textbox', { name: /^Título/ }).fill('Quiz E2E');
     await page.getByRole('button', { name: 'Crear quiz' }).click();
     await expect(page).toHaveURL(/\/admin\/quizzes\/[0-9a-f]{24}$/);
     await expect(page.getByRole('heading', { name: 'Quiz E2E' })).toBeVisible();
 
-    // Un quiz vacío no se puede publicar: validar lo explica.
-    await page.getByRole('button', { name: 'Validar' }).click();
-    await expect(page.getByLabel('Resultado de la validación')).toContainText('impiden publicar');
+    // Un quiz vacío no se puede publicar: revisar lo explica.
+    await page.getByRole('button', { name: 'Revisar' }).click();
+    await expect(page.getByLabel('Resultado de la revisión')).toContainText(
+      'por arreglar antes de publicar',
+    );
 
     // Etapa 1 y dos resultados.
-    await page.getByRole('tab', { name: 'Etapas y preguntas' }).click();
+    await page.getByRole('tab', { name: 'Preguntas' }).click();
     await page.getByRole('button', { name: '+ Agregar etapa' }).click();
     await page.getByRole('tab', { name: 'Resultados' }).click();
     await page.getByRole('button', { name: '+ Resultado en esta etapa' }).click();
@@ -103,22 +115,22 @@ test.describe('panel de administración', () => {
     await page.getByRole('textbox', { name: 'Título' }).nth(1).fill('Resultado B');
 
     // Una pregunta: nace con una respuesta por resultado (la i apunta al resultado i).
-    await page.getByRole('tab', { name: 'Etapas y preguntas' }).click();
-    await page.getByRole('button', { name: '+ Pregunta' }).click();
+    await page.getByRole('tab', { name: 'Preguntas' }).click();
+    await page.getByRole('button', { name: '+ Agregar pregunta' }).click();
     await page.getByRole('textbox', { name: 'Texto de la pregunta' }).fill('¿Qué eliges?');
     await page.getByRole('textbox', { name: 'Respuesta 1' }).fill('Lo primero');
     await page.getByRole('textbox', { name: 'Respuesta 2' }).fill('Lo segundo');
-    await expect(page.getByLabel('Suma al resultado').nth(0)).toHaveValue('r1');
-    await expect(page.getByLabel('Suma al resultado').nth(1)).toHaveValue('r2');
+    await expect(page.getByLabel('Resultado al que suma esta respuesta').nth(0)).toHaveValue('r1');
+    await expect(page.getByLabel('Resultado al que suma esta respuesta').nth(1)).toHaveValue('r2');
 
     await page.getByRole('button', { name: 'Guardar borrador' }).click();
-    await expect(page.getByText('Borrador guardado.')).toBeVisible();
+    await expect(page.getByText('Borrador guardado', { exact: true })).toBeVisible();
 
-    // Validar y publicar.
-    await page.getByRole('button', { name: 'Validar' }).click();
+    // Revisar y publicar.
+    await page.getByRole('button', { name: 'Revisar' }).click();
     await expect(page.getByText('El quiz está completo y se puede publicar')).toBeVisible();
     await page.getByRole('button', { name: 'Publicar' }).click();
-    await expect(page.getByText('Publicada como versión 1.')).toBeVisible();
+    await expect(page.getByText(/Publicado: ya es la versión 1/)).toBeVisible();
 
     // Vista previa en modo prueba: se juega la versión publicada.
     await page.getByRole('button', { name: 'Vista previa' }).click();
@@ -132,8 +144,11 @@ test.describe('panel de administración', () => {
     await expect(page.getByRole('cell', { name: 'v1' })).toBeVisible();
 
     // El quiz figura como publicado en el listado.
-    await page.getByRole('link', { name: '← Quizzes' }).click();
-    await page.getByLabel('Libro').selectOption({ label: bookTitle });
+    await page
+      .getByRole('navigation', { name: 'Dónde estás' })
+      .getByRole('link', { name: 'Quizzes' })
+      .click();
+    await page.getByRole('combobox', { name: /^Libro/ }).selectOption({ label: bookTitle });
     await expect(page.getByRole('row', { name: /Quiz E2E.*Publicado.*v1/ })).toBeVisible();
   });
 
@@ -145,8 +160,12 @@ test.describe('panel de administración', () => {
     await page.getByRole('link', { name: '+ Nueva entrada' }).click();
     await page.getByRole('textbox', { name: /^Nombre/ }).fill(name);
     await page.getByLabel('Estado').selectOption('published');
-    await page.getByRole('button', { name: 'Guardar' }).click();
-    await expect(page.getByText('Cambios guardados')).toBeVisible();
+    await page
+      .getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      })
+      .click();
+    await expect(page.getByText('Guardado', { exact: true })).toBeVisible();
 
     await page.getByRole('link', { name: '← Wiki' }).click();
     await page.getByRole('textbox', { name: 'Buscar por nombre' }).fill(name.toLowerCase());
@@ -155,7 +174,11 @@ test.describe('panel de administración', () => {
     await page.getByRole('tab', { name: 'Campos y poderes' }).click();
     await page.getByRole('link', { name: '+ Nuevo poder' }).click();
     await page.getByRole('textbox', { name: /^Nombre/ }).fill('Poder sin campo');
-    await page.getByRole('button', { name: 'Guardar' }).click();
+    await page
+      .getByRole('button', {
+        name: /^Guardar (libro|entrada|fan art|reseña|cambios|mensaje|extra)$/,
+      })
+      .click();
     await expect(page.getByText('Todo poder pertenece a un campo')).toBeVisible();
   });
 });

@@ -5,81 +5,106 @@ import {
   type ReviewStatus,
 } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router';
-import { Button, SelectField, TextAreaField, TextField } from '../../../shared/ui/controls';
-import { Alert, Badge, Card, EmptyState, Loading, PageHeader } from '../../../shared/ui/layout';
+import { useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
+import { SelectField, TextAreaField, TextField } from '../../../shared/ui/controls';
+import { Alert, PageHeader } from '../../../shared/ui/layout';
+import { FormSection } from '../components/FormSection';
+import { SaveBar } from '../components/SaveBar';
+import { useToast } from '../components/Toast';
+import { useFormGuard } from '../components/useFormGuard';
+import { DataList, type Column } from '../components/DataList';
+import { ListPage, useRowSearch } from '../components/ListPage';
+import { StatusBadge } from '../components/StatusBadge';
 import { booksApi, keys, reviewsApi } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { errorMessage, fieldErrors } from '../errors';
 
 const STATUS_LABEL: Record<ReviewStatus, string> = { published: 'Publicada', hidden: 'Oculta' };
 
+const useReviews = () => useQuery({ queryKey: keys.reviews, queryFn: () => reviewsApi.list() });
+type ReviewRow = NonNullable<ReturnType<typeof useReviews>['data']>['reviews'][number];
+
+const reviewColumns: Column<ReviewRow>[] = [
+  {
+    id: 'order',
+    header: '#',
+    role: 'table',
+    className: 'admin-cell-num',
+    cell: (review) => review.order,
+  },
+  {
+    id: 'review',
+    header: 'Reseña',
+    role: 'title',
+    cell: (review) => (
+      <span className="block min-w-0">
+        <span className="line-clamp-2 block max-w-[38rem] overflow-hidden [overflow-wrap:anywhere]">
+          {review.text}
+        </span>
+        <span className="admin-cell-sub">
+          — {review.authorName}
+          {review.rating ? ` · ${'★'.repeat(review.rating)}` : ''}
+        </span>
+      </span>
+    ),
+  },
+  {
+    id: 'status',
+    header: 'Estado',
+    role: 'status',
+    cell: (review) => (
+      <StatusBadge
+        status={review.status === 'published' ? 'published' : 'draft'}
+        label={STATUS_LABEL[review.status]}
+      />
+    ),
+  },
+];
+
 /** Reseñas de lectores: las carga la autora y decide cuáles se muestran. */
 export function ReviewListPage() {
-  const reviews = useQuery({ queryKey: keys.reviews, queryFn: () => reviewsApi.list() });
+  const reviews = useReviews();
+  const search = useRowSearch(
+    reviews.data?.reviews,
+    (review) => `${review.text} ${review.authorName}`,
+  );
   return (
-    <>
-      <PageHeader
-        title="Reseñas"
-        subtitle="Comentarios de lectores. Solo se muestran en la página principal las que estén publicadas."
-        actions={
+    <ListPage
+      title="Reseñas"
+      subtitle="Comentarios de lectores. Solo se muestran en la página principal las que estén publicadas."
+      primaryAction={
+        <Link to="/admin/resenas/nueva" className="btn btn-primary">
+          + Nueva reseña
+        </Link>
+      }
+      toolbar={search.field}
+      state={reviews}
+      count={search.visible?.length}
+      filtersActive={search.active}
+      onClearFilters={search.clear}
+      empty={{
+        icon: 'review',
+        title: 'Todavía no hay reseñas',
+        text: 'Carga la primera; las publicadas aparecen en la página principal.',
+        action: (
           <Link to="/admin/resenas/nueva" className="btn btn-primary">
-            + Nueva reseña
+            Cargar la primera reseña
           </Link>
-        }
+        ),
+      }}
+    >
+      <DataList
+        label="Reseñas"
+        rows={search.visible ?? []}
+        rowKey={(review) => review.id}
+        columns={reviewColumns}
+        action={{
+          to: (review) => `/admin/resenas/${review.id}`,
+          name: (review) => `la reseña de ${review.authorName}`,
+        }}
       />
-      {reviews.isPending ? <Loading /> : null}
-      {reviews.isError ? <Alert>{errorMessage(reviews.error)}</Alert> : null}
-      {reviews.data && reviews.data.reviews.length === 0 ? (
-        <EmptyState title="Todavía no hay reseñas">Carga la primera con «Nueva reseña».</EmptyState>
-      ) : null}
-      {reviews.data && reviews.data.reviews.length > 0 ? (
-        <div className="overflow-x-auto rounded-token-lg border border-border bg-surface">
-          <table className="w-full min-w-[34rem] text-left text-sm">
-            <thead className="bg-surface-alt text-xs uppercase text-muted">
-              <tr>
-                <th scope="col" className="px-4 py-3">
-                  #
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Reseña
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Estado
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  <span className="sr-only">Acciones</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {reviews.data.reviews.map((review) => (
-                <tr key={review.id} className="border-t border-border">
-                  <td className="px-4 py-3 text-muted">{review.order}</td>
-                  <td className="px-4 py-3">
-                    <p className="line-clamp-2">{review.text}</p>
-                    <p className="text-xs text-muted">
-                      — {review.authorName}
-                      {review.rating ? ` · ${'★'.repeat(review.rating)}` : ''}
-                    </p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge tone={review.status === 'published' ? 'success' : 'neutral'}>
-                      {STATUS_LABEL[review.status]}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link to={`/admin/resenas/${review.id}`} className="underline">
-                      Editar<span className="sr-only"> la reseña de {review.authorName}</span>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-    </>
+    </ListPage>
   );
 }
 
@@ -146,7 +171,7 @@ export function ReviewFormPage() {
 
   if (editing) {
     if (review.isError) return <Alert>{errorMessage(review.error)}</Alert>;
-    if (!review.data) return <Loading />;
+    if (!review.data) return <SkeletonRows rows={4} />;
     return (
       <ReviewFormView
         key={review.data.id}
@@ -156,7 +181,7 @@ export function ReviewFormPage() {
     );
   }
   if (all.isError) return <Alert>{errorMessage(all.error)}</Alert>;
-  if (!all.data) return <Loading />;
+  if (!all.data) return <SkeletonRows rows={4} />;
   return <ReviewFormView key="nueva" initial={emptyForm(all.data.reviews.length + 1)} />;
 }
 
@@ -164,31 +189,31 @@ function ReviewFormView({ reviewId, initial }: { reviewId?: string; initial: Rev
   const editing = reviewId !== undefined;
   const navigate = useNavigate();
   const client = useQueryClient();
-  const location = useLocation();
   const [form, setForm] = useState<ReviewForm>(initial);
+  const guard = useFormGuard(form, initial);
+  const toast = useToast();
+  const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState(
-    (location.state as { created?: boolean } | null)?.created === true,
-  );
   const books = useQuery({ queryKey: keys.books, queryFn: booksApi.list });
   const save = useMutation({
     mutationFn: (payload: ReviewInputPayload) =>
       editing ? reviewsApi.replace(reviewId, payload) : reviewsApi.create(payload),
     onSuccess: async (result) => {
       await client.invalidateQueries({ queryKey: keys.reviews });
-      setSaved(true);
+      guard.markSaved(submitted.current);
+      toast.success('Guardado');
       if (!editing) {
+        guard.allowLeave();
         void navigate(`/admin/resenas/${result.id}`, { replace: true, state: { created: true } });
       }
     },
   });
   const set = <K extends keyof ReviewForm>(key: K, value: ReviewForm[K]) => {
-    setSaved(false);
     setForm((current) => ({ ...current, [key]: value }));
   };
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit(event?: FormEvent) {
+    event?.preventDefault();
     const payload = reviewPayload(form);
     const parsed = reviewInputSchema.safeParse(payload);
     if (!parsed.success) {
@@ -196,30 +221,14 @@ function ReviewFormView({ reviewId, initial }: { reviewId?: string; initial: Rev
       return;
     }
     setErrors({});
+    submitted.current = form;
     save.mutate(payload);
   }
 
   return (
     <form onSubmit={submit} noValidate className="max-w-2xl">
-      <PageHeader
-        title={editing ? `Reseña de ${form.authorName || '…'}` : 'Nueva reseña'}
-        actions={
-          <Button type="submit" loading={save.isPending}>
-            Guardar
-          </Button>
-        }
-      />
-      {saved ? (
-        <div className="mb-4">
-          <Alert tone="success" title="Cambios guardados" />
-        </div>
-      ) : null}
-      {save.isError ? (
-        <div className="mb-4">
-          <Alert>{errorMessage(save.error)}</Alert>
-        </div>
-      ) : null}
-      <Card className="flex flex-col gap-4">
+      <PageHeader title={editing ? `Reseña de ${form.authorName || '…'}` : 'Nueva reseña'} />
+      <FormSection title="La reseña" help="Texto, autoría y si se muestra en la página principal.">
         <TextAreaField
           label="Reseña"
           required
@@ -281,7 +290,19 @@ function ReviewFormView({ reviewId, initial }: { reviewId?: string; initial: Rev
             onChange={(event) => set('status', event.target.value as ReviewStatus)}
           />
         </div>
-      </Card>
+      </FormSection>
+      <SaveBar
+        dirty={guard.dirty || !editing}
+        dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}
+        saving={save.isPending}
+        error={save.isError ? errorMessage(save.error) : null}
+        onSave={() => submit()}
+        onDiscard={() => {
+          setForm(guard.saved);
+          setErrors({});
+        }}
+        saveLabel="Guardar reseña"
+      />
     </form>
   );
 }

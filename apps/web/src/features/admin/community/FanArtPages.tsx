@@ -6,18 +6,20 @@ import {
   type ImageRefInput,
 } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router';
+import { useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
 import { thumbUrl } from '../../../shared/lib/cloudinary';
-import {
-  Button,
-  CheckField,
-  SelectField,
-  TextAreaField,
-  TextField,
-} from '../../../shared/ui/controls';
-import { Alert, Badge, Card, EmptyState, Loading, PageHeader } from '../../../shared/ui/layout';
+import { CheckField, SelectField, TextAreaField, TextField } from '../../../shared/ui/controls';
+import { Alert, PageHeader } from '../../../shared/ui/layout';
+import { FormSection } from '../components/FormSection';
+import { SaveBar } from '../components/SaveBar';
+import { useToast } from '../components/Toast';
+import { useFormGuard } from '../components/useFormGuard';
+import { DataList, type Column } from '../components/DataList';
+import { ListPage, useRowSearch } from '../components/ListPage';
+import { StatusBadge } from '../components/StatusBadge';
 import { booksApi, fanArtsApi, keys } from '../api';
+import { SkeletonRows } from '../components/Skeleton';
 import { ImageField } from '../components/MediaFields';
 import { errorMessage, fieldErrors } from '../errors';
 
@@ -27,90 +29,94 @@ const STATUS_LABEL: Record<FanArtStatus, string> = {
   archived: 'Archivado',
 };
 
+const useFanArts = () => useQuery({ queryKey: keys.fanArts, queryFn: () => fanArtsApi.list() });
+type FanArtRow = NonNullable<ReturnType<typeof useFanArts>['data']>['fanArts'][number];
+
+const fanArtColumns: Column<FanArtRow>[] = [
+  {
+    id: 'order',
+    header: '#',
+    role: 'table',
+    className: 'admin-cell-num',
+    cell: (art) => art.order,
+  },
+  {
+    id: 'art',
+    header: 'Dibujo',
+    role: 'title',
+    cell: (art) => (
+      <span className="flex items-center gap-3">
+        <img
+          src={thumbUrl(art.image.url, 96)}
+          alt=""
+          className="admin-thumb size-12 shrink-0 rounded-token object-cover"
+        />
+        <span className="min-w-0">
+          <span className="admin-cell-title">{art.title ?? 'Sin título'}</span>
+          <span className="admin-cell-sub">Por {art.artistName}</span>
+        </span>
+      </span>
+    ),
+  },
+  {
+    id: 'permission',
+    header: 'Permiso',
+    role: 'status',
+    cell: (art) =>
+      art.permissionConfirmed ? (
+        <StatusBadge status="active" label="Permiso confirmado" />
+      ) : (
+        <StatusBadge status="pending" label="Sin confirmar" />
+      ),
+  },
+  {
+    id: 'status',
+    header: 'Estado',
+    role: 'status',
+    cell: (art) => <StatusBadge status={art.status} />,
+  },
+];
+
 /** Fan arts: los carga la autora; solo se publican con el permiso del artista. */
 export function FanArtListPage() {
-  const arts = useQuery({ queryKey: keys.fanArts, queryFn: () => fanArtsApi.list() });
+  const arts = useFanArts();
+  const search = useRowSearch(arts.data?.fanArts, (art) => `${art.title ?? ''} ${art.artistName}`);
   return (
-    <>
-      <PageHeader
-        title="Fan arts"
-        subtitle="Dibujos de lectores. Solo se muestran los publicados con el permiso del artista confirmado."
-        actions={
+    <ListPage
+      title="Fan arts"
+      subtitle="Dibujos de lectores. Solo se muestran los publicados con el permiso del artista confirmado."
+      primaryAction={
+        <Link to="/admin/fan-arts/nuevo" className="btn btn-primary">
+          + Nuevo fan art
+        </Link>
+      }
+      toolbar={search.field}
+      state={arts}
+      count={search.visible?.length}
+      filtersActive={search.active}
+      onClearFilters={search.clear}
+      empty={{
+        icon: 'art',
+        title: 'Todavía no hay fan arts',
+        text: 'Carga el primero y confirma el permiso del artista para publicarlo.',
+        action: (
           <Link to="/admin/fan-arts/nuevo" className="btn btn-primary">
-            + Nuevo fan art
+            Cargar el primer fan art
           </Link>
-        }
+        ),
+      }}
+    >
+      <DataList
+        label="Fan arts"
+        rows={search.visible ?? []}
+        rowKey={(art) => art.id}
+        columns={fanArtColumns}
+        action={{
+          to: (art) => `/admin/fan-arts/${art.id}`,
+          name: (art) => `el fan art de ${art.artistName}`,
+        }}
       />
-      {arts.isPending ? <Loading /> : null}
-      {arts.isError ? <Alert>{errorMessage(arts.error)}</Alert> : null}
-      {arts.data && arts.data.fanArts.length === 0 ? (
-        <EmptyState title="Todavía no hay fan arts">
-          Carga el primero con «Nuevo fan art».
-        </EmptyState>
-      ) : null}
-      {arts.data && arts.data.fanArts.length > 0 ? (
-        <div className="overflow-x-auto rounded-token-lg border border-border bg-surface">
-          <table className="w-full min-w-[34rem] text-left text-sm">
-            <thead className="bg-surface-alt text-xs uppercase text-muted">
-              <tr>
-                <th scope="col" className="px-4 py-3">
-                  #
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Dibujo
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Permiso
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  Estado
-                </th>
-                <th scope="col" className="px-4 py-3">
-                  <span className="sr-only">Acciones</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {arts.data.fanArts.map((art) => (
-                <tr key={art.id} className="border-t border-border">
-                  <td className="px-4 py-3 text-muted">{art.order}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={thumbUrl(art.image.url, 96)}
-                        alt=""
-                        className="size-12 rounded-token object-cover"
-                      />
-                      <div>
-                        <p className="font-medium">{art.title ?? 'Sin título'}</p>
-                        <p className="text-xs text-muted">Por {art.artistName}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {art.permissionConfirmed ? (
-                      <Badge tone="success">Confirmado</Badge>
-                    ) : (
-                      <Badge tone="warning">Sin confirmar</Badge>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge tone={art.status === 'published' ? 'success' : 'neutral'}>
-                      {STATUS_LABEL[art.status]}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link to={`/admin/fan-arts/${art.id}`} className="underline">
-                      Editar<span className="sr-only"> el fan art de {art.artistName}</span>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-    </>
+    </ListPage>
   );
 }
 
@@ -185,11 +191,11 @@ export function FanArtFormPage() {
 
   if (editing) {
     if (art.isError) return <Alert>{errorMessage(art.error)}</Alert>;
-    if (!art.data) return <Loading />;
+    if (!art.data) return <SkeletonRows rows={4} />;
     return <FanArtFormView key={art.data.id} fanArtId={fanArtId} initial={formFromArt(art.data)} />;
   }
   if (all.isError) return <Alert>{errorMessage(all.error)}</Alert>;
-  if (!all.data) return <Loading />;
+  if (!all.data) return <SkeletonRows rows={4} />;
   return <FanArtFormView key="nuevo" initial={emptyForm(all.data.fanArts.length + 1)} />;
 }
 
@@ -197,31 +203,31 @@ function FanArtFormView({ fanArtId, initial }: { fanArtId?: string; initial: Fan
   const editing = fanArtId !== undefined;
   const navigate = useNavigate();
   const client = useQueryClient();
-  const location = useLocation();
   const [form, setForm] = useState<FanArtForm>(initial);
+  const guard = useFormGuard(form, initial);
+  const toast = useToast();
+  const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState(
-    (location.state as { created?: boolean } | null)?.created === true,
-  );
   const books = useQuery({ queryKey: keys.books, queryFn: booksApi.list });
   const save = useMutation({
     mutationFn: (payload: FanArtInputPayload) =>
       editing ? fanArtsApi.replace(fanArtId, payload) : fanArtsApi.create(payload),
     onSuccess: async (result) => {
       await client.invalidateQueries({ queryKey: keys.fanArts });
-      setSaved(true);
+      guard.markSaved(submitted.current);
+      toast.success('Guardado');
       if (!editing) {
+        guard.allowLeave();
         void navigate(`/admin/fan-arts/${result.id}`, { replace: true, state: { created: true } });
       }
     },
   });
   const set = <K extends keyof FanArtForm>(key: K, value: FanArtForm[K]) => {
-    setSaved(false);
     setForm((current) => ({ ...current, [key]: value }));
   };
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit(event?: FormEvent) {
+    event?.preventDefault();
     const payload = fanArtPayload(form);
     const parsed = fanArtInputSchema.safeParse(payload);
     if (!parsed.success) {
@@ -229,30 +235,14 @@ function FanArtFormView({ fanArtId, initial }: { fanArtId?: string; initial: Fan
       return;
     }
     setErrors({});
+    submitted.current = form;
     save.mutate(payload as FanArtInputPayload);
   }
 
   return (
     <form onSubmit={submit} noValidate className="max-w-2xl">
-      <PageHeader
-        title={editing ? form.title || form.artistName || 'Fan art' : 'Nuevo fan art'}
-        actions={
-          <Button type="submit" loading={save.isPending}>
-            Guardar
-          </Button>
-        }
-      />
-      {saved ? (
-        <div className="mb-4">
-          <Alert tone="success" title="Cambios guardados" />
-        </div>
-      ) : null}
-      {save.isError ? (
-        <div className="mb-4">
-          <Alert>{errorMessage(save.error)}</Alert>
-        </div>
-      ) : null}
-      <Card className="flex flex-col gap-4">
+      <PageHeader title={editing ? form.title || form.artistName || 'Fan art' : 'Nuevo fan art'} />
+      <FormSection title="El dibujo" help="Imagen, artista y el permiso para publicarlo.">
         <div className="flex flex-col gap-1">
           <ImageField
             label="Dibujo"
@@ -334,7 +324,19 @@ function FanArtFormView({ fanArtId, initial }: { fanArtId?: string; initial: Fan
             onChange={(event) => set('status', event.target.value as FanArtStatus)}
           />
         </div>
-      </Card>
+      </FormSection>
+      <SaveBar
+        dirty={guard.dirty || !editing}
+        dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}
+        saving={save.isPending}
+        error={save.isError ? errorMessage(save.error) : null}
+        onSave={() => submit()}
+        onDiscard={() => {
+          setForm(guard.saved);
+          setErrors({});
+        }}
+        saveLabel="Guardar fan art"
+      />
     </form>
   );
 }

@@ -1,16 +1,24 @@
 import type { WikiEntryResponse, WikiKind } from '@libro/shared';
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { Button, SelectField, TextField } from '../../../shared/ui/controls';
-import { Alert, Badge, EmptyState, Loading, PageHeader, Tabs } from '../../../shared/ui/layout';
+import { Alert, Tabs } from '../../../shared/ui/layout';
 import { booksApi, keys, wikiApi } from '../api';
+import { DataList, type Column } from '../components/DataList';
+import { ListPage } from '../components/ListPage';
+import { StatusBadge } from '../components/StatusBadge';
 import { errorMessage } from '../errors';
 import { KIND_LABEL, LIST_TABS } from './wikiForm';
 
 type TabId = (typeof LIST_TABS)[number]['id'];
 
-const STATUS = { draft: 'Borrador', published: 'Publicado', archived: 'Archivado' } as const;
 const LETTERS = [
   'A',
   'B',
@@ -55,6 +63,8 @@ export function WikiListPage() {
   const lists = useQueries({
     queries: kinds.map((kind) => ({
       queryKey: [...keys.wiki, 'list', kind, bookId, q, letter],
+      // Al teclear en el buscador se conserva la lista anterior mientras llega la nueva (sin parpadeo de esqueletos).
+      placeholderData: keepPreviousData,
       queryFn: () =>
         wikiApi.list({
           kind,
@@ -108,170 +118,176 @@ export function WikiListPage() {
 
   const newKind: WikiKind = tabId === 'powers' ? 'power_field' : tabId;
 
-  return (
-    <>
-      <PageHeader
-        title="Wiki del universo"
-        subtitle="Personajes, campos y poderes, lugares y glosario en un solo lugar."
-        actions={
-          <>
-            {tabId === 'powers' ? (
-              <Link to="/admin/wiki/nueva?tipo=power" className="btn btn-secondary">
-                + Nuevo poder
-              </Link>
-            ) : null}
-            <Link to={`/admin/wiki/nueva?tipo=${newKind}`} className="btn btn-primary">
-              + {tabId === 'powers' ? 'Nuevo campo' : 'Nueva entrada'}
-            </Link>
-          </>
-        }
-      />
-      <Tabs
-        label="Tipos de la wiki"
-        active={tabId}
-        onChange={(id) => {
-          setTabId(id);
-          setLetter('');
-        }}
-        tabs={LIST_TABS.map((item) => ({ id: item.id, label: item.label }))}
-      />
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:max-w-xl">
-        <TextField
-          label="Buscar por nombre"
-          value={q}
-          onChange={(event) => setQ(event.target.value)}
-        />
-        <SelectField
-          label="Libro"
-          value={bookId}
-          placeholder="Todos"
-          options={(books.data?.books ?? []).map((book) => ({ value: book.id, label: book.title }))}
-          onChange={(event) => setBookId(event.target.value)}
-        />
-      </div>
-      {tabId === 'term' ? (
-        <nav aria-label="Filtrar por letra" className="mb-4 flex flex-wrap gap-1">
-          <button
-            type="button"
-            aria-pressed={letter === ''}
-            onClick={() => setLetter('')}
-            className={`min-h-9 rounded-token px-3 text-sm ${letter === '' ? 'bg-primary text-primary-contrast' : 'border border-border'}`}
+  const columns: Column<WikiEntryResponse>[] = [
+    {
+      id: 'order',
+      header: 'Orden manual',
+      role: 'meta',
+      cell: (entry) => (
+        <span className="flex gap-1">
+          <Button
+            variant="ghost"
+            aria-label={`Subir ${entry.name}`}
+            disabled={!canReorder || reorder.isPending}
+            onClick={() => move(entry, -1)}
           >
-            Todas
-          </button>
-          {LETTERS.map((item) => (
-            <button
-              key={item}
-              type="button"
-              aria-pressed={letter === item}
-              onClick={() => setLetter(item)}
-              className={`min-h-9 min-w-9 rounded-token px-2 text-sm ${letter === item ? 'bg-primary text-primary-contrast' : 'border border-border'}`}
-            >
-              {item}
-            </button>
-          ))}
-        </nav>
-      ) : null}
-
-      {loading ? <Loading /> : null}
-      {failed?.error ? <Alert>{errorMessage(failed.error)}</Alert> : null}
-      {reorder.isError ? <Alert>{errorMessage(reorder.error)}</Alert> : null}
-      {!loading && !failed && ordered.length === 0 ? (
-        <EmptyState title="No hay entradas con estos filtros" />
-      ) : null}
-      {ordered.length > 0 ? (
-        <>
-          {!canReorder ? (
-            <p className="mb-2 text-xs text-muted">
-              Elige un libro para poder ordenar las entradas a mano.
-            </p>
+            ↑
+          </Button>
+          <Button
+            variant="ghost"
+            aria-label={`Bajar ${entry.name}`}
+            disabled={!canReorder || reorder.isPending}
+            onClick={() => move(entry, 1)}
+          >
+            ↓
+          </Button>
+        </span>
+      ),
+    },
+    {
+      id: 'name',
+      header: 'Nombre',
+      role: 'title',
+      cell: (entry) => (
+        <span className={`admin-cell-title ${entry.kind === 'power' ? 'pl-6' : ''}`}>
+          {entry.name}
+          {tabId === 'powers' ? (
+            <span className="ml-2 text-xs font-normal text-muted">{KIND_LABEL[entry.kind]}</span>
           ) : null}
-          <div className="overflow-x-auto rounded-token-lg border border-border bg-surface">
-            <table className="w-full min-w-[36rem] text-left text-sm">
-              <thead className="bg-surface-alt text-xs uppercase text-muted">
-                <tr>
-                  <th scope="col" className="px-4 py-3">
-                    Orden
-                  </th>
-                  <th scope="col" className="px-4 py-3">
-                    Nombre
-                  </th>
-                  <th scope="col" className="px-4 py-3">
-                    {tabId === 'powers' ? 'Campo' : 'Grupo'}
-                  </th>
-                  <th scope="col" className="px-4 py-3">
-                    Oculto hasta…
-                  </th>
-                  <th scope="col" className="px-4 py-3">
-                    Estado
-                  </th>
-                  <th scope="col" className="px-4 py-3">
-                    <span className="sr-only">Acciones</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {ordered.map((entry) => (
-                  <tr key={entry.id} className="border-t border-border">
-                    <td className="px-4 py-2">
-                      <span className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          aria-label={`Subir ${entry.name}`}
-                          disabled={!canReorder || reorder.isPending}
-                          onClick={() => move(entry, -1)}
-                        >
-                          ↑
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          aria-label={`Bajar ${entry.name}`}
-                          disabled={!canReorder || reorder.isPending}
-                          onClick={() => move(entry, 1)}
-                        >
-                          ↓
-                        </Button>
-                      </span>
-                    </td>
-                    <td className={`px-4 py-3 font-medium ${entry.kind === 'power' ? 'pl-8' : ''}`}>
-                      {entry.name}
-                      {tabId === 'powers' ? (
-                        <span className="ml-2 text-xs font-normal text-muted">
-                          {KIND_LABEL[entry.kind]}
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3 text-muted">
-                      {entry.kind === 'power' ? nameOf(entry.parentId) : (entry.group ?? '—')}
-                    </td>
-                    <td className="px-4 py-3 text-muted">
-                      {entry.unlockAfter ? 'Un quiz completado' : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge
-                        tone={
-                          entry.status === 'published'
-                            ? 'success'
-                            : entry.status === 'archived'
-                              ? 'warning'
-                              : 'neutral'
-                        }
-                      >
-                        {STATUS[entry.status]}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link to={`/admin/wiki/${entry.id}`} className="underline">
-                        Editar<span className="sr-only"> {entry.name}</span>
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        </span>
+      ),
+    },
+    {
+      id: 'group',
+      header: tabId === 'powers' ? 'Campo' : 'Grupo',
+      role: 'meta',
+      cell: (entry) => (entry.kind === 'power' ? nameOf(entry.parentId) : (entry.group ?? '—')),
+    },
+    {
+      id: 'unlock',
+      header: 'Oculto hasta…',
+      role: 'meta',
+      cell: (entry) => (entry.unlockAfter ? 'Un quiz completado' : '—'),
+    },
+    {
+      id: 'status',
+      header: 'Estado',
+      role: 'status',
+      cell: (entry) => <StatusBadge status={entry.status} />,
+    },
+  ];
+
+  const filtering = bookId !== '' || q !== '' || letter !== '';
+  const newLink = `/admin/wiki/nueva?tipo=${newKind}`;
+
+  return (
+    <ListPage
+      title="Wiki del universo"
+      subtitle="Personajes, campos y poderes, lugares y glosario en un solo lugar."
+      primaryAction={
+        <>
+          {tabId === 'powers' ? (
+            <Link to="/admin/wiki/nueva?tipo=power" className="btn btn-secondary">
+              + Nuevo poder
+            </Link>
+          ) : null}
+          <Link to={newLink} className="btn btn-primary">
+            + {tabId === 'powers' ? 'Nuevo campo' : 'Nueva entrada'}
+          </Link>
         </>
+      }
+      tabs={
+        <Tabs
+          label="Tipos de la wiki"
+          active={tabId}
+          onChange={(id) => {
+            setTabId(id);
+            setLetter('');
+          }}
+          tabs={LIST_TABS.map((item) => ({ id: item.id, label: item.label }))}
+        />
+      }
+      toolbar={
+        <>
+          <TextField
+            label="Buscar por nombre"
+            wrapperClassName="min-w-56 flex-1 sm:max-w-xs"
+            value={q}
+            onChange={(event) => setQ(event.target.value)}
+          />
+          <SelectField
+            label="Libro"
+            value={bookId}
+            placeholder="Todos"
+            options={(books.data?.books ?? []).map((book) => ({
+              value: book.id,
+              label: book.title,
+            }))}
+            onChange={(event) => setBookId(event.target.value)}
+          />
+          {tabId === 'term' ? (
+            <nav aria-label="Filtrar por letra" className="flex w-full flex-wrap gap-1">
+              <button
+                type="button"
+                aria-pressed={letter === ''}
+                onClick={() => setLetter('')}
+                className={`min-h-9 rounded-token px-3 text-sm ${letter === '' ? 'bg-primary text-primary-contrast' : 'border border-border'}`}
+              >
+                Todas
+              </button>
+              {LETTERS.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  aria-pressed={letter === item}
+                  onClick={() => setLetter(item)}
+                  className={`min-h-9 min-w-9 rounded-token px-2 text-sm ${letter === item ? 'bg-primary text-primary-contrast' : 'border border-border'}`}
+                >
+                  {item}
+                </button>
+              ))}
+            </nav>
+          ) : null}
+        </>
+      }
+      state={{
+        isPending: loading,
+        isError: Boolean(failed),
+        error: failed?.error,
+        refetch: () => lists.forEach((list) => void list.refetch()),
+      }}
+      count={loading ? undefined : ordered.length}
+      filtersActive={filtering}
+      onClearFilters={() => {
+        setBookId('');
+        setQ('');
+        setLetter('');
+      }}
+      noResults="No hay entradas con estos filtros"
+      empty={{
+        icon: 'wiki',
+        title: 'Todavía no hay entradas en esta pestaña',
+        text: 'Crea la primera para que aparezca en la wiki.',
+        action: (
+          <Link to={newLink} className="btn btn-primary">
+            {tabId === 'powers' ? 'Crear el primer campo' : 'Crear la primera entrada'}
+          </Link>
+        ),
+      }}
+    >
+      {reorder.isError ? <Alert>{errorMessage(reorder.error)}</Alert> : null}
+      {!canReorder ? (
+        <p className="mb-2 text-xs text-muted">
+          Elige un libro para poder ordenar las entradas a mano.
+        </p>
       ) : null}
-    </>
+      <DataList
+        label="Entradas de la wiki"
+        rows={ordered}
+        rowKey={(entry) => entry.id}
+        columns={columns}
+        action={{ to: (entry) => `/admin/wiki/${entry.id}`, name: (entry) => entry.name }}
+      />
+    </ListPage>
   );
 }

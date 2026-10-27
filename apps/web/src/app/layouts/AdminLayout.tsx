@@ -1,108 +1,252 @@
-import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type RefObject,
+} from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router';
+import { crumbsFor, documentTitle, locate, navForRole } from '../../features/admin/adminNav';
+import '../../features/admin/adminTheme.css';
+import { useNavCounts } from '../../features/admin/overview';
+import { Breadcrumbs, CrumbLeafProvider } from '../../features/admin/components/Breadcrumbs';
+import { ConfirmProvider } from '../../features/admin/components/ConfirmDialog';
+import { ToastProvider } from '../../features/admin/components/Toast';
 import { useSession } from '../../features/auth/session';
-import { Brand } from '../../shared/ui/Brand';
-import { MAIN_ID, sideLink, SkipLink } from '../../shared/ui/nav';
-import { StaffSwitcher } from '../../shared/ui/StaffSwitcher';
+import { AdminIcon } from '../../shared/ui/adminIcons';
+import { MAIN_ID, SkipLink } from '../../shared/ui/nav';
 import { UserMenu } from '../../shared/ui/UserMenu';
 
-/** Secciones del menú: contenido (editoras y administradoras) y las solo de administradoras. */
-const CONTENT = [
-  { to: '/admin/libros', label: 'Libros' },
-  { to: '/admin/quizzes', label: 'Quizzes' },
-  { to: '/admin/wiki', label: 'Wiki' },
-  { to: '/admin/actualizaciones', label: 'Actualizaciones' },
-  { to: '/admin/fan-arts', label: 'Fan arts' },
-  { to: '/admin/resenas', label: 'Reseñas' },
-  { to: '/admin/extras', label: 'Capítulos extra' },
-  { to: '/admin/sitio', label: 'Portada y autora' },
-  { to: '/admin/bienvenida', label: 'Mensaje de bienvenida' },
-] as const;
-/** Solo administradoras. */
-const ADMIN_ONLY = [
-  { to: '/admin/qr', label: 'Códigos QR' },
-  { to: '/admin/mensajes', label: 'Mensajes de contacto' },
-  { to: '/admin/estadisticas', label: 'Estadísticas' },
-  { to: '/admin/ajustes', label: 'Ajustes del sitio' },
-] as const;
+const WIDE = '(min-width: 1024px)';
 
-/** Marco del panel de administración: menú lateral en escritorio, desplegable en móvil. */
+/** `true` mientras al menú le queda contenido por debajo (para mostrar el degradado que avisa que sigue). */
+function useMoreBelow(ref: RefObject<HTMLElement | null>) {
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setMore(el.scrollHeight - el.scrollTop - el.clientHeight > 4);
+    measure();
+    el.addEventListener('scroll', measure, { passive: true });
+    window.addEventListener('resize', measure);
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(measure) : null;
+    observer?.observe(el);
+    return () => {
+      el.removeEventListener('scroll', measure);
+      window.removeEventListener('resize', measure);
+      observer?.disconnect();
+    };
+  }, [ref]);
+  return more;
+}
+
+/** Elementos que reciben el foco dentro del cajón (para atraparlo mientras está abierto). */
+const FOCUSABLE = 'a[href], button:not([disabled])';
+
+/**
+ * Marco de la administración: menú lateral por tareas en escritorio y cajón lateral en celular, barra superior con
+ * el menú de usuario y migas sobre cada pantalla. El menú sale de `adminNav.ts` y solo muestra lo que la cuenta puede
+ * usar (los permisos los decide el servidor).
+ */
 export function AdminLayout() {
   const session = useSession();
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
-  const user = session.data;
-  const isAdmin = user?.role === 'ADMIN';
+  const [leaf, setLeaf] = useState<string | null>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const drawer = useRef<HTMLElement>(null);
+  const navScroll = useRef<HTMLElement>(null);
+  const moreBelow = useMoreBelow(navScroll);
+  const groups = navForRole(session.data?.role);
+  const counts = useNavCounts(session.data?.role);
+  const where = locate(pathname);
+
+  const close = useCallback((returnFocus: boolean) => {
+    setOpen(false);
+    if (returnFocus) menuButton.current?.focus();
+  }, []);
+
+  // Título de la pestaña del navegador: «Quizzes · Administración · Universo Memorias».
+  useEffect(() => {
+    const previous = document.title;
+    document.title = documentTitle(pathname);
+    return () => {
+      document.title = previous;
+    };
+  }, [pathname]);
+
+  // Al navegar se cierra el cajón y la miga vuelve a ser genérica hasta que la nueva pantalla ponga su nombre.
+  const [shownPath, setShownPath] = useState(pathname);
+  if (shownPath !== pathname) {
+    setShownPath(pathname);
+    setOpen(false);
+    setLeaf(null);
+  }
+
+  // Abierto: sin desplazamiento de fondo, foco dentro del cajón y, si la ventana se ensancha, se cierra solo.
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    drawer.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    const media = typeof window.matchMedia === 'function' ? window.matchMedia(WIDE) : null;
+    const onChange = () => {
+      if (media?.matches) setOpen(false);
+    };
+    media?.addEventListener('change', onChange);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      media?.removeEventListener('change', onChange);
+    };
+  }, [open]);
+
+  const onDrawerKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (!open) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      close(true);
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const items = Array.from(drawer.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (!first || !last) return;
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
-      <SkipLink />
-      <aside className="border-b border-line bg-bg lg:sticky lg:top-0 lg:h-dvh lg:overflow-y-auto lg:border-b-0 lg:border-r">
-        <div className="flex items-center justify-between gap-2 px-4 py-3">
-          <Brand to="/admin" label="Panel" />
-          <button
-            type="button"
-            className="btn btn-secondary lg:hidden"
-            aria-expanded={open}
-            aria-controls="admin-menu"
-            onClick={() => setOpen((value) => !value)}
-          >
-            Menú
-          </button>
-        </div>
-        <nav
-          id="admin-menu"
-          aria-label="Administración"
-          className={`${open ? 'flex' : 'hidden'} flex-col gap-1 px-3 pb-4 lg:flex`}
-          onClick={() => setOpen(false)}
-        >
-          {isAdmin ? (
-            <>
-              <p className="px-3 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                Atajos
-              </p>
-              <NavLink to="/admin/usuarios" className={sideLink}>
-                Usuarios
-              </NavLink>
-            </>
-          ) : null}
-          <p className="px-3 pt-4 text-xs font-semibold uppercase tracking-wide text-muted">
-            Contenido
-          </p>
-          {CONTENT.map((item) => (
-            <NavLink key={item.to} to={item.to} className={sideLink}>
-              {item.label}
-            </NavLink>
-          ))}
-          {isAdmin ? (
-            <>
-              <p className="px-3 pt-4 text-xs font-semibold uppercase tracking-wide text-muted">
-                Solo administradores
-              </p>
-              {ADMIN_ONLY.map((item) => (
-                <NavLink key={item.to} to={item.to} className={sideLink}>
-                  {item.label}
+    <ToastProvider>
+      <ConfirmProvider>
+        <CrumbLeafProvider setLeaf={setLeaf}>
+          <div className="admin-shell min-h-dvh lg:grid lg:grid-cols-[var(--admin-sidebar-w)_1fr]">
+            <SkipLink />
+            <div
+              className="admin-scrim"
+              data-open={open}
+              aria-hidden="true"
+              onClick={() => close(true)}
+            />
+            <aside
+              ref={drawer}
+              id="admin-sidebar"
+              className="admin-sidebar lg:sticky lg:top-0 lg:h-dvh"
+              data-open={open}
+              // Abierto (solo en celular) es modal: el resto de la página queda inerte para teclado y lectores.
+              role={open ? 'dialog' : undefined}
+              aria-modal={open || undefined}
+              aria-label={open ? 'Menú de administración' : undefined}
+              onKeyDown={onDrawerKeyDown}
+            >
+              <div className="flex items-center justify-between gap-2 px-4 pb-1 pt-3">
+                <NavLink
+                  to="/admin"
+                  end
+                  className="flex min-h-11 min-w-0 flex-col justify-center rounded-token-sm"
+                >
+                  <span className="whitespace-nowrap font-display text-[1.0625rem] font-bold leading-tight tracking-wide">
+                    Universo Memorias
+                  </span>
+                  <span className="text-xs text-muted">Administración</span>
                 </NavLink>
-              ))}
-            </>
-          ) : null}
-        </nav>
-      </aside>
+                <button
+                  type="button"
+                  className="admin-icon-btn lg:hidden"
+                  aria-label="Cerrar el menú"
+                  onClick={() => close(true)}
+                >
+                  <AdminIcon name="close" />
+                </button>
+              </div>
+              <nav
+                ref={navScroll}
+                aria-label="Administración"
+                className="admin-nav-scroll"
+                data-more={moreBelow}
+              >
+                {groups.map((group) => {
+                  const labelId = `admin-group-${group.id}`;
+                  return (
+                    <div
+                      key={group.id}
+                      role="group"
+                      aria-labelledby={group.label ? labelId : undefined}
+                    >
+                      {group.label ? (
+                        <p id={labelId} className="admin-nav-group-label">
+                          {group.label}
+                        </p>
+                      ) : null}
+                      <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
+                        {group.items.map((item) => (
+                          <li key={item.id}>
+                            <NavLink
+                              to={item.to}
+                              end={item.to === '/admin'}
+                              className="admin-link"
+                              onClick={() => setOpen(false)}
+                            >
+                              <AdminIcon name={item.icon} />
+                              <span className="min-w-0">{item.label}</span>
+                              {counts[item.id] ? (
+                                <span className="admin-link-count">
+                                  <span aria-hidden="true">{counts[item.id]}</span>
+                                  <span className="sr-only">
+                                    {' '}
+                                    {counts[item.id]}{' '}
+                                    {item.id === 'mensajes' ? 'sin atender' : 'en borrador'}
+                                  </span>
+                                </span>
+                              ) : null}
+                            </NavLink>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </nav>
+            </aside>
 
-      <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-2 border-b border-line bg-bg px-4 py-2.5">
-          <StaffSwitcher className="hidden 2xl:inline-flex" />
-          <UserMenu className="ml-auto" />
-        </header>
-        <main
-          id={MAIN_ID}
-          tabIndex={-1}
-          className="min-w-0 flex-1 px-4 py-6 focus:outline-none sm:px-8 sm:py-8"
-        >
-          <div className="fade-up">
-            <Outlet />
+            <div className="flex min-w-0 flex-col" inert={open || undefined}>
+              <header className="admin-topbar">
+                <button
+                  ref={menuButton}
+                  type="button"
+                  className="admin-icon-btn lg:hidden"
+                  aria-label="Abrir el menú"
+                  aria-expanded={open}
+                  aria-controls="admin-sidebar"
+                  onClick={() => setOpen(true)}
+                >
+                  <AdminIcon name="menu" />
+                </button>
+                <p className="min-w-0 flex-1 truncate text-base font-semibold lg:hidden">
+                  {where?.item.label ?? 'Administración'}
+                </p>
+                <UserMenu className="ml-auto" looseZones={false} />
+              </header>
+              <main
+                id={MAIN_ID}
+                tabIndex={-1}
+                className="min-w-0 flex-1 px-4 py-6 focus:outline-none sm:px-8 sm:py-8"
+              >
+                <div className="fade-up mx-auto w-full max-w-[72rem]">
+                  <Breadcrumbs crumbs={crumbsFor(pathname, leaf)} />
+                  <Outlet />
+                </div>
+              </main>
+            </div>
           </div>
-        </main>
-      </div>
-    </div>
+        </CrumbLeafProvider>
+      </ConfirmProvider>
+    </ToastProvider>
   );
 }
