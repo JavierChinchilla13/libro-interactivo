@@ -144,7 +144,7 @@ describe('usuarios', () => {
     );
     renderAt('/admin/usuarios');
     await userEvent.click(
-      await screen.findByRole('button', { name: 'Nueva cuenta de administración' }),
+      await screen.findByRole('button', { name: 'Nueva cuenta del equipo' }),
     );
     await userEvent.click(screen.getByRole('button', { name: 'Crear y enviar invitación' }));
     expect((await screen.findAllByText(/Escribe el nombre/)).length).toBeGreaterThan(0);
@@ -322,7 +322,7 @@ describe('mensajes de contacto', () => {
       { session: ADMIN },
     );
     renderAt('/admin/mensajes');
-    expect(await screen.findByText('No hay mensajes en esta bandeja')).toBeInTheDocument();
+    expect(await screen.findByText('No hay mensajes sin atender')).toBeInTheDocument();
   });
 });
 

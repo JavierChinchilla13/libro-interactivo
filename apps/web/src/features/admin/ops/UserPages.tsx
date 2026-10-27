@@ -11,6 +11,9 @@ import { Button, SelectField, TextField } from '../../../shared/ui/controls';
 import { Alert, Badge, Card, EmptyState, Loading, PageHeader } from '../../../shared/ui/layout';
 import { useSession } from '../../auth/session';
 import { keys, usersApi } from '../api';
+import { DataList, type Column } from '../components/DataList';
+import { ListPage } from '../components/ListPage';
+import { StatusBadge } from '../components/StatusBadge';
 import { errorMessage, fieldErrors } from '../errors';
 
 const ROLE_LABEL: Record<AdminUser['role'], string> = {
@@ -23,12 +26,8 @@ function RoleBadge({ role }: { role: AdminUser['role'] }) {
   return <Badge tone={role === 'USER' ? 'neutral' : 'success'}>{ROLE_LABEL[role]}</Badge>;
 }
 
-function StatusBadge({ status }: { status: AdminUser['status'] }) {
-  return (
-    <Badge tone={status === 'active' ? 'success' : 'warning'}>
-      {status === 'active' ? 'Activa' : 'Desactivada'}
-    </Badge>
-  );
+function AccountStatus({ status }: { status: AdminUser['status'] }) {
+  return <StatusBadge status={status === 'active' ? 'active' : 'inactive'} />;
 }
 
 function CreateStaffForm({ onDone }: { onDone: () => void }) {
@@ -57,7 +56,7 @@ function CreateStaffForm({ onDone }: { onDone: () => void }) {
   return (
     <Card>
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-        <h2 className="font-semibold">Nueva cuenta de administración</h2>
+        <h2 className="font-semibold">Nueva cuenta del equipo</h2>
         <p className="text-sm text-muted">
           La persona recibe un correo con un enlace para elegir su propia contraseña. Tú nunca la
           conoces.
@@ -102,7 +101,7 @@ function CreateStaffForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-/** Usuarios (solo administradoras): búsqueda, filtros y alta de editoras. */
+/** Usuarios (solo administradoras): búsqueda, filtros y alta de cuentas del equipo. */
 export function UserListPage() {
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
@@ -124,18 +123,51 @@ export function UserListPage() {
   const data = users.data;
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
+  const columns: Column<AdminUser>[] = [
+    {
+      id: 'person',
+      header: 'Persona',
+      role: 'title',
+      cell: (user) => (
+        <>
+          <Link to={`/admin/usuarios/${user.id}`} className="admin-cell-title underline">
+            {user.name}
+          </Link>
+          <span className="admin-cell-sub">{user.email}</span>
+        </>
+      ),
+    },
+    { id: 'role', header: 'Rol', role: 'status', cell: (user) => <RoleBadge role={user.role} /> },
+    {
+      id: 'status',
+      header: 'Estado',
+      role: 'status',
+      cell: (user) => <AccountStatus status={user.status} />,
+    },
+    {
+      id: 'quizzes',
+      header: 'Quizzes',
+      role: 'meta',
+      cell: (user) => `${user.completedQuizzes} de ${data?.totalQuizzes ?? '—'}`,
+    },
+    {
+      id: 'created',
+      header: 'Registro',
+      role: 'meta',
+      cell: (user) => formatShortDate(user.createdAt),
+    },
+  ];
+
   return (
-    <>
-      <PageHeader
-        title="Usuarios"
-        subtitle="Lectoras, editoras y administradoras. Los intentos de prueba no cuentan."
-        actions={<Button onClick={() => setCreating(true)}>Nueva cuenta de administración</Button>}
-      />
-      <div className="flex flex-col gap-5">
-        {creating ? <CreateStaffForm onDone={() => setCreating(false)} /> : null}
+    <ListPage
+      title="Usuarios"
+      subtitle="Lectoras, editoras y administradoras. Los intentos de prueba no cuentan."
+      primaryAction={<Button onClick={() => setCreating(true)}>Nueva cuenta del equipo</Button>}
+      tabs={creating ? <CreateStaffForm onDone={() => setCreating(false)} /> : null}
+      toolbar={
         <form
           role="search"
-          className="flex flex-wrap items-end gap-3"
+          className="contents"
           onSubmit={(event) => {
             event.preventDefault();
             setPage(1);
@@ -179,62 +211,26 @@ export function UserListPage() {
             Buscar
           </Button>
         </form>
-
-        {users.isPending ? <Loading /> : null}
-        {users.isError ? <Alert>{errorMessage(users.error)}</Alert> : null}
-        {data && data.users.length === 0 ? (
-          <EmptyState title="No hay personas con ese filtro" />
-        ) : null}
-        {data && data.users.length > 0 ? (
-          <div className="surface overflow-x-auto rounded-token-lg">
-            <table className="w-full text-left text-sm">
-              <caption className="sr-only">Usuarios</caption>
-              <thead className="text-xs uppercase tracking-wide text-muted">
-                <tr>
-                  <th scope="col" className="p-3">
-                    Persona
-                  </th>
-                  <th scope="col" className="p-3">
-                    Rol
-                  </th>
-                  <th scope="col" className="p-3">
-                    Estado
-                  </th>
-                  <th scope="col" className="p-3">
-                    Quizzes
-                  </th>
-                  <th scope="col" className="p-3">
-                    Registro
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.users.map((user) => (
-                  <tr key={user.id} className="border-t border-line">
-                    <td className="p-3">
-                      <Link to={`/admin/usuarios/${user.id}`} className="font-medium underline">
-                        {user.name}
-                      </Link>
-                      <span className="block text-xs text-muted">{user.email}</span>
-                    </td>
-                    <td className="p-3">
-                      <RoleBadge role={user.role} />
-                    </td>
-                    <td className="p-3">
-                      <StatusBadge status={user.status} />
-                    </td>
-                    <td className="p-3">
-                      {user.completedQuizzes} de {data.totalQuizzes}
-                    </td>
-                    <td className="p-3">{formatShortDate(user.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-        {data && pages > 1 ? (
-          <nav aria-label="Páginas" className="flex items-center justify-between gap-3">
+      }
+      state={users}
+      count={data?.users.length}
+      filtersActive={Boolean(search || role || status)}
+      onClearFilters={() => {
+        setQ('');
+        setSearch('');
+        setRole('');
+        setStatus('');
+        setPage(1);
+      }}
+      noResults="No hay personas con ese filtro"
+      empty={{
+        icon: 'users',
+        title: 'Todavía no hay personas',
+        text: 'Las lectoras aparecen aquí cuando se registran.',
+      }}
+      footer={
+        data && pages > 1 ? (
+          <nav aria-label="Páginas" className="mt-4 flex items-center justify-between gap-3">
             <Button variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
               Anterior
             </Button>
@@ -245,9 +241,17 @@ export function UserListPage() {
               Siguiente
             </Button>
           </nav>
-        ) : null}
-      </div>
-    </>
+        ) : null
+      }
+    >
+      <DataList
+        label="Usuarios"
+        rows={data?.users ?? []}
+        rowKey={(user) => user.id}
+        columns={columns}
+        pageSize={500}
+      />
+    </ListPage>
   );
 }
 
@@ -307,7 +311,7 @@ export function UserDetailPage() {
           <h2 className="font-semibold">Cuenta</h2>
           <p className="flex flex-wrap items-center gap-2 text-sm">
             <RoleBadge role={user.role} />
-            <StatusBadge status={user.status} />
+            <AccountStatus status={user.status} />
             <span className="text-muted">Registro: {formatDateTime(user.createdAt)}</span>
             {user.lastLoginAt ? (
               <span className="text-muted">

@@ -70,7 +70,7 @@ describe('fan arts del panel', () => {
     );
     renderAt('/admin/fan-arts');
     expect(
-      await screen.findByRole('row', { name: /Mi dibujo.*Por Ana.*Confirmado.*Publicado/ }),
+      await screen.findByRole('row', { name: /Mi dibujo.*Por Ana.*Permiso confirmado.*Publicado/ }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('row', { name: /Sin título.*Por Beto.*Sin confirmar.*Borrador/ }),

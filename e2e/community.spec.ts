@@ -108,7 +108,7 @@ test.describe('fan arts y reseñas (escritorio)', () => {
     await page.getByRole('link', { name: 'Fan arts' }).first().click();
     await expect(
       page.getByRole('row', {
-        name: new RegExp(`Dibujo ${stamp}.*Artista Visible ${stamp}.*Confirmado.*Publicado`),
+        name: new RegExp(`Dibujo ${stamp}.*Artista Visible ${stamp}.*Permiso confirmado.*Publicado`),
       }),
     ).toBeVisible();
 
