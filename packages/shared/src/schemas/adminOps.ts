@@ -152,3 +152,30 @@ export const adminStatsSchema = z.object({
   ),
 });
 export type AdminStats = z.infer<typeof adminStatsSchema>;
+
+/**
+ * Diagnóstico de red (solo administradoras): describe la cadena de proxies de **la propia petición** de quien lo
+ * consulta, con las direcciones enmascaradas. Nada de esto se guarda ni se registra.
+ */
+export const networkCheckResponseSchema = z.object({
+  /** Saltos de proxy en los que confía hoy el API (`TRUST_PROXY_HOPS`). */
+  configuredHops: z.number().int().min(0),
+  /** Cuántas direcciones trae `X-Forwarded-For`. */
+  forwardedForEntries: z.number().int().min(0),
+  /** `true` si llegó `CF-Connecting-IP` (Cloudflare delante de Render). */
+  hasCfConnectingIp: z.boolean(),
+  cfConnectingIpMasked: z.string().nullable(),
+  /** La dirección que el API usa hoy como «IP de esta persona» (la que cuenta el limitador), enmascarada. */
+  resolvedMasked: z.string(),
+  /** La dirección que resultaría con 0, 1, 2… saltos. Con el valor correcto aparece **tu** red, no la de Render. */
+  candidates: z.array(
+    z.object({
+      hops: z.number().int().min(0),
+      masked: z.string(),
+      /** Dirección privada, local o de uso interno: casi seguro es un proxy de la plataforma, no una lectora. */
+      looksInternal: z.boolean(),
+      current: z.boolean(),
+    }),
+  ),
+});
+export type NetworkCheckResponse = z.infer<typeof networkCheckResponseSchema>;

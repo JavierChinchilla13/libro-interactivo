@@ -10,6 +10,7 @@ import {
 import { Router } from 'express';
 import type {
   createAdminMetricsController,
+  createAdminNetworkController,
   createAdminUsersController,
 } from '../controllers/adminOps.controller.js';
 import type { Guards } from '../middleware/auth.js';
@@ -67,5 +68,15 @@ export function createAdminStatsRouter(
 ): Router {
   const router = adminOnly(guards);
   router.get('/', controller.stats);
+  return router;
+}
+
+/** `/admin/network-check`: diagnóstico de la cadena de proxies (para elegir `TRUST_PROXY_HOPS`). Solo administradoras. */
+export function createAdminNetworkRouter(
+  controller: ReturnType<typeof createAdminNetworkController>,
+  guards: Guards,
+): Router {
+  const router = adminOnly(guards);
+  router.get('/', controller.check);
   return router;
 }
