@@ -439,3 +439,40 @@ describe('historial y reversión', () => {
     expect((await editor.post(`${url}/revert`).send({ rev: 0, expectedRev: 14 })).status).toBe(400);
   });
 });
+
+describe('límite de guardado de la apariencia', () => {
+  it('corta con 429 el guardado y la reversión de quien se pasa, sin afectar a otra persona ni a las lecturas', async () => {
+    const { editor, admin, url } = await staffWorld({
+      limits: { appearanceWrite: { windowMs: 60_000, limit: 2, by: 'user' } },
+    }).then(async (w) => {
+      const book = await createBook();
+      const quiz = await createQuiz({
+        bookId: book._id,
+        order: 1,
+        content: simpleContent({ title: 'Quiz de prueba' }),
+        publishedBy: w.adminUser._id,
+      });
+      return { ...w, url: `/api/admin/quizzes/${quiz.id}/appearance` };
+    });
+    await editor
+      .put(url)
+      .send({ appearance: appearance('a'), expectedRev: 0 })
+      .expect(200);
+    await editor
+      .put(url)
+      .send({ appearance: appearance('b'), expectedRev: 1 })
+      .expect(200);
+
+    const blocked = await editor.put(url).send({ appearance: appearance('c'), expectedRev: 2 });
+    expect(blocked.status).toBe(429);
+    expect(code(blocked)).toBe('RATE_LIMITED');
+    expect((await editor.post(`${url}/revert`).send({ rev: 1, expectedRev: 2 })).status).toBe(429);
+    // Leer no cuenta, y otra persona tiene su propio cupo.
+    await editor.get(url).expect(200);
+    await editor.get(`${url}/history`).expect(200);
+    await admin
+      .put(url)
+      .send({ appearance: appearance('d'), expectedRev: 2 })
+      .expect(200);
+  });
+});

@@ -25,6 +25,9 @@ const RELAXED_LIMITS: Limits = {
   contact: { windowMs: 60_000, limit: 10_000 },
   accessResolve: { windowMs: 60_000, limit: 10_000 },
   accessRedeem: { windowMs: 60_000, limit: 10_000 },
+  appearanceWrite: { windowMs: 60_000, limit: 10_000, by: 'user' },
+  uploadSign: { windowMs: 60_000, limit: 10_000, by: 'user' },
+  uploadSignQuizBg: { windowMs: 60_000, limit: 10_000, by: 'user' },
 };
 
 interface TestAppOptions {

@@ -84,3 +84,30 @@ describe('POST /api/admin/uploads/image-signature', () => {
     expect(apiErrorSchema.parse(res.body).error).toMatchObject({ code: 'UNAVAILABLE' });
   });
 });
+
+describe('límite de firmas de subida', () => {
+  it('cada persona tiene su cupo y el de fondos de quiz es aparte y más estricto', async () => {
+    const { editor, admin } = await staffWorld({
+      env: CLOUD,
+      limits: {
+        uploadSign: { windowMs: 60_000, limit: 2, by: 'user' },
+        uploadSignQuizBg: { windowMs: 60_000, limit: 1, by: 'user' },
+      },
+    });
+    await editor.post(url).send({ purpose: 'cover' }).expect(200);
+    await editor.post(url).send({ purpose: 'cover' }).expect(200);
+    const blocked = await editor.post(url).send({ purpose: 'cover' });
+    expect(blocked.status).toBe(429);
+    expect(apiErrorSchema.parse(blocked.body).error.code).toBe('RATE_LIMITED');
+
+    // Otra persona no se ve afectada; los fondos de quiz cuentan aparte (también por propósito).
+    await admin.post(url).send({ purpose: 'cover' }).expect(200);
+    await editor.post(url).send({ purpose: 'quiz-bg', resource: 'video' }).expect(200);
+    expect((await editor.post(url).send({ purpose: 'quiz-bg', resource: 'video' })).status).toBe(
+      429,
+    );
+    // Una petición inválida no gasta cupo de nadie.
+    expect((await admin.post(url).send({ purpose: 'otro' })).status).toBe(400);
+    await admin.post(url).send({ purpose: 'cover' }).expect(200);
+  });
+});
