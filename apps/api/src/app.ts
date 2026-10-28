@@ -72,6 +72,7 @@ export interface AppDeps {
     | 'RESEND_API_KEY'
     | 'GOOGLE_CLIENT_ID'
     | 'RATE_LIMIT_MULTIPLIER'
+    | 'TRUST_PROXY_HOPS'
     | 'CONTACT_RECIPIENT_EMAIL'
     | 'REQUIRE_QR_UNLOCK'
     | 'ACCESS_TOKEN_SECRET'
@@ -190,12 +191,17 @@ export function createApp(
 
   const app = express();
   app.disable('x-powered-by');
-  if (deps.env.NODE_ENV === 'production') app.set('trust proxy', 1); // Render está detrás de un proxy
+  // Cuántos proxies de confianza hay delante (ver `TRUST_PROXY_HOPS`); de esto sale `req.ip`, la clave de los límites.
+  app.set('trust proxy', deps.env.TRUST_PROXY_HOPS);
 
   app.use(
     pinoHttp({
       logger: deps.logger,
-      autoLogging: { ignore: (req) => req.url === '/api/health' },
+      // El diagnóstico de red muestra la cadena de proxies de quien lo abre: no se registra.
+      autoLogging: {
+        ignore: (req) =>
+          req.url === '/api/health' || req.url?.startsWith('/api/admin/network-check') === true,
+      },
       // El token del QR viaja en la URL de /access/resolve: nunca debe quedar en los logs.
       serializers: { req: (req: { url?: string }) => ({ ...req, url: maskAccessToken(req.url) }) },
     }),

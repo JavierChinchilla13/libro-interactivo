@@ -52,6 +52,12 @@ const envSchema = z.object({
    * extremo a extremo, donde una sola máquina hace muchos ingresos seguidos.
    */
   RATE_LIMIT_MULTIPLIER: z.coerce.number().int().min(1).max(100).default(1),
+  /**
+   * Cuántos proxies de confianza hay entre la persona y el API (Render, y lo que haya delante). De esto depende la «IP
+   * de la lectora» que cuenta el limitador: de menos, todas parecen una sola; de más, se puede falsificar. Por defecto
+   * 1 en producción y 0 fuera. El valor correcto se mide con `GET /api/admin/network-check`.
+   */
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).optional(),
   /** Cloudinary (subida firmada de imágenes y videos desde el panel). Las tres juntas o ninguna. */
   CLOUDINARY_CLOUD_NAME: z.string().min(1).optional(),
   CLOUDINARY_API_KEY: z.string().min(1).optional(),
@@ -173,8 +179,12 @@ const envSchemaChecked = envSchema.superRefine((env, ctx) => {
 });
 
 /** Entorno ya validado. `REQUIRE_QR_UNLOCK` siempre es booleano: por defecto, `true` solo en producción. */
-export type Env = Omit<z.infer<typeof envSchemaChecked>, 'REQUIRE_QR_UNLOCK'> & {
+export type Env = Omit<
+  z.infer<typeof envSchemaChecked>,
+  'REQUIRE_QR_UNLOCK' | 'TRUST_PROXY_HOPS'
+> & {
   REQUIRE_QR_UNLOCK: boolean;
+  TRUST_PROXY_HOPS: number;
 };
 
 /** Valores que solo se asumen fuera de producción, para que `npm run dev` funcione sin configurar nada. */
@@ -219,6 +229,8 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
     ...result.data,
     // En desarrollo y pruebas el desbloqueo por QR va apagado salvo que se pida; en producción, siempre encendido.
     REQUIRE_QR_UNLOCK: result.data.REQUIRE_QR_UNLOCK ?? result.data.NODE_ENV === 'production',
+    TRUST_PROXY_HOPS:
+      result.data.TRUST_PROXY_HOPS ?? (result.data.NODE_ENV === 'production' ? 1 : 0),
   };
 }
 

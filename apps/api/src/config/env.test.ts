@@ -247,6 +247,11 @@ describe('parseEnv', () => {
       );
     });
 
+    it('TRUST_PROXY_HOPS vale 1 por defecto en producción y se puede fijar', () => {
+      expect(parseEnv(prod).TRUST_PROXY_HOPS).toBe(1);
+      expect(parseEnv({ ...prod, TRUST_PROXY_HOPS: '2' }).TRUST_PROXY_HOPS).toBe(2);
+    });
+
     it('fuera de producción nada de esto se exige', () => {
       expect(() =>
         parseEnv({
