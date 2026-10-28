@@ -69,7 +69,8 @@ test.describe('administración: usuarios, mensajes y borrado de cuenta (escritor
     await expect(reader).toHaveURL(/\/ingresar/);
 
     await page.getByRole('button', { name: 'Reactivar cuenta' }).click();
-    await expect(page.getByText('Activa').first()).toBeVisible();
+    // «Activa» también está dentro de «Desactivada»: esperar el botón contrario es lo que prueba que ya se guardó.
+    await expect(page.getByRole('button', { name: 'Desactivar cuenta' })).toBeVisible();
     await reader.getByRole('button', { name: 'Ingresar' }).click();
     await expect(reader).toHaveURL(/\/panel/);
     await other.close();
