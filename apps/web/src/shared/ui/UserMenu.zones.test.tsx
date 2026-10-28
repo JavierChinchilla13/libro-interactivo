@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { READER, json, mockApi, renderAt } from '../../test/mockApi';
-import { zoneOf } from './StaffSwitcher';
+import { zoneOf } from '../lib/zones';
 
 const ADMIN = { ...READER, id: '670000000000000000000002', name: 'Admin', role: 'ADMIN' };
 const EDITOR = { ...READER, id: '670000000000000000000003', name: 'Editora', role: 'EDITOR' };

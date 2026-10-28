@@ -1487,41 +1487,6 @@
     }
   }
 
-  /* Selector de zona para administradoras y editoras (sitio, panel, administración): un control segmentado. */
-  .staff-switcher {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.125rem;
-    padding: 0.125rem;
-    border: 1px solid var(--token-line);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--token-bg) 60%, transparent);
-  }
-  .staff-switcher-link {
-    display: inline-flex;
-    align-items: center;
-    min-height: 2.25rem;
-    padding-inline: 0.75rem;
-    border-radius: 999px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--token-muted);
-    text-decoration: none;
-    white-space: nowrap;
-    transition:
-      background-color var(--token-dur-fast) var(--token-ease-out),
-      color var(--token-dur-fast) var(--token-ease-out);
-  }
-  .staff-switcher-link[data-active] {
-    background: color-mix(in srgb, var(--token-primary) 18%, transparent);
-    color: var(--token-text);
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .staff-switcher-link:hover {
-      color: var(--token-text);
-    }
-  }
-
   /* Una sola pieza: a su proporción, hasta 34 rem de ancho y sin pasar de 70 % del alto de la pantalla. */
   .fan-single {
     width: min(100%, calc(70dvh * var(--ratio, 1)), 34rem);

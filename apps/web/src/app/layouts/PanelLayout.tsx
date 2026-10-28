@@ -86,7 +86,7 @@ export function PanelLayout() {
                 )}
               </nav>
               <div className="flex items-center gap-2">
-                <UserMenu looseZones={false} />
+                <UserMenu />
               </div>
             </>
           )}

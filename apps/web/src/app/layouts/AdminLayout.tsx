@@ -231,7 +231,7 @@ export function AdminLayout() {
                 <p className="min-w-0 flex-1 truncate text-base font-semibold lg:hidden">
                   {where?.item.label ?? 'Administración'}
                 </p>
-                <UserMenu className="ml-auto" looseZones={false} />
+                <UserMenu className="ml-auto" />
               </header>
               <main
                 id={MAIN_ID}
