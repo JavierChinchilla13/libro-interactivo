@@ -21,7 +21,10 @@ import type {
   createAdminUploadController,
   createAdminWikiController,
 } from '../controllers/admin.controller.js';
+import type { Request, RequestHandler } from 'express';
+import type { Limits } from '../config/limits.js';
 import type { Guards } from '../middleware/auth.js';
+import { createRateLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 
 /** Todo `/admin/*` exige sesión y rol EDITOR o ADMIN (lista explícita: se valida en el servidor). */
@@ -52,8 +55,10 @@ export function createAdminBookRouter(
 export function mountQuizEditorRoutes(
   router: Router,
   controller: ReturnType<typeof createAdminQuizEditorController>,
+  limits: Limits,
 ): void {
   const params = validate({ params: quizParamsSchema });
+  const appearanceLimit = createRateLimiter(limits.appearanceWrite);
   router.get('/', validate({ query: quizListQuerySchema }), controller.list);
   router.post('/', validate({ body: createQuizRequestSchema }), controller.create);
   router.get('/:quizId', params, controller.get);
@@ -74,11 +79,13 @@ export function mountQuizEditorRoutes(
   router.get('/:quizId/appearance/history', params, controller.appearanceHistory);
   router.put(
     '/:quizId/appearance',
+    appearanceLimit,
     validate({ params: quizParamsSchema, body: updateQuizAppearanceRequestSchema }),
     controller.updateAppearance,
   );
   router.post(
     '/:quizId/appearance/revert',
+    appearanceLimit,
     validate({ params: quizParamsSchema, body: revertQuizAppearanceRequestSchema }),
     controller.revertAppearance,
   );
@@ -107,8 +114,21 @@ export function createAdminWikiRouter(
 export function createAdminUploadRouter(
   controller: ReturnType<typeof createAdminUploadController>,
   guards: Guards,
+  limits: Limits,
 ): Router {
   const router = staffRouter(guards);
-  router.post('/image-signature', validate({ body: imageSignatureRequestSchema }), controller.sign);
+  // Cada propósito tiene su cupo por usuaria; los fondos de quiz (videos) tienen un tope más bajo.
+  const purpose = (req: Request) =>
+    String((req.body as { purpose?: unknown } | undefined)?.purpose);
+  const general = createRateLimiter({ ...limits.uploadSign, keyPart: purpose });
+  const quizBg = createRateLimiter({ ...limits.uploadSignQuizBg, keyPart: purpose });
+  const byPurpose: RequestHandler = (req, res, next) =>
+    purpose(req) === 'quiz-bg' ? quizBg(req, res, next) : general(req, res, next);
+  router.post(
+    '/image-signature',
+    validate({ body: imageSignatureRequestSchema }),
+    byPurpose,
+    controller.sign,
+  );
   return router;
 }

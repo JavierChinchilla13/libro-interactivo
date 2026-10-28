@@ -11,6 +11,7 @@ import type {
   createAdminQuizController,
   createQuizController,
 } from '../controllers/quiz.controller.js';
+import type { Limits } from '../config/limits.js';
 import type { Guards } from '../middleware/auth.js';
 import type { RequireUnlocked } from '../middleware/unlocked.js';
 import { validate } from '../middleware/validate.js';
@@ -61,6 +62,7 @@ export function createAdminQuizRouter(
   controller: AdminQuizController,
   editor: ReturnType<typeof createAdminQuizEditorController>,
   guards: Guards,
+  limits: Limits,
 ): Router {
   const router = Router();
   router.use(guards.requireAuth, guards.requireRole('EDITOR', 'ADMIN'));
@@ -68,6 +70,6 @@ export function createAdminQuizRouter(
   router.post('/:quizId/validate', params, controller.validateQuiz);
   router.post('/:quizId/publish', params, controller.publish);
   router.post('/:quizId/preview', params, controller.preview);
-  mountQuizEditorRoutes(router, editor);
+  mountQuizEditorRoutes(router, editor, limits);
   return router;
 }

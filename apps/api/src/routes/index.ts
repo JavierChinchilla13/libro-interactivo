@@ -211,6 +211,7 @@ export function createApiRouter(deps: RouteDeps): Router {
       createAdminQuizController(deps.quizPublisher),
       createAdminQuizEditorController(deps.quizAdmin, deps.quizAppearance),
       deps.guards,
+      deps.limits,
     ),
   );
   router.use(
@@ -239,7 +240,11 @@ export function createApiRouter(deps: RouteDeps): Router {
   );
   router.use(
     '/admin/uploads',
-    createAdminUploadRouter(createAdminUploadController(deps.images, deps.clock), deps.guards),
+    createAdminUploadRouter(
+      createAdminUploadController(deps.images, deps.clock),
+      deps.guards,
+      deps.limits,
+    ),
   );
   return router;
 }
