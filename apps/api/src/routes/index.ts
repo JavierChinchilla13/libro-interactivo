@@ -16,6 +16,7 @@ import {
 } from '../controllers/community.controller.js';
 import {
   createAdminMetricsController,
+  createAdminNetworkController,
   createAdminUsersController,
 } from '../controllers/adminOps.controller.js';
 import { createPublicWikiController } from '../controllers/publicWiki.controller.js';
@@ -88,6 +89,7 @@ import {
 } from './community.routes.js';
 import {
   createAdminMessagesRouter,
+  createAdminNetworkRouter,
   createAdminStatsRouter,
   createAdminUsersRouter,
 } from './adminOps.routes.js';
@@ -107,7 +109,7 @@ import {
 } from './quiz.routes.js';
 
 export interface RouteDeps {
-  env: Pick<Env, 'NODE_ENV' | 'COOKIE_DOMAIN'>;
+  env: Pick<Env, 'NODE_ENV' | 'COOKIE_DOMAIN' | 'TRUST_PROXY_HOPS'>;
   isDbUp: () => boolean;
   auth: AuthService;
   account: AccountService;
@@ -183,6 +185,10 @@ export function createApiRouter(deps: RouteDeps): Router {
   );
   router.use('/admin/contact-messages', createAdminMessagesRouter(metrics, deps.guards));
   router.use('/admin/stats', createAdminStatsRouter(metrics, deps.guards));
+  router.use(
+    '/admin/network-check',
+    createAdminNetworkRouter(createAdminNetworkController(deps.env.TRUST_PROXY_HOPS), deps.guards),
+  );
   const community = createPublicCommunityController(deps.fanArts, deps.reviews);
   router.use('/fan-arts', createPublicFanArtRouter(community));
   router.use('/reviews', createPublicReviewRouter(community));
