@@ -421,6 +421,37 @@ describe('apariencia del quiz: el video se verifica con Cloudinary', () => {
     });
   });
 
+  it('cambiar solo el texto alternativo de un video ya guardado NO vuelve a consultar a Cloudinary y conserva lo medido', async () => {
+    const { appearance, quiz, editor, cloud } = await world();
+    await appearance.update(quiz.id, editor, { appearance: withVideo(), expectedRev: 0 });
+    expect(cloud.provider.inspect).toHaveBeenCalledTimes(1);
+    // Mismo archivo, otro alt, y medidas falsas del navegador: se acepta el alt y se ignoran las medidas.
+    const res = await appearance.update(quiz.id, editor, {
+      appearance: withVideo({ alt: 'Otro texto', durationSeconds: 1, width: 99 }),
+      expectedRev: 1,
+    });
+    expect(cloud.provider.inspect).toHaveBeenCalledTimes(1);
+    const saved = res.appearance?.background;
+    expect(saved?.kind).toBe('video');
+    if (saved?.kind === 'video') {
+      expect(saved.video.alt).toBe('Otro texto');
+      expect(saved.video.durationSeconds).toBe(8.2);
+      expect(saved.video.width).toBe(1280);
+    }
+  });
+
+  it('una versión distinta del archivo (otra url) sí se consulta', async () => {
+    const { appearance, quiz, editor, cloud } = await world();
+    await appearance.update(quiz.id, editor, { appearance: withVideo(), expectedRev: 0 });
+    await appearance.update(quiz.id, editor, {
+      appearance: withVideo({
+        url: 'https://res.cloudinary.com/demo/video/upload/v2/libro/quiz-bg/vid.mp4',
+      }),
+      expectedRev: 1,
+    });
+    expect(cloud.provider.inspect).toHaveBeenCalledTimes(2);
+  });
+
   it('rechaza un video que dura más de 10 s (con margen de 2) aunque el navegador diga que dura poco', async () => {
     const { appearance, quiz, editor, cloud } = await world();
     cloud.set(videoAsset('libro/quiz-bg/vid', { durationSeconds: 14.5 }));
