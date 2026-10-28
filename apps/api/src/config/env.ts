@@ -84,6 +84,43 @@ const envSchema = z.object({
   CONTACT_RECIPIENT_EMAIL: z.email('debe ser un correo válido').optional(),
 });
 
+/** Un secreto de producción no puede ser el de desarrollo ni algo repetitivo (`aaaa…`, `1234…`). Nunca se cita su valor. */
+function weakSecret(value: string): boolean {
+  return value.includes('solo-para-desarrollo') || new Set(value).size < 12;
+}
+
+/** Reglas que solo rigen en producción. Los mensajes dicen qué variable falla, nunca su valor. */
+function checkProduction(env: z.infer<typeof envSchema>, ctx: z.core.$RefinementCtx): void {
+  const fail = (name: keyof typeof env, message: string) =>
+    ctx.addIssue({ code: 'custom', path: [name], message });
+  if (env.CLOUDINARY_CLOUD_NAME === undefined) {
+    fail(
+      'CLOUDINARY_CLOUD_NAME',
+      'es obligatoria en producción (sin ella el sitio no sabe de dónde cargar las imágenes y se rechazaría todo el contenido)',
+    );
+  }
+  for (const name of ['JWT_ACCESS_SECRET', 'ACCESS_TOKEN_SECRET'] as const) {
+    if (weakSecret(env[name])) {
+      fail(name, 'en producción debe ser aleatoria (no la de desarrollo ni caracteres repetidos)');
+    }
+  }
+  if (env.RATE_LIMIT_MULTIPLIER !== 1) {
+    fail(
+      'RATE_LIMIT_MULTIPLIER',
+      'no debe definirse en producción (relaja los límites de intentos)',
+    );
+  }
+  const insecure = (url: string) => {
+    const { protocol, hostname } = new URL(url);
+    return protocol !== 'https:' || hostname === 'localhost' || hostname.endsWith('.localhost');
+  };
+  if (insecure(env.APP_URL))
+    fail('APP_URL', 'en producción debe ser https y no apuntar a localhost');
+  if (env.CORS_ORIGIN.some(insecure)) {
+    fail('CORS_ORIGIN', 'en producción cada origen debe ser https y no apuntar a localhost');
+  }
+}
+
 const envSchemaChecked = envSchema.superRefine((env, ctx) => {
   const need = (name: keyof typeof env, reason: string) => {
     if (env[name] === undefined) ctx.addIssue({ code: 'custom', path: [name], message: reason });
@@ -124,6 +161,7 @@ const envSchemaChecked = envSchema.superRefine((env, ctx) => {
         'S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID y S3_SECRET_ACCESS_KEY van juntas o ninguna',
     });
   }
+  if (env.NODE_ENV === 'production') checkProduction(env, ctx);
   if (env.MAIL_PROVIDER === 'gmail') {
     need('GMAIL_USER', 'es obligatoria con MAIL_PROVIDER=gmail');
     need('GMAIL_APP_PASSWORD', 'es obligatoria con MAIL_PROVIDER=gmail');
@@ -182,4 +220,21 @@ export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
     // En desarrollo y pruebas el desbloqueo por QR va apagado salvo que se pida; en producción, siempre encendido.
     REQUIRE_QR_UNLOCK: result.data.REQUIRE_QR_UNLOCK ?? result.data.NODE_ENV === 'production',
   };
+}
+
+/**
+ * Solo para el arranque del servidor (no para los scripts, que sí reciben `SEED_*` a propósito): en producción no deben
+ * quedar definidas las variables de los seeds, que llevan contraseñas de ejemplo.
+ */
+export function assertNoSeedVariables(source: NodeJS.ProcessEnv): void {
+  if (source['NODE_ENV'] !== 'production') return;
+  const found = Object.keys(definedOnly(source)).filter((key) => key.startsWith('SEED_'));
+  if (found.length > 0) {
+    throw new EnvError(
+      found.map(
+        (name) =>
+          `${name}: no debe definirse en el servidor de producción (es solo para los scripts)`,
+      ),
+    );
+  }
 }

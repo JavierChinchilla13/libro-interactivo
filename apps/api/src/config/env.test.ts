@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EnvError, parseEnv } from './env.js';
+import { assertNoSeedVariables, EnvError, parseEnv } from './env.js';
 
 describe('parseEnv', () => {
   it('en desarrollo usa valores por defecto', () => {
@@ -44,8 +44,11 @@ describe('parseEnv', () => {
       NODE_ENV: 'production',
       MONGODB_URI: 'mongodb://127.0.0.1:27017/x',
       CORS_ORIGIN: 'https://app.ejemplo.com',
-      JWT_ACCESS_SECRET: 'j'.repeat(40),
-      ACCESS_TOKEN_SECRET: 'q'.repeat(40),
+      JWT_ACCESS_SECRET: 'Jx7vQ2mP9sLk4RtW8nBz3YcD6fGh1aUe5oIq0XvN',
+      CLOUDINARY_CLOUD_NAME: 'demo',
+      CLOUDINARY_API_KEY: '123456',
+      CLOUDINARY_API_SECRET: 'secreto-de-prueba',
+      ACCESS_TOKEN_SECRET: 'Qh3kT8wZr1NbV6yMcP4sLd9fGj2XaUe7oIq5RtWn',
       APP_URL: 'https://app.ejemplo.com',
       MAIL_PROVIDER: 'resend',
       RESEND_API_KEY: 'clave-de-prueba',
@@ -114,8 +117,11 @@ describe('parseEnv', () => {
       NODE_ENV: 'production',
       MONGODB_URI: 'mongodb+srv://cluster-de-prueba.example.net/libro',
       CORS_ORIGIN: 'https://app.ejemplo.com',
-      JWT_ACCESS_SECRET: 'a'.repeat(40),
-      ACCESS_TOKEN_SECRET: 'q'.repeat(40),
+      JWT_ACCESS_SECRET: 'Jx7vQ2mP9sLk4RtW8nBz3YcD6fGh1aUe5oIq0XvN',
+      CLOUDINARY_CLOUD_NAME: 'demo',
+      CLOUDINARY_API_KEY: '123456',
+      CLOUDINARY_API_SECRET: 'secreto-de-prueba',
+      ACCESS_TOKEN_SECRET: 'Qh3kT8wZr1NbV6yMcP4sLd9fGj2XaUe7oIq5RtWn',
       APP_URL: 'https://app.ejemplo.com/',
       MAIL_PROVIDER: 'resend',
       RESEND_API_KEY: 're_clave_de_prueba',
@@ -132,8 +138,11 @@ describe('parseEnv', () => {
       NODE_ENV: 'production',
       MONGODB_URI: 'mongodb://127.0.0.1:27017/x',
       CORS_ORIGIN: 'https://app.ejemplo.com',
-      JWT_ACCESS_SECRET: 'p'.repeat(40),
-      ACCESS_TOKEN_SECRET: 'q'.repeat(40),
+      JWT_ACCESS_SECRET: 'Jx7vQ2mP9sLk4RtW8nBz3YcD6fGh1aUe5oIq0XvN',
+      CLOUDINARY_CLOUD_NAME: 'demo',
+      CLOUDINARY_API_KEY: '123456',
+      CLOUDINARY_API_SECRET: 'secreto-de-prueba',
+      ACCESS_TOKEN_SECRET: 'Qh3kT8wZr1NbV6yMcP4sLd9fGj2XaUe7oIq5RtWn',
       APP_URL: 'https://app.ejemplo.com',
     };
 
@@ -171,6 +180,99 @@ describe('parseEnv', () => {
         /RESET_TOKEN_TTL_MINUTES/,
       );
       expect(parseEnv({ NODE_ENV: 'test' }).RESET_TOKEN_TTL_MINUTES).toBe(30);
+    });
+  });
+
+  describe('reglas solo de producción', () => {
+    const prod = {
+      NODE_ENV: 'production',
+      MONGODB_URI: 'mongodb://127.0.0.1:27017/x',
+      CORS_ORIGIN: 'https://app.ejemplo.com',
+      JWT_ACCESS_SECRET: 'Jx7vQ2mP9sLk4RtW8nBz3YcD6fGh1aUe5oIq0XvN',
+      ACCESS_TOKEN_SECRET: 'Qh3kT8wZr1NbV6yMcP4sLd9fGj2XaUe7oIq5RtWn',
+      APP_URL: 'https://app.ejemplo.com',
+      MAIL_PROVIDER: 'resend',
+      RESEND_API_KEY: 'clave-de-prueba',
+      MAIL_FROM: 'Libro <a@ejemplo.com>',
+      CLOUDINARY_CLOUD_NAME: 'demo',
+      CLOUDINARY_API_KEY: '123456',
+      CLOUDINARY_API_SECRET: 'secreto-de-prueba',
+    };
+    const problemsOf = (source: NodeJS.ProcessEnv): string => {
+      try {
+        parseEnv(source);
+      } catch (error) {
+        return (error as EnvError).problems.join('\n');
+      }
+      return '';
+    };
+
+    it('la configuración completa pasa', () => {
+      expect(problemsOf(prod)).toBe('');
+    });
+
+    it('exige el nombre de nube de Cloudinary (sin ella no hay de dónde cargar imágenes)', () => {
+      const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, ...rest } = prod;
+      void [CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET];
+      expect(problemsOf(rest)).toContain('CLOUDINARY_CLOUD_NAME');
+      // En desarrollo y pruebas sigue siendo opcional.
+      expect(parseEnv({ NODE_ENV: 'test' }).CLOUDINARY_CLOUD_NAME).toBeUndefined();
+    });
+
+    it('rechaza secretos de desarrollo o repetitivos, sin citar su valor', () => {
+      const devSecret = 'solo-para-desarrollo-no-usar-en-produccion-0123456789';
+      const repeated = 'a'.repeat(48);
+      const messages = problemsOf({
+        ...prod,
+        JWT_ACCESS_SECRET: devSecret,
+        ACCESS_TOKEN_SECRET: repeated,
+      });
+      expect(messages).toContain('JWT_ACCESS_SECRET');
+      expect(messages).toContain('ACCESS_TOKEN_SECRET');
+      expect(messages).not.toContain(devSecret);
+      expect(messages).not.toContain(repeated);
+    });
+
+    it('rechaza RATE_LIMIT_MULTIPLIER y direcciones inseguras o locales', () => {
+      expect(problemsOf({ ...prod, RATE_LIMIT_MULTIPLIER: '20' })).toContain(
+        'RATE_LIMIT_MULTIPLIER',
+      );
+      expect(problemsOf({ ...prod, APP_URL: 'http://app.ejemplo.com' })).toContain('APP_URL');
+      expect(problemsOf({ ...prod, APP_URL: 'https://localhost:5173' })).toContain('APP_URL');
+      expect(
+        problemsOf({ ...prod, CORS_ORIGIN: 'https://app.ejemplo.com,http://x.ejemplo.com' }),
+      ).toContain('CORS_ORIGIN');
+      expect(problemsOf({ ...prod, CORS_ORIGIN: 'https://app.localhost' })).toContain(
+        'CORS_ORIGIN',
+      );
+    });
+
+    it('fuera de producción nada de esto se exige', () => {
+      expect(() =>
+        parseEnv({
+          NODE_ENV: 'development',
+          RATE_LIMIT_MULTIPLIER: '20',
+          APP_URL: 'http://localhost:5173',
+        }),
+      ).not.toThrow();
+    });
+
+    it('el servidor se niega a arrancar en producción con variables SEED_*, sin citar su valor', () => {
+      expect(() =>
+        assertNoSeedVariables({ NODE_ENV: 'development', SEED_ADMIN_PASSWORD: 'x' }),
+      ).not.toThrow();
+      expect(() => assertNoSeedVariables({ NODE_ENV: 'production' })).not.toThrow();
+      try {
+        assertNoSeedVariables({
+          NODE_ENV: 'production',
+          SEED_ADMIN_PASSWORD: 'Contrasena-Secreta-1',
+        });
+        expect.unreachable();
+      } catch (error) {
+        const text = (error as EnvError).problems.join('\n');
+        expect(text).toContain('SEED_ADMIN_PASSWORD');
+        expect(text).not.toContain('Contrasena-Secreta-1');
+      }
     });
   });
 });

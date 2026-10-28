@@ -1,11 +1,12 @@
 import { createApp } from './app.js';
-import { EnvError, parseEnv, type Env } from './config/env.js';
+import { assertNoSeedVariables, EnvError, parseEnv, type Env } from './config/env.js';
 import { connectDb, disconnectDb, isDbUp } from './db/connect.js';
 import { createBackgroundTasks } from './lib/background.js';
 import { createLogger } from './lib/logger.js';
 
 function loadEnvOrExit(): Env {
   try {
+    assertNoSeedVariables(process.env);
     return parseEnv();
   } catch (error) {
     if (error instanceof EnvError) {
