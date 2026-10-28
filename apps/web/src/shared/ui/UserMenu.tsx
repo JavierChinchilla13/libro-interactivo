@@ -14,7 +14,7 @@ import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useLogout, useSession } from '../../features/auth/session';
 import { GearIcon, LogoutIcon } from './icons';
-import { zoneOf } from './StaffSwitcher';
+import { zoneOf } from '../lib/zones';
 
 type Role = AuthUser['role'];
 
@@ -33,8 +33,6 @@ export interface UserMenuItem {
   zone?: 'site' | 'panel' | 'admin';
   /** Las opciones de un mismo grupo van juntas; entre grupos hay una línea. */
   group?: string;
-  /** Solo se ve donde el selector de zonas no cabe suelto en la barra (por debajo de 1536 px). */
-  narrowOnly?: boolean;
 }
 
 const STAFF: readonly Role[] = ['EDITOR', 'ADMIN'];
@@ -47,7 +45,6 @@ export const USER_MENU_ITEMS: readonly UserMenuItem[] = [
     zone: 'site',
     roles: STAFF,
     group: 'zonas',
-    narrowOnly: true,
   },
   {
     id: 'zona-panel',
@@ -56,7 +53,6 @@ export const USER_MENU_ITEMS: readonly UserMenuItem[] = [
     zone: 'panel',
     roles: STAFF,
     group: 'zonas',
-    narrowOnly: true,
   },
   {
     id: 'zona-admin',
@@ -65,7 +61,6 @@ export const USER_MENU_ITEMS: readonly UserMenuItem[] = [
     zone: 'admin',
     roles: STAFF,
     group: 'zonas',
-    narrowOnly: true,
   },
   { id: 'ajustes', label: 'Ajustes', to: '/panel/cuenta', icon: <GearIcon />, group: 'cuenta' },
   { id: 'salir', label: 'Salir', action: 'logout', icon: <LogoutIcon />, group: 'cuenta' },
@@ -113,14 +108,11 @@ export function UserMenu({
   items = USER_MENU_ITEMS,
   className = '',
   alwaysShowName = false,
-  looseZones = true,
 }: {
   items?: readonly UserMenuItem[];
   className?: string;
   /** Muestra el nombre también en pantallas estrechas (p. ej. dentro del menú desplegable del sitio). */
   alwaysShowName?: boolean;
-  /** Hay un selector de zonas suelto en pantallas anchas (panel y administración); en el sitio no cabe y siempre va aquí. */
-  looseZones?: boolean;
 }) {
   const session = useSession();
   const user = session.data;
@@ -284,7 +276,7 @@ export function UserMenu({
                   {visible.map((item, index) => {
                     const common = {
                       role: 'menuitem' as const,
-                      className: `user-menu-item ${item.narrowOnly && looseZones ? '2xl:hidden' : ''}`,
+                      className: 'user-menu-item',
                       'aria-current':
                         item.zone && item.zone === currentZone ? ('page' as const) : undefined,
                       tabIndex: -1,
@@ -301,10 +293,7 @@ export function UserMenu({
                     const previous = visible[index - 1];
                     const separator =
                       previous && previous.group !== item.group ? (
-                        <div
-                          role="separator"
-                          className={`user-menu-sep ${previous.narrowOnly && looseZones ? '2xl:hidden' : ''}`}
-                        />
+                        <div role="separator" className="user-menu-sep" />
                       ) : null;
                     if (item.to) {
                       return (

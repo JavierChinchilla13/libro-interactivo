@@ -93,7 +93,7 @@ export function PublicLayout() {
                       Mi panel
                     </NavLink>
                   )}
-                  <UserMenu alwaysShowName looseZones={false} />
+                  <UserMenu alwaysShowName />
                 </>
               ) : (
                 <>
