@@ -8,6 +8,7 @@ import {
   quizAppearanceSchema,
   type AppearanceField,
   type AppearanceHistoryEntry,
+  type BackgroundVideo,
   type QuestionBackground,
   type QuizAppearance,
   type QuizAppearanceResponse,
@@ -203,7 +204,7 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
   /** Un medio de fondo: carpeta, URL exacta y, si es video, lo que dice Cloudinary (peso, formato y duración). */
   async function verifyMedia(
     background: Verifiable,
-    alreadyVerified: ReadonlySet<string>,
+    alreadyVerified: ReadonlyMap<string, BackgroundVideo>,
   ): Promise<Verifiable> {
     const media = background.kind === 'image' ? background.image : background.video;
     if (
@@ -229,8 +230,11 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
     if (!urlHasPublicId(video.posterUrl, video.publicId)) {
       throw new AppError('VALIDATION', 'El póster no corresponde a ese video');
     }
-    // Un video idéntico al que ya estaba guardado (y verificado) no vuelve a consultarse: cuida la cuota de Cloudinary.
-    if (alreadyVerified.has(stable(video))) return background;
+    // El mismo archivo (mismo `publicId` y `url`) que ya estaba guardado y verificado no vuelve a consultarse, aunque
+    // cambie su texto alternativo: cuida la cuota de Cloudinary. Lo medido se toma de lo guardado, nunca de lo que mande
+    // el navegador; solo el texto alternativo es nuevo.
+    const stored = alreadyVerified.get(`${video.publicId}|${video.url}`);
+    if (stored) return { ...background, video: { ...stored, alt: video.alt } };
     const info = await deps.images.inspect({ publicId: video.publicId, resource: 'video' });
     if (!info)
       throw new AppError('VALIDATION', 'No encontramos ese video en Cloudinary: súbelo de nuevo');
@@ -279,12 +283,14 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
     appearance: QuizAppearance,
     current: QuizAppearance | null,
   ): Promise<QuizAppearance> {
-    const known = new Set<string>();
+    const known = new Map<string, BackgroundVideo>();
     for (const background of [
       current?.background,
       ...Object.values(current?.questions ?? {}).map((entry) => entry.background),
     ]) {
-      if (background?.kind === 'video') known.add(stable(background.video));
+      if (background?.kind === 'video') {
+        known.set(`${background.video.publicId}|${background.video.url}`, background.video);
+      }
     }
     const general = appearance.background
       ? await verifyMedia(appearance.background, known)
