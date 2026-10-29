@@ -25,6 +25,14 @@ export default defineConfig({
   use: {
     baseURL: E2E_BASE_URL,
     trace: 'on-first-retry',
+    // El aviso de cookies sale en la primera visita y taparía los botones de abajo: las pruebas ya lo «vieron»
+    // (`e2e/legal.spec.ts` prueba el aviso con un navegador limpio).
+    storageState: {
+      cookies: [],
+      origins: [
+        { origin: E2E_BASE_URL, localStorage: [{ name: 'libro_cookie_notice', value: '1' }] },
+      ],
+    },
   },
   projects: [
     {

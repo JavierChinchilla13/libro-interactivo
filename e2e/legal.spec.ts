@@ -1,0 +1,78 @@
+import { expect, test } from '@playwright/test';
+
+const PAGES = [
+  { path: '/privacidad', title: 'Política de privacidad' },
+  { path: '/terminos', title: 'Términos de uso' },
+  { path: '/cookies', title: 'Política de cookies' },
+] as const;
+
+test.describe('páginas legales', () => {
+  for (const { path, title } of PAGES) {
+    test(`${path} carga con un solo titular y el cartel de borrador`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+      await expect(page.getByText('Borrador pendiente de revisión legal')).toBeVisible();
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      );
+      expect(overflow).toBe(false);
+    });
+  }
+
+  test('el pie lleva a cada una', async ({ page }) => {
+    await page.goto('/');
+    const legal = page.getByRole('navigation', { name: 'Legal' });
+    await legal.getByRole('link', { name: 'Privacidad' }).click();
+    await expect(page).toHaveURL(/\/privacidad$/);
+    await page
+      .getByRole('navigation', { name: 'Textos legales' })
+      .getByRole('link', { name: 'Términos' })
+      .click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Términos de uso');
+  });
+});
+
+test.describe('aviso de cookies', () => {
+  // Sin el «ya lo vi» que las demás pruebas traen de fábrica: es la primera visita.
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('sale una vez, enlaza a la política y no vuelve tras cerrarlo', async ({ page }) => {
+    await page.goto('/contacto');
+    const notice = page.getByRole('region', { name: 'Aviso de cookies' });
+    await expect(notice).toBeVisible();
+    await expect(notice).toContainText('solo cookies necesarias');
+    await notice.getByRole('button', { name: 'Entendido' }).click();
+    await expect(notice).toBeHidden();
+    await page.reload();
+    await expect(page.getByRole('heading', { level: 1, name: 'Contacto' })).toBeVisible();
+    await expect(notice).toBeHidden();
+  });
+
+  test('«Política de cookies» abre la política de cookies', async ({ page }) => {
+    await page.goto('/contacto');
+    await page
+      .getByRole('region', { name: 'Aviso de cookies' })
+      .getByRole('link', { name: 'Política de cookies' })
+      .click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Política de cookies');
+  });
+});
+
+test.describe('sitio sin abrir al público', () => {
+  test('pide no indexarse: meta robots y robots.txt que bloquea todo', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+      'content',
+      'noindex, nofollow',
+    );
+    const robots = await page.request.get('/robots.txt');
+    expect(robots.status()).toBe(200);
+    expect(await robots.text()).toMatch(/^Disallow: \/$/m);
+  });
+
+  test('el API responde con X-Robots-Tag: noindex', async ({ page }) => {
+    const health = await page.request.get('/api/health');
+    expect(health.headers()['x-robots-tag']).toBe('noindex');
+  });
+});
