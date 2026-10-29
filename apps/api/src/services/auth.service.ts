@@ -1,4 +1,4 @@
-import type { AuthUser, LoginRequest, RegisterRequest, Role } from '@libro/shared';
+import type { AuthUser, Consent, LoginRequest, RegisterRequest, Role } from '@libro/shared';
 import { Types } from 'mongoose';
 import { AppError } from '../lib/errors.js';
 import { addDays, addMinutes, type Clock } from '../lib/clock.js';
@@ -6,6 +6,8 @@ import { hashIp, randomToken, sha256Hex } from '../lib/crypto.js';
 import { normalizeEmail } from '../lib/email.js';
 import { RefreshToken } from '../models/RefreshToken.js';
 import { User, type UserDoc } from '../models/User.js';
+import { createAgeGate, type AgeGate } from './ageGate.service.js';
+import { evaluateConsent } from './consent.service.js';
 import { getDummyHash, hashPassword, verifyPassword } from './password.service.js';
 import type { GoogleProfile } from './google.service.js';
 import type { TokenService } from './token.service.js';
@@ -50,6 +52,8 @@ export interface AuthServiceOptions {
   /** Secreto para el HMAC de las IP almacenadas. */
   ipSecret: string;
   refreshTtlDays: number;
+  /** Freno a quien prueba fechas de nacimiento; por defecto uno propio (en memoria). */
+  ageGate?: AgeGate;
 }
 
 export function toAuthUser(user: Pick<UserDoc, 'id' | 'name' | 'email' | 'role'>): AuthUser {
@@ -62,6 +66,7 @@ function isDuplicateKeyError(error: unknown): boolean {
 
 export function createAuthService(options: AuthServiceOptions) {
   const { tokens, clock, ipSecret, refreshTtlDays } = options;
+  const ageGate = options.ageGate ?? createAgeGate({ clock });
 
   async function issueSession(
     user: UserDoc,
@@ -119,6 +124,8 @@ export function createAuthService(options: AuthServiceOptions) {
       input: RegisterRequest,
       meta: RequestMeta,
     ): Promise<{ user: AuthUser; session: Session }> {
+      // Primero la edad: quien no la alcanza se rechaza sin cifrar nada, sin tocar la base de datos y sin guardar nada.
+      const consent = evaluateConsent(input, { now: clock(), gate: ageGate, ip: meta.ip });
       const passwordHash = await hashPassword(input.password);
       let user: UserDoc;
       try {
@@ -128,6 +135,7 @@ export function createAuthService(options: AuthServiceOptions) {
           name: input.name,
           passwordHash,
           role: 'USER',
+          ...consent,
         });
       } catch (error) {
         // El índice único es la garantía real (también ante registros simultáneos).
@@ -173,13 +181,22 @@ export function createAuthService(options: AuthServiceOptions) {
 
     /**
      * Ingreso con Google (el perfil ya viene verificado por `GoogleVerifier`). Un correo verificado por Google es
-     * prueba de que la persona controla esa cuenta: si ya existe se entra; si no, se crea una lectora con una
-     * contraseña al azar que nadie conoce (puede definir una con «Olvidé mi contraseña»).
+     * prueba de que la persona controla esa cuenta.
+     *
+     * - Si la cuenta **ya existe**, se entra como siempre (aunque no tenga fecha de nacimiento guardada).
+     * - Si **no existe** y no llegó el perfil (edad y consentimientos), **no se crea nada**: se responde
+     *   `needs_profile` con el nombre y el correo para mostrarlos. Entre los dos pasos el servidor no guarda nada.
+     * - Si llegó el perfil, se evalúa igual que en el registro (menor de 16: rechazo, nada guardado) y se crea una
+     *   lectora con una contraseña al azar que nadie conoce (puede definir una con «Olvidé mi contraseña»).
      */
     async loginWithGoogle(
       profile: GoogleProfile,
       meta: RequestMeta,
-    ): Promise<{ user: AuthUser; session: Session }> {
+      consentInput?: Consent,
+    ): Promise<
+      | { status: 'ok'; user: AuthUser; session: Session }
+      | { status: 'needs_profile'; name: string; email: string }
+    > {
       if (!profile.emailVerified) throw new AppError('AUTH_INVALID', GOOGLE_INVALID);
       const emailNormalized = normalizeEmail(profile.email);
       let user = await User.findOne({ emailNormalized });
@@ -187,6 +204,14 @@ export function createAuthService(options: AuthServiceOptions) {
         throw new AppError('AUTH_INVALID', GOOGLE_INVALID);
       }
       if (!user) {
+        if (!consentInput) {
+          return { status: 'needs_profile', name: profile.name.slice(0, 80), email: profile.email };
+        }
+        const consent = evaluateConsent(consentInput, {
+          now: clock(),
+          gate: ageGate,
+          ip: meta.ip,
+        });
         try {
           user = await User.create({
             email: profile.email,
@@ -194,6 +219,7 @@ export function createAuthService(options: AuthServiceOptions) {
             name: profile.name.slice(0, 80),
             passwordHash: await hashPassword(randomToken(24)),
             role: 'USER',
+            ...consent,
           });
         } catch (error) {
           // Dos ingresos simultáneos: gana el índice único y el segundo reutiliza la cuenta creada.
@@ -204,7 +230,7 @@ export function createAuthService(options: AuthServiceOptions) {
       }
       await User.updateOne({ _id: user._id }, { $set: { lastLoginAt: clock() } });
       const session = await issueSession(user, meta, randomToken(16));
-      return { user: toAuthUser(user), session };
+      return { status: 'ok', user: toAuthUser(user), session };
     },
 
     /**

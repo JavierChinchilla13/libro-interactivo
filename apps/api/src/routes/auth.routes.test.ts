@@ -9,11 +9,17 @@ import { User } from '../models/User.js';
 import { hashPassword } from '../services/password.service.js';
 import { REFRESH_REUSE_GRACE_MS } from '../services/auth.service.js';
 import { createTestApp, createTestClock } from '../test-utils/app.js';
+import { ADULT_CONSENT } from '../test-utils/consent.js';
 import { useTestDb } from '../test-utils/db.js';
 
 useTestDb();
 
-const VALID = { name: 'Ana López', email: 'ana@ejemplo.com', password: 'Nube-Azul-Cuatro-87' };
+const VALID = {
+  name: 'Ana López',
+  email: 'ana@ejemplo.com',
+  password: 'Nube-Azul-Cuatro-87',
+  ...ADULT_CONSENT,
+};
 const MINUTE = 60_000;
 
 const post = (app: Express, path: string, body?: object) =>

@@ -36,6 +36,7 @@ import { createSiteSettingsService } from './services/siteSettings.service.js';
 import { createWelcomeService } from './services/welcome.service.js';
 import { createExtraService } from './services/extra.service.js';
 import { createAccountService } from './services/account.service.js';
+import { AGE_REJECTION_LIMIT, createAgeGate } from './services/ageGate.service.js';
 import { createAuthService, type AuthService } from './services/auth.service.js';
 import { createContactService } from './services/contact.service.js';
 import { createGoogleVerifier, type GoogleVerifier } from './services/google.service.js';
@@ -136,6 +137,8 @@ export function createApp(
     clock,
     ipSecret: deps.env.JWT_ACCESS_SECRET,
     refreshTtlDays: deps.env.REFRESH_TOKEN_TTL_DAYS,
+    // Con `RATE_LIMIT_MULTIPLIER` (solo pruebas E2E) el tope sube igual que el de los demás límites.
+    ageGate: createAgeGate({ clock, limit: AGE_REJECTION_LIMIT * limitFactor(deps.env) }),
   });
   const guards = createGuards(auth);
   const account = createAccountService({ auth, mail, tasks, clock });

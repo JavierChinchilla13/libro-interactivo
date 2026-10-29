@@ -22,6 +22,19 @@ const userSchema = new Schema(
     /** Última vez que vio el mensaje de bienvenida (ver `siteSettings.welcome`). */
     welcomeSeenAt: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    /**
+     * Edad y consentimientos declarados al crear la cuenta (solo lectoras que se registran; las cuentas de equipo y las
+     * anteriores no los tienen). Se guarda lo mínimo: año y mes de nacimiento (nunca el día ni la edad calculada).
+     */
+    birthYear: { type: Number, min: 1900, max: 2200 },
+    birthMonth: { type: Number, min: 1, max: 12 },
+    /** Madre, padre o tutor autorizó la cuenta (solo de 16 a 17 años). Es una declaración, no una verificación. */
+    guardianAuthorized: { type: Boolean },
+    termsAcceptedAt: { type: Date },
+    /** Consentimiento al tratamiento de datos: casilla propia, separada de los términos. */
+    privacyConsentAt: { type: Date },
+    /** Versión de los textos legales que se aceptaron (`LEGAL_VERSION`). */
+    termsVersion: { type: String, maxlength: 40 },
   },
   { timestamps: true },
 );

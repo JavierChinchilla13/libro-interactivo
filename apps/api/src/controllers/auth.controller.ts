@@ -49,9 +49,14 @@ export function createAuthController(auth: AuthService, env: CookieEnv, google?:
         'No pudimos iniciar sesión con Google. Inténtalo de nuevo.',
       );
     }
-    const { user, session } = await auth.loginWithGoogle(profile, requestMeta(req));
-    setSessionCookies(res, env, session);
-    res.json({ user });
+    const result = await auth.loginWithGoogle(profile, requestMeta(req), body.profile);
+    if (result.status === 'needs_profile') {
+      // Persona nueva: todavía no existe cuenta ni sesión. Se piden la edad y los consentimientos.
+      res.json({ status: 'needs_profile', name: result.name, email: result.email });
+      return;
+    }
+    setSessionCookies(res, env, result.session);
+    res.json({ status: 'ok', user: result.user });
   };
 
   const refresh: RequestHandler = async (req, res) => {
