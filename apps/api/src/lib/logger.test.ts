@@ -41,11 +41,40 @@ describe('los registros no guardan la IP de la lectora', () => {
     // Sigue registrando la petición (qué se pidió y cómo terminó), solo sin la IP.
     expect(log).toContain('/api/no-existe');
     expect(log).toContain('"statusCode":404');
-    expect(log).toContain('[REDACTADO]');
-    // La dirección de la conexión también (la cabecera Host es la del propio servidor, no la de la lectora).
+    // La dirección de la conexión tampoco aparece.
     const entry = JSON.parse(log.split('\n')[0] ?? '{}') as { req: Record<string, unknown> };
-    expect(entry.req['remoteAddress']).toBe('[REDACTADO]');
-    expect(entry.req['remotePort']).toBe('[REDACTADO]');
+    expect(entry.req['remoteAddress']).toBeUndefined();
+    expect(entry.req['remotePort']).toBeUndefined();
+  });
+
+  it('de cada petición solo queda qué se pidió y cómo terminó: ninguna cabecera, aunque no la conozcamos', async () => {
+    const log = await logOf({
+      'CF-Connecting-IPv6': '2001:db8::1',
+      'CF-Pseudo-IPv4': '198.51.100.77',
+      'X-Client-IP': '192.0.2.88',
+      'Fastly-Client-IP': '192.0.2.89',
+      'CF-IPCountry': 'CR',
+      'User-Agent': 'NavegadorDePrueba/9.9',
+      Origin: 'https://origen-de-prueba.example',
+      Referer: 'https://universomemorias.com/registro?correo=secreto@ejemplo.com',
+    });
+    for (const secret of [
+      '2001:db8',
+      '198.51.100.77',
+      '192.0.2.88',
+      '192.0.2.89',
+      'NavegadorDePrueba',
+      'origen-de-prueba',
+      'secreto@ejemplo.com',
+    ]) {
+      expect(log, secret).not.toContain(secret);
+    }
+    const entry = JSON.parse(log.split('\n')[0] ?? '{}') as {
+      req: Record<string, unknown>;
+      res: Record<string, unknown>;
+    };
+    expect(Object.keys(entry.req).sort()).toEqual(['id', 'method', 'url']);
+    expect(entry.res).toEqual({ statusCode: 404 });
   });
 
   it('sigue ocultando cookies y autorización', async () => {

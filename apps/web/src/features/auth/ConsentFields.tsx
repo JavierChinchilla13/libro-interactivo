@@ -188,9 +188,7 @@ export function ConsentFields({
   return (
     <div className="flex flex-col gap-4">
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium">
-          Fecha de nacimiento
-        </legend>
+        <legend className="mb-1 text-sm font-medium">Fecha de nacimiento</legend>
         <div className="grid grid-cols-2 gap-3">
           <SelectField
             label="Mes"

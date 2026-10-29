@@ -1,4 +1,4 @@
-import { registerRequestSchema } from '@libro/shared';
+import { registerAccountSchema, registerRequestSchema } from '@libro/shared';
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { ApiClientError } from '../../shared/api/client';
@@ -18,14 +18,6 @@ import { PasswordField } from './PasswordField';
 import { GoogleProfileStep } from './GoogleProfileStep';
 import { homeFor, useRegister, useSession } from './session';
 import { useGoogleAccess } from './useGoogleAccess';
-
-/** Solo para revisar nombre, correo y contraseña cuando la edad aún no está resuelta: nunca se envía. */
-const PLACEHOLDER_CONSENT = {
-  birth: { year: 2000, month: 1 },
-  ageDeclaration: 'adult',
-  acceptTerms: true,
-  acceptPrivacy: true,
-} as const;
 
 /**
  * Crear cuenta. Valida con la política del servidor mientras se escribe; el correo
@@ -53,18 +45,19 @@ export function RegisterPage() {
     // alcanza la edad no manda nada al servidor.
     const age = resolveConsent(consent, new Date());
     setConsentErrors(age.ok ? {} : age.errors);
-    const parsed = registerRequestSchema.safeParse({
-      name,
-      email,
-      password,
-      ...(age.ok ? age.consent : PLACEHOLDER_CONSENT),
-    });
-    if (!parsed.success) {
-      setErrors(fieldErrors(parsed.error.issues));
+    // Primero la cuenta (nombre, correo, contraseña): sus avisos salen junto con los de la edad.
+    const account = registerAccountSchema.safeParse({ name, email, password });
+    if (!account.success) {
+      setErrors(fieldErrors(account.error.issues));
       return;
     }
     if (!age.ok) {
       setErrors({});
+      return;
+    }
+    const parsed = registerRequestSchema.safeParse({ ...account.data, ...age.consent });
+    if (!parsed.success) {
+      setErrors(fieldErrors(parsed.error.issues));
       return;
     }
     setErrors({});
@@ -76,7 +69,7 @@ export function RegisterPage() {
   const failure = register.error instanceof ApiClientError ? register.error : null;
   const message =
     failure?.code === 'AGE_RESTRICTED'
-      ? failure.message
+      ? `${failure.message} Si te equivocaste de fecha, inténtalo de nuevo más tarde.`
       : failure?.code === 'CONFLICT'
         ? 'No se pudo completar el registro. Si ya tienes una cuenta, inicia sesión o recupera tu contraseña.'
         : failure?.code === 'RATE_LIMITED'

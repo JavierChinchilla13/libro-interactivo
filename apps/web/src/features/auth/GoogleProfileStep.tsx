@@ -48,7 +48,7 @@ export function GoogleProfileStep({
   const failure = error instanceof ApiClientError ? error : null;
   const message =
     failure?.code === 'AGE_RESTRICTED'
-      ? failure.message
+      ? `${failure.message} Si te equivocaste de fecha, inténtalo de nuevo más tarde.`
       : failure?.code === 'VALIDATION'
         ? failure.message
         : failure

@@ -138,7 +138,14 @@ export function createApp(
     ipSecret: deps.env.JWT_ACCESS_SECRET,
     refreshTtlDays: deps.env.REFRESH_TOKEN_TTL_DAYS,
     // Con `RATE_LIMIT_MULTIPLIER` (solo pruebas E2E) el tope sube igual que el de los demás límites.
-    ageGate: createAgeGate({ clock, limit: AGE_REJECTION_LIMIT * limitFactor(deps.env) }),
+    ageGate: createAgeGate({
+      clock,
+      secret: deps.env.JWT_ACCESS_SECRET,
+      limit: AGE_REJECTION_LIMIT * limitFactor(deps.env),
+      // Sin decir qué red: sirve para notar si un valor mal puesto de TRUST_PROXY_HOPS cierra el registro a todos.
+      onClosed: () =>
+        deps.logger.warn('El registro quedó cerrado para una red por rechazos de edad'),
+    }),
   });
   const guards = createGuards(auth);
   const account = createAccountService({ auth, mail, tasks, clock });
@@ -211,7 +218,16 @@ export function createApp(
           req.url === '/api/health' || req.url?.startsWith('/api/admin/network-check') === true,
       },
       // El token del QR viaja en la URL de /access/resolve: nunca debe quedar en los logs.
-      serializers: { req: (req: { url?: string }) => ({ ...req, url: maskAccessToken(req.url) }) },
+      // Lista blanca: de cada petición solo se registra qué se pidió y cómo terminó. Nada de cabeceras (IP, navegador,
+      // país, origen, referer) ni de la conexión: la política de privacidad dice que los registros no guardan la IP.
+      serializers: {
+        req: (req: { id?: unknown; method?: string; url?: string }) => ({
+          id: req.id,
+          method: req.method,
+          url: maskAccessToken(req.url),
+        }),
+        res: (res: { statusCode?: number }) => ({ statusCode: res.statusCode }),
+      },
     }),
   );
   app.use(helmet());

@@ -42,25 +42,31 @@ export const consentSchema = z.object({
 });
 export type Consent = z.infer<typeof consentSchema>;
 
+const accountShape = {
+  name: nameSchema,
+  email: emailSchema,
+  password: z.string().max(PASSWORD_MAX_LENGTH, PASSWORD_PROBLEM_MESSAGES.TOO_LONG),
+};
+
+function checkAccountPassword(
+  value: { name: string; email: string; password: string },
+  ctx: z.RefinementCtx,
+): void {
+  for (const problem of checkPassword(value.password, { name: value.name, email: value.email })) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['password'],
+      message: PASSWORD_PROBLEM_MESSAGES[problem],
+    });
+  }
+}
+
+/** Solo nombre, correo y contraseña: lo que el formulario revisa mientras la edad aún no está resuelta. */
+export const registerAccountSchema = z.object(accountShape).superRefine(checkAccountPassword);
+
 export const registerRequestSchema = z
-  .object({
-    name: nameSchema,
-    email: emailSchema,
-    password: z.string().max(PASSWORD_MAX_LENGTH, PASSWORD_PROBLEM_MESSAGES.TOO_LONG),
-    ...consentSchema.shape,
-  })
-  .superRefine((value, ctx) => {
-    for (const problem of checkPassword(value.password, {
-      name: value.name,
-      email: value.email,
-    })) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['password'],
-        message: PASSWORD_PROBLEM_MESSAGES[problem],
-      });
-    }
-  });
+  .object({ ...accountShape, ...consentSchema.shape })
+  .superRefine(checkAccountPassword);
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;
 
 /** En el login no se valida la política (solo que haya algo): las cuentas viejas deben poder entrar. */

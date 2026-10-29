@@ -66,7 +66,7 @@ function isDuplicateKeyError(error: unknown): boolean {
 
 export function createAuthService(options: AuthServiceOptions) {
   const { tokens, clock, ipSecret, refreshTtlDays } = options;
-  const ageGate = options.ageGate ?? createAgeGate({ clock });
+  const ageGate = options.ageGate ?? createAgeGate({ clock, secret: ipSecret });
 
   async function issueSession(
     user: UserDoc,
