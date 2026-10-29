@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkPassword } from '../passwordPolicy.js';
-import { loginRequestSchema, registerRequestSchema } from './auth.js';
+import { googleLoginRequestSchema, loginRequestSchema, registerRequestSchema } from './auth.js';
 
 describe('checkPassword', () => {
   it('acepta una contraseña razonable', () => {
@@ -44,6 +44,10 @@ describe('registerRequestSchema', () => {
     name: '  Ana López ',
     email: '  ANA@Ejemplo.COM ',
     password: 'Nube-Azul-Cuatro-87',
+    birth: { year: 1990, month: 6 },
+    ageDeclaration: 'adult',
+    acceptTerms: true,
+    acceptPrivacy: true,
   };
 
   it('normaliza nombre y correo', () => {
@@ -65,11 +69,89 @@ describe('registerRequestSchema', () => {
       expect(messages).toContain('demasiado común');
     }
   });
+
+  it('exige la edad declarada y los dos consentimientos por separado', () => {
+    for (const missing of ['birth', 'ageDeclaration', 'acceptTerms', 'acceptPrivacy']) {
+      const body: Record<string, unknown> = { ...valid };
+      delete body[missing];
+      expect(registerRequestSchema.safeParse(body).success, missing).toBe(false);
+    }
+    // Un consentimiento en falso o de otro tipo no vale: ni false ni el texto "true".
+    for (const field of ['acceptTerms', 'acceptPrivacy']) {
+      for (const value of [false, 'true', 1, null]) {
+        expect(registerRequestSchema.safeParse({ ...valid, [field]: value }).success).toBe(false);
+      }
+    }
+    const result = registerRequestSchema.safeParse({ ...valid, acceptPrivacy: false });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((i) => i.message)).toContain(
+        'Debes autorizar el tratamiento de tus datos',
+      );
+    }
+  });
+
+  it('rechaza mes fuera de 1 a 12, año de texto o decimal y declaraciones desconocidas', () => {
+    const bad = [
+      { birth: { year: 1990, month: 0 } },
+      { birth: { year: 1990, month: 13 } },
+      { birth: { year: '1990', month: 6 } },
+      { birth: { year: 1990.5, month: 6 } },
+      { birth: { year: 1800, month: 6 } },
+      { ageDeclaration: 'otra' },
+    ];
+    for (const change of bad) {
+      expect(registerRequestSchema.safeParse({ ...valid, ...change }).success).toBe(false);
+    }
+  });
+
+  it('solo pasa lo que el esquema conoce (ni día de nacimiento, ni edad, ni rol)', () => {
+    const parsed = registerRequestSchema.parse({ ...valid, birthDay: 12, age: 30, role: 'ADMIN' });
+    expect(Object.keys(parsed).sort()).toEqual(
+      [
+        'acceptPrivacy',
+        'acceptTerms',
+        'ageDeclaration',
+        'birth',
+        'email',
+        'name',
+        'password',
+      ].sort(),
+    );
+  });
 });
 
 describe('loginRequestSchema', () => {
   it('no impone la política de contraseñas al iniciar sesión', () => {
     expect(loginRequestSchema.safeParse({ email: 'a@b.co', password: '123' }).success).toBe(true);
     expect(loginRequestSchema.safeParse({ email: 'a@b.co', password: '' }).success).toBe(false);
+  });
+});
+
+describe('googleLoginRequestSchema', () => {
+  const credential = 'x'.repeat(30);
+
+  it('acepta solo la credencial (primer paso) o con el perfil completo (segundo paso)', () => {
+    expect(googleLoginRequestSchema.safeParse({ credential }).success).toBe(true);
+    expect(
+      googleLoginRequestSchema.safeParse({
+        credential,
+        profile: {
+          birth: { year: 2000, month: 1 },
+          ageDeclaration: 'adult',
+          acceptTerms: true,
+          acceptPrivacy: true,
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  it('un perfil a medias se rechaza', () => {
+    expect(
+      googleLoginRequestSchema.safeParse({
+        credential,
+        profile: { birth: { year: 2000, month: 1 } },
+      }).success,
+    ).toBe(false);
   });
 });

@@ -1,3 +1,4 @@
+export * from './age.js';
 export * from './errors.js';
 export * from './legal.js';
 export * from './passwordPolicy.js';

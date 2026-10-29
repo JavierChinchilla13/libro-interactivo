@@ -20,11 +20,34 @@ export const nameSchema = z
   .min(2, 'El nombre debe tener al menos 2 caracteres')
   .max(80, 'El nombre no puede superar los 80 caracteres');
 
+/** Año y mes de nacimiento. La fecha posible y la edad las decide el servidor (`checkBirth`, `ageBand`). */
+export const birthSchema = z.object({
+  year: z.number().int().min(1900).max(2200),
+  month: z.number().int().min(1).max(12),
+});
+
+/** Lo que la persona declara de su edad. Es una declaración: el sitio no verifica nada. */
+export const ageDeclarationSchema = z.enum(['adult', 'minor_with_guardian']);
+export type AgeDeclaration = z.infer<typeof ageDeclarationSchema>;
+
+/**
+ * Edad y consentimientos del alta. Los dos consentimientos van separados a propósito (términos de uso y tratamiento de
+ * datos personales): el reglamento pide que el consentimiento sobre los datos se dé en un documento independiente.
+ */
+export const consentSchema = z.object({
+  birth: birthSchema,
+  ageDeclaration: ageDeclarationSchema,
+  acceptTerms: z.literal(true, { error: 'Debes aceptar los términos de uso' }),
+  acceptPrivacy: z.literal(true, { error: 'Debes autorizar el tratamiento de tus datos' }),
+});
+export type Consent = z.infer<typeof consentSchema>;
+
 export const registerRequestSchema = z
   .object({
     name: nameSchema,
     email: emailSchema,
     password: z.string().max(PASSWORD_MAX_LENGTH, PASSWORD_PROBLEM_MESSAGES.TOO_LONG),
+    ...consentSchema.shape,
   })
   .superRefine((value, ctx) => {
     for (const problem of checkPassword(value.password, {
@@ -50,6 +73,8 @@ export type LoginRequest = z.infer<typeof loginRequestSchema>;
 /** Ingreso con Google: el `id_token` (credential) que entrega Google Identity Services; el servidor lo verifica. */
 export const googleLoginRequestSchema = z.object({
   credential: z.string().min(20, 'Falta la credencial de Google').max(4096),
+  /** Solo en el segundo paso de una persona nueva: la edad y los consentimientos. */
+  profile: consentSchema.optional(),
 });
 export type GoogleLoginRequest = z.infer<typeof googleLoginRequestSchema>;
 
@@ -64,3 +89,13 @@ export type AuthUser = z.infer<typeof authUserSchema>;
 
 export const authResponseSchema = z.object({ user: authUserSchema });
 export type AuthResponse = z.infer<typeof authResponseSchema>;
+
+/**
+ * Respuesta del ingreso con Google. Una persona nueva primero recibe `needs_profile` (con el nombre y el correo ya
+ * verificados, para mostrarlos) y **no se crea nada** hasta que reenvía la credencial con su edad y consentimientos.
+ */
+export const googleLoginResponseSchema = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('ok'), user: authUserSchema }),
+  z.object({ status: z.literal('needs_profile'), name: z.string(), email: z.string() }),
+]);
+export type GoogleLoginResponse = z.infer<typeof googleLoginResponseSchema>;
