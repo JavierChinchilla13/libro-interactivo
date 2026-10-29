@@ -51,7 +51,8 @@ describe('páginas legales', () => {
 
   it('la privacidad lista a los proveedores que tratan datos y cómo pedir el borrado', async () => {
     renderAt('/privacidad');
-    const table = await screen.findByRole('table', { name: 'Proveedores que tratan datos' });
+    await screen.findByRole('heading', { level: 1, name: 'Política de privacidad' });
+    const terms = screen.getAllByRole('term').map((node) => node.textContent);
     for (const name of [
       'Cloudflare',
       'Render',
@@ -60,7 +61,7 @@ describe('páginas legales', () => {
       'Resend',
       'Google Identity',
     ]) {
-      expect(within(table).getByRole('rowheader', { name })).toBeInTheDocument();
+      expect(terms).toContain(name);
     }
     expect(screen.getByRole('link', { name: /Panel › Cuenta/ })).toHaveAttribute(
       'href',
@@ -68,10 +69,69 @@ describe('páginas legales', () => {
     );
   });
 
+  it('la privacidad separa lo que da la titular [PLACEHOLDER] de lo que se propone [PROPUESTA]', async () => {
+    renderAt('/privacidad');
+    await screen.findByRole('heading', { level: 1, name: 'Política de privacidad' });
+    const article = screen.getByRole('article');
+    expect(within(article).getAllByText(/^\[PLACEHOLDER: /).length).toBeGreaterThan(3);
+    expect(within(article).getAllByText(/^\[PROPUESTA: /).length).toBeGreaterThan(3);
+    // La leyenda del cartel explica las dos etiquetas.
+    const note = screen.getByRole('note');
+    expect(within(note).getByText('[PLACEHOLDER]')).toBeInTheDocument();
+    expect(within(note).getByText('[PROPUESTA]')).toBeInTheDocument();
+  });
+
+  it('la privacidad tiene la sección de datos de Google con lo que se recibe y lo que no se hace', async () => {
+    renderAt('/privacidad');
+    const heading = await screen.findByRole('heading', { name: /Datos que vienen de Google/ });
+    const section = heading.closest('section') as HTMLElement;
+    expect(
+      within(section).getByText(/correo, tu nombre y si ese correo está verificado/),
+    ).toBeInTheDocument();
+    expect(
+      within(section).getByText(/No vendemos esa información, no la usamos para publicidad/),
+    ).toBeInTheDocument();
+    expect(
+      within(section).getByText(/El uso de la información que recibimos de Google se limita/),
+    ).toBeInTheDocument();
+    // No se afirma lo que el código no hace: el identificador de Google no se guarda.
+    expect(section.textContent).toMatch(/No guardamos .* el identificador de tu cuenta de Google/);
+  });
+
+  it.each(PAGES)(
+    '$path: el índice enlaza a cada apartado, que existe y tiene su titular',
+    async ({ path, title }) => {
+      renderAt(path);
+      await screen.findByRole('heading', { level: 1, name: title });
+      const toc = screen.getByRole('navigation', { name: 'En esta página' });
+      const links = within(toc).getAllByRole('link');
+      expect(links.length).toBeGreaterThanOrEqual(5);
+      for (const anchor of links) {
+        const id = anchor.getAttribute('href')?.slice(1) ?? '';
+        const section = document.getElementById(id);
+        expect(section, id).not.toBeNull();
+        expect(section?.querySelector('h2')).not.toBeNull();
+      }
+    },
+  );
+
+  it.each(PAGES)('$path: sin rayas largas ni cajas de más en el texto', async ({ path, title }) => {
+    renderAt(path);
+    await screen.findByRole('heading', { level: 1, name: title });
+    const article = screen.getByRole('article');
+    expect(article.textContent).not.toMatch(/[—–]/);
+    // Una sola franja de aviso: no hay otras alertas dentro del texto.
+    expect(within(article).queryAllByRole('alert')).toHaveLength(0);
+    expect(within(article).queryAllByRole('status')).toHaveLength(0);
+  });
+
   it('las cookies declaran la sesión como única cookie y el script de Google bajo demanda', async () => {
     renderAt('/cookies');
-    const table = await screen.findByRole('table', { name: 'Cookies del sitio' });
-    expect(within(table).getAllByRole('row')).toHaveLength(3); // encabezado + libro_at + libro_rt
+    await screen.findByRole('heading', { level: 1, name: 'Política de cookies' });
+    const names = screen.getAllByRole('term').map((node) => node.textContent);
+    // Solo las dos cookies de sesión; el resto son claves del almacenamiento del navegador.
+    expect(names.slice(0, 2)).toEqual(['libro_at', 'libro_rt']);
+    expect(names).toContain('libro_cookie_notice');
     const main = screen.getByRole('main');
     expect(within(main).getByText(/No usamos analítica ni publicidad/)).toBeInTheDocument();
     expect(within(main).getByText(/no se carga hasta que tocas ese botón/)).toBeInTheDocument();

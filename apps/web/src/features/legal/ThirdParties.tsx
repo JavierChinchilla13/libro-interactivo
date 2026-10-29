@@ -1,90 +1,92 @@
-import { Placeholder } from './LegalPage';
+import { FactList, type Fact } from './FactList';
 
 /**
- * Quién más interviene cuando alguien usa el sitio. La lista sale de lo que el sitio usa de verdad; el país y el
- * enlace a cada política quedan como dato pendiente para la revisión legal.
+ * Quién más interviene cuando alguien usa el sitio. La lista sale de lo que el sitio usa de verdad. El país o la región
+ * de cada uno y el enlace a su política quedan como dato pendiente (un solo aviso arriba de la lista): no se supone
+ * ninguno.
  */
-const THIRD_PARTIES = [
+const PENDING = 'Pendiente';
+
+const THIRD_PARTIES: ReadonlyArray<Fact> = [
   {
     name: 'Cloudflare',
-    purpose: 'Dirección del sitio (DNS) y protección delante de él.',
-    data: 'Todas las visitas pasan por ahí: dirección IP, navegador y las páginas que se piden.',
+    rows: [
+      ['Para qué', 'Dirección del sitio (DNS) y protección delante de él.'],
+      [
+        'Qué recibe',
+        'Todas las visitas pasan por ahí: dirección IP, navegador y las páginas que se piden.',
+      ],
+      ['Dónde y su política', PENDING],
+    ],
   },
   {
     name: 'Render',
-    purpose: 'Alojamiento del sitio web y del servidor.',
-    data: 'Dirección IP y registros técnicos de cada visita.',
+    rows: [
+      ['Para qué', 'Alojamiento del sitio web y del servidor.'],
+      ['Qué recibe', 'Dirección IP y registros técnicos de cada visita.'],
+      ['Dónde y su política', PENDING],
+    ],
   },
   {
     name: 'MongoDB Atlas',
-    purpose: 'Base de datos.',
-    data: 'Cuentas, progreso, resultados y mensajes de contacto.',
+    rows: [
+      ['Para qué', 'Base de datos.'],
+      ['Qué recibe', 'Cuentas, progreso, resultados y mensajes de contacto.'],
+      ['Dónde y su política', PENDING],
+    ],
   },
   {
     name: 'Cloudinary',
-    purpose: 'Alojamiento de las imágenes y los videos del sitio.',
-    data: 'Tu navegador pide las imágenes y los videos directamente a Cloudinary, así que recibe tu dirección IP y datos técnicos de la petición. No recibe datos de tu cuenta.',
+    rows: [
+      ['Para qué', 'Alojamiento de las imágenes y los videos del sitio.'],
+      [
+        'Qué recibe',
+        'Tu navegador pide las imágenes y los videos directamente a Cloudinary, así que recibe tu dirección IP y datos técnicos de la petición. No recibe datos de tu cuenta.',
+      ],
+      ['Dónde y su política', PENDING],
+    ],
   },
   {
     name: 'Resend',
-    purpose:
-      'Envío de correos del servicio (recuperar contraseña, avisos de seguridad, mensajes de contacto).',
-    data: 'La dirección de correo y el texto del mensaje.',
+    rows: [
+      [
+        'Para qué',
+        'Envío de correos del servicio (recuperar contraseña, avisos de seguridad, mensajes de contacto).',
+      ],
+      ['Qué recibe', 'La dirección de correo y el texto del mensaje.'],
+      ['Dónde y su política', PENDING],
+    ],
   },
   {
     name: 'Google Identity',
-    purpose: 'Solo si eliges «Continuar con Google».',
-    data: 'Tu correo, tu nombre y tu identificador de Google. Su botón carga un script de Google y puede usar cookies propias.',
+    rows: [
+      ['Para qué', 'Solo si eliges «Continuar con Google».'],
+      [
+        'Qué recibe',
+        'Te pide iniciar sesión en Google y nos envía tu correo, tu nombre y si el correo está verificado. Su botón carga un script de Google y puede usar cookies propias.',
+      ],
+      ['Dónde y su política', PENDING],
+    ],
   },
   {
     name: 'Namecheap',
-    purpose: 'Dominio y reenvío del correo de contacto.',
-    data: 'Los mensajes enviados a la dirección de contacto pasan por su reenvío.',
+    rows: [
+      ['Para qué', 'Dominio y reenvío del correo de contacto.'],
+      ['Qué recibe', 'Los mensajes enviados a la dirección de contacto pasan por su reenvío.'],
+      ['Dónde y su política', PENDING],
+    ],
   },
   {
     name: 'Almacenamiento de documentos privados',
-    purpose: 'Archivos de los capítulos extra.',
-    data: 'Los archivos que sube el equipo; no recibe datos de las lectoras.',
+    rows: [
+      ['Para qué', 'Archivos de los capítulos extra.'],
+      ['Qué recibe', 'Los archivos que sube el equipo; no recibe datos de las lectoras.'],
+      ['Dónde y su política', PENDING],
+    ],
   },
-] as const;
+];
 
-/** La tabla de terceros de la política de privacidad. */
-export function ThirdPartyTable() {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[34rem] border-collapse text-left text-sm">
-        <caption className="sr-only">Proveedores que tratan datos</caption>
-        <thead>
-          <tr className="border-b border-line text-muted">
-            <th scope="col" className="py-2 pr-3 font-medium">
-              Proveedor
-            </th>
-            <th scope="col" className="py-2 pr-3 font-medium">
-              Para qué
-            </th>
-            <th scope="col" className="py-2 pr-3 font-medium">
-              Qué datos recibe
-            </th>
-            <th scope="col" className="py-2 font-medium">
-              País y política
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {THIRD_PARTIES.map((row) => (
-            <tr key={row.name} className="border-b border-line align-top">
-              <th scope="row" className="py-3 pr-3 font-medium">
-                {row.name}
-              </th>
-              <td className="py-3 pr-3">{row.purpose}</td>
-              <td className="py-3 pr-3">{row.data}</td>
-              <td className="py-3">
-                <Placeholder>país o región y enlace a su política</Placeholder>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+/** La lista de proveedores de la política de privacidad. */
+export function ThirdPartyList() {
+  return <FactList items={THIRD_PARTIES} />;
 }

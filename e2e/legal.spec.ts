@@ -20,6 +20,21 @@ test.describe('páginas legales', () => {
     });
   }
 
+  test('el índice de la privacidad lleva al apartado y la sección queda a la vista', async ({
+    page,
+  }) => {
+    await page.goto('/privacidad');
+    // En el celular el índice está plegado: se abre; en escritorio ya está abierto.
+    const toggle = page.getByText('En esta página', { exact: true });
+    const link = page.getByRole('link', { name: /Datos que vienen de Google/ });
+    if (!(await link.isVisible())) await toggle.click();
+    await link.click();
+    await expect(page).toHaveURL(/#google$/);
+    await expect(
+      page.getByRole('heading', { name: /Datos que vienen de Google/ }),
+    ).toBeInViewport();
+  });
+
   test('el pie lleva a cada una', async ({ page }) => {
     await page.goto('/');
     const legal = page.getByRole('navigation', { name: 'Legal' });
