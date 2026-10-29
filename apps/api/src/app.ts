@@ -19,6 +19,7 @@ import {
   type StorageProvider,
 } from './providers/storage/StorageProvider.js';
 import { createClientIpMiddleware } from './lib/clientIp.js';
+import { noIndex } from './middleware/noIndex.js';
 import { createSameOriginGuard } from './middleware/sameOrigin.js';
 import type { MailProvider } from './providers/mail/MailProvider.js';
 import { createMailProvider } from './providers/mail/createMailProvider.js';
@@ -211,6 +212,8 @@ export function createApp(
     }),
   );
   app.use(helmet());
+  // Todo lo que sirve el API es JSON o archivos para la aplicación: nunca debe aparecer en un buscador.
+  app.use('/api', noIndex);
   app.use(cors({ origin: deps.env.CORS_ORIGIN, credentials: true }));
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
