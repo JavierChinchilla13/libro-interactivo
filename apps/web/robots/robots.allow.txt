@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /panel
+Disallow: /u/
+Disallow: /api/
+
+# Rastreadores de entrenamiento de IA: decisión pendiente de la autora. Para bloquearlos (dejando los buscadores),
+# quita el # de las líneas de abajo. Es una petición de cortesía: los rastreadores pueden ignorarla.
+# User-agent: GPTBot
+# User-agent: CCBot
+# User-agent: Google-Extended
+# User-agent: ClaudeBot
+# User-agent: anthropic-ai
+# User-agent: PerplexityBot
+# Disallow: /
+
+Sitemap: {{SITE_URL}}/sitemap.xml

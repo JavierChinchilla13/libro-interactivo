@@ -1,0 +1,3 @@
+# Sitio todavía no público: no se rastrea nada.
+User-agent: *
+Disallow: /

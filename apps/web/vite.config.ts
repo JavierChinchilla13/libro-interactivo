@@ -1,7 +1,9 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
+import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
+import { indexingControl, resolveIndexing } from './vite/indexing.ts';
 
 /**
  * Precarga las letras que se ven en el primer pintado: Cinzel (el titular, que es el LCP) y Jost (la presentación y los
@@ -80,8 +82,15 @@ function preloadDirectPageChunks(): Plugin {
 
 const API_TARGET = process.env['VITE_API_PROXY_TARGET'] ?? 'http://localhost:3000';
 
-export default defineConfig({
-  plugins: [react(), tailwindcss(), preloadFirstPaintFonts(), preloadDirectPageChunks()],
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    react(),
+    tailwindcss(),
+    preloadFirstPaintFonts(),
+    preloadDirectPageChunks(),
+    // Hasta el lanzamiento el sitio pide no indexarse (meta + robots.txt); se abre con VITE_ALLOW_INDEXING=true.
+    indexingControl(resolveIndexing(loadEnv(mode, process.cwd(), 'VITE_'))),
+  ],
   server: {
     port: 5173,
     // En desarrollo el navegador habla con el mismo origen (:5173); Vite reenvía /api al backend.
@@ -92,7 +101,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'vite/**/*.test.ts'],
     css: false,
     coverage: {
       provider: 'v8',
@@ -101,4 +110,4 @@ export default defineConfig({
       reporter: ['text-summary', 'json-summary'],
     },
   },
-});
+}));
