@@ -34,7 +34,7 @@ function takeEarly(path: string): Promise<Response | null> | undefined {
 }
 
 /** Al entrar, salir o crear una cuenta, lo que se pidió antes de la app (con la sesión anterior) ya no vale. */
-const SESSION_CHANGES = ['/auth/login', '/auth/logout', '/auth/register'];
+const SESSION_CHANGES = ['/auth/login', '/auth/logout', '/auth/register', '/auth/google'];
 function dropEarlySession(): void {
   const registry = (window as unknown as { __early?: Record<string, unknown> }).__early;
   if (!registry) return;

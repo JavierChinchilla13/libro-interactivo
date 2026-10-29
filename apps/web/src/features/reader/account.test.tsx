@@ -27,6 +27,15 @@ const LIBRARY = {
 };
 const GOOD = 'Nube-Azul-Cuatro-87';
 
+/** Llena la edad (una persona adulta) y marca los dos consentimientos del registro. */
+async function fillConsent(birthYear = '1990', birthMonth = '6') {
+  await userEvent.selectOptions(screen.getByLabelText(/^Mes/), birthMonth);
+  await userEvent.selectOptions(screen.getByLabelText(/^Año/), birthYear);
+  await userEvent.click(screen.getByRole('checkbox', { name: /Tengo 18 años o más/ }));
+  await userEvent.click(screen.getByRole('checkbox', { name: /Acepto los términos de uso/ }));
+  await userEvent.click(screen.getByRole('checkbox', { name: /Autorizo el tratamiento/ }));
+}
+
 describe('registro', () => {
   it('avisa por campo con los mensajes del servidor y no llama al API si algo está mal', async () => {
     const { called } = mockApi({}, NO_SESSION);
@@ -60,6 +69,7 @@ describe('registro', () => {
     await userEvent.type(await screen.findByLabelText(/Nombre/), 'Lectora Prueba');
     await userEvent.type(screen.getByLabelText(/Correo/), 'lectora@ejemplo.com');
     await userEvent.type(screen.getByLabelText(/^Contraseña/), GOOD);
+    await fillConsent();
     await userEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
     // Tras registrarse, la sesión queda activa y el panel se muestra.
     expect(await screen.findByRole('navigation', { name: 'Panel' })).toBeInTheDocument();
@@ -71,6 +81,7 @@ describe('registro', () => {
     await userEvent.type(await screen.findByLabelText(/Nombre/), 'Lectora Prueba');
     await userEvent.type(screen.getByLabelText(/Correo/), 'lectora@ejemplo.com');
     await userEvent.type(screen.getByLabelText(/^Contraseña/), GOOD);
+    await fillConsent();
     await userEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'No se pudo completar el registro. Si ya tienes una cuenta',

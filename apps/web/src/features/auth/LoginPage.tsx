@@ -7,7 +7,9 @@ import { Alert } from '../../shared/ui/layout';
 import { AuthShell, OrDivider, QR_TAGLINE } from './AuthShell';
 import { GOOGLE_CLIENT_ID, GoogleButton } from './GoogleButton';
 import { PasswordField } from './PasswordField';
-import { homeFor, useGoogleLogin, useLogin, useSession } from './session';
+import { GoogleProfileStep } from './GoogleProfileStep';
+import { homeFor, useLogin, useSession } from './session';
+import { useGoogleAccess } from './useGoogleAccess';
 
 /**
  * Ingreso. Mensajes genéricos: nunca dice si el correo existe.
@@ -16,10 +18,10 @@ import { homeFor, useGoogleLogin, useLogin, useSession } from './session';
 export function LoginPage() {
   const session = useSession();
   const login = useLogin();
-  const google = useGoogleLogin();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
+  const google = useGoogleAccess((user) => void navigate(from ?? homeFor(user), { replace: true }));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
@@ -55,18 +57,27 @@ export function LoginPage() {
           ? 'No pudimos iniciar sesión. Inténtalo de nuevo.'
           : null;
 
+  // Persona nueva con Google: aún no existe cuenta; se piden la edad y los consentimientos.
+  if (google.pending) {
+    return (
+      <AuthShell title="Un último paso">
+        <GoogleProfileStep
+          name={google.pending.name}
+          email={google.pending.email}
+          pending={google.isPending}
+          error={google.error}
+          onSubmit={google.submitProfile}
+          onCancel={google.cancel}
+        />
+      </AuthShell>
+    );
+  }
+
   return (
     <AuthShell title="Ingresar" tagline={QR_TAGLINE}>
       {GOOGLE_CLIENT_ID ? (
         <>
-          <GoogleButton
-            disabled={google.isPending}
-            onCredential={(credential) =>
-              google.mutate(credential, {
-                onSuccess: (data) => void navigate(from ?? homeFor(data.user), { replace: true }),
-              })
-            }
-          />
+          <GoogleButton disabled={google.isPending} onCredential={google.start} />
           <OrDivider />
         </>
       ) : null}

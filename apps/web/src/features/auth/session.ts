@@ -1,6 +1,8 @@
 import {
   authResponseSchema,
+  googleLoginResponseSchema,
   type AuthUser,
+  type Consent,
   type LoginRequest,
   type RegisterRequest,
 } from '@libro/shared';
@@ -39,12 +41,18 @@ export function useLogin() {
   });
 }
 
+/**
+ * Ingreso con Google. Con una cuenta que ya existe, abre sesión. Con una persona nueva, el servidor responde
+ * `needs_profile` y **no crea nada**: hay que reenviar la misma credencial con la edad y los consentimientos.
+ */
 export function useGoogleLogin() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (credential: string) =>
-      apiRequest('/auth/google', authResponseSchema, { method: 'POST', body: { credential } }),
-    onSuccess: (data) => client.setQueryData(SESSION_KEY, data.user),
+    mutationFn: (input: { credential: string; profile?: Consent }) =>
+      apiRequest('/auth/google', googleLoginResponseSchema, { method: 'POST', body: input }),
+    onSuccess: (data) => {
+      if (data.status === 'ok') client.setQueryData(SESSION_KEY, data.user);
+    },
   });
 }
 
