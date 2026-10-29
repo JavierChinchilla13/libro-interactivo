@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { useMediaQuery } from './useMediaQuery';
+import { useMediaQuery } from '../../../shared/lib/useMediaQuery';
 
 /**
  * Qué papel juega una columna en la tarjeta del celular: `title` es el encabezado de la tarjeta, `status` va como

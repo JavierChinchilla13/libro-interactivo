@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { AdminIcon } from '../../../shared/ui/adminIcons';
-import { useMediaQuery } from './useMediaQuery';
+import { useMediaQuery } from '../../../shared/lib/useMediaQuery';
 
 /** Una acción del menú «Más» de la barra en celular. */
 export interface SaveBarItem {
