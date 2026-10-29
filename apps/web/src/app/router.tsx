@@ -65,6 +65,12 @@ export const routes: RouteObject[] = [
         ...page(() => import('../features/auth/ResetPasswordPage'), 'ResetPasswordPage'),
       },
       { path: 'u/:token', ...page(() => import('../features/access/RedeemPage'), 'RedeemPage') },
+      {
+        path: 'privacidad',
+        ...page(() => import('../features/legal/PrivacyPage'), 'PrivacyPage'),
+      },
+      { path: 'terminos', ...page(() => import('../features/legal/TermsPage'), 'TermsPage') },
+      { path: 'cookies', ...page(() => import('../features/legal/CookiesPage'), 'CookiesPage') },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
