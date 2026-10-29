@@ -1,4 +1,5 @@
 export * from './errors.js';
+export * from './legal.js';
 export * from './passwordPolicy.js';
 export * from './schemas/account.js';
 export * from './schemas/auth.js';
