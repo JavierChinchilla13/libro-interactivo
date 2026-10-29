@@ -165,8 +165,18 @@ export const networkCheckResponseSchema = z.object({
   /** `true` si llegó `CF-Connecting-IP` (Cloudflare delante de Render). */
   hasCfConnectingIp: z.boolean(),
   cfConnectingIpMasked: z.string().nullable(),
+  /** `TRUST_CLOUDFLARE_HEADER`: si está encendida, una `CF-Connecting-IP` válida manda sobre los saltos. */
+  trustCloudflareHeader: z.boolean(),
+  /** La cabecera `CF-Connecting-IP` es una única IP válida (si no, aunque esté encendida se ignora). */
+  cfConnectingIpValid: z.boolean(),
+  /** De dónde sale hoy la IP de esta persona. */
+  resolvedSource: z.enum(['cf-connecting-ip', 'trust-proxy-hops']),
   /** La dirección que el API usa hoy como «IP de esta persona» (la que cuenta el limitador), enmascarada. */
   resolvedMasked: z.string(),
+  /** La que saldría solo por saltos (`TRUST_PROXY_HOPS`), la de respaldo. */
+  resolvedByHopsMasked: z.string(),
+  /** La que saldría con la cabecera de Cloudflare activada (`null` si falta o no es válida), aunque hoy esté apagada. */
+  resolvedWithCloudflareMasked: z.string().nullable(),
   /** La dirección que resultaría con 0, 1, 2… saltos. Con el valor correcto aparece **tu** red, no la de Render. */
   candidates: z.array(
     z.object({

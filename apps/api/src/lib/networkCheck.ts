@@ -1,8 +1,9 @@
 import { isIP } from 'node:net';
 import type { NetworkCheckResponse } from '@libro/shared';
+import { parseCloudflareIp } from './clientIp.js';
 
 /** Hasta cuántos saltos se prueban en el diagnóstico (el máximo de `TRUST_PROXY_HOPS` es 5). */
-const MAX_CANDIDATE_HOPS = 4;
+const MAX_CANDIDATE_HOPS = 5;
 
 /** Quita el prefijo de IPv4 mapeada en IPv6 (`::ffff:1.2.3.4`) que Node pone en algunos sockets. */
 function plain(ip: string): string {
@@ -82,12 +83,17 @@ export interface NetworkSnapshot {
   forwardedFor: string | undefined;
   cfConnectingIp: string | undefined;
   configuredHops: number;
+  /** `TRUST_CLOUDFLARE_HEADER`: si está encendida, una `CF-Connecting-IP` válida manda sobre los saltos. */
+  trustCloudflareHeader: boolean;
 }
 
 /** Arma la respuesta del diagnóstico. Función pura: no lee ni guarda nada fuera de sus argumentos. */
 export function describeNetwork(snapshot: NetworkSnapshot): NetworkCheckResponse {
   const entries = parseForwardedFor(snapshot.forwardedFor);
   const cf = snapshot.cfConnectingIp?.trim();
+  const cfValid = parseCloudflareIp(snapshot.cfConnectingIp);
+  const byHops = addressForHops(snapshot.remote, entries, snapshot.configuredHops);
+  const useCf = snapshot.trustCloudflareHeader && cfValid !== null;
   const candidates = Array.from({ length: MAX_CANDIDATE_HOPS + 1 }, (_, hops) => {
     const address = addressForHops(snapshot.remote, entries, hops);
     return {
@@ -102,7 +108,12 @@ export function describeNetwork(snapshot: NetworkSnapshot): NetworkCheckResponse
     forwardedForEntries: entries.length,
     hasCfConnectingIp: cf !== undefined && cf !== '',
     cfConnectingIpMasked: cf ? maskIp(cf) : null,
-    resolvedMasked: maskIp(addressForHops(snapshot.remote, entries, snapshot.configuredHops)),
+    trustCloudflareHeader: snapshot.trustCloudflareHeader,
+    cfConnectingIpValid: cfValid !== null,
+    resolvedSource: useCf ? 'cf-connecting-ip' : 'trust-proxy-hops',
+    resolvedMasked: maskIp(useCf ? cfValid : byHops),
+    resolvedByHopsMasked: maskIp(byHops),
+    resolvedWithCloudflareMasked: cfValid !== null ? maskIp(cfValid) : null,
     candidates,
   };
 }

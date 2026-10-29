@@ -69,7 +69,10 @@ export function createAdminMetricsController(metrics: AdminMetricsService) {
  * `/admin/network-check`: describe la cadena de proxies de la propia petición de la administradora, con las
  * direcciones enmascaradas. No se guarda ni se registra nada, y nunca se cachea.
  */
-export function createAdminNetworkController(configuredHops: number) {
+export function createAdminNetworkController(
+  configuredHops: number,
+  trustCloudflareHeader: boolean,
+) {
   const check: RequestHandler = (req, res) => {
     const cf = req.get('cf-connecting-ip');
     res.set('Cache-Control', 'no-store').json(
@@ -78,6 +81,7 @@ export function createAdminNetworkController(configuredHops: number) {
         forwardedFor: req.get('x-forwarded-for'),
         cfConnectingIp: cf,
         configuredHops,
+        trustCloudflareHeader,
       }),
     );
   };
