@@ -70,6 +70,7 @@ describe('describeNetwork', () => {
       forwardedFor: '203.0.113.7, 10.0.0.2',
       cfConnectingIp: '203.0.113.7',
       configuredHops: 2,
+      trustCloudflareHeader: false,
     });
     expect(out.forwardedForEntries).toBe(2);
     expect(out.hasCfConnectingIp).toBe(true);
@@ -81,9 +82,17 @@ describe('describeNetwork', () => {
       '203.0.113.x',
       '203.0.113.x',
       '203.0.113.x',
+      '203.0.113.x',
     ]);
     expect(out.candidates.filter((c) => c.current).map((c) => c.hops)).toEqual([2]);
-    expect(out.candidates.map((c) => c.looksInternal)).toEqual([true, true, false, false, false]);
+    expect(out.candidates.map((c) => c.looksInternal)).toEqual([
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+    ]);
     expect(JSON.stringify(out)).not.toMatch(/203\.0\.113\.7|10\.0\.0\.[23]\b/);
   });
 
@@ -93,12 +102,58 @@ describe('describeNetwork', () => {
       forwardedFor: undefined,
       cfConnectingIp: undefined,
       configuredHops: 1,
+      trustCloudflareHeader: true,
     });
     expect(out).toMatchObject({
       forwardedForEntries: 0,
       hasCfConnectingIp: false,
       cfConnectingIpMasked: null,
+      cfConnectingIpValid: false,
+      resolvedSource: 'trust-proxy-hops',
+      resolvedWithCloudflareMasked: null,
     });
+  });
+
+  // Los valores de la medición en producción, con direcciones de documentación: Render reparte entre proxies internos.
+  const render = (cf: string | undefined, trust: boolean, remote = '10.29.1.9') =>
+    describeNetwork({
+      remote,
+      forwardedFor: `${cf ?? '198.51.100.20'}, 172.71.1.5, 172.71.1.5, 10.29.1.7, 10.29.1.8`,
+      cfConnectingIp: cf,
+      configuredHops: 1,
+      trustCloudflareHeader: trust,
+    });
+
+  it('con la cabecera de Cloudflare encendida y válida, la IP resuelta es la de la cabecera', () => {
+    const out = render('203.0.113.7', true);
+    expect(out).toMatchObject({
+      trustCloudflareHeader: true,
+      cfConnectingIpValid: true,
+      resolvedSource: 'cf-connecting-ip',
+      resolvedMasked: '203.0.113.x',
+      resolvedByHopsMasked: '10.29.1.x',
+      resolvedWithCloudflareMasked: '203.0.113.x',
+    });
+    expect(out.candidates).toHaveLength(6);
+  });
+
+  it('apagada, muestra la IP que saldría con la cabecera pero sigue resolviendo por saltos', () => {
+    expect(render('203.0.113.7', false)).toMatchObject({
+      resolvedSource: 'trust-proxy-hops',
+      resolvedMasked: '10.29.1.x',
+      resolvedWithCloudflareMasked: '203.0.113.x',
+    });
+  });
+
+  it('encendida pero con la cabecera inválida o repetida, cae a los saltos', () => {
+    for (const bad of ['no-es-ip', '203.0.113.7, 198.51.100.1', 'fe80::1%eth0', '']) {
+      expect(render(bad, true)).toMatchObject({
+        cfConnectingIpValid: false,
+        resolvedSource: 'trust-proxy-hops',
+        resolvedMasked: '10.29.1.x',
+        resolvedWithCloudflareMasked: null,
+      });
+    }
   });
 });
 

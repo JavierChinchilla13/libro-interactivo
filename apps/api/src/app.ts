@@ -18,6 +18,7 @@ import {
   MemoryStorageProvider,
   type StorageProvider,
 } from './providers/storage/StorageProvider.js';
+import { createClientIpMiddleware } from './lib/clientIp.js';
 import { createSameOriginGuard } from './middleware/sameOrigin.js';
 import type { MailProvider } from './providers/mail/MailProvider.js';
 import { createMailProvider } from './providers/mail/createMailProvider.js';
@@ -73,6 +74,7 @@ export interface AppDeps {
     | 'GOOGLE_CLIENT_ID'
     | 'RATE_LIMIT_MULTIPLIER'
     | 'TRUST_PROXY_HOPS'
+    | 'TRUST_CLOUDFLARE_HEADER'
     | 'CONTACT_RECIPIENT_EMAIL'
     | 'REQUIRE_QR_UNLOCK'
     | 'ACCESS_TOKEN_SECRET'
@@ -193,6 +195,8 @@ export function createApp(
   app.disable('x-powered-by');
   // Cuántos proxies de confianza hay delante (ver `TRUST_PROXY_HOPS`); de esto sale `req.ip`, la clave de los límites.
   app.set('trust proxy', deps.env.TRUST_PROXY_HOPS);
+  // Con Cloudflare delante, la IP de la lectora sale de `CF-Connecting-IP` (respaldo: los saltos de arriba).
+  app.use(createClientIpMiddleware(deps.env.TRUST_CLOUDFLARE_HEADER));
 
   app.use(
     pinoHttp({

@@ -109,7 +109,7 @@ import {
 } from './quiz.routes.js';
 
 export interface RouteDeps {
-  env: Pick<Env, 'NODE_ENV' | 'COOKIE_DOMAIN' | 'TRUST_PROXY_HOPS'>;
+  env: Pick<Env, 'NODE_ENV' | 'COOKIE_DOMAIN' | 'TRUST_PROXY_HOPS' | 'TRUST_CLOUDFLARE_HEADER'>;
   isDbUp: () => boolean;
   auth: AuthService;
   account: AccountService;
@@ -187,7 +187,10 @@ export function createApiRouter(deps: RouteDeps): Router {
   router.use('/admin/stats', createAdminStatsRouter(metrics, deps.guards));
   router.use(
     '/admin/network-check',
-    createAdminNetworkRouter(createAdminNetworkController(deps.env.TRUST_PROXY_HOPS), deps.guards),
+    createAdminNetworkRouter(
+      createAdminNetworkController(deps.env.TRUST_PROXY_HOPS, deps.env.TRUST_CLOUDFLARE_HEADER),
+      deps.guards,
+    ),
   );
   const community = createPublicCommunityController(deps.fanArts, deps.reviews);
   router.use('/fan-arts', createPublicFanArtRouter(community));

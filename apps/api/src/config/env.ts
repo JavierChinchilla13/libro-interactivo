@@ -58,6 +58,15 @@ const envSchema = z.object({
    * 1 en producción y 0 fuera. El valor correcto se mide con `GET /api/admin/network-check`.
    */
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).optional(),
+  /**
+   * Toma la IP de quien llama de `CF-Connecting-IP` (Cloudflare) cuando es una IP válida; si falta o no lo es, sigue
+   * rigiendo `TRUST_PROXY_HOPS`. Solo si el origen recibe tráfico únicamente a través de Cloudflare (si no, la
+   * cabecera se puede falsificar). Apagada por defecto: con ella apagada la cabecera se ignora.
+   */
+  TRUST_CLOUDFLARE_HEADER: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
   /** Cloudinary (subida firmada de imágenes y videos desde el panel). Las tres juntas o ninguna. */
   CLOUDINARY_CLOUD_NAME: z.string().min(1).optional(),
   CLOUDINARY_API_KEY: z.string().min(1).optional(),
