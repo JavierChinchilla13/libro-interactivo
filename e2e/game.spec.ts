@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { createHmac } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { E2E_ADMIN } from './global-setup';
+import { fillConsent } from './consent';
 
 /** Mismo valor por defecto de desarrollo que usa el API (solo existe fuera de producción). */
 const DEV_ACCESS_SECRET = 'solo-para-desarrollo-token-de-qr-no-usar-en-produccion-9876';
@@ -77,6 +78,7 @@ test.describe('juego (celular y escritorio)', () => {
     await page.getByLabel(/^Nombre/).fill('Jugadora E2E');
     await page.getByLabel(/^Correo/).fill(`jugadora-${stamp}@ejemplo.com`);
     await page.getByLabel(/^Contraseña/).fill(PASSWORD);
+    await fillConsent(page);
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
     await expect(page.getByText('¡Desbloqueado!')).toBeVisible();
     // La bienvenida es un ajuste global de la base de pruebas: se espera la respuesta del servidor que dice si toca

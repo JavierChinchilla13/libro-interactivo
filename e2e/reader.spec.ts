@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { E2E_ADMIN } from './global-setup';
+import { fillConsent } from './consent';
 
 /** Mismo valor por defecto de desarrollo que usa el API (solo existe fuera de producción). */
 const DEV_ACCESS_SECRET = 'solo-para-desarrollo-token-de-qr-no-usar-en-produccion-9876';
@@ -156,6 +157,7 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await expect(page.getByTestId('password-meter')).toContainText('demasiado común');
     await page.getByLabel(/^Contraseña/).fill(PASSWORD);
     await expect(page.getByTestId('password-meter')).toContainText('muy buena');
+    await fillConsent(page);
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
     await expect(page.getByText('¡Desbloqueado!')).toBeVisible();
 

@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { E2E_ADMIN } from './global-setup';
+import { ADULT_CONSENT } from './consent';
 
 const PASSWORD = 'Nube-Azul-Cuatro-87';
 
@@ -39,7 +40,7 @@ test.describe('administración: usuarios, mensajes y borrado de cuenta (escritor
     expect(
       (
         await anon.post('/api/auth/register', {
-          data: { name: `Lectora Ops ${stamp}`, email, password: PASSWORD },
+          data: { ...ADULT_CONSENT, name: `Lectora Ops ${stamp}`, email, password: PASSWORD },
         })
       ).status(),
     ).toBe(201);
@@ -142,7 +143,7 @@ test.describe('administración: usuarios, mensajes y borrado de cuenta (escritor
     expect(
       (
         await anon.post('/api/auth/register', {
-          data: { name: `Adiós ${stamp}`, email, password: PASSWORD },
+          data: { ...ADULT_CONSENT, name: `Adiós ${stamp}`, email, password: PASSWORD },
         })
       ).status(),
     ).toBe(201);

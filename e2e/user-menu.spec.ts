@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { E2E_ADMIN } from './global-setup';
+import { ADULT_CONSENT } from './consent';
 
 /** Otra prueba puede encender el mensaje de bienvenida mientras corre ésta: su ventana taparía el menú. */
 async function dismissWelcome(page: Page) {
@@ -17,7 +18,12 @@ test.describe('menú de usuario (celular y escritorio)', () => {
   }) => {
     const stamp = `${Date.now()}-${test.info().project.name}`;
     const register = await page.request.post('/api/auth/register', {
-      data: { name: LONG_NAME, email: `menu-${stamp}@ejemplo.com`, password: PASSWORD },
+      data: {
+        ...ADULT_CONSENT,
+        name: LONG_NAME,
+        email: `menu-${stamp}@ejemplo.com`,
+        password: PASSWORD,
+      },
     });
     expect(register.status(), await register.text()).toBe(201);
     await page.request.post('/api/me/welcome-seen');
@@ -100,7 +106,12 @@ test.describe('menú de usuario (celular y escritorio)', () => {
   test('una lectora (USER) no ve las tres zonas a 1920 px', async ({ page }) => {
     const stamp = `${Date.now()}-${test.info().project.name}`;
     const register = await page.request.post('/api/auth/register', {
-      data: { name: 'Lectora Zonas', email: `zonas-${stamp}@ejemplo.com`, password: PASSWORD },
+      data: {
+        ...ADULT_CONSENT,
+        name: 'Lectora Zonas',
+        email: `zonas-${stamp}@ejemplo.com`,
+        password: PASSWORD,
+      },
     });
     expect(register.status(), await register.text()).toBe(201);
     await page.request.post('/api/me/welcome-seen');
@@ -124,7 +135,7 @@ test.describe('menú de usuario (celular y escritorio)', () => {
     }) => {
       const stamp = `${Date.now()}-${test.info().project.name}-${name.length}`;
       const register = await page.request.post('/api/auth/register', {
-        data: { name, email: `barra-${stamp}@ejemplo.com`, password: PASSWORD },
+        data: { ...ADULT_CONSENT, name, email: `barra-${stamp}@ejemplo.com`, password: PASSWORD },
       });
       expect(register.status(), await register.text()).toBe(201);
       await page.request.post('/api/me/welcome-seen');

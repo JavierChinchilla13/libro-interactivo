@@ -3,6 +3,7 @@ import { expect, test, type Browser, type BrowserContext, type Page } from '@pla
 import { MongoClient, ObjectId } from 'mongodb';
 import { E2E_ADMIN } from './global-setup';
 import { seedPublishedQuiz } from './seed';
+import { ADULT_CONSENT } from './consent';
 
 const DEV_ACCESS_SECRET = 'solo-para-desarrollo-token-de-qr-no-usar-en-produccion-9876';
 const tokenFor = (id: string) =>
@@ -67,6 +68,7 @@ async function unlockedReader(
   const context = await browser.newContext(options);
   const register = await context.request.post('/api/auth/register', {
     data: {
+      ...ADULT_CONSENT,
       name: `Lectora ${label}`,
       email: `lectora-${label}-${stamp}@ejemplo.com`,
       password: PASSWORD,

@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { E2E_ADMIN } from './global-setup';
+import { ADULT_CONSENT } from './consent';
 
 /** Mismo valor por defecto de desarrollo que usa el API (solo existe fuera de producción). */
 const DEV_ACCESS_SECRET = 'solo-para-desarrollo-token-de-qr-no-usar-en-produccion-9876';
@@ -108,6 +109,7 @@ test.describe('barajado de respuestas', () => {
       (
         await reader.request.post('/api/auth/register', {
           data: {
+            ...ADULT_CONSENT,
             name: 'Lectora Baraja',
             email: `lectora-baraja-${stamp}@ejemplo.com`,
             password: PASSWORD,

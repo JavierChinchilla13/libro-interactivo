@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto';
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { E2E_ADMIN } from './global-setup';
 import { seedPublishedQuiz } from './seed';
+import { ADULT_CONSENT } from './consent';
 
 /** Mismo valor por defecto de desarrollo que usa el API (solo existe fuera de producción). */
 const DEV_ACCESS_SECRET = 'solo-para-desarrollo-token-de-qr-no-usar-en-produccion-9876';
@@ -110,7 +111,7 @@ test.describe('wiki pública (celular y escritorio)', () => {
     const email = `lectora-wiki-${stamp}@ejemplo.com`;
     await created(
       await page.request.post('/api/auth/register', {
-        data: { name: 'Lectora Wiki', email, password: PASSWORD },
+        data: { ...ADULT_CONSENT, name: 'Lectora Wiki', email, password: PASSWORD },
       }),
     );
     expect((await page.request.get(`/api/wiki/entries/${ana.id}`)).status()).toBe(403);

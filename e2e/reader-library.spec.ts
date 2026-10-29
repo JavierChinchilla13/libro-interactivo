@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { E2E_ADMIN } from './global-setup';
+import { ADULT_CONSENT } from './consent';
 
 const PASSWORD = 'Nube-Azul-Cuatro-87';
 const cover = {
@@ -93,7 +94,7 @@ test.describe('«Tus libros» del panel (celular y escritorio)', () => {
     expect(
       (
         await reader.post('/api/auth/register', {
-          data: { name: 'Lectora Libros', email, password: PASSWORD },
+          data: { ...ADULT_CONSENT, name: 'Lectora Libros', email, password: PASSWORD },
         })
       ).status(),
     ).toBe(201);

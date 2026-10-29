@@ -10,6 +10,7 @@ import {
 import { MongoClient, ObjectId } from 'mongodb';
 import { E2E_ADMIN } from './global-setup';
 import { seedPublishedQuiz } from './seed';
+import { ADULT_CONSENT } from './consent';
 
 /** Mismo valor por defecto de desarrollo que usa el API (solo existe fuera de producción). */
 const DEV_ACCESS_SECRET = 'solo-para-desarrollo-token-de-qr-no-usar-en-produccion-9876';
@@ -77,6 +78,7 @@ async function newReader(browser: Browser, stamp: number, label: string) {
   const context = await browser.newContext();
   const register = await context.request.post('/api/auth/register', {
     data: {
+      ...ADULT_CONSENT,
       name: `Lectora ${label}`,
       email: `lectora-${label}-${stamp}@ejemplo.com`,
       password: PASSWORD,
@@ -349,6 +351,7 @@ test.describe('apariencia del quiz: reglas de la lectora (celular y escritorio)'
       (
         await context.request.post('/api/auth/register', {
           data: {
+            ...ADULT_CONSENT,
             name: 'Lectora Reducida',
             email: `lectora-reducida-${stamp}@ejemplo.com`,
             password: PASSWORD,

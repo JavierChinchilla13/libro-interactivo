@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { E2E_ADMIN } from './global-setup';
+import { ADULT_CONSENT } from './consent';
 
 const PASSWORD = 'Nube-Azul-Cuatro-87';
 const LONG_NAME = 'Alejandra Montserrat-Wiśniewska de la Vega y Fernández 🌙';
@@ -82,7 +83,12 @@ test.describe('cabeceras a todos los anchos', () => {
     });
     expect(adminLogin.status()).toBe(200);
     const register = await sessions.largo.request.post('/api/auth/register', {
-      data: { name: LONG_NAME, email: `anchos-${stamp}@ejemplo.com`, password: PASSWORD },
+      data: {
+        ...ADULT_CONSENT,
+        name: LONG_NAME,
+        email: `anchos-${stamp}@ejemplo.com`,
+        password: PASSWORD,
+      },
     });
     expect(register.status()).toBe(201);
     for (const context of [sessions.admin, sessions.largo]) {

@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 import { E2E_ADMIN } from './global-setup';
 import { seedPublishedQuiz } from './seed';
+import { ADULT_CONSENT } from './consent';
 
 /** Mismo valor por defecto de desarrollo que usa el API en las pruebas (solo existe fuera de producción). */
 const DEV_ACCESS_SECRET = 'solo-para-desarrollo-token-de-qr-no-usar-en-produccion-9876';
@@ -76,6 +77,7 @@ test.describe('códigos QR y capítulos extra', () => {
     const readerPage = await reader.newPage();
     const register = await reader.request.post('/api/auth/register', {
       data: {
+        ...ADULT_CONSENT,
         name: 'Lectora E2E',
         email: `lectora-${stamp}@ejemplo.com`,
         password: 'Nube-Azul-Cuatro-87',
