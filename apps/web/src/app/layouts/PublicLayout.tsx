@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { homeFor, isStaff, useSession } from '../../features/auth/session';
 import { publicApi, publicKeys } from '../../features/home/api';
+import { CookieNotice } from '../../features/legal/CookieNotice';
 import { Brand } from '../../shared/ui/Brand';
 import { PageBackground } from '../../shared/ui/PageBackground';
 import { MAIN_ID, navTabLg, SkipLink } from '../../shared/ui/nav';
@@ -16,6 +17,12 @@ const FOOTER_LINKS = [
   { to: '/fan-arts', label: 'Fan arts' },
   { to: '/contacto', label: 'Contacto' },
   { to: '/#comprar', label: 'Cómo comprar' },
+] as const;
+
+const LEGAL_LINKS = [
+  { to: '/privacidad', label: 'Privacidad' },
+  { to: '/terminos', label: 'Términos' },
+  { to: '/cookies', label: 'Cookies' },
 ] as const;
 
 const footerLink = 'link-slide inline-flex min-h-11 items-center hover:text-text';
@@ -133,6 +140,17 @@ export function PublicLayout() {
               ))}
             </ul>
           </nav>
+          <nav aria-label="Legal">
+            <ul className="flex flex-wrap justify-center gap-x-6">
+              {LEGAL_LINKS.map((item) => (
+                <li key={item.to}>
+                  <Link to={item.to} className={footerLink}>
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
           {social.length > 0 ? (
             <ul aria-label="Redes sociales" className="flex flex-wrap justify-center gap-x-6">
               {social.map((link) => (
@@ -160,6 +178,7 @@ export function PublicLayout() {
           </Link>
         </div>
       </footer>
+      <CookieNotice />
     </div>
   );
 }
