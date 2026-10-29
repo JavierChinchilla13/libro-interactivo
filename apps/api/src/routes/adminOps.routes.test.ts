@@ -7,11 +7,12 @@ import {
   apiErrorSchema,
   siteSettingsResponseSchema,
 } from '@libro/shared';
-import type { Types } from 'mongoose';
+import { Types } from 'mongoose';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { ContactMessage } from '../models/ContactMessage.js';
 import { ExtraAccess } from '../models/ExtraAccess.js';
+import { GameSession } from '../models/GameSession.js';
 import { PasswordReset } from '../models/PasswordReset.js';
 import { QuizAttempt } from '../models/QuizAttempt.js';
 import { QuizVersion } from '../models/QuizVersion.js';
@@ -334,6 +335,22 @@ describe('eliminar cuentas y datos personales', () => {
       tokenHash: 'hash-prueba',
       expiresAt: new Date(Date.now() + DAY),
     });
+    // Una partida del juego terminada y otra en curso.
+    for (const [attemptNumber, status] of [
+      [1, 'completed'],
+      [2, 'in_progress'],
+    ] as const) {
+      await GameSession.create({
+        userId: w.readerDoc._id,
+        bookId: w.book._id,
+        storyId: new Types.ObjectId(),
+        storyVersion: 1,
+        attemptNumber,
+        status,
+        currentSceneId: 'inicio',
+        startedAt: new Date(),
+      });
+    }
     return w;
   }
   async function expectErased(userId: Types.ObjectId) {
@@ -347,6 +364,11 @@ describe('eliminar cuentas y datos personales', () => {
     const kept = await QuizAttempt.find({ userId: ANONYMIZED_USER_ID }).lean();
     expect(kept).toHaveLength(1);
     expect(kept[0]?.status).toBe('completed');
+    // Igual con las partidas del juego.
+    expect(await GameSession.countDocuments({ userId })).toBe(0);
+    const games = await GameSession.find({ userId: ANONYMIZED_USER_ID }).lean();
+    expect(games).toHaveLength(1);
+    expect(games[0]?.status).toBe('completed');
   }
 
   it('la administradora elimina a una lectora: se borran sus datos y sus intentos quedan anonimizados', async () => {

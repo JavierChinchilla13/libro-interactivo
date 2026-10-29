@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { ExtraAccess } from '../models/ExtraAccess.js';
+import { GameSession } from '../models/GameSession.js';
 import { PasswordReset } from '../models/PasswordReset.js';
 import { QuizAttempt } from '../models/QuizAttempt.js';
 import { RefreshToken } from '../models/RefreshToken.js';
@@ -18,6 +19,9 @@ export async function eraseUserData(userId: string | Types.ObjectId): Promise<vo
   const id = typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
   await QuizAttempt.deleteMany({ userId: id, status: 'in_progress' });
   await QuizAttempt.updateMany({ userId: id }, { $set: { userId: ANONYMIZED_USER_ID } });
+  // Las partidas del juego siguen la misma regla: la que está en curso se elimina y las terminadas quedan sin nombre.
+  await GameSession.deleteMany({ userId: id, status: 'in_progress' });
+  await GameSession.updateMany({ userId: id }, { $set: { userId: ANONYMIZED_USER_ID } });
   await Promise.all([
     RefreshToken.deleteMany({ userId: id }),
     PasswordReset.deleteMany({ userId: id }),
