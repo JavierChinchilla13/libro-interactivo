@@ -11,21 +11,15 @@ import { UserMenu } from '../../shared/ui/UserMenu';
 
 const ctaClass = () => 'btn btn-primary btn-compact whitespace-nowrap';
 
-const FOOTER_LINKS = [
-  { to: '/wiki', label: 'Wiki' },
-  { to: '/actualizaciones', label: 'Actualizaciones' },
-  { to: '/fan-arts', label: 'Fan arts' },
-  { to: '/contacto', label: 'Contacto' },
-  { to: '/#comprar', label: 'Cómo comprar' },
-] as const;
-
 const LEGAL_LINKS = [
   { to: '/privacidad', label: 'Privacidad' },
   { to: '/terminos', label: 'Términos' },
   { to: '/cookies', label: 'Cookies' },
 ] as const;
 
-const footerLink = 'link-slide inline-flex min-h-11 items-center hover:text-text';
+/** El enlace mide 44 px de alto (táctil); la línea del `link-slide` va en el texto, no en el borde de esa caja. */
+const footerLink = 'inline-flex min-h-11 items-center';
+const footerText = 'link-slide py-0.5';
 
 /**
  * Marco de las páginas públicas: barra flotante en píldora, contenido y un pie mínimo. Mobile-first (en el celular el
@@ -128,54 +122,41 @@ export function PublicLayout() {
         </div>
       </main>
       <footer className="relative z-10 border-t border-line bg-sunken text-sm text-muted">
-        <div className="mx-auto flex w-full max-w-[var(--token-page-max)] flex-col items-center gap-2 px-4 py-8 text-center">
-          <nav aria-label="Pie de página">
-            <ul className="flex flex-wrap justify-center gap-x-6">
-              {FOOTER_LINKS.map((item) => (
-                <li key={item.to}>
-                  <Link to={item.to} viewTransition className={footerLink}>
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <nav aria-label="Legal">
-            <ul className="flex flex-wrap justify-center gap-x-6">
+        <div className="mx-auto grid w-full max-w-[var(--token-page-max)] gap-x-12 gap-y-2 px-4 py-9 sm:py-12 md:grid-cols-[minmax(0,1fr)_auto] [html[data-cookie-notice]_&]:pb-44 sm:[html[data-cookie-notice]_&]:pb-28">
+          <nav aria-label="Legal" className="md:col-start-2 md:row-start-1">
+            <ul className="flex flex-wrap gap-x-7 md:justify-end">
               {LEGAL_LINKS.map((item) => (
                 <li key={item.to}>
-                  <Link to={item.to} className={footerLink}>
-                    {item.label}
+                  <Link to={item.to} className={`${footerLink} text-text`}>
+                    <span className={footerText}>{item.label}</span>
                   </Link>
                 </li>
               ))}
             </ul>
           </nav>
-          {social.length > 0 ? (
-            <ul aria-label="Redes sociales" className="flex flex-wrap justify-center gap-x-6">
-              {social.map((link) => (
-                <li key={link.url}>
-                  <a
-                    className={footerLink}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          <p className="label mt-3 !tracking-[0.2em]">
-            © 2026 Universo Memorias. Una saga que se lee, se descubre y se juega.
-          </p>
-          <Link
-            to="/estado"
-            className="inline-flex min-h-11 items-center underline hover:text-text"
-          >
-            Estado del sitio
-          </Link>
+          <div className="mt-4 flex flex-col gap-1 md:col-start-1 md:row-start-1 md:mt-0">
+            <p className="max-w-[40ch] py-3 leading-relaxed text-pretty">
+              <span className="block text-text">© 2026 Universo Memorias</span>
+              <span className="block">Una saga que se lee, se descubre y se juega.</span>
+            </p>
+            {social.length > 0 ? (
+              <ul aria-label="Redes sociales" className="flex flex-wrap gap-x-7">
+                {social.map((link) => (
+                  <li key={link.url}>
+                    <a
+                      className={`${footerLink} hover:text-text`}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span className={footerText}>{link.label}</span>
+                      <span className="sr-only"> (se abre en otra pestaña)</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         </div>
       </footer>
       <CookieNotice />

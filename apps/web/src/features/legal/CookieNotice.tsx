@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
 /** Dónde se recuerda que la persona ya vio el aviso (solo una comodidad: no es dato de la cuenta). */
@@ -18,6 +18,14 @@ function alreadySeen(): boolean {
  */
 export function CookieNotice() {
   const [visible, setVisible] = useState(() => !alreadySeen());
+  // Mientras el aviso está a la vista, la página lo sabe (el pie deja espacio para que no lo tape).
+  useEffect(() => {
+    if (!visible) return;
+    document.documentElement.dataset['cookieNotice'] = 'visible';
+    return () => {
+      delete document.documentElement.dataset['cookieNotice'];
+    };
+  }, [visible]);
   if (!visible) return null;
 
   function dismiss() {

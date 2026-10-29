@@ -168,11 +168,35 @@ describe('landing: el héroe lleva al libro en la mano', () => {
       'href',
       '/#comprar',
     );
+  });
+
+  it('el pie de la portada enlaza a privacidad, términos y cookies, sin repetir el menú de arriba', async () => {
+    mockApi(full, NO_SESSION);
+    renderAt('/');
+    await screen.findByRole('heading', { level: 1 });
     const footer = screen.getByRole('contentinfo');
-    expect(within(footer).getByRole('link', { name: 'Cómo comprar' })).toHaveAttribute(
+    const legal = within(footer).getByRole('navigation', { name: 'Legal' });
+    expect(within(legal).getByRole('link', { name: 'Privacidad' })).toHaveAttribute(
       'href',
-      '/#comprar',
+      '/privacidad',
     );
+    expect(within(legal).getByRole('link', { name: 'Términos' })).toHaveAttribute(
+      'href',
+      '/terminos',
+    );
+    expect(within(legal).getByRole('link', { name: 'Cookies' })).toHaveAttribute(
+      'href',
+      '/cookies',
+    );
+    // El estado técnico del sitio no se anuncia al público.
+    expect(
+      within(footer).queryByRole('link', { name: 'Estado del sitio' }),
+    ).not.toBeInTheDocument();
+    expect(within(footer).getByText(/© 2026 Universo Memorias/)).toBeInTheDocument();
+    // El menú principal ya lleva estas secciones: el pie no las repite.
+    for (const name of ['Wiki', 'Actualizaciones', 'Fan arts', 'Contacto', 'Cómo comprar']) {
+      expect(within(footer).queryByRole('link', { name })).not.toBeInTheDocument();
+    }
   });
 
   it('el héroe va a la izquierda con la rejilla debajo; la portada vive en la ficha del libro', async () => {
@@ -458,7 +482,7 @@ describe('landing: con contenido', () => {
       '/contacto',
     );
     const footerLinks = within(screen.getByRole('list', { name: 'Redes sociales' }));
-    expect(footerLinks.getByRole('link', { name: 'Instagram' })).toHaveAttribute(
+    expect(footerLinks.getByRole('link', { name: /^Instagram/ })).toHaveAttribute(
       'rel',
       expect.stringContaining('noopener'),
     );
