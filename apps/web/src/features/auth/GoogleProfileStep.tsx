@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { ApiClientError } from '../../shared/api/client';
 import { Button } from '../../shared/ui/controls';
 import { Alert } from '../../shared/ui/layout';
@@ -23,6 +23,8 @@ export function GoogleProfileStep({
   error,
   onSubmit,
   onCancel,
+  intro,
+  submitLabel = 'Crear mi cuenta',
 }: {
   name: string;
   email: string;
@@ -30,6 +32,9 @@ export function GoogleProfileStep({
   error: unknown;
   onSubmit: (consent: Consent) => void;
   onCancel: () => void;
+  /** Texto de arriba; por omisión el de «Continuar con Google» para una persona nueva. */
+  intro?: ReactNode;
+  submitLabel?: string;
 }) {
   const [values, setValues] = useState<ConsentValues>(EMPTY_CONSENT);
   const [errors, setErrors] = useState<ConsentErrors>({});
@@ -58,15 +63,19 @@ export function GoogleProfileStep({
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-5">
       <p className="text-sm text-muted">
-        Entraste con Google como <strong className="text-text">{name}</strong> ({email}). Para crear
-        tu cuenta necesitamos tu edad y tu autorización.
+        {intro ?? (
+          <>
+            Entraste con Google como <strong className="text-text">{name}</strong> ({email}). Para
+            crear tu cuenta necesitamos tu edad y tu autorización.
+          </>
+        )}
       </p>
       <ConsentFields values={values} onChange={setValues} errors={errors} />
       {message ? (
         <Alert tone={failure?.code === 'AGE_RESTRICTED' ? 'warning' : 'danger'}>{message}</Alert>
       ) : null}
       <Button type="submit" loading={pending}>
-        Crear mi cuenta
+        {submitLabel}
       </Button>
       <Button type="button" variant="ghost" onClick={onCancel}>
         Cancelar

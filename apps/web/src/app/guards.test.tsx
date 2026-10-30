@@ -140,7 +140,7 @@ describe('ingreso', () => {
     mockApi(null, (url, init) => {
       if (url === '/api/auth/login' && init?.method === 'POST') {
         logged = true;
-        return json(user('EDITOR'));
+        return json({ status: 'ok', ...user('EDITOR') });
       }
       if (url === '/api/me' && logged) return json(user('EDITOR'));
       return undefined;

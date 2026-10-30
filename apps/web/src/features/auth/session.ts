@@ -1,6 +1,7 @@
 import {
   authResponseSchema,
   googleLoginResponseSchema,
+  loginResponseSchema,
   type AuthUser,
   type Consent,
   type LoginRequest,
@@ -39,8 +40,11 @@ export function useLogin() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (input: LoginRequest) =>
-      apiRequest('/auth/login', authResponseSchema, { method: 'POST', body: input }),
-    onSuccess: (data) => client.setQueryData(SESSION_KEY, data.user),
+      apiRequest('/auth/login', loginResponseSchema, { method: 'POST', body: input }),
+    // `needs_profile`: la contraseña es correcta pero hay que volver a declarar la edad; todavía no hay sesión.
+    onSuccess: (data) => {
+      if (data.status === 'ok') client.setQueryData(SESSION_KEY, data.user);
+    },
   });
 }
 

@@ -306,3 +306,56 @@ describe('segundo paso de Google (persona nueva)', () => {
     });
   });
 });
+
+describe('ingreso con contraseña: volver a declarar la edad', () => {
+  it('si el servidor pide el perfil no hay sesión: se muestra el paso y el reenvío lleva el perfil', async () => {
+    const api = mockApi(
+      {
+        'POST /api/auth/login': ({ body }) =>
+          (body as { profile?: unknown }).profile
+            ? json({ status: 'ok', user: READER })
+            : json({ status: 'needs_profile', name: 'Lola Pérez', email: 'lola@ejemplo.com' }),
+      },
+      NO_SESSION,
+    );
+    renderAt('/ingresar');
+    await userEvent.type(await screen.findByLabelText(/Correo/), 'lola@ejemplo.com');
+    await userEvent.type(screen.getByLabelText(/^Contraseña/), GOOD_PASSWORD);
+    await userEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+
+    expect(await screen.findByText(/Antes de entrar necesitamos/)).toBeInTheDocument();
+    expect(screen.getByText('Lola Pérez')).toBeInTheDocument();
+    expect(api.called('POST /api/auth/login')).toHaveLength(1);
+
+    await userEvent.selectOptions(screen.getByLabelText(/^Mes/), '6');
+    await userEvent.selectOptions(screen.getByLabelText(/^Año/), '1990');
+    const form = screen.getByRole('button', { name: 'Continuar' }).closest('form') as HTMLElement;
+    await userEvent.click(within(form).getByRole('checkbox', { name: /Tengo 18 años o más/ }));
+    await userEvent.click(
+      within(form).getByRole('checkbox', { name: /Acepto los términos de uso/ }),
+    );
+    await userEvent.click(within(form).getByRole('checkbox', { name: /Autorizo el tratamiento/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    await waitFor(() => expect(api.called('POST /api/auth/login')).toHaveLength(2));
+    expect(api.called('POST /api/auth/login')[1]?.body).toMatchObject({
+      email: 'lola@ejemplo.com',
+      password: GOOD_PASSWORD,
+      profile: {
+        birth: { year: 1990, month: 6 },
+        ageDeclaration: 'adult',
+        acceptTerms: true,
+        acceptPrivacy: true,
+      },
+    });
+  });
+
+  it('un ingreso normal sigue entrando directo, sin ese paso', async () => {
+    mockApi({ 'POST /api/auth/login': () => json({ status: 'ok', user: READER }) }, NO_SESSION);
+    renderAt('/ingresar');
+    await userEvent.type(await screen.findByLabelText(/Correo/), 'lola@ejemplo.com');
+    await userEvent.type(screen.getByLabelText(/^Contraseña/), GOOD_PASSWORD);
+    await userEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
+    await waitFor(() => expect(screen.queryByText(/Antes de entrar necesitamos/)).toBeNull());
+  });
+});

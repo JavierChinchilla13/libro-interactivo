@@ -1,4 +1,4 @@
-import { loginRequestSchema } from '@libro/shared';
+import { loginRequestSchema, type Consent } from '@libro/shared';
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { ApiClientError } from '../../shared/api/client';
@@ -25,6 +25,8 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  // La contraseña fue correcta pero hay que volver a declarar la edad y los consentimientos (viven solo en memoria).
+  const [retake, setRetake] = useState<{ name: string; email: string } | null>(null);
 
   if (session.data) return <Navigate to={from ?? homeFor(session.data)} replace />;
 
@@ -42,8 +44,28 @@ export function LoginPage() {
     }
     setErrors({});
     login.mutate(parsed.data, {
-      onSuccess: (data) => void navigate(from ?? homeFor(data.user), { replace: true }),
+      onSuccess: (data) => {
+        if (data.status === 'ok') void navigate(from ?? homeFor(data.user), { replace: true });
+        else setRetake({ name: data.name, email: data.email });
+      },
     });
+  }
+
+  function submitRetake(profile: Consent) {
+    login.mutate(
+      { email, password, profile },
+      {
+        onSuccess: (data) => {
+          if (data.status === 'ok') void navigate(from ?? homeFor(data.user), { replace: true });
+        },
+      },
+    );
+  }
+
+  function cancelRetake() {
+    setRetake(null);
+    setPassword('');
+    login.reset();
   }
 
   const error = login.error ?? google.error;
@@ -56,6 +78,29 @@ export function LoginPage() {
         : failure
           ? 'No pudimos iniciar sesión. Inténtalo de nuevo.'
           : null;
+
+  // Cuenta cuya edad y consentimientos hay que volver a declarar antes de abrir sesión.
+  if (retake) {
+    return (
+      <AuthShell title="Un último paso">
+        <GoogleProfileStep
+          name={retake.name}
+          email={retake.email}
+          pending={login.isPending}
+          error={login.error}
+          onSubmit={submitRetake}
+          onCancel={cancelRetake}
+          intro={
+            <>
+              Hola, <strong className="text-text">{retake.name}</strong>. Antes de entrar
+              necesitamos que confirmes tu edad y des tu autorización de nuevo.
+            </>
+          }
+          submitLabel="Continuar"
+        />
+      </AuthShell>
+    );
+  }
 
   // Persona nueva con Google: aún no existe cuenta; se piden la edad y los consentimientos.
   if (google.pending) {
