@@ -21,7 +21,8 @@
     "typecheck": "npm run build -w packages/shared && npm run build -w packages/game-core && npm run typecheck --workspaces --if-present",
     "test": "npm run build -w packages/shared && npm run build -w packages/game-core && npm test --workspaces --if-present",
     "test:e2e": "playwright test",
-    "icons": "node apps/web/scripts/icons.mjs"
+    "icons": "node apps/web/scripts/icons.mjs",
+    "csp:print": "tsx apps/web/scripts/csp-print.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
