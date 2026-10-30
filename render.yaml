@@ -1,0 +1,188 @@
+# Blueprint de Render para Universo Memorias (Fase 14 · P7). Dos servicios: el API (Node) y el sitio estático.
+#
+# LÉELO ANTES DE USARLO (más detalle en docs/DESPLIEGUE.md):
+#  - Es una REFERENCIA fiel de lo que ya funciona. Render aplica un Blueprint a un servicio existente solo si el NOMBRE
+#    coincide; si no, crea servicios nuevos. No lo importes sobre producción sin comprobar los nombres, la región y la
+#    dirección del API (marcadas abajo con «CONFIRMAR»).
+#  - Las variables con `sync: false` NO llevan valor aquí: Render las pide al crear el Blueprint. Nunca escribas secretos
+#    en este archivo (el repositorio es público).
+#  - NO definir hoy `ALLOW_INDEXING` (API) ni `VITE_ALLOW_INDEXING` (sitio): el sitio está cerrado a los buscadores hasta el
+#    día del lanzamiento (ver «Cómo abrir el sitio» en DESPLIEGUE.md). Tampoco `RATE_LIMIT_MULTIPLIER` ni ninguna
+#    `SEED_*`: en producción el API se niega a arrancar con ellas.
+#  - La lista de rutas del sitio sale de apps/web/src/app/routeList.ts (`APP_ROUTES`); una prueba falla si este archivo
+#    y esa lista se desfasan. La política de contenido sale de `npm run csp:print`; otra prueba falla si cambia un script
+#    en línea de index.html y la huella de aquí queda vieja.
+
+services:
+  # ───────────────────────── API (Express + Mongoose) ─────────────────────────
+  - type: web
+    runtime: node
+    name: universomemorias-api # CONFIRMAR: el nombre de tu servicio actual
+    plan: free
+    # region: oregon # CONFIRMAR: la misma región que tu servicio actual (no se puede cambiar después de crearlo)
+    # `NODE_ENV=production` hace que `npm ci` omita las dependencias de desarrollo, y `tsc` es una de ellas.
+    buildCommand: npm ci --include=dev && npm run build -w packages/shared && npm run build -w packages/game-core && npm run build -w apps/api
+    startCommand: node apps/api/dist/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Medido en producción el 28-oct-2026 (docs/MEDICION-IP.md): la IP de cada lectora sale de CF-Connecting-IP.
+      - key: TRUST_CLOUDFLARE_HEADER
+        value: 'true'
+      - key: TRUST_PROXY_HOPS
+        value: '1'
+      # Base de datos y direcciones
+      - key: MONGODB_URI
+        sync: false
+      - key: APP_URL # https://universomemorias.com (sin barra final)
+        sync: false
+      - key: CORS_ORIGIN # el mismo origen del sitio; sin comodines ni localhost
+        sync: false
+      - key: COOKIE_DOMAIN # opcional: solo si el sitio y el API están en subdominios distintos
+        sync: false
+      # Secretos (≥ 32 caracteres, distintos entre sí). ACCESS_TOKEN_SECRET firma los QR: no rotar sin plan.
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: ACCESS_TOKEN_SECRET
+        sync: false
+      # Correo (Resend por API HTTP: el plan gratuito de Render bloquea SMTP)
+      - key: MAIL_PROVIDER # resend
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: CONTACT_RECIPIENT_EMAIL
+        sync: false
+      # Ingreso con Google (opcional; el mismo ID público que VITE_GOOGLE_CLIENT_ID)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      # Imágenes y videos (subida firmada desde el panel). Las tres, obligatorias en producción.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      # Documentos privados de los capítulos extra (S3 compatible, p. ej. Cloudflare R2). Las cuatro juntas o ninguna.
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_REGION # R2: auto
+        sync: false
+      - key: S3_FORCE_PATH_STYLE # R2: true
+        sync: false
+
+  # ───────────────────────── Sitio estático (React + Vite) ─────────────────────────
+  - type: web
+    runtime: static
+    name: universomemorias-web # CONFIRMAR: el nombre de tu sitio actual
+    buildCommand: npm ci --include=dev && npm run build -w packages/shared && npm run build -w apps/web
+    staticPublishPath: apps/web/dist
+    envVars:
+      - key: VITE_GOOGLE_CLIENT_ID # ID público de cliente OAuth (el botón «Continuar con Google»)
+        sync: false
+      - key: VITE_SITE_URL # dirección canónica, imagen social y `Sitemap:` del robots.txt
+        value: https://universomemorias.com
+    # Reglas en orden. IMPORTANTE: no hay un comodín «/* → /index.html». Solo las direcciones de la aplicación reciben
+    # `index.html`; cualquier otra recibe `404.html` con estado 404 de verdad (los buscadores no la toman por válida).
+    # Render no aplica estas reglas a una ruta si existe un archivo en ella (assets, robots.txt, iconos…).
+    routes:
+      # Al API (CONFIRMAR: la dirección pública de tu servicio de API; aquí el nombre de arriba)
+      - type: rewrite
+        source: /api/*
+        destination: https://universomemorias-api.onrender.com/api/*
+      - type: rewrite
+        source: /sitemap.xml
+        destination: https://universomemorias-api.onrender.com/api/sitemap.xml
+      # La aplicación (APP_ROUTES de apps/web/src/app/routeList.ts; «/» ya es index.html)
+      - type: rewrite
+        source: /estado
+        destination: /index.html
+      - type: rewrite
+        source: /actualizaciones
+        destination: /index.html
+      - type: rewrite
+        source: /actualizaciones/*
+        destination: /index.html
+      - type: rewrite
+        source: /fan-arts
+        destination: /index.html
+      - type: rewrite
+        source: /contacto
+        destination: /index.html
+      - type: rewrite
+        source: /libros/*
+        destination: /index.html
+      - type: rewrite
+        source: /wiki
+        destination: /index.html
+      - type: rewrite
+        source: /wiki/*
+        destination: /index.html
+      - type: rewrite
+        source: /ingresar
+        destination: /index.html
+      - type: rewrite
+        source: /registro
+        destination: /index.html
+      - type: rewrite
+        source: /olvide-mi-contrasena
+        destination: /index.html
+      - type: rewrite
+        source: /restablecer/*
+        destination: /index.html
+      - type: rewrite
+        source: /u/*
+        destination: /index.html
+      - type: rewrite
+        source: /privacidad
+        destination: /index.html
+      - type: rewrite
+        source: /terminos
+        destination: /index.html
+      - type: rewrite
+        source: /cookies
+        destination: /index.html
+      - type: rewrite
+        source: /panel
+        destination: /index.html
+      - type: rewrite
+        source: /panel/*
+        destination: /index.html
+      - type: rewrite
+        source: /admin
+        destination: /index.html
+      - type: rewrite
+        source: /admin/*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=(), payment=()
+      # Política de contenido en SOLO REPORTE (no bloquea nada): copiar de `npm run csp:print` tras compilar.
+      - path: /*
+        name: Content-Security-Policy-Report-Only
+        value: "default-src 'self'; script-src 'self' 'sha256-rDAlQh7EopvGbdgAbgDR1aZpocDCTBNAhLvKpKrpdrE=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: https://res.cloudinary.com; media-src 'self' https://res.cloudinary.com; font-src 'self'; connect-src 'self' https://accounts.google.com/gsi/ https://api.cloudinary.com; frame-src https://accounts.google.com/gsi/; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; report-uri /api/csp-report"
+      # Los archivos de /assets llevan un hash en el nombre: nunca cambian, se pueden guardar un año.
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
