@@ -1,4 +1,5 @@
 import express from 'express';
+import { pino } from 'pino';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
@@ -40,6 +41,23 @@ describe('manejo de errores', () => {
       error: { code: 'INTERNAL', message: 'Error interno del servidor' },
     });
     expect(JSON.stringify(res.body)).not.toContain('detalle-interno');
+  });
+
+  it('un error no controlado en la resolución de un QR no deja el token en el registro', async () => {
+    const lines: string[] = [];
+    const logger = pino({ level: 'error' }, { write: (line: string) => void lines.push(line) });
+    const app = createTestApp({
+      logger,
+      configure: (a) =>
+        a.get('/prueba/access/resolve/:token', () => {
+          throw new Error('base caída');
+        }),
+    });
+    const res = await request(app).get('/prueba/access/resolve/abc123.firma-secreta');
+    expect(res.status).toBe(500);
+    const log = lines.join(' ');
+    expect(log).toContain('[REDACTADO]');
+    expect(log).not.toContain('firma-secreta');
   });
 
   it('un JSON mal formado responde 400 VALIDATION', async () => {

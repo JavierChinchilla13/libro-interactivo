@@ -6,7 +6,7 @@ export interface Violation {
   directive: string;
 }
 
-const MAX_PER_REPORT = 10;
+const MAX_PER_REPORT = 3;
 const KEYWORDS = new Set([
   'inline',
   'eval',
@@ -28,8 +28,10 @@ export function sanitizeBlocked(value: string | undefined): string {
   if (KEYWORDS.has(raw)) return raw;
   try {
     const url = new URL(raw);
-    if (url.protocol === 'data:' || url.protocol === 'blob:' || url.protocol === 'javascript:') {
-      return url.protocol.slice(0, -1);
+    // Solo las direcciones de red conservan origen y ruta; cualquier otro esquema (`mailto:`, `data:`, uno inventado)
+    // puede traer texto libre o un correo, así que de él queda únicamente el nombre del esquema.
+    if (!['https:', 'http:', 'wss:', 'ws:'].includes(url.protocol)) {
+      return url.protocol.slice(0, -1).slice(0, 20);
     }
     return `${url.origin}${url.pathname}`.slice(0, 200);
   } catch {
@@ -44,7 +46,7 @@ export function sanitizeDirective(value: string | undefined): string {
   return match?.[0] ?? 'otra';
 }
 
-/** Saca de un informe (formato antiguo o API de Reportes) hasta 10 violaciones ya limpias. */
+/** Saca de un informe (formato antiguo o API de Reportes) hasta 3 violaciones ya limpias. */
 export function extractViolations(body: CspReportBody): Violation[] {
   const found: Violation[] = [];
   if (Array.isArray(body)) {

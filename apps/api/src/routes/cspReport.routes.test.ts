@@ -165,6 +165,8 @@ describe('limpieza de lo que se registra', () => {
     expect(sanitizeBlocked('data:image/png;base64,AAAA')).toBe('data');
     expect(sanitizeBlocked('blob:https://universomemorias.com/uuid')).toBe('blob');
     expect(sanitizeBlocked('texto raro con ana@ejemplo.com')).toBe('otro');
+    expect(sanitizeBlocked('mailto:ana@ejemplo.com')).toBe('mailto');
+    expect(sanitizeBlocked('x:cualquier-texto-largo-con-datos-personales')).toBe('x');
     expect(sanitizeBlocked(undefined)).toBe('sin dato');
     expect(sanitizeBlocked(`https://a.example/${'x'.repeat(500)}`).length).toBeLessThanOrEqual(200);
   });

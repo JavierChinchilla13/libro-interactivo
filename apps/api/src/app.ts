@@ -47,16 +47,14 @@ import { createProgressService } from './services/progress.service.js';
 import { cryptoRandomInt, type RandomInt } from './services/quiz-engine.js';
 import { createQuizService } from './services/quiz.service.js';
 import { createQuizPublishService } from './services/quizPublish.service.js';
+import { maskAccessToken } from './lib/maskUrl.js';
 import { createBookService } from './services/book.service.js';
 import { createQuizAdminService } from './services/quizAdmin.service.js';
 import { createQuizAppearanceService } from './services/quizAppearance.service.js';
 import { createWikiService } from './services/wiki.service.js';
 import { createTokenService } from './services/token.service.js';
 
-/** Oculta el token de un QR en una URL (para logs). */
-export function maskAccessToken(url: string | undefined): string | undefined {
-  return url?.replace(/(\/access\/resolve\/)[^/?#]+/, '$1[REDACTADO]');
-}
+export { maskAccessToken };
 
 export interface AppDeps {
   env: Pick<
@@ -237,7 +235,9 @@ export function createApp(
   // Todo lo que sirve el API es JSON o archivos para la aplicación: nunca debe aparecer en un buscador.
   app.use('/api', noIndex);
   app.use(cors({ origin: deps.env.CORS_ORIGIN, credentials: true }));
-  app.use(express.json({ limit: '100kb' }));
+  // El informe de la política de contenido tiene su propio lector (8 KB) y va detrás de su límite de ritmo.
+  const json = express.json({ limit: '100kb' });
+  app.use((req, res, next) => (req.path === '/api/csp-report' ? next() : json(req, res, next)));
   app.use(cookieParser());
   app.use('/api', createSameOriginGuard(deps.env.CORS_ORIGIN));
 

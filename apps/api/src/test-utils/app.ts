@@ -4,7 +4,7 @@ import { parseEnv, type Env } from '../config/env.js';
 import type { Limits } from '../config/limits.js';
 import { createBackgroundTasks } from '../lib/background.js';
 import type { Clock } from '../lib/clock.js';
-import { createLogger } from '../lib/logger.js';
+import { createLogger, type Logger } from '../lib/logger.js';
 import { MemoryMailProvider, type MailProvider } from '../providers/mail/MailProvider.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
 import {
@@ -45,6 +45,8 @@ interface TestAppOptions {
   google?: GoogleVerifier;
   /** Almacenamiento privado; por defecto uno en memoria (accesible desde `createTestHarness().storage`). */
   storage?: StorageProvider;
+  /** Registro propio (para comprobar qué se anota); por defecto uno en silencio. */
+  logger?: Logger;
   configure?: (app: Express, ctx: AppContext) => void;
 }
 
@@ -54,7 +56,7 @@ interface TestAppOptions {
  */
 export function createTestHarness(options: TestAppOptions = {}) {
   const env = parseEnv({ NODE_ENV: 'test', ...options.env });
-  const logger = createLogger({ NODE_ENV: 'test', LOG_LEVEL: 'silent' });
+  const logger = options.logger ?? createLogger({ NODE_ENV: 'test', LOG_LEVEL: 'silent' });
   const memoryMail = new MemoryMailProvider();
   const memoryStorage = new MemoryStorageProvider();
   const tasks = createBackgroundTasks(logger);
