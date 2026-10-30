@@ -90,6 +90,11 @@ export function createPasswordResetService(options: PasswordResetServiceOptions)
       );
       if (!consumed) throw new AppError('TOKEN_INVALID', TOKEN_INVALID_MESSAGE); // otro canje ganó la carrera
 
+      // Una cuenta con contraseña y correo sin comprobar que ya declaró edad y consentimientos: lo declaró quien la creó,
+      // que pudo no ser la dueña del correo. Se borra lo declarado y se marca para volver a pedirlo en el siguiente
+      // ingreso. Las cuentas anteriores a la edad (sin lo declarado), las ya verificadas y las de equipo no se tocan.
+      const clearDeclared =
+        user.role === 'USER' && !user.emailVerifiedAt && user.termsAcceptedAt !== undefined;
       await User.updateOne(
         { _id: user._id },
         {
@@ -99,8 +104,21 @@ export function createPasswordResetService(options: PasswordResetServiceOptions)
             passwordChangedAt: now,
             failedLoginCount: 0,
             emailVerifiedAt: user.emailVerifiedAt ?? now,
+            ...(clearDeclared ? { consentRequiredAt: now } : {}),
           },
-          $unset: { lockedUntil: 1 },
+          $unset: {
+            lockedUntil: 1,
+            ...(clearDeclared
+              ? {
+                  birthYear: 1,
+                  birthMonth: 1,
+                  guardianAuthorized: 1,
+                  termsAcceptedAt: 1,
+                  privacyConsentAt: 1,
+                  termsVersion: 1,
+                }
+              : {}),
+          },
         },
       );
       await PasswordReset.updateMany({ userId: user._id, usedAt: null }, { $set: { usedAt: now } });

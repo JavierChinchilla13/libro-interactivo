@@ -26,5 +26,8 @@ const reportingEntrySchema = z.looseObject({
     .optional(),
 });
 
-export const cspReportBodySchema = z.union([legacyReportSchema, z.array(reportingEntrySchema).max(50)]);
+export const cspReportBodySchema = z.union([
+  legacyReportSchema,
+  z.array(reportingEntrySchema).max(50),
+]);
 export type CspReportBody = z.infer<typeof cspReportBodySchema>;

@@ -246,8 +246,8 @@ describe('POST /api/auth/google · vincular con una cuenta creada con contraseñ
     const before = await User.findOne({}).lean();
     expect(before?.emailVerifiedAt).toBeUndefined();
 
-    // La dueña real entra con Google.
-    const res = await post(app, { credential: CREDENTIAL });
+    // La dueña real entra con Google: como la cuenta traía edad y consentimientos de quien la creó, los declara ella.
+    const res = await post(app, { credential: CREDENTIAL, profile: ADULT_CONSENT });
     expect(res.status).toBe(200);
     expect(googleLoginResponseSchema.parse(res.body).status).toBe('ok');
 
@@ -277,7 +277,7 @@ describe('POST /api/auth/google · vincular con una cuenta creada con contraseñ
   it('solo la primera vez: con el correo ya comprobado, entrar con Google no vuelve a tocar nada', async () => {
     const app = createTestApp({ google: verifier(GOOD), clock: createTestClock(NOW) });
     await register(app).expect(201);
-    const first = await post(app, { credential: CREDENTIAL });
+    const first = await post(app, { credential: CREDENTIAL, profile: ADULT_CONSENT });
     const afterFirst = await User.findOne({}).lean();
     const second = await post(app, { credential: CREDENTIAL });
     const afterSecond = await User.findOne({}).lean();

@@ -73,6 +73,8 @@ export type RegisterRequest = z.infer<typeof registerRequestSchema>;
 export const loginRequestSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, 'Escribe tu contraseña').max(PASSWORD_MAX_LENGTH),
+  /** Solo cuando el servidor pidió volver a declarar la edad y los consentimientos (`needs_profile`). */
+  profile: consentSchema.optional(),
 });
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 
@@ -105,3 +107,14 @@ export const googleLoginResponseSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('needs_profile'), name: z.string(), email: z.string() }),
 ]);
 export type GoogleLoginResponse = z.infer<typeof googleLoginResponseSchema>;
+
+/**
+ * Respuesta del ingreso con contraseña. Una cuenta a la que se le borraron la edad y los consentimientos declarados
+ * (porque otra persona los había puesto antes de que su dueña probara controlar el correo) recibe `needs_profile`
+ * y **no se abre sesión** hasta que reenvía el ingreso con su edad y sus consentimientos.
+ */
+export const loginResponseSchema = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('ok'), user: authUserSchema }),
+  z.object({ status: z.literal('needs_profile'), name: z.string(), email: z.string() }),
+]);
+export type LoginResponse = z.infer<typeof loginResponseSchema>;

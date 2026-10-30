@@ -7,7 +7,7 @@ import { normalizeEmail } from '../lib/email.js';
 import { RefreshToken } from '../models/RefreshToken.js';
 import { User, type UserDoc } from '../models/User.js';
 import { createAgeGate, type AgeGate } from './ageGate.service.js';
-import { evaluateConsent } from './consent.service.js';
+import { evaluateConsent, type StoredConsent } from './consent.service.js';
 import { getDummyHash, hashPassword, verifyPassword } from './password.service.js';
 import type { GoogleProfile } from './google.service.js';
 import type { TokenService } from './token.service.js';
@@ -119,6 +119,41 @@ export function createAuthService(options: AuthServiceOptions) {
     );
   }
 
+  /** ¿Los datos de edad y consentimiento de esta cuenta pudieron ser puestos por otra persona? */
+  function needsFreshConsent(user: UserDoc): boolean {
+    return (
+      Boolean(user.consentRequiredAt) || (!user.emailVerifiedAt && Boolean(user.termsAcceptedAt))
+    );
+  }
+
+  /**
+   * Una persona acaba de probar que controla el correo de una cuenta creada con contraseña y sin comprobar: se le quita
+   * la contraseña a quien la creó (queda una al azar que nadie conoce), se cierran las sesiones que hubiera abiertas
+   * y, si ya declaró su edad y sus consentimientos, se guardan en lugar de los que había.
+   */
+  async function claimUnverifiedAccount(
+    userId: Types.ObjectId,
+    consent: StoredConsent | undefined,
+  ): Promise<UserDoc | null> {
+    await User.updateOne(
+      { _id: userId },
+      {
+        $set: {
+          passwordHash: await hashPassword(randomToken(24)),
+          passwordChangedAt: clock(),
+          emailVerifiedAt: clock(),
+          failedLoginCount: 0,
+          ...consent,
+        },
+        $unset: { lockedUntil: 1, ...(consent ? { consentRequiredAt: 1 } : {}) },
+        // Los access tokens vigentes dejan de valer y los refresh se revocan: se cierran todas las sesiones.
+        $inc: { tokenVersion: 1 },
+      },
+    );
+    await RefreshToken.updateMany({ userId, revokedAt: null }, { $set: { revokedAt: clock() } });
+    return User.findById(userId);
+  }
+
   return {
     async register(
       input: RegisterRequest,
@@ -149,7 +184,10 @@ export function createAuthService(options: AuthServiceOptions) {
     async login(
       input: LoginRequest,
       meta: RequestMeta,
-    ): Promise<{ user: AuthUser; session: Session }> {
+    ): Promise<
+      | { status: 'ok'; user: AuthUser; session: Session }
+      | { status: 'needs_profile'; name: string; email: string }
+    > {
       const user = await User.findOne({ emailNormalized: normalizeEmail(input.email) });
       if (!user) {
         // Misma carga de trabajo que con un usuario real: no se delata si el correo existe.
@@ -171,12 +209,22 @@ export function createAuthService(options: AuthServiceOptions) {
         throw new AppError('AUTH_INVALID', INVALID_CREDENTIALS);
       }
 
+      // Cuenta a la que se le borraron la edad y los consentimientos declarados por otra persona: se vuelven a pedir
+      // antes de abrir sesión (la contraseña ya se comprobó; no cuenta como intento fallido ni se abre nada).
+      let consent: StoredConsent | undefined;
+      if (user.role === 'USER' && user.consentRequiredAt) {
+        if (!input.profile) return { status: 'needs_profile', name: user.name, email: user.email };
+        consent = evaluateConsent(input.profile, { now, gate: ageGate, ip: meta.ip });
+      }
       await User.updateOne(
         { _id: user._id },
-        { $set: { failedLoginCount: 0, lastLoginAt: now }, $unset: { lockedUntil: 1 } },
+        {
+          $set: { failedLoginCount: 0, lastLoginAt: now, ...consent },
+          $unset: { lockedUntil: 1, ...(consent ? { consentRequiredAt: 1 } : {}) },
+        },
       );
       const session = await issueSession(user, meta, randomToken(16));
-      return { user: toAuthUser(user), session };
+      return { status: 'ok', user: toAuthUser(user), session };
     },
 
     /**
@@ -203,40 +251,33 @@ export function createAuthService(options: AuthServiceOptions) {
       if (user && (user.status !== 'active' || (user.lockedUntil && user.lockedUntil > clock()))) {
         throw new AppError('AUTH_INVALID', GOOGLE_INVALID);
       }
+      // Una lectora cuyos datos de edad y consentimiento pudo poner otra persona (cuenta con contraseña y correo sin
+      // comprobar que ya declaró edad, o marcada para volver a declararlos) debe declararlos ella antes de entrar. Sin
+      // ellos no se cambia nada. Las cuentas anteriores a la edad y las de equipo no entran aquí.
+      let consent: StoredConsent | undefined;
+      if (user && user.role === 'USER' && needsFreshConsent(user)) {
+        if (!consentInput) {
+          return { status: 'needs_profile', name: user.name, email: profile.email };
+        }
+        consent = evaluateConsent(consentInput, { now: clock(), gate: ageGate, ip: meta.ip });
+      }
       if (user && user.role === 'USER' && !user.emailVerifiedAt) {
         // Cuenta creada con contraseña, con un correo que nadie comprobó: quien la creó pudo no ser la dueña del
-        // correo. Entrar con Google prueba que esta persona sí lo es, así que se le quita la contraseña a quien creó
-        // la cuenta (queda una al azar que nadie conoce) y se cierran las sesiones que hubiera abiertas.
+        // correo. Entrar con Google prueba que esta persona sí lo es.
+        user = await claimUnverifiedAccount(user._id, consent);
+      } else if (user && consent) {
+        // Cuenta ya verificada marcada para volver a declarar: se guardan los datos y se quita la marca.
         await User.updateOne(
           { _id: user._id },
-          {
-            $set: {
-              passwordHash: await hashPassword(randomToken(24)),
-              passwordChangedAt: clock(),
-              emailVerifiedAt: clock(),
-              failedLoginCount: 0,
-            },
-            $unset: { lockedUntil: 1 },
-            // Los access tokens vigentes dejan de valer y los refresh se revocan: se cierran todas las sesiones.
-            $inc: { tokenVersion: 1 },
-          },
+          { $set: { ...consent }, $unset: { consentRequiredAt: 1 } },
         );
-        await RefreshToken.updateMany(
-          { userId: user._id, revokedAt: null },
-          { $set: { revokedAt: clock() } },
-        );
-        user = await User.findById(user._id);
-        if (!user) throw new AppError('AUTH_INVALID', GOOGLE_INVALID);
       }
       if (!user) {
         if (!consentInput) {
           return { status: 'needs_profile', name: profile.name.slice(0, 80), email: profile.email };
         }
-        const consent = evaluateConsent(consentInput, {
-          now: clock(),
-          gate: ageGate,
-          ip: meta.ip,
-        });
+        const declared =
+          consent ?? evaluateConsent(consentInput, { now: clock(), gate: ageGate, ip: meta.ip });
         try {
           user = await User.create({
             email: profile.email,
@@ -245,15 +286,22 @@ export function createAuthService(options: AuthServiceOptions) {
             passwordHash: await hashPassword(randomToken(24)),
             role: 'USER',
             emailVerifiedAt: clock(),
-            ...consent,
+            ...declared,
           });
         } catch (error) {
-          // Dos ingresos simultáneos: gana el índice único y el segundo reutiliza la cuenta creada.
+          // Dos ingresos simultáneos (o un registro con contraseña justo en medio): gana el índice único. Si la cuenta
+          // que ganó es una con correo sin comprobar, también se reclama (se rota su contraseña y se cierran sus
+          // sesiones); si no, el segundo ingreso la reutiliza.
           if (!isDuplicateKeyError(error)) throw error;
-          user = await User.findOne({ emailNormalized });
-          if (!user) throw error;
+          const winner = await User.findOne({ emailNormalized });
+          if (!winner) throw error;
+          user =
+            winner.role === 'USER' && !winner.emailVerifiedAt
+              ? await claimUnverifiedAccount(winner._id, declared)
+              : winner;
         }
       }
+      if (!user) throw new AppError('AUTH_INVALID', GOOGLE_INVALID);
       await User.updateOne({ _id: user._id }, { $set: { lastLoginAt: clock() } });
       const session = await issueSession(user, meta, randomToken(16));
       return { status: 'ok', user: toAuthUser(user), session };

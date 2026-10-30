@@ -34,9 +34,14 @@ export function createAuthController(auth: AuthService, env: CookieEnv, google?:
 
   const login: RequestHandler = async (req, res) => {
     const { body } = getInput<LoginRequest>(res);
-    const { user, session } = await auth.login(body, requestMeta(req));
-    setSessionCookies(res, env, session);
-    res.json({ user });
+    const result = await auth.login(body, requestMeta(req));
+    if (result.status === 'needs_profile') {
+      // Sin sesión: se pide volver a declarar la edad y los consentimientos antes de entrar.
+      res.json({ status: 'needs_profile', name: result.name, email: result.email });
+      return;
+    }
+    setSessionCookies(res, env, result.session);
+    res.json({ status: 'ok', user: result.user });
   };
 
   const googleLogin: RequestHandler = async (req, res) => {

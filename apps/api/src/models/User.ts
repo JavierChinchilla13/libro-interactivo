@@ -40,6 +40,12 @@ const userSchema = new Schema(
     privacyConsentAt: { type: Date },
     /** Versión de los textos legales que se aceptaron (`LEGAL_VERSION`). */
     termsVersion: { type: String, maxlength: 40 },
+    /**
+     * Se pone cuando se borran la edad y los consentimientos declarados por quien creó la cuenta sin probar que
+     * controlaba el correo (la dueña restableció la contraseña desde el correo): el siguiente ingreso los vuelve a
+     * pedir y esta marca se quita. Las cuentas anteriores y las de equipo nunca la tienen.
+     */
+    consentRequiredAt: { type: Date },
   },
   { timestamps: true },
 );
