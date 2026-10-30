@@ -203,6 +203,31 @@ export function createAuthService(options: AuthServiceOptions) {
       if (user && (user.status !== 'active' || (user.lockedUntil && user.lockedUntil > clock()))) {
         throw new AppError('AUTH_INVALID', GOOGLE_INVALID);
       }
+      if (user && user.role === 'USER' && !user.emailVerifiedAt) {
+        // Cuenta creada con contraseña, con un correo que nadie comprobó: quien la creó pudo no ser la dueña del
+        // correo. Entrar con Google prueba que esta persona sí lo es, así que se le quita la contraseña a quien creó
+        // la cuenta (queda una al azar que nadie conoce) y se cierran las sesiones que hubiera abiertas.
+        await User.updateOne(
+          { _id: user._id },
+          {
+            $set: {
+              passwordHash: await hashPassword(randomToken(24)),
+              passwordChangedAt: clock(),
+              emailVerifiedAt: clock(),
+              failedLoginCount: 0,
+            },
+            $unset: { lockedUntil: 1 },
+            // Los access tokens vigentes dejan de valer y los refresh se revocan: se cierran todas las sesiones.
+            $inc: { tokenVersion: 1 },
+          },
+        );
+        await RefreshToken.updateMany(
+          { userId: user._id, revokedAt: null },
+          { $set: { revokedAt: clock() } },
+        );
+        user = await User.findById(user._id);
+        if (!user) throw new AppError('AUTH_INVALID', GOOGLE_INVALID);
+      }
       if (!user) {
         if (!consentInput) {
           return { status: 'needs_profile', name: profile.name.slice(0, 80), email: profile.email };
@@ -219,6 +244,7 @@ export function createAuthService(options: AuthServiceOptions) {
             name: profile.name.slice(0, 80),
             passwordHash: await hashPassword(randomToken(24)),
             role: 'USER',
+            emailVerifiedAt: clock(),
             ...consent,
           });
         } catch (error) {

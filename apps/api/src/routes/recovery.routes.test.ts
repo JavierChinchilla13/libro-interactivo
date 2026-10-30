@@ -173,6 +173,14 @@ describe('POST /api/auth/reset-password', () => {
       .expect(200);
   });
 
+  it('restablecer desde el enlace prueba que la persona controla el correo', async () => {
+    const h = createTestHarness();
+    await createUser();
+    expect((await User.findOne({}).lean())?.emailVerifiedAt).toBeUndefined();
+    await reset(h.app, await requestToken(h)).expect(200);
+    expect((await User.findOne({}).lean())?.emailVerifiedAt).toBeInstanceOf(Date);
+  });
+
   it('el enlace es de un solo uso', async () => {
     const h = createTestHarness();
     await createUser();

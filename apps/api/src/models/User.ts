@@ -19,6 +19,11 @@ const userSchema = new Schema(
     lockedUntil: { type: Date },
     passwordChangedAt: { type: Date },
     lastLoginAt: { type: Date },
+    /**
+     * Cuándo se comprobó que la persona controla el correo (entró con Google o restableció la contraseña desde un
+     * enlace enviado a ese correo). Las cuentas creadas con contraseña no lo tienen hasta entonces.
+     */
+    emailVerifiedAt: { type: Date },
     /** Última vez que vio el mensaje de bienvenida (ver `siteSettings.welcome`). */
     welcomeSeenAt: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },

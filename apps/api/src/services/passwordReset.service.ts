@@ -93,7 +93,13 @@ export function createPasswordResetService(options: PasswordResetServiceOptions)
       await User.updateOne(
         { _id: user._id },
         {
-          $set: { passwordHash, passwordChangedAt: now, failedLoginCount: 0 },
+          // Restablecer desde un enlace enviado al correo prueba que la persona lo controla.
+          $set: {
+            passwordHash,
+            passwordChangedAt: now,
+            failedLoginCount: 0,
+            emailVerifiedAt: user.emailVerifiedAt ?? now,
+          },
           $unset: { lockedUntil: 1 },
         },
       );
