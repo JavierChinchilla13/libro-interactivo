@@ -11,6 +11,7 @@ import { wikiApi, wikiKeys } from './api';
 import { LockedNotice } from './LockedNotice';
 import { SECTION_SLUGS, sectionOfEntry } from './sections';
 import { LockIcon } from '../../shared/ui/icons';
+import { usePageMeta } from '../../shared/seo/usePageMeta';
 
 function BackLink({ to, label }: { to: string; label: string }) {
   return (
@@ -33,6 +34,15 @@ export function WikiEntryPage() {
     // Al conocerse la sesión la clave cambia (de visitante a la persona): se sigue mostrando la ficha mientras se
     // vuelve a pedir, en vez de volver a «Cargando».
     placeholderData: keepPreviousData,
+  });
+
+  const loaded = query.data?.entry;
+  usePageMeta({
+    title: loaded?.name ?? 'Entrada de la wiki',
+    description: loaded?.summary,
+    image: loaded?.image?.url,
+    // Bloqueada, inexistente o sin cargar: nunca se indexa.
+    noindex: !loaded,
   });
 
   if (query.isPending) return <Loading />;

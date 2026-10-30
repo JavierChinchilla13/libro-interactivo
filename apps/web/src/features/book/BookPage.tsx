@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import { Link, useParams } from 'react-router';
 import { ApiClientError } from '../../shared/api/client';
 import { releaseTarget } from '../../shared/lib/countdown';
@@ -15,6 +14,8 @@ import { publicKeys } from '../home/api';
 import { booksApi } from '../reader/api';
 import { BookFacts, BookGenres } from './BookFacts';
 import { hasPurchaseLinks, PurchaseList } from './PurchaseList';
+import { absoluteUrl, describe } from '../../shared/seo/site';
+import { usePageMeta } from '../../shared/seo/usePageMeta';
 
 /**
  * Página de un libro (`/libros/:slug`), versión mínima: portada, título, lema, sinopsis, fecha de salida y dónde
@@ -28,15 +29,31 @@ export function BookPage() {
     retry: false,
   });
   const session = useSession();
-  const title = book.data?.title;
-  useEffect(() => {
-    if (!title) return;
-    const previous = document.title;
-    document.title = `${title} · Universo Memorias`;
-    return () => {
-      document.title = previous;
-    };
-  }, [title]);
+  const loaded = book.data;
+  usePageMeta({
+    title: loaded?.title ?? (book.isError ? 'Página no encontrada' : 'Libro'),
+    description: [loaded?.tagline, loaded?.synopsis].filter(Boolean).join('. '),
+    image: loaded?.cover?.url,
+    type: 'book',
+    noindex: book.isError || !loaded,
+    // Datos estructurados verdaderos: solo lo que la autora cargó (nada de autor, reseñas ni fechas inventadas).
+    jsonLd: loaded
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'Book',
+          name: loaded.title,
+          url: absoluteUrl(`/libros/${loaded.slug}`),
+          inLanguage: 'es',
+          ...(loaded.synopsis ? { description: describe(loaded.synopsis) } : {}),
+          ...(loaded.cover ? { image: loaded.cover.url } : {}),
+          ...(loaded.isbn ? { isbn: loaded.isbn } : {}),
+          // La fecha solo cuando el libro ya salió: antes es una fecha prevista, no una publicación.
+          ...(loaded.status === 'published' && loaded.releaseDate
+            ? { datePublished: loaded.releaseDate }
+            : {}),
+        }
+      : undefined,
+  });
 
   if (book.isError) {
     const missing = book.error instanceof ApiClientError && book.error.status === 404;

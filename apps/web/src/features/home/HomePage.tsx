@@ -24,6 +24,8 @@ import {
   SectionsSkeleton,
   WikiPreview,
 } from './LandingSections';
+import { SITE_NAME, siteUrl } from '../../shared/seo/site';
+import { usePageMeta } from '../../shared/seo/usePageMeta';
 
 /** El libro que se destaca: el publicado más reciente de la saga (el de mayor posición). */
 function pickFeatured(books: readonly PublicBookSummary[]): PublicBookSummary | undefined {
@@ -35,6 +37,21 @@ function pickFeatured(books: readonly PublicBookSummary[]): PublicBookSummary | 
  * que la autora aún no escribe aparecen marcados `[PLACEHOLDER]`. Nunca revela contenido del libro.
  */
 export function HomePage() {
+  usePageMeta({
+    title: SITE_NAME,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Organization',
+          name: SITE_NAME,
+          url: siteUrl(),
+          logo: `${siteUrl()}/icon-512.png`,
+        },
+        { '@type': 'WebSite', name: SITE_NAME, url: siteUrl(), inLanguage: 'es' },
+      ],
+    },
+  });
   const session = useSession();
   const site = useQuery({ queryKey: publicKeys.site, queryFn: publicApi.site, retry: false });
   const books = useQuery({ queryKey: readerKeys.books, queryFn: booksApi.list });

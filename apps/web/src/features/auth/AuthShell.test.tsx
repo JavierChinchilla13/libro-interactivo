@@ -1,13 +1,16 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { AuthShell } from './AuthShell';
 
 describe('AuthShell', () => {
   it('lleva el título y el contenido en una tarjeta, con el humo de fondo solo decorativo', () => {
     const { container } = render(
-      <AuthShell title="Ingresar" tagline="Una frase">
-        <button type="button">Entrar</button>
-      </AuthShell>,
+      <MemoryRouter>
+        <AuthShell title="Ingresar" tagline="Una frase">
+          <button type="button">Entrar</button>
+        </AuthShell>
+      </MemoryRouter>,
     );
     expect(screen.getByRole('heading', { level: 1, name: 'Ingresar' })).toBeInTheDocument();
     expect(screen.getByText('Una frase')).toBeInTheDocument();

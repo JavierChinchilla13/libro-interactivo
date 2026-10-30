@@ -8,6 +8,7 @@ import { Lightbox } from '../posts/templates/Lightbox';
 import { booksApi, readerKeys } from '../reader/api';
 import { communityApi, communityKeys } from './api';
 import { FanArtGallery } from './FanArtGallery';
+import { usePageMeta } from '../../shared/seo/usePageMeta';
 
 /**
  * Fan arts: dibujos de lectores, cargados por la autora **con permiso del artista**. La galería se acomoda según
@@ -15,6 +16,10 @@ import { FanArtGallery } from './FanArtGallery';
  * se abre ampliado con el crédito del artista. Sin envío público: se escribe a la autora.
  */
 export function FanArtsPage() {
+  usePageMeta({
+    title: 'Fan arts',
+    description: 'Dibujos que las lectoras y lectores hicieron del universo Memorias.',
+  });
   const [bookId, setBookId] = useState<string | undefined>(undefined);
   const [open, setOpen] = useState<number | null>(null);
   // Galería por defecto; el carrusel es una vista alternativa que solo se ofrece desde 5 piezas.

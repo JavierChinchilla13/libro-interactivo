@@ -1,3 +1,4 @@
+import { usePageMeta } from '../../shared/seo/usePageMeta';
 import type { ReactNode } from 'react';
 
 /** Frase de la landing que invita a entrar con el libro (no se inventa texto nuevo para las pantallas de cuenta). */
@@ -16,6 +17,8 @@ export function AuthShell({
   tagline?: string;
   children: ReactNode;
 }) {
+  // Ingreso, registro y recuperación no se indexan: no tienen nada que buscar.
+  usePageMeta({ title, noindex: true });
   return (
     <div className="relative isolate mx-auto flex w-full max-w-md flex-col items-center py-4 sm:py-10">
       <div aria-hidden="true" className="auth-smoke" />

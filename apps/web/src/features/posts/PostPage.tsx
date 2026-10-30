@@ -5,6 +5,7 @@ import { errorMessage } from '../../shared/api/messages';
 import { Alert, Loading } from '../../shared/ui/layout';
 import { postKeys, postsApi } from './api';
 import { PostView } from './templates';
+import { usePageMeta } from '../../shared/seo/usePageMeta';
 
 function Back() {
   return (
@@ -23,6 +24,15 @@ export function PostPage() {
     queryKey: postKeys.detail(slug),
     queryFn: () => postsApi.get(slug),
     retry: false,
+  });
+
+  const post = query.data;
+  usePageMeta({
+    title: post?.title ?? 'Publicación',
+    description: post?.excerpt,
+    image: post?.thumbnail?.url,
+    type: 'article',
+    noindex: !post,
   });
 
   if (query.isPending) return <Loading />;

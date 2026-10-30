@@ -7,6 +7,7 @@ import { formatShortDate } from '../../shared/lib/dates';
 import { Button } from '../../shared/ui/controls';
 import { Alert, Badge, EmptyState, Loading, PageHeader } from '../../shared/ui/layout';
 import { postKeys, postsApi } from './api';
+import { usePageMeta } from '../../shared/seo/usePageMeta';
 
 /** Filtro por tipo: la dirección usa el plural en español (`?tipo=eventos`). */
 const FILTERS: { label: string; slug: string | null; category: PostCategory | undefined }[] = [
@@ -56,6 +57,10 @@ export function PostCardItem({ post, className = '' }: { post: PostCard; classNa
 
 /** Lista de actualizaciones: filtro por tipo, más recientes primero y «Cargar más». */
 export function PostsPage() {
+  usePageMeta({
+    title: 'Actualizaciones',
+    description: 'Ferias, eventos y novedades de la autora de Universo Memorias.',
+  });
   const [params, setParams] = useSearchParams();
   const active = FILTERS.find((filter) => filter.slug === params.get('tipo')) ?? FILTERS[0];
   const category = active?.category;

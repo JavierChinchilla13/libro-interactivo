@@ -1,7 +1,9 @@
 import { PageHeader } from '../../shared/ui/layout';
 import { ServiceStatus } from './ServiceStatus';
+import { usePageMeta } from '../../shared/seo/usePageMeta';
 
 export function HealthPage() {
+  usePageMeta({ title: 'Estado del sistema', noindex: true });
   return (
     <div>
       <PageHeader

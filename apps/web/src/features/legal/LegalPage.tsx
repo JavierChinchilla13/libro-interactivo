@@ -2,6 +2,7 @@ import { LEGAL_VERSION } from '@libro/shared';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useMediaQuery } from '../../shared/lib/useMediaQuery';
+import { usePageMeta } from '../../shared/seo/usePageMeta';
 
 /**
  * Las dos etiquetas del borrador. Se leen como una nota al margen (letra de interfaz, más chica que el texto) y se
@@ -80,6 +81,7 @@ export function LegalPage({
   sections: LegalSectionDef[];
 }) {
   const wide = useMediaQuery('(min-width: 1024px)', false);
+  usePageMeta({ title, description: subtitle });
   return (
     <div className="mx-auto grid w-full max-w-[64rem] gap-x-14 lg:grid-cols-[13.5rem_minmax(0,1fr)]">
       <header className="fade-up lg:col-span-2">
