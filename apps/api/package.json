@@ -23,6 +23,7 @@
     "backup:db": "tsx --env-file-if-exists=.env scripts/backup-db.ts",
     "restore:db": "tsx scripts/restore-db.ts",
     "smoke:prod": "tsx scripts/smoke-prod.ts",
+    "check:prelaunch": "tsx --env-file-if-exists=.env scripts/check-prelaunch.ts",
     "load:smoke": "tsx scripts/load-smoke.ts"
   },
   "devDependencies": {
