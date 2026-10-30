@@ -9,6 +9,7 @@ import { LockedNotice } from './LockedNotice';
 import { SECTION_SLUGS, sectionFromSlug } from './sections';
 import { CharactersView, GlossaryView, PlacesView, PowersView } from './SectionViews';
 import { LockIcon } from '../../shared/ui/icons';
+import { usePageMeta } from '../../shared/seo/usePageMeta';
 
 const homeLink = (
   <Link to="/" className="btn btn-secondary">
@@ -42,9 +43,25 @@ function WikiContent() {
     enabled: bookId !== '',
   });
 
+  const available = sections.data?.sections ?? [];
+  const current = available.find((s) => s.kind === sectionFromSlug(slug)) ?? available[0];
+  usePageMeta({
+    title: current && !current.locked ? `Wiki: ${current.title}` : 'Wiki del universo',
+    description:
+      'La wiki del universo de Memorias: personajes, campos de poder, lugares y glosario. Parte del contenido se desbloquea al avanzar en los quizzes.',
+  });
+
   if (isPending || (book && sections.isPending)) return <Loading />;
   if (error) return <Alert>{errorMessage(error)}</Alert>;
-  if (!book) return <EmptyState title="Todavía no hay una wiki disponible." action={homeLink} />;
+  if (!book) {
+    // También sin wiki la página tiene su titular: una sola H1 por página.
+    return (
+      <div className="flex flex-col">
+        <PageHeader title="Wiki del universo" />
+        <EmptyState title="Todavía no hay una wiki disponible." action={homeLink} />
+      </div>
+    );
+  }
   if (sections.isError) return <Alert>{errorMessage(sections.error)}</Alert>;
 
   const list = sections.data?.sections ?? [];
