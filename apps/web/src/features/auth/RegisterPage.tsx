@@ -16,7 +16,7 @@ import {
 import { GOOGLE_CLIENT_ID, GoogleButton } from './GoogleButton';
 import { PasswordField } from './PasswordField';
 import { GoogleProfileStep } from './GoogleProfileStep';
-import { homeFor, useRegister, useSession } from './session';
+import { landingAfterLogin, useRegister, useSession } from './session';
 import { useGoogleAccess } from './useGoogleAccess';
 
 /**
@@ -29,7 +29,9 @@ export function RegisterPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
-  const google = useGoogleAccess((user) => void navigate(from ?? homeFor(user), { replace: true }));
+  const google = useGoogleAccess(
+    (user) => void navigate(landingAfterLogin(user, from), { replace: true }),
+  );
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,7 +39,7 @@ export function RegisterPage() {
   const [consent, setConsent] = useState<ConsentValues>(EMPTY_CONSENT);
   const [consentErrors, setConsentErrors] = useState<ConsentErrors>({});
 
-  if (session.data) return <Navigate to={from ?? homeFor(session.data)} replace />;
+  if (session.data) return <Navigate to={landingAfterLogin(session.data, from)} replace />;
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -62,7 +64,7 @@ export function RegisterPage() {
     }
     setErrors({});
     register.mutate(parsed.data, {
-      onSuccess: (data) => void navigate(from ?? homeFor(data.user), { replace: true }),
+      onSuccess: (data) => void navigate(landingAfterLogin(data.user, from), { replace: true }),
     });
   }
 

@@ -8,7 +8,7 @@ import { AuthShell, OrDivider, QR_TAGLINE } from './AuthShell';
 import { GOOGLE_CLIENT_ID, GoogleButton } from './GoogleButton';
 import { PasswordField } from './PasswordField';
 import { GoogleProfileStep } from './GoogleProfileStep';
-import { homeFor, useLogin, useSession } from './session';
+import { landingAfterLogin, useLogin, useSession } from './session';
 import { useGoogleAccess } from './useGoogleAccess';
 
 /**
@@ -21,14 +21,16 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
-  const google = useGoogleAccess((user) => void navigate(from ?? homeFor(user), { replace: true }));
+  const google = useGoogleAccess(
+    (user) => void navigate(landingAfterLogin(user, from), { replace: true }),
+  );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   // La contraseña fue correcta pero hay que volver a declarar la edad y los consentimientos (viven solo en memoria).
   const [retake, setRetake] = useState<{ name: string; email: string } | null>(null);
 
-  if (session.data) return <Navigate to={from ?? homeFor(session.data)} replace />;
+  if (session.data) return <Navigate to={landingAfterLogin(session.data, from)} replace />;
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -45,7 +47,8 @@ export function LoginPage() {
     setErrors({});
     login.mutate(parsed.data, {
       onSuccess: (data) => {
-        if (data.status === 'ok') void navigate(from ?? homeFor(data.user), { replace: true });
+        if (data.status === 'ok')
+          void navigate(landingAfterLogin(data.user, from), { replace: true });
         else setRetake({ name: data.name, email: data.email });
       },
     });
@@ -56,7 +59,8 @@ export function LoginPage() {
       { email, password, profile },
       {
         onSuccess: (data) => {
-          if (data.status === 'ok') void navigate(from ?? homeFor(data.user), { replace: true });
+          if (data.status === 'ok')
+            void navigate(landingAfterLogin(data.user, from), { replace: true });
         },
       },
     );

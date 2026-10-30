@@ -90,6 +90,20 @@ export function homeFor(user: AuthUser | null | undefined): string {
   return isStaff(user) ? '/admin' : '/panel';
 }
 
+/**
+ * A dónde va una persona al terminar de ingresar o de registrarse: a la dirección que traía (`from`, la que la mandó a
+ * `/ingresar`) o, si no hay, a su inicio por rol. Una dirección de `/admin` solo se respeta para el equipo: quien llegó a
+ * `/admin` sin sesión y resulta ser lectora (por ejemplo, entró con una cuenta nueva de Google) va a su panel en lugar de
+ * toparse con «sin permiso». Solo se aceptan rutas internas (empiezan con una sola `/`). Es comodidad, no seguridad: la
+ * seguridad real de `/admin` es del API.
+ */
+export function landingAfterLogin(user: AuthUser, from: string | undefined): string {
+  const internal = from !== undefined && from.startsWith('/') && !from.startsWith('//');
+  if (!internal) return homeFor(user);
+  const toAdmin = from === '/admin' || from.startsWith('/admin/') || from.startsWith('/admin?');
+  return toAdmin && !isStaff(user) ? homeFor(user) : from;
+}
+
 /** Editoras y administradoras entran al panel. */
 export function isStaff(user: AuthUser | null | undefined): boolean {
   return user?.role === 'EDITOR' || user?.role === 'ADMIN';
