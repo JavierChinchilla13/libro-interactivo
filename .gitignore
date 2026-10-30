@@ -31,3 +31,6 @@ Thumbs.db
 # Datos locales de desarrollo
 .data/
 .vitest/
+
+# Respaldos de la base de datos (traen datos personales: nunca al repositorio)
+libro-interactivo-respaldos/

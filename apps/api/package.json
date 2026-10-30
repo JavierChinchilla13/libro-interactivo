@@ -20,6 +20,8 @@
     "repair:progress": "tsx --env-file-if-exists=.env scripts/repair-progress.ts",
     "cleanup:orphans": "tsx --env-file-if-exists=.env scripts/cleanup-orphans.ts",
     "migrate:accents": "tsx --env-file-if-exists=.env scripts/migrate-accents.ts",
+    "backup:db": "tsx --env-file-if-exists=.env scripts/backup-db.ts",
+    "restore:db": "tsx scripts/restore-db.ts",
     "load:smoke": "tsx scripts/load-smoke.ts"
   },
   "devDependencies": {
