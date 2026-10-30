@@ -43,9 +43,13 @@ function preloadFirstPaintFonts(): Plugin {
 }
 
 /**
- * Quien abre directo una ficha de la wiki descargaba el código de esa página solo después de ejecutar el paquete inicial
- * (un salto más de red). Aquí se agrega a `index.html` una precarga que solo actúa en esas direcciones: el código de la
- * ficha viaja en paralelo con el paquete inicial, sin cargar nada extra en la portada ni en las demás páginas.
+ * Quien abre directo una ficha de la wiki o un libro descargaba el código de esa página solo después de ejecutar el
+ * paquete inicial (un salto más de red). Un archivo pequeño, `preload-direct.js`, hace que ese código viaje en
+ * paralelo con el paquete inicial, solo en esas direcciones (en la portada y en las demás páginas no hace nada).
+ *
+ * Va como archivo propio (`<script src async>`) y no dentro del HTML a propósito: su contenido lleva los nombres con
+ * hash de cada compilación, y un script en línea cambiaría su huella en cada despliegue, lo que haría imposible fijar
+ * la política de contenido (CSP) con huellas estables.
  */
 function preloadDirectPageChunks(): Plugin {
   // Páginas que suelen abrirse directo desde un enlace: su código se precarga solo en esas direcciones.
@@ -53,29 +57,42 @@ function preloadDirectPageChunks(): Plugin {
     { file: /WikiEntryPage-[^/]*\.js$/, prefix: '/wiki/entrada/', name: 'la ficha de la wiki' },
     { file: /BookPage-[^/]*\.js$/, prefix: '/libros/', name: 'la página del libro' },
   ];
+  let code = '';
   return {
     name: 'preload-direct-page-chunks',
     apply: 'build',
     transformIndexHtml: {
       order: 'post',
       handler(_html, ctx) {
-        return pages.flatMap((page) => {
-          const file = Object.keys(ctx.bundle ?? {}).find((name) => page.file.test(name));
-          if (!file) {
-            // Sin el aviso, un cambio de nombre o de agrupación quitaría la precarga sin que nadie lo note.
-            console.warn(
-              `[preload-direct-page-chunks] No se encontró el archivo de ${page.name}: no se precarga.`,
-            );
-            return [];
-          }
-          return [
-            {
-              tag: 'script',
-              children: `if(location.pathname.indexOf('${page.prefix}')===0){var l=document.createElement('link');l.rel='modulepreload';l.href='/${file}';document.head.appendChild(l);}`,
-              injectTo: 'head' as const,
-            },
-          ];
-        });
+        code = pages
+          .flatMap((page) => {
+            const file = Object.keys(ctx.bundle ?? {}).find((name) => page.file.test(name));
+            if (!file) {
+              // Sin el aviso, un cambio de nombre o de agrupación quitaría la precarga sin que nadie lo note.
+              console.warn(
+                `[preload-direct-page-chunks] No se encontró el archivo de ${page.name}: no se precarga.`,
+              );
+              return [];
+            }
+            return [
+              `if(location.pathname.indexOf('${page.prefix}')===0){var l=document.createElement('link');l.rel='modulepreload';l.href='/${file}';document.head.appendChild(l);}`,
+            ];
+          })
+          .join('\n');
+        return [
+          {
+            tag: 'script',
+            attrs: { src: '/preload-direct.js', async: true },
+            injectTo: 'head' as const,
+          },
+        ];
+      },
+    },
+    generateBundle: {
+      // Después de que Vite arma el HTML (que es quien conoce los nombres con hash de esta compilación).
+      order: 'post',
+      handler() {
+        this.emitFile({ type: 'asset', fileName: 'preload-direct.js', source: code });
       },
     },
   };

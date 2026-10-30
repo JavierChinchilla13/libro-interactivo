@@ -34,6 +34,15 @@ describe('la aplicación compilada', () => {
     }
   });
 
+  it('la precarga de las páginas que se abren directo es un archivo propio, no un script en línea', () => {
+    const file = all.find((item) => item.fileName === 'preload-direct.js');
+    const code = file && file.type === 'asset' ? String(file.source) : '';
+    expect(code).toContain("location.pathname.indexOf('/wiki/entrada/')===0");
+    expect(code).toContain("location.pathname.indexOf('/libros/')===0");
+    expect(code).toMatch(/modulepreload/);
+    expect(code).toMatch(/\/assets\/BookPage-[\w-]+\.js/);
+  });
+
   it('el HTML trae las etiquetas sociales del sitio, los iconos y el manifest', () => {
     const html = all.find((file) => file.fileName === 'index.html');
     const text = html && html.type === 'asset' ? String(html.source) : '';
