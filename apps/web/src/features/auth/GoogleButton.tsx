@@ -129,10 +129,13 @@ export function GoogleButton({
   }
   if (status === 'ready') {
     return (
+      // `color-scheme: light` a propósito: el botón de Google vive en un iframe que declara esquema claro. Si la página
+      // (oscura) declara otro, el navegador pinta el iframe con un fondo blanco opaco y asoman esquinas cuadradas
+      // alrededor de la píldora. Con el mismo esquema el marco es transparente. No afecta al resto de la página.
       <div
         ref={host}
         aria-label="Continuar con Google"
-        className={`flex min-h-11 w-full justify-center ${disabled ? 'pointer-events-none opacity-60' : ''}`}
+        className={`flex min-h-11 w-full justify-center [color-scheme:light] ${disabled ? 'pointer-events-none opacity-60' : ''}`}
       />
     );
   }

@@ -56,6 +56,9 @@ describe('GoogleButton', () => {
     );
     // El botón propio se cambia por el de Google, en el mismo lugar.
     expect(screen.queryByRole('button', { name: 'Continuar con Google' })).toBeNull();
+    // El contenedor declara esquema claro (el del iframe de Google): con la página oscura, un esquema distinto hace que
+    // el navegador pinte un fondo blanco opaco con esquinas cuadradas alrededor de la píldora.
+    expect(renderGoogle.mock.calls[0]?.[0]).toHaveClass('[color-scheme:light]');
 
     // La credencial que entrega Google llega al padre.
     const config = initialize.mock.calls[0]?.[0] as {
