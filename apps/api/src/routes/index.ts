@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { AppError } from '../lib/errors.js';
 import type { Env } from '../config/env.js';
 import type { Limits } from '../config/limits.js';
 import { createGameController } from '../controllers/game.controller.js';
@@ -49,6 +50,7 @@ import type { AdminMetricsService } from '../services/adminMetrics.service.js';
 import type { AdminUsersService } from '../services/adminUsers.service.js';
 import type { PostService } from '../services/post.service.js';
 import type { PublicWikiService } from '../services/publicWiki.service.js';
+import type { SitemapService } from '../services/sitemap.service.js';
 import type { SiteSettingsService } from '../services/siteSettings.service.js';
 import type { WelcomeService } from '../services/welcome.service.js';
 import type { AccessService } from '../services/access.service.js';
@@ -109,7 +111,11 @@ import {
 } from './quiz.routes.js';
 
 export interface RouteDeps {
-  env: Pick<Env, 'NODE_ENV' | 'COOKIE_DOMAIN' | 'TRUST_PROXY_HOPS' | 'TRUST_CLOUDFLARE_HEADER'>;
+  env: Pick<
+    Env,
+    'NODE_ENV' | 'COOKIE_DOMAIN' | 'TRUST_PROXY_HOPS' | 'TRUST_CLOUDFLARE_HEADER' | 'ALLOW_INDEXING'
+  >;
+  sitemap: SitemapService;
   isDbUp: () => boolean;
   auth: AuthService;
   account: AccountService;
@@ -171,6 +177,14 @@ export function createApiRouter(deps: RouteDeps): Router {
     createPublicWikiRouter(createPublicWikiController(deps.publicWiki), deps.guards),
   );
   router.use('/posts', createPublicPostRouter(createPublicPostController(deps.posts)));
+  // Solo con la indexación abierta (`ALLOW_INDEXING`): si no, responde 404 y no se anuncia nada.
+  router.get('/sitemap.xml', async (_req, res) => {
+    if (!deps.env.ALLOW_INDEXING) throw new AppError('NOT_FOUND', 'No encontrado');
+    res
+      .type('application/xml')
+      .set('Cache-Control', 'public, max-age=3600')
+      .send(await deps.sitemap.build());
+  });
   // Piso de seguridad de TODO `/admin`: sin sesión no se entra, y una lectora recibe 403, aunque a un router nuevo se le
   // olvide su propio guard. Los routers de solo administradoras exigen además `ADMIN` por su cuenta.
   router.use('/admin', deps.guards.requireAuth, deps.guards.requireRole('EDITOR', 'ADMIN'));

@@ -67,6 +67,14 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((value) => value === 'true'),
+  /**
+   * `true` solo el día del lanzamiento (junto con `VITE_ALLOW_INDEXING=true` al construir el sitio): publica
+   * `/api/sitemap.xml`. Apagada, el sitemap responde 404 y no se anuncia nada a los buscadores.
+   */
+  ALLOW_INDEXING: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
   /** Cloudinary (subida firmada de imágenes y videos desde el panel). Las tres juntas o ninguna. */
   CLOUDINARY_CLOUD_NAME: z.string().min(1).optional(),
   CLOUDINARY_API_KEY: z.string().min(1).optional(),

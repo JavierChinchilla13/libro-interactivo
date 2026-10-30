@@ -32,6 +32,7 @@ import { createAdminUsersService } from './services/adminUsers.service.js';
 import { createFanArtService, createReviewService } from './services/community.service.js';
 import { createPostService } from './services/post.service.js';
 import { createPublicWikiService } from './services/publicWiki.service.js';
+import { createSitemapService } from './services/sitemap.service.js';
 import { createSiteSettingsService } from './services/siteSettings.service.js';
 import { createWelcomeService } from './services/welcome.service.js';
 import { createExtraService } from './services/extra.service.js';
@@ -77,6 +78,7 @@ export interface AppDeps {
     | 'RATE_LIMIT_MULTIPLIER'
     | 'TRUST_PROXY_HOPS'
     | 'TRUST_CLOUDFLARE_HEADER'
+    | 'ALLOW_INDEXING'
     | 'CONTACT_RECIPIENT_EMAIL'
     | 'REQUIRE_QR_UNLOCK'
     | 'ACCESS_TOKEN_SECRET'
@@ -195,6 +197,7 @@ export function createApp(
   const welcome = createWelcomeService({ clock });
   const publicBooks = createPublicBookService();
   const publicWiki = createPublicWikiService();
+  const sitemap = createSitemapService({ publicWiki, clock, siteUrl: deps.env.APP_URL });
   const posts = createPostService({ clock });
   const adminUsers = createAdminUsersService({ auth, passwordReset: recovery });
   const adminMetrics = createAdminMetricsService({ clock });
@@ -265,6 +268,7 @@ export function createApp(
       publicBooks,
       library,
       publicWiki,
+      sitemap,
       posts,
       fanArts,
       adminUsers,
