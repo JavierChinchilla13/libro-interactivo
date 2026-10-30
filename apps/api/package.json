@@ -22,6 +22,7 @@
     "migrate:accents": "tsx --env-file-if-exists=.env scripts/migrate-accents.ts",
     "backup:db": "tsx --env-file-if-exists=.env scripts/backup-db.ts",
     "restore:db": "tsx scripts/restore-db.ts",
+    "smoke:prod": "tsx scripts/smoke-prod.ts",
     "load:smoke": "tsx scripts/load-smoke.ts"
   },
   "devDependencies": {
