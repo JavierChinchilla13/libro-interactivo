@@ -129,8 +129,8 @@ describe('páginas legales', () => {
     renderAt('/cookies');
     await screen.findByRole('heading', { level: 1, name: 'Política de cookies' });
     const names = screen.getAllByRole('term').map((node) => node.textContent);
-    // Solo las dos cookies de sesión; el resto son claves del almacenamiento del navegador.
-    expect(names.slice(0, 2)).toEqual(['libro_at', 'libro_rt']);
+    // Solo las cookies de sesión y su pista; el resto son claves del almacenamiento del navegador.
+    expect(names.slice(0, 3)).toEqual(['libro_at', 'libro_rt', 'libro_s']);
     expect(names).toContain('libro_cookie_notice');
     const main = screen.getByRole('main');
     expect(within(main).getByText(/No usamos analítica ni publicidad/)).toBeInTheDocument();

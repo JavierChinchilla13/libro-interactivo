@@ -9,11 +9,14 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { ApiClientError, apiRequest } from '../../shared/api/client';
+import { hasSessionHint } from '../../shared/api/sessionHint';
 
 export const SESSION_KEY = ['session'] as const;
 
 /** `null` = sin sesión. Cualquier otro error (red, servidor) se propaga para que la pantalla lo muestre. */
 async function fetchSession(): Promise<AuthUser | null> {
+  // Visita anónima (sin la cookie-pista): no hay a quién preguntar y no se deja un 401 en la consola.
+  if (!hasSessionHint()) return null;
   try {
     return (await apiRequest('/me', authResponseSchema)).user;
   } catch (error) {

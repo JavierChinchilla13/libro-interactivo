@@ -553,3 +553,49 @@ describe('protección CSRF por origen', () => {
     await request(app).post('/api/auth/login').send(body).expect(401);
   });
 });
+
+describe('cookie-pista libro_s', () => {
+  const hintLine = (res: request.Response) => setCookies(res).find((c) => c.startsWith('libro_s='));
+
+  it('el ingreso y el registro la ponen sin HttpOnly y con la vida del refresh; la sesión sigue en cookies httpOnly', async () => {
+    const app = createTestApp();
+    const res = await post(app, '/register', VALID).expect(201);
+    const hint = hintLine(res) ?? '';
+    expect(hint).toMatch(/^libro_s=1;/);
+    expect(hint).toMatch(/Path=\/;/);
+    expect(hint).not.toMatch(/HttpOnly/i);
+    expect(hint).toMatch(/SameSite=Lax/);
+    const refresh = setCookies(res).find((c) => c.startsWith(`${REFRESH_COOKIE}=`)) ?? '';
+    expect(refresh).toMatch(/HttpOnly/);
+    // Misma caducidad que el refresh.
+    expect(/Expires=([^;]+)/.exec(hint)?.[1]).toBe(/Expires=([^;]+)/.exec(refresh)?.[1]);
+  });
+
+  it('cerrar sesión la borra', async () => {
+    const app = createTestApp();
+    const reg = await post(app, '/register', VALID).expect(201);
+    const out = await post(app, '/logout').set(
+      'Cookie',
+      cookieHeader({ [REFRESH_COOKIE]: cookieValue(reg, REFRESH_COOKIE) }),
+    );
+    expect(out.status).toBe(204);
+    expect(hintLine(out)).toMatch(/^libro_s=;.*Expires=Thu, 01 Jan 1970/);
+  });
+
+  it('un refresh que falla también la borra: la siguiente visita ya no pregunta', async () => {
+    const app = createTestApp();
+    const res = await post(app, '/refresh').set(
+      'Cookie',
+      cookieHeader({ [REFRESH_COOKIE]: 'inventado' }),
+    );
+    expect(res.status).toBe(401);
+    expect(hintLine(res)).toMatch(/^libro_s=;.*Expires=Thu, 01 Jan 1970/);
+  });
+
+  it('falsificarla no da acceso: el servidor sigue exigiendo la sesión de verdad', async () => {
+    const app = createTestApp();
+    await request(app).get('/api/me').set('Cookie', 'libro_s=1').expect(401);
+    await request(app).get('/api/me/library').set('Cookie', 'libro_s=1').expect(401);
+    await post(app, '/refresh').set('Cookie', 'libro_s=1').expect(401);
+  });
+});

@@ -18,6 +18,17 @@ const COOKIES: ReadonlyArray<Fact> = [
       ['Cuánto dura', 'Hasta 30 días. Se borra al cerrar sesión.'],
     ],
   },
+  {
+    name: 'libro_s',
+    technical: true,
+    rows: [
+      [
+        'Para qué',
+        'Le avisa a la página que hay una sesión por preguntar, para no pedirla a quien visita sin haber iniciado una. No contiene datos ni da acceso a nada.',
+      ],
+      ['Cuánto dura', 'Lo mismo que libro_rt. Se borra al cerrar sesión.'],
+    ],
+  },
 ];
 
 const STORAGE: ReadonlyArray<Fact> = [
@@ -69,8 +80,10 @@ const SECTIONS: LegalSectionDef[] = [
       <>
         <FactList items={COOKIES} />
         <p>
-          Son necesarias: sin ellas no puedes iniciar sesión. El navegador no deja que los programas
-          de la página las lean, y solo viajan al servidor del sitio.
+          Son necesarias: sin ellas no puedes iniciar sesión. Las dos primeras las guarda el
+          servidor de forma que los programas de la página no pueden leerlas. La tercera sí es
+          legible, pero solo dice «hay una sesión»: quien la inventara no ganaría nada, porque el
+          servidor sigue pidiendo las otras dos.
         </p>
       </>
     ),

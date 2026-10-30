@@ -1,5 +1,6 @@
 import { apiErrorSchema, type ErrorCode } from '@libro/shared';
 import type { ZodType } from 'zod';
+import { hasSessionHint } from './sessionHint';
 
 /** Error devuelto por el API (o de red). `code` es estable; el texto lo decide la pantalla. */
 export class ApiClientError extends Error {
@@ -84,7 +85,12 @@ export async function apiRequest<T>(
   const payload: unknown = await response.json().catch(() => null);
 
   // El access token dura poco: ante un 401 se renueva la sesión (cookie de refresco) y se reintenta una vez.
-  if (response.status === 401 && !options.retried && !path.startsWith('/auth/')) {
+  if (
+    response.status === 401 &&
+    !options.retried &&
+    !path.startsWith('/auth/') &&
+    hasSessionHint()
+  ) {
     if (await refreshSession()) return apiRequest(path, schema, { ...options, retried: true });
   }
 
