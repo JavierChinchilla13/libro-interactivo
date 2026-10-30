@@ -166,14 +166,12 @@ describe('checkPrelaunch', () => {
     await db()
       .collection('books')
       .insertOne({ slug: 'real', title: 'Memorias Postergadas', status: 'published' });
-    await db()
-      .collection('users')
-      .insertOne({
-        email: 'autora@dominio-real.com',
-        emailNormalized: 'autora@dominio-real.com',
-        role: 'ADMIN',
-        status: 'active',
-      });
+    await db().collection('users').insertOne({
+      email: 'autora@dominio-real.com',
+      emailNormalized: 'autora@dominio-real.com',
+      role: 'ADMIN',
+      status: 'active',
+    });
     const lines = describePrelaunch(await checkPrelaunch(db()));
     expect(lines.filter((l) => l.status !== 'ok')).toEqual([]);
     expect(lines.at(-1)?.text).toMatch(/No se encontró contenido de muestra/);

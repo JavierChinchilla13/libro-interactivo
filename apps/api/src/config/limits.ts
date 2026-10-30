@@ -11,6 +11,8 @@ export interface Limits {
   contact: RateLimitOptions;
   accessResolve: RateLimitOptions;
   accessRedeem: RateLimitOptions;
+  /** Informes de la política de contenido que mandan los navegadores (sin sesión; pueden venir varios por visita). */
+  cspReport: RateLimitOptions;
   /** Guardar o revertir la apariencia de un quiz (por usuaria). */
   appearanceWrite: RateLimitOptions;
   /** Firmar subidas a Cloudinary (por usuaria y propósito). */
@@ -52,6 +54,7 @@ export const DEFAULT_LIMITS: Limits = {
   contact: { windowMs: 60 * 60_000, limit: 5 },
   accessResolve: { windowMs: 15 * 60_000, limit: 60 },
   accessRedeem: { windowMs: 15 * 60_000, limit: 30 },
+  cspReport: { windowMs: 10 * 60_000, limit: 200 },
   appearanceWrite: { windowMs: 15 * 60_000, limit: 60, by: 'user' },
   uploadSign: { windowMs: 60 * 60_000, limit: 60, by: 'user' },
   uploadSignQuizBg: { windowMs: 60 * 60_000, limit: 20, by: 'user' },

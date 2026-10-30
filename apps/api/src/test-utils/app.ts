@@ -20,6 +20,7 @@ const RELAXED_LIMITS: Limits = {
   login: { windowMs: 60_000, limit: 10_000 },
   refresh: { windowMs: 60_000, limit: 10_000 },
   changePassword: { windowMs: 60_000, limit: 10_000 },
+  cspReport: { windowMs: 60_000, limit: 10_000 },
   forgotPassword: { windowMs: 60_000, limit: 10_000 },
   resetPassword: { windowMs: 60_000, limit: 10_000 },
   contact: { windowMs: 60_000, limit: 10_000 },

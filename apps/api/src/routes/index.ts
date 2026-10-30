@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AppError } from '../lib/errors.js';
 import type { Env } from '../config/env.js';
+import type { Logger } from '../lib/logger.js';
 import type { Limits } from '../config/limits.js';
 import { createGameController } from '../controllers/game.controller.js';
 import type { GameService } from '../services/game.service.js';
@@ -82,6 +83,7 @@ import {
 } from './admin.routes.js';
 import { createAuthRouter } from './auth.routes.js';
 import { createContactRouter } from './contact.routes.js';
+import { createCspReportRouter } from './cspReport.routes.js';
 import { createHealthRouter } from './health.routes.js';
 import {
   createAdminFanArtRouter,
@@ -116,6 +118,7 @@ export interface RouteDeps {
     'NODE_ENV' | 'COOKIE_DOMAIN' | 'TRUST_PROXY_HOPS' | 'TRUST_CLOUDFLARE_HEADER' | 'ALLOW_INDEXING'
   >;
   sitemap: SitemapService;
+  logger: Logger;
   isDbUp: () => boolean;
   auth: AuthService;
   account: AccountService;
@@ -223,6 +226,7 @@ export function createApiRouter(deps: RouteDeps): Router {
     createAdminSiteRouter(createAdminSiteController(deps.siteSettings), deps.guards),
   );
   router.use('/contact', createContactRouter(deps.contact, deps.limits));
+  router.use('/csp-report', createCspReportRouter(deps.logger, deps.limits));
   const gameController = createGameController(deps.game);
   router.use('/game', createGameRouter(gameController, deps.guards));
   router.use('/admin/game-stories', createAdminGameRouter(gameController, deps.guards));

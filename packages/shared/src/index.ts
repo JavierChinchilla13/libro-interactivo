@@ -20,4 +20,5 @@ export * from './schemas/publicWiki.js';
 export * from './schemas/post.js';
 export * from './schemas/community.js';
 export * from './schemas/adminOps.js';
+export * from './schemas/csp.js';
 export * from './schemas/game.js';

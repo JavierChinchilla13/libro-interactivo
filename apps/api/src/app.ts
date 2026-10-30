@@ -269,6 +269,7 @@ export function createApp(
       library,
       publicWiki,
       sitemap,
+      logger: deps.logger,
       posts,
       fanArts,
       adminUsers,
