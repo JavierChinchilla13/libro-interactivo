@@ -12,6 +12,7 @@ import { createApp } from '../app.js';
 import { parseEnv } from '../config/env.js';
 import { LOG_REDACTION } from '../lib/logger.js';
 import { User } from '../models/User.js';
+import { AGE_REJECTION_LIMIT } from '../services/ageGate.service.js';
 import { createTestHarness, createTestApp, createTestClock } from '../test-utils/app.js';
 import { ADULT_CONSENT, NOW, consentFor } from '../test-utils/consent.js';
 import { useTestDb } from '../test-utils/db.js';
@@ -202,11 +203,13 @@ describe('menor de 16 años', () => {
     }
   });
 
-  it('tras 5 rechazos, esa red recibe el mismo rechazo aunque la fecha sirva; otra red no', async () => {
+  it('tras 15 rechazos, esa red recibe el mismo rechazo aunque la fecha sirva; otra red no', async () => {
     const clock = createTestClock(NOW);
     const app = createTestApp({ clock, env: { TRUST_CLOUDFLARE_HEADER: 'true' } });
     const from = (ip: string, body: object) => register(app, body, { 'CF-Connecting-IP': ip });
-    for (let i = 0; i < 5; i += 1) expect((await from('203.0.113.7', kid)).status).toBe(403);
+    for (let i = 0; i < AGE_REJECTION_LIMIT; i += 1) {
+      expect((await from('203.0.113.7', kid)).status).toBe(403);
+    }
 
     const blocked = await from('203.0.113.7', { ...BASE, ...ADULT_CONSENT });
     expect(blocked.status).toBe(403);

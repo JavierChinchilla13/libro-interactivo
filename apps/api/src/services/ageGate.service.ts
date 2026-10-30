@@ -2,8 +2,11 @@ import { ipKeyGenerator } from 'express-rate-limit';
 import type { Clock } from '../lib/clock.js';
 import { hashIp } from '../lib/crypto.js';
 
-/** Rechazos por edad que se toleran por IP y por hora antes de cerrar la puerta a esa IP. */
-export const AGE_REJECTION_LIMIT = 5;
+/**
+ * Rechazos por edad que se toleran por IP y por hora antes de cerrar la puerta a esa IP. Son 15 porque en datos móviles
+ * varias personas comparten una misma IP.
+ */
+export const AGE_REJECTION_LIMIT = 15;
 const HOUR_MS = 60 * 60_000;
 const MAX_TRACKED = 10_000;
 
