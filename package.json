@@ -20,7 +20,8 @@
     "format:check": "prettier --check .",
     "typecheck": "npm run build -w packages/shared && npm run build -w packages/game-core && npm run typecheck --workspaces --if-present",
     "test": "npm run build -w packages/shared && npm run build -w packages/game-core && npm test --workspaces --if-present",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "icons": "node apps/web/scripts/icons.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

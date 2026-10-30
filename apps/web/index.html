@@ -3,8 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Universo Memorias: la plataforma interactiva de la saga." />
+    <meta
+      name="description"
+      content="Universo Memorias: la saga que se lee, se descubre y se juega. Entra con el código QR de tu libro, resuelve los quizzes y explora el universo."
+    />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preconnect" href="https://res.cloudinary.com" />
     <meta name="theme-color" content="#06142b" />
     <title>Universo Memorias</title>
@@ -33,7 +39,9 @@
         // El panel de la lectora (`/panel` y `/panel/libros/:slug`): sesión y «Tus libros» salen a la vez que el código, y
         // se precarga la portada que encabeza la página (con el mismo `srcset` y `sizes` que pinta `Plate`).
         var panel = /^\/panel(?:\/libros\/([^/]+))?\/?$/.exec(location.pathname);
-        if (panel) {
+        // Sin la cookie-pista de sesión (visita anónima) no se pregunta por la sesión: sin errores 401 en la consola.
+        var hasSession = document.cookie.split('; ').indexOf('libro_s=1') >= 0;
+        if (panel && hasSession) {
           try {
             request('/me');
             request('/me/library')

@@ -4,6 +4,7 @@ import type { Plugin } from 'vite';
 import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { indexingControl, resolveIndexing } from './vite/indexing.ts';
+import { siteMeta } from './vite/siteMeta.ts';
 
 /**
  * Precarga las letras que se ven en el primer pintado: Cinzel (el titular, que es el LCP) y Jost (la presentación y los
@@ -82,32 +83,46 @@ function preloadDirectPageChunks(): Plugin {
 
 const API_TARGET = process.env['VITE_API_PROXY_TARGET'] ?? 'http://localhost:3000';
 
-export default defineConfig(({ mode }) => ({
-  plugins: [
-    react(),
-    tailwindcss(),
-    preloadFirstPaintFonts(),
-    preloadDirectPageChunks(),
-    // Hasta el lanzamiento el sitio pide no indexarse (meta + robots.txt); se abre con VITE_ALLOW_INDEXING=true.
-    indexingControl(resolveIndexing(loadEnv(mode, process.cwd(), 'VITE_'))),
-  ],
-  server: {
-    port: 5173,
-    // En desarrollo el navegador habla con el mismo origen (:5173); Vite reenvía /api al backend.
-    // Así las cookies httpOnly del refresh funcionan igual que en producción (mismo sitio).
-    proxy: { '/api': { target: API_TARGET, changeOrigin: false } },
-  },
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}', 'vite/**/*.test.ts'],
-    css: false,
-    coverage: {
-      provider: 'v8',
-      include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/main.tsx', 'src/vite-env.d.ts'],
-      reporter: ['text-summary', 'json-summary'],
+export default defineConfig(({ mode }) => {
+  const indexing = resolveIndexing(loadEnv(mode, process.cwd(), 'VITE_'));
+  return {
+    plugins: [
+      react(),
+      tailwindcss(),
+      preloadFirstPaintFonts(),
+      preloadDirectPageChunks(),
+      // Hasta el lanzamiento el sitio pide no indexarse (meta + robots.txt); se abre con VITE_ALLOW_INDEXING=true.
+      indexingControl(indexing),
+      siteMeta({ siteUrl: indexing.siteUrl }),
+    ],
+    // Sin mapas de código en producción: no se publica el código fuente.
+    build: { sourcemap: false },
+    server: {
+      port: 5173,
+      // En desarrollo el navegador habla con el mismo origen (:5173); Vite reenvía /api al backend.
+      // Así las cookies httpOnly del refresh funcionan igual que en producción (mismo sitio).
+      proxy: {
+        '/api': { target: API_TARGET, changeOrigin: false },
+        // En producción el sitio estático reescribe esta dirección al API (ver `PROXIED_ROUTES`).
+        '/sitemap.xml': {
+          target: API_TARGET,
+          changeOrigin: false,
+          rewrite: () => '/api/sitemap.xml',
+        },
+      },
     },
-  },
-}));
+    test: {
+      environment: 'jsdom',
+      globals: true,
+      setupFiles: ['./vitest.setup.ts'],
+      include: ['src/**/*.test.{ts,tsx}', 'vite/**/*.test.ts'],
+      css: false,
+      coverage: {
+        provider: 'v8',
+        include: ['src/**/*.{ts,tsx}'],
+        exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/main.tsx', 'src/vite-env.d.ts'],
+        reporter: ['text-summary', 'json-summary'],
+      },
+    },
+  };
+});
