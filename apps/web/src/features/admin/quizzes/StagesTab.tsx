@@ -1,4 +1,13 @@
-import { memo, useCallback, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import {
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import {
   Button,
   CheckField,
@@ -30,6 +39,13 @@ import {
 } from './draft';
 import { useConfirm } from '../components/ConfirmDialog';
 
+/**
+ * Ids de pregunta que una pregunta nueva no puede estrenar: los que trae el servidor (versiones publicadas y ajustes
+ * de apariencia, aunque su pregunta ya se haya borrado) más todos los que esta pantalla ha visto desde que se abrió
+ * (una pregunta quitada y agregada sin guardar tampoco reutiliza su número).
+ */
+const ReservedIdsContext = createContext<readonly string[]>([]);
+
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 function stageLabel(draft: Draft, stage: DraftStage): string {
@@ -40,6 +56,31 @@ function stageLabel(draft: Draft, stage: DraftStage): string {
 
 /** Pestaña «Preguntas». */
 export function StagesTab({
+  draft,
+  onChange,
+  reservedQuestionIds = [],
+}: {
+  draft: Draft;
+  onChange: Dispatch<SetStateAction<Draft>>;
+  reservedQuestionIds?: readonly string[];
+}) {
+  // Todo id que esta pantalla ha visto desde que se abrió. Se ajusta durante el render (patrón de React para estado
+  // derivado), así no hace falta escribir en una referencia ni en un efecto.
+  const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set<string>());
+  const current = [
+    ...reservedQuestionIds,
+    ...draft.stages.flatMap((stageItem) => stageItem.questions.map((question) => question.id)),
+  ];
+  if (current.some((id) => !seen.has(id))) setSeen(new Set([...seen, ...current]));
+  const reserved = useMemo(() => [...seen], [seen]);
+  return (
+    <ReservedIdsContext.Provider value={reserved}>
+      <StagesTabBody draft={draft} onChange={onChange} />
+    </ReservedIdsContext.Provider>
+  );
+}
+
+function StagesTabBody({
   draft,
   onChange,
 }: {
@@ -119,6 +160,7 @@ function StageEditor({
   onRemoved: () => void;
 }) {
   const confirm = useConfirm();
+  const reserved = useContext(ReservedIdsContext);
   const results = resultsOfStage(draft, stage.id);
   const [openIds, setOpenIds] = useState<ReadonlySet<string>>(
     // Con pocas preguntas se ven abiertas; con muchas, plegadas (se abre la que se necesita).
@@ -304,7 +346,7 @@ function StageEditor({
           variant="secondary"
           className="self-start"
           onClick={() => {
-            const next = addQuestion(draft, stage.id);
+            const next = addQuestion(draft, stage.id, reserved);
             onChange(next);
             // La pregunta nueva se abre sola para escribirla.
             const created = next.stages
@@ -348,6 +390,7 @@ const QuestionEditor = memo(function QuestionEditor({
   open: boolean;
   onToggle: (questionId: string) => void;
 }) {
+  const reserved = useContext(ReservedIdsContext);
   return (
     <Card as="article" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -391,7 +434,9 @@ const QuestionEditor = memo(function QuestionEditor({
           </Button>
           <Button
             variant="ghost"
-            onClick={() => update((current) => duplicateQuestion(current, stageId, question.id))}
+            onClick={() =>
+              update((current) => duplicateQuestion(current, stageId, question.id, reserved))
+            }
           >
             Duplicar
           </Button>

@@ -114,8 +114,9 @@ export function setCondition(
 
 // --- Preguntas y respuestas -----------------------------------------------------------------
 
-export function addQuestion(draft: Draft, stageId: string): Draft {
-  const id = nextId('p', allQuestionIds(draft));
+/** `reserved`: ids que no se pueden reutilizar aunque ya no estén en el borrador (ver `reservedQuestionIds`). */
+export function addQuestion(draft: Draft, stageId: string, reserved: Iterable<string> = []): Draft {
+  const id = nextId('p', [...allQuestionIds(draft), ...reserved]);
   const keys = resultsOfStage(draft, stageId).map((result) => result.key);
   // Pre-llenado: una respuesta por resultado, la respuesta i apunta al resultado i (como las redacta la autora).
   const answers = (keys.length >= 2 ? keys : ['', '']).map((resultKey, index) => ({
@@ -158,12 +159,17 @@ export function removeQuestion(draft: Draft, stageId: string, questionId: string
   }));
 }
 
-export function duplicateQuestion(draft: Draft, stageId: string, questionId: string): Draft {
+export function duplicateQuestion(
+  draft: Draft,
+  stageId: string,
+  questionId: string,
+  reserved: Iterable<string> = [],
+): Draft {
   const source = draft.stages
     .find((stage) => stage.id === stageId)
     ?.questions.find((q) => q.id === questionId);
   if (!source) return draft;
-  const id = nextId('p', allQuestionIds(draft));
+  const id = nextId('p', [...allQuestionIds(draft), ...reserved]);
   const copy: DraftQuestion = {
     ...source,
     id,
