@@ -8,7 +8,7 @@ import { Button, TextField } from '../../shared/ui/controls';
 import { Alert, PageHeader } from '../../shared/ui/layout';
 import { accountApi } from '../auth/accountApi';
 import { PasswordField } from '../auth/PasswordField';
-import { SESSION_KEY, useLogout, useSession } from '../auth/session';
+import { SESSION_KEY, isStaff, useLogout, useSession } from '../auth/session';
 
 function NameForm() {
   const session = useSession();
@@ -133,6 +133,7 @@ function PasswordForm() {
 }
 
 function DeleteAccount() {
+  const session = useSession();
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState('');
   const remove = useMutation({
@@ -144,6 +145,20 @@ function DeleteAccount() {
     },
   });
   const wrong = remove.error instanceof ApiClientError && remove.error.status === 400;
+
+  // Una cuenta del equipo no se elimina desde aquí: el servidor lo rechaza (siempre debe quedar una administradora
+  // activa) y la desactiva otra administradora desde «Usuarios». Se explica en vez de ofrecer un botón que no puede.
+  if (isStaff(session.data)) {
+    return (
+      <section className="border-t border-line pt-6">
+        <h2 className="font-semibold">Tu cuenta es de administración</h2>
+        <p className="mt-1 text-sm text-muted">
+          Las cuentas del equipo no se eliminan desde aquí: otra administradora la desactiva desde
+          Usuarios. Así siempre queda al menos una administradora activa.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="border-t border-line pt-6">

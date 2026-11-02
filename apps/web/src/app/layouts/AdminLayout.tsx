@@ -7,7 +7,13 @@ import {
   type RefObject,
 } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { crumbsFor, documentTitle, locate, navForRole } from '../../features/admin/adminNav';
+import {
+  crumbsFor,
+  documentTitle,
+  isAdminAccount,
+  locate,
+  navForRole,
+} from '../../features/admin/adminNav';
 import '../../features/admin/adminTheme.css';
 import { useNavCounts } from '../../features/admin/overview';
 import { Breadcrumbs, CrumbLeafProvider } from '../../features/admin/components/Breadcrumbs';
@@ -229,7 +235,7 @@ export function AdminLayout() {
                   <AdminIcon name="menu" />
                 </button>
                 <p className="min-w-0 flex-1 truncate text-base font-semibold lg:hidden">
-                  {where?.item.label ?? 'Administración'}
+                  {isAdminAccount(pathname) ? 'Mi cuenta' : (where?.item.label ?? 'Administración')}
                 </p>
                 <UserMenu className="ml-auto" />
               </header>
