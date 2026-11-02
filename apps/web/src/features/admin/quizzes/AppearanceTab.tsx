@@ -427,6 +427,13 @@ function AppearanceEditor({
             revísalo para no dar pistas antes de tiempo.
           </Alert>
         ) : null}
+        {warnings.includes('APPEARANCE_UNREADABLE') ? (
+          <Alert tone="warning" title="No pudimos leer la apariencia guardada">
+            Lo que había guardado ya no cumple el formato actual, por eso se ve vacío. No se borró
+            nada: si guardas ahora, lo anterior queda en el historial. Avisa a quien administra el
+            sitio antes de rehacerla.
+          </Alert>
+        ) : null}
         {notice && !failure ? <Alert tone="success">{notice}</Alert> : null}
         {failure && !stale ? <Alert>{errorMessage(failure)}</Alert> : null}
         {stale ? (

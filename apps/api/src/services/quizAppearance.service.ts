@@ -18,6 +18,7 @@ import {
 } from '@libro/shared';
 import type { Types } from 'mongoose';
 import type { Clock } from '../lib/clock.js';
+import type { Logger } from '../lib/logger.js';
 import { AppError } from '../lib/errors.js';
 import { assertCloudinaryUrls } from '../lib/images.js';
 import { sanitizeRichHtml } from '../lib/sanitize.js';
@@ -31,6 +32,8 @@ export interface QuizAppearanceDeps {
   clock: Clock;
   /** Para verificar con Cloudinary lo que el navegador no puede garantizar (duración, peso y formato del video). */
   images: ImageProvider;
+  /** Para dejar constancia (sin datos) de un estado guardado que ya no se puede leer o de lecturas que fallaron. */
+  logger?: Logger;
 }
 
 type HistoryDoc = {
@@ -78,6 +81,11 @@ function readStored(value: unknown): QuizAppearance | null {
   return parsed.success ? parsed.data : null;
 }
 
+/** Hay algo guardado pero ya no cumple el esquema (dato viejo o dañado): se ve como «sin apariencia», pero se avisa. */
+function isUnreadable(value: unknown): boolean {
+  return value !== undefined && value !== null && readStored(value) === null;
+}
+
 /**
  * Apariencia en vivo de un quiz (regla 5, excepción acotada): se edita sin publicar una versión nueva porque solo
  * contiene decoración (fondo, velo, acento, portada y texto de introducción). Cada cambio es una sola operación atómica
@@ -102,14 +110,23 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
 
   async function view(
     quiz: NonNullable<Awaited<ReturnType<typeof mustFind>>>,
-    warnings: QuizAppearanceResponse['warnings'] = [],
+    initialWarnings: QuizAppearanceResponse['warnings'] = [],
   ): Promise<QuizAppearanceResponse> {
+    let warnings = initialWarnings;
     const history = ((quiz.appearanceHistory ?? []) as HistoryDoc[])
       .slice()
       .sort((a, b) => b.rev - a.rev);
     const byName = await names([
       ...new Set(history.map((entry) => entry.by.toString())),
     ] as unknown as Types.ObjectId[]);
+    if (isUnreadable(quiz.appearance)) {
+      // Solo el identificador del quiz: nunca el contenido guardado.
+      deps.logger?.warn(
+        { quizId: quiz._id.toString() },
+        'La apariencia guardada de un quiz ya no cumple el esquema',
+      );
+      warnings = [...warnings, 'APPEARANCE_UNREADABLE'];
+    }
     return {
       appearance: readStored(quiz.appearance),
       rev: quiz.appearanceRev ?? 0,
@@ -336,7 +353,8 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
       by: actor.userId as unknown as Types.ObjectId,
       action,
       changed: changedFields(before, next),
-      before,
+      // Un estado ilegible se conserva tal cual en el historial: al guardar encima no se pierde sin dejar rastro.
+      before: isUnreadable(quiz.appearance) ? quiz.appearance : before,
     };
     const revFilter =
       expectedRev === 0
@@ -371,13 +389,34 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
     const next = await verified(validated(request.appearance), current);
     const first = current === null;
     await commit(quiz, actor, next, first ? 'seed' : 'update', request.expectedRev);
-    const warnings: QuizAppearanceResponse['warnings'] = mentionsResult(
-      next,
-      await resultNames(quiz),
-    )
-      ? ['APPEARANCE_MENTIONS_RESULT']
-      : [];
-    return view(await mustFind(quizId), warnings);
+    return afterSave(quizId, quiz, next, request.expectedRev, true);
+  }
+
+  /**
+   * Lo que se lee DESPUÉS de guardar (aviso de resultado, nombres de quienes editaron, historial). El guardado ya
+   * ocurrió y es atómico: si una de estas lecturas falla no se responde 500 (la persona creería que no se guardó y
+   * reintentaría con una revisión vieja); se deja constancia y se responde con lo guardado, sin historial ni avisos.
+   */
+  async function afterSave(
+    quizId: string,
+    quiz: NonNullable<Awaited<ReturnType<typeof mustFind>>>,
+    saved: QuizAppearance | null,
+    expectedRev: number,
+    checkResultNames: boolean,
+  ): Promise<QuizAppearanceResponse> {
+    try {
+      const warnings: QuizAppearanceResponse['warnings'] =
+        checkResultNames && saved !== null && mentionsResult(saved, await resultNames(quiz))
+          ? ['APPEARANCE_MENTIONS_RESULT']
+          : [];
+      return await view(await mustFind(quizId), warnings);
+    } catch (error) {
+      deps.logger?.error(
+        { quizId, err: error },
+        'La apariencia se guardó pero falló la lectura posterior',
+      );
+      return { appearance: saved, rev: expectedRev + 1, history: [], warnings: [] };
+    }
   }
 
   async function revert(
@@ -398,9 +437,14 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
         'Ese cambio ya no está en el historial (se guardan los últimos 10)',
       );
     }
-    const restored = entry.before === null ? null : validated(entry.before);
+    // Igual que al guardar: el estado a restaurar vuelve a pasar por el esquema y por la verificación de medios. Un video
+    // que Cloudinary ya no tiene se rechaza («súbelo de nuevo») en vez de restaurar algo roto.
+    const restored =
+      entry.before === null
+        ? null
+        : await verified(validated(entry.before), readStored(quiz.appearance));
     await commit(quiz, actor, restored, 'revert', request.expectedRev);
-    return view(await mustFind(quizId));
+    return afterSave(quizId, quiz, restored, request.expectedRev, false);
   }
 
   return { get, update, revert };

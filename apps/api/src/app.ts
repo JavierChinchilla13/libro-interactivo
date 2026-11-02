@@ -181,7 +181,7 @@ export function createApp(
     cloudName: deps.env.CLOUDINARY_CLOUD_NAME,
     production: deps.env.NODE_ENV === 'production',
   });
-  const quizAppearance = createQuizAppearanceService({ clock, images });
+  const quizAppearance = createQuizAppearanceService({ clock, images, logger: deps.logger });
   const s3 = s3ConfigFromEnv(deps.env);
   const storage =
     deps.storage ?? (s3 ? new S3StorageProvider({ ...s3, clock }) : new MemoryStorageProvider());
