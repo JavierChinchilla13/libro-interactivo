@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { E2E_ADMIN } from './global-setup';
 
 const PAGES = [
   { path: '/privacidad', title: 'Política de privacidad' },
@@ -45,6 +46,56 @@ test.describe('páginas legales', () => {
       .getByRole('link', { name: 'Términos' })
       .click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Términos de uso');
+  });
+});
+
+test.describe('titular de los textos legales', () => {
+  test('la administradora escribe el nombre legal en el panel y lo muestran la privacidad y los términos', async ({
+    page,
+    browser,
+  }) => {
+    // Cambia un ajuste compartido del sitio: corre en un solo proyecto para no pisarse con el otro en paralelo.
+    test.skip(test.info().project.name !== 'escritorio', 'ajuste compartido: solo en escritorio');
+    // Un nombre evidentemente inventado: el real se escribe en el panel de producción, nunca en el código.
+    const owner = 'Titular Inventada de Prueba';
+    await page.goto('/admin/ajustes');
+    await page.getByLabel('Correo').fill(E2E_ADMIN.email);
+    await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
+    await page.getByRole('button', { name: 'Ingresar' }).click();
+    const field = page.getByLabel('Nombre legal de la titular');
+    await field.fill(owner);
+    // Se espera la respuesta del guardado (el texto «guardado» de la barra ya estaba antes de editar).
+    const saved = page.waitForResponse(
+      (res) => res.url().endsWith('/api/admin/site-settings') && res.request().method() === 'PATCH',
+    );
+    await page.getByRole('button', { name: 'Guardar cambios' }).click();
+    expect((await saved).status()).toBe(200);
+
+    // `/api/site` se guarda un minuto en el navegador (`max-age=60`): una visita nueva (sin caché) lo ve al momento.
+    const baseURL = test.info().project.use.baseURL;
+    const visitor = await browser.newContext({ baseURL });
+    const view = await visitor.newPage();
+    for (const path of ['/privacidad', '/terminos']) {
+      await view.goto(path);
+      await expect(view.getByText(owner).first()).toBeVisible();
+      await expect(view.getByText('[PLACEHOLDER: nombre legal de la titular]')).toHaveCount(0);
+      await expect(view.getByText(/Vigente\s+desde el/)).toContainText('3 de noviembre de 2026');
+    }
+    await visitor.close();
+
+    // Se deja vacío otra vez: las páginas vuelven a mostrar el dato pendiente.
+    await page.goto('/admin/ajustes');
+    await field.fill('');
+    const cleared = page.waitForResponse(
+      (res) => res.url().endsWith('/api/admin/site-settings') && res.request().method() === 'PATCH',
+    );
+    await page.getByRole('button', { name: 'Guardar cambios' }).click();
+    expect((await cleared).status()).toBe(200);
+    const later = await browser.newContext({ baseURL });
+    const again = await later.newPage();
+    await again.goto('/terminos');
+    await expect(again.getByText('[PLACEHOLDER: nombre legal de la titular]')).toBeVisible();
+    await later.close();
   });
 });
 
