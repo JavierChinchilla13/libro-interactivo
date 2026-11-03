@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
-import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -57,6 +57,66 @@ export function redactUri(text: string): string {
 export function backupFolderName(now: Date): string {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${now.getUTCFullYear()}-${p(now.getUTCMonth() + 1)}-${p(now.getUTCDate())}-${p(now.getUTCHours())}${p(now.getUTCMinutes())}`;
+}
+
+/** Cuántos días se conserva un respaldo (lo promete la política de privacidad: «copias … hasta 90 días»). */
+export const BACKUP_RETENTION_DAYS = 90;
+
+const FOLDER_NAME = /^\d{4}-\d{2}-\d{2}-\d{4}$/;
+
+export interface PruneReport {
+  /** Carpetas de respaldo borradas por tener más de `BACKUP_RETENTION_DAYS` días. */
+  removed: string[];
+  /** Carpetas con el formato de nombre del script que se dejaron porque su manifiesto no es válido o no coincide. */
+  skipped: string[];
+}
+
+/**
+ * Borra los respaldos de más de `maxAgeDays` días que hay **directamente** dentro de `base` (la carpeta de respaldos).
+ * Solo toca una carpeta si (1) su nombre tiene el formato del script (`AAAA-MM-DD-HHmm`), (2) tiene un `manifiesto.json`
+ * válido, (3) su fecha de creación corresponde con el nombre y (4) está dentro de `base`. Nunca sigue enlaces
+ * simbólicos ni entra en subcarpetas, y nunca toca `keep` (el respaldo recién hecho). Lo demás se deja como está.
+ */
+export async function pruneOldBackups(
+  base: string,
+  now: Date,
+  options: { maxAgeDays?: number; keep?: string } = {},
+): Promise<PruneReport> {
+  const maxAgeMs = (options.maxAgeDays ?? BACKUP_RETENTION_DAYS) * 24 * 60 * 60 * 1000;
+  const root = resolve(base);
+  const keep = options.keep ? resolve(options.keep) : undefined;
+  const report: PruneReport = { removed: [], skipped: [] };
+  let entries;
+  try {
+    entries = await readdir(root, { withFileTypes: true });
+  } catch {
+    return report;
+  }
+  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    // `isDirectory()` es falso para un enlace simbólico: nunca se sigue uno.
+    if (!entry.isDirectory() || !FOLDER_NAME.test(entry.name)) continue;
+    const folder = resolve(root, entry.name);
+    if (dirname(folder) !== root || folder === keep) continue;
+    let createdAt: Date;
+    try {
+      const manifest = await readManifest(folder);
+      createdAt = new Date(manifest.createdAt);
+      if (
+        Number.isNaN(createdAt.getTime()) ||
+        backupFolderName(createdAt) !== entry.name ||
+        !Array.isArray(manifest.collections)
+      ) {
+        throw new Error('manifiesto que no corresponde');
+      }
+    } catch {
+      report.skipped.push(entry.name);
+      continue;
+    }
+    if (now.getTime() - createdAt.getTime() <= maxAgeMs) continue;
+    await rm(folder, { recursive: true });
+    report.removed.push(entry.name);
+  }
+  return report;
 }
 
 /** Un respaldo tiene datos personales y huellas: nunca dentro del repositorio (podría subirse por error). */

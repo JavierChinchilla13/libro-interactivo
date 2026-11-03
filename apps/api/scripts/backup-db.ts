@@ -6,6 +6,11 @@
  *   npm run backup:db -w apps/api
  *   npm run backup:db -w apps/api -- --salida D:\respaldos          # otra carpeta base (fuera del repositorio)
  *   npm run backup:db -w apps/api -- --con-sesiones                  # incluye sesiones y enlaces de recuperación
+ *   npm run backup:db -w apps/api -- --sin-podar                     # no borra los respaldos de más de 90 días
+ *
+ * Después de guardar, borra los respaldos de más de 90 días de la misma carpeta base (solo los que tienen el nombre y
+ * un manifiesto del script; nunca nada fuera de esa carpeta) y dice cuáles borró: la política de privacidad promete
+ * que las copias se guardan hasta 90 días.
  *
  * El respaldo trae datos personales y huellas de contraseñas: guárdalo como un secreto (disco cifrado o gestor de
  * archivos privado), nunca en el repositorio ni en un chat. No incluye `ACCESS_TOKEN_SECRET` ni lo de Cloudinary/R2.
@@ -16,8 +21,10 @@ import mongoose from 'mongoose';
 import { connectDb, disconnectDb } from '../src/db/connect.js';
 import {
   assertOutsideRepo,
+  BACKUP_RETENTION_DAYS,
   backupFolderName,
   exportDatabase,
+  pruneOldBackups,
   redactUri,
 } from '../src/maintenance/backup.js';
 
@@ -52,6 +59,23 @@ try {
     console.log(`No incluido a propósito: ${manifest.excluded.join(', ')}`);
   console.log(`Total: ${total} documentos en ${manifest.collections.length} colecciones.`);
   console.log(`Respaldo guardado en: ${folder}`);
+
+  if (flag('--sin-podar')) {
+    console.log(`No se borró ningún respaldo viejo (--sin-podar).`);
+  } else {
+    const pruned = await pruneOldBackups(base, new Date(), { keep: folder });
+    if (pruned.removed.length > 0) {
+      console.log(`Respaldos de más de ${BACKUP_RETENTION_DAYS} días borrados:`);
+      for (const name of pruned.removed) console.log(`- ${name}`);
+    } else {
+      console.log(`No había respaldos de más de ${BACKUP_RETENTION_DAYS} días.`);
+    }
+    if (pruned.skipped.length > 0) {
+      console.log(
+        `Se dejaron sin tocar (nombre de respaldo, pero sin un manifiesto válido): ${pruned.skipped.join(', ')}`,
+      );
+    }
+  }
 } catch (error) {
   console.error(redactUri(error instanceof Error ? error.message : String(error)));
   process.exitCode = 1;
