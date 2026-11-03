@@ -51,6 +51,8 @@ const siteSettingsSchema = new Schema(
     },
     /** Texto de «Bloqueado: avanza en tu lectura» editable por la autora. */
     lock: { message: { type: String, trim: true, maxlength: 200 } },
+    /** Nombre legal de la titular del sitio: lo citan la privacidad y los términos. Solo lo cambia una administradora. */
+    legalOwnerName: { type: String, trim: true, maxlength: 160 },
     updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true },

@@ -70,6 +70,16 @@ export const contactSettingsSchema = z.object({
 });
 export type ContactSettings = z.infer<typeof contactSettingsSchema>;
 
+/**
+ * Nombre legal de la titular del sitio (persona física o empresa). Lo escribe una administradora en el panel y lo leen
+ * la política de privacidad y los términos. Nunca se escribe en el código: el repositorio es público. Vacío = las
+ * páginas legales muestran un dato pendiente.
+ */
+export const legalOwnerNameSchema = z
+  .string()
+  .trim()
+  .max(160, 'El nombre legal no puede superar los 160 caracteres');
+
 export const siteSettingsResponseSchema = z.object({
   welcome: welcomeSettingsSchema,
   universe: universeSettingsSchema,
@@ -78,6 +88,7 @@ export const siteSettingsResponseSchema = z.object({
   lock: lockSettingsSchema,
   /** Solo la ven las administradoras. */
   contact: contactSettingsSchema.optional(),
+  legalOwnerName: z.string().optional(),
 });
 export type SiteSettingsResponse = z.infer<typeof siteSettingsResponseSchema>;
 
@@ -91,6 +102,8 @@ export const updateSiteSettingsRequestSchema = z
     lock: lockSettingsSchema.optional(),
     /** Solo administradoras (si la manda una editora, `403`). */
     contact: contactSettingsSchema.optional(),
+    /** Solo administradoras (`403` para una editora). Vacío lo quita. */
+    legalOwnerName: legalOwnerNameSchema.optional(),
   })
   .refine((body) => Object.values(body).some((section) => section !== undefined), {
     message: 'No hay nada que guardar',
@@ -103,6 +116,8 @@ export const publicSiteResponseSchema = z.object({
   author: authorSettingsSchema,
   social: socialLinksSchema,
   lockMessage: z.string(),
+  /** Para la política de privacidad y los términos (ausente si aún no se escribió). */
+  legalOwnerName: z.string().optional(),
 });
 export type PublicSiteResponse = z.infer<typeof publicSiteResponseSchema>;
 

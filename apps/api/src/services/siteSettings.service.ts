@@ -115,6 +115,7 @@ export function createSiteSettingsService() {
       social: toSocial(settings),
       lock: settings?.lock?.message ? { message: settings.lock.message } : {},
       ...(role === 'ADMIN' ? { contact } : {}),
+      ...(settings?.legalOwnerName ? { legalOwnerName: settings.legalOwnerName } : {}),
     };
   }
 
@@ -130,9 +131,15 @@ export function createSiteSettingsService() {
       else unset[path] = 1;
     };
 
-    const { welcome, universe, author, social, lock, contact } = request;
+    const { welcome, universe, author, social, lock, contact, legalOwnerName } = request;
     if (contact && actor.role !== 'ADMIN') {
       throw new AppError('FORBIDDEN', 'Solo una administradora puede cambiar el contacto');
+    }
+    if (legalOwnerName !== undefined && actor.role !== 'ADMIN') {
+      throw new AppError(
+        'FORBIDDEN',
+        'Solo una administradora puede cambiar el nombre legal de la titular',
+      );
     }
 
     if (welcome) {
@@ -166,6 +173,7 @@ export function createSiteSettingsService() {
     }
     if (social) set['social'] = social;
     if (lock) optional('lock.message', lock.message);
+    if (legalOwnerName !== undefined) optional('legalOwnerName', legalOwnerName);
     if (contact) {
       optional('contact.recipientEmail', contact.recipientEmail);
       set['contact.storeMessages'] = contact.storeMessages;
@@ -188,6 +196,7 @@ export function createSiteSettingsService() {
       author: toAuthor(settings),
       social: toSocial(settings),
       lockMessage: settings?.lock?.message || DEFAULT_LOCK_MESSAGE,
+      ...(settings?.legalOwnerName ? { legalOwnerName: settings.legalOwnerName } : {}),
     };
   }
 
