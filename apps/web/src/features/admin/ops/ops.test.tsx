@@ -437,6 +437,43 @@ describe('ajustes del sitio (contacto)', () => {
     });
   });
 
+  it('escribe el nombre legal de la titular (lo leen la privacidad y los términos) y lo quita si se vacía', async () => {
+    const OWNER = 'Titular Inventada de Prueba';
+    const { called } = mockApi(
+      {
+        'GET /api/admin/site-settings': () =>
+          json(settings({ storeMessages: true, retentionDays: 365 })),
+        'PATCH /api/admin/site-settings': ({ body }) =>
+          json({
+            ...settings((body as { contact: object }).contact),
+            ...((body as { legalOwnerName?: string }).legalOwnerName
+              ? { legalOwnerName: (body as { legalOwnerName: string }).legalOwnerName }
+              : {}),
+          }),
+      },
+      { session: ADMIN },
+    );
+    renderAt('/admin/ajustes');
+    const owner = await screen.findByLabelText(/Nombre legal de la titular/);
+    expect(owner).toHaveValue('');
+    expect(screen.getByText(/Se publica en \/privacidad y \/terminos/)).toBeInTheDocument();
+    await userEvent.type(owner, OWNER);
+    await userEvent.click(screen.getByRole('button', { name: /^Guardar cambios$/ }));
+    expect(await screen.findByText('Guardado')).toBeInTheDocument();
+    expect(called('PATCH /api/admin/site-settings')[0]?.body).toEqual({
+      contact: { storeMessages: true, retentionDays: 365 },
+      legalOwnerName: OWNER,
+    });
+
+    await userEvent.clear(owner);
+    await userEvent.click(screen.getByRole('button', { name: /^Guardar cambios$/ }));
+    await waitFor(() => expect(called('PATCH /api/admin/site-settings')).toHaveLength(2));
+    expect(called('PATCH /api/admin/site-settings')[1]?.body).toEqual({
+      contact: { storeMessages: true, retentionDays: 365 },
+      legalOwnerName: '',
+    });
+  });
+
   it('no guarda un correo o unos días inválidos', async () => {
     const { called } = mockApi(
       {

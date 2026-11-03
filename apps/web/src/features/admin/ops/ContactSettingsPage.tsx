@@ -1,4 +1,4 @@
-import { contactSettingsSchema, type ContactSettings } from '@libro/shared';
+import { contactSettingsSchema, legalOwnerNameSchema, type ContactSettings } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
 import { CheckField, TextField } from '../../../shared/ui/controls';
@@ -18,9 +18,13 @@ interface ContactForm {
   email: string;
   store: boolean;
   days: string;
+  ownerName: string;
 }
 
-/** Contacto del sitio (solo administradoras): adónde llegan los mensajes y cuánto se guardan. */
+/**
+ * Contacto del sitio (solo administradoras): adónde llegan los mensajes, cuánto se guardan y el nombre legal de la
+ * titular que citan la privacidad y los términos (nunca se escribe en el código: el repositorio es público).
+ */
 export function ContactSettingsPage() {
   const settings = useQuery({
     queryKey: keys.site,
@@ -30,16 +34,22 @@ export function ContactSettingsPage() {
   });
   if (settings.isError) return <Alert>{errorMessage(settings.error)}</Alert>;
   if (!settings.data) return <SkeletonRows rows={4} />;
-  return <ContactFormView initial={settings.data.contact ?? DEFAULTS} />;
+  return (
+    <ContactFormView
+      initial={settings.data.contact ?? DEFAULTS}
+      ownerName={settings.data.legalOwnerName ?? ''}
+    />
+  );
 }
 
-function ContactFormView({ initial }: { initial: ContactSettings }) {
+function ContactFormView({ initial, ownerName }: { initial: ContactSettings; ownerName: string }) {
   const client = useQueryClient();
   const toast = useToast();
   const start: ContactForm = {
     email: initial.recipientEmail ?? '',
     store: initial.storeMessages,
     days: String(initial.retentionDays),
+    ownerName,
   };
   const [form, setForm] = useState<ContactForm>(start);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -62,20 +72,27 @@ function ContactFormView({ initial }: { initial: ContactSettings }) {
       storeMessages: form.store,
       retentionDays: Number(form.days),
     });
-    if (!parsed.success) {
-      setErrors(fieldErrors(parsed.error.issues));
+    const owner = legalOwnerNameSchema.safeParse(form.ownerName);
+    if (!parsed.success || !owner.success) {
+      setErrors({
+        ...(parsed.success ? {} : fieldErrors(parsed.error.issues)),
+        ...(owner.success ? {} : { ownerName: owner.error.issues[0]?.message ?? 'No válido' }),
+      });
       return;
     }
     setErrors({});
     submitted.current = form;
-    save.mutate({ contact: parsed.data });
+    // Solo se manda si cambió (guardar el contacto no toca el nombre). Vacío lo quita: las páginas legales vuelven a
+    // mostrar el dato pendiente.
+    const ownerChanged = owner.data !== guard.saved.ownerName.trim();
+    save.mutate({ contact: parsed.data, ...(ownerChanged ? { legalOwnerName: owner.data } : {}) });
   }
 
   return (
     <form onSubmit={submit} noValidate className="max-w-2xl">
       <PageHeader
         title="Contacto del sitio"
-        subtitle="Mensajes de contacto: adónde llegan y cuánto tiempo se conservan."
+        subtitle="Mensajes de contacto: adónde llegan y cuánto tiempo se conservan. Y el nombre legal de la titular."
       />
       <div className="mb-4">
         <HelpTip>
@@ -110,6 +127,20 @@ function ContactFormView({ initial }: { initial: ContactSettings }) {
           hint="Pasado ese tiempo se borran solos (datos personales: conviene no guardarlos de más)."
           error={errors['retentionDays']}
           onChange={(event) => set({ days: event.target.value })}
+        />
+      </FormSection>
+      <FormSection
+        title="Titular de los textos legales"
+        help="Aparece en la política de privacidad y en los términos de uso."
+      >
+        <TextField
+          label="Nombre legal de la titular"
+          maxLength={160}
+          autoComplete="off"
+          value={form.ownerName}
+          hint="Tal como figura en su documento de identidad (o la razón social, si fuera una empresa). Se publica en /privacidad y /terminos. Si lo dejas vacío, esas páginas muestran un dato pendiente."
+          error={errors['ownerName']}
+          onChange={(event) => set({ ownerName: event.target.value })}
         />
       </FormSection>
       <SaveBar

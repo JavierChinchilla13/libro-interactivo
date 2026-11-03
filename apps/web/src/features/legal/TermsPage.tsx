@@ -1,6 +1,6 @@
 import { ADULT_AGE, LEGAL_CONTACT_EMAIL, MIN_ACCOUNT_AGE } from '@libro/shared';
 import { Link } from 'react-router';
-import { LegalPage, Placeholder, Proposal, type LegalSectionDef } from './LegalPage';
+import { LegalPage, OwnerName, Proposal, type LegalSectionDef } from './LegalPage';
 
 const list = 'list-disc space-y-2 pl-5';
 const link = 'underline underline-offset-4 decoration-1 hover:text-text';
@@ -55,8 +55,7 @@ const SECTIONS: LegalSectionDef[] = [
           para ti. No puedes copiarlos, publicarlos ni usarlos para otros fines sin permiso.
         </p>
         <p>
-          Titular de los derechos:{' '}
-          <Placeholder>nombre legal de la autora o de la titular</Placeholder>.
+          Titular de los derechos: <OwnerName />.
         </p>
       </>
     ),
@@ -85,8 +84,15 @@ const SECTIONS: LegalSectionDef[] = [
           </Link>
           .
         </p>
+        {/* Limitación de responsabilidad: redactado sin revisión legal (no hubo abogada; texto dado por la titular). */}
         <p>
-          Limitación de responsabilidad: <Placeholder>cláusula que redacta la abogada</Placeholder>.
+          El sitio se ofrece tal como está. Hacemos lo posible por mantenerlo disponible y correcto,
+          pero puede tener interrupciones o errores. En la medida en que la ley lo permita, la
+          titular no responde por daños indirectos derivados del uso del sitio o de la imposibilidad
+          de usarlo, ni por el contenido o el funcionamiento de sitios de terceros enlazados, como
+          las tiendas donde se vende el libro. Nada de lo anterior limita los derechos que te
+          reconoce la ley como persona consumidora, en particular la Ley N.º 7472 de Costa Rica, ni
+          la responsabilidad que legalmente no pueda excluirse.
         </p>
       </>
     ),
@@ -95,16 +101,11 @@ const SECTIONS: LegalSectionDef[] = [
     id: 'creditos',
     title: 'Créditos y licencias',
     body: (
-      <ul className={list}>
-        <li>
-          Las tipografías (Cinzel, Jost y Newsreader) usan la licencia SIL Open Font License y se
-          sirven desde este mismo sitio.
-        </li>
-        <li>
-          Las imágenes son material de la autora o de su equipo; no usamos imágenes con derechos de
-          terceros. <Placeholder>créditos de imágenes y de quienes colaboraron</Placeholder>
-        </li>
-      </ul>
+      <p>
+        Las imágenes, ilustraciones y textos del sitio son obra de la autora o se usan con su
+        autorización. No usamos imágenes con derechos de terceros sin permiso. Las tipografías
+        Cinzel, Jost y Newsreader se usan bajo la licencia SIL Open Font License.
+      </p>
     ),
   },
   {
@@ -121,15 +122,16 @@ const SECTIONS: LegalSectionDef[] = [
           .
         </p>
         <p>
-          Ley aplicable y jurisdicción:{' '}
-          <Placeholder>ley y fuero que aplican, según el país de la titular</Placeholder>.
+          Estos términos se rigen por las leyes de la República de Costa Rica, y cualquier
+          controversia se someterá a los tribunales de Costa Rica, sin perjuicio de los derechos que
+          como persona consumidora te reconozca la ley de tu país de residencia.
         </p>
       </>
     ),
   },
 ];
 
-/** Términos de uso (borrador). Quién puede usar el sitio, qué se espera de la cuenta y de qué es cada contenido. */
+/** Términos de uso. Quién puede usar el sitio, qué se espera de la cuenta y de qué es cada contenido. */
 export function TermsPage() {
   return (
     <LegalPage

@@ -1,8 +1,10 @@
-import { LEGAL_VERSION } from '@libro/shared';
+import { LEGAL_EFFECTIVE_DATE, LEGAL_VERSION } from '@libro/shared';
+import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useMediaQuery } from '../../shared/lib/useMediaQuery';
 import { usePageMeta } from '../../shared/seo/usePageMeta';
+import { publicApi, publicKeys } from '../home/api';
 
 /**
  * Las dos etiquetas del borrador. Se leen como una nota al margen (letra de interfaz, más chica que el texto) y se
@@ -27,6 +29,34 @@ export function Placeholder({ children }: { children: ReactNode }) {
  */
 export function Proposal({ children }: { children: ReactNode }) {
   return <mark className={proposalTag}>[PROPUESTA: {children}]</mark>;
+}
+
+/** Lo que se muestra mientras la administradora no escribe el nombre legal de la titular en el panel. */
+export const OWNER_PENDING = 'nombre legal de la titular';
+
+/**
+ * El nombre legal de la titular. **Siempre sale de los ajustes del sitio** (`legalOwnerName`, lo escribe una
+ * administradora en el panel): nunca se escribe en el código, porque el repositorio es público. Sin él, un dato
+ * pendiente bien visible.
+ */
+export function OwnerName() {
+  const site = useQuery({ queryKey: publicKeys.site, queryFn: publicApi.site, retry: false });
+  const name = site.data?.legalOwnerName?.trim();
+  return name ? (
+    <span data-legal-owner="">{name}</span>
+  ) : (
+    <Placeholder>{OWNER_PENDING}</Placeholder>
+  );
+}
+
+/** «3 de noviembre de 2026» a partir de `AAAA-MM-DD` (sin zona horaria: es una fecha de calendario). */
+export function formatLegalDate(isoDate: string): string {
+  return new Intl.DateTimeFormat('es', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${isoDate}T12:00:00Z`));
 }
 
 const LEGAL_LINKS = [
@@ -88,8 +118,8 @@ export function LegalPage({
         <h1 className="page-title">{title}</h1>
         <p className="mt-1 text-sm text-muted">{subtitle}</p>
         <p className="mt-3 text-sm text-muted">
-          Versión de los textos: <span className="tabular-nums">{LEGAL_VERSION}</span>. Vigencia:{' '}
-          <Placeholder>fecha en que se publiquen</Placeholder>.
+          Versión de los textos: <span className="tabular-nums">{LEGAL_VERSION}</span>. Vigente
+          desde el <span className="tabular-nums">{formatLegalDate(LEGAL_EFFECTIVE_DATE)}</span>.
         </p>
         <div role="note" className="mt-5 border-y border-line py-3 text-sm text-muted">
           <p>

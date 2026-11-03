@@ -1,6 +1,6 @@
 import { ADULT_AGE, LEGAL_CONTACT_EMAIL, MIN_ACCOUNT_AGE } from '@libro/shared';
 import { Link } from 'react-router';
-import { LegalPage, Placeholder, Proposal, type LegalSectionDef } from './LegalPage';
+import { LegalPage, OwnerName, Proposal, type LegalSectionDef } from './LegalPage';
 import { ThirdPartyList } from './ThirdParties';
 
 const list = 'list-disc space-y-2 pl-5';
@@ -19,13 +19,13 @@ const SECTIONS: LegalSectionDef[] = [
     body: (
       <>
         <p>
-          Universo Memorias lo administra{' '}
-          <Placeholder>nombre legal completo de la persona o empresa titular</Placeholder>, con
-          identificación <Placeholder>número de identificación</Placeholder> y domicilio en{' '}
-          <Placeholder>domicilio de la titular</Placeholder>. Es quien decide para qué se usan tus
-          datos: la persona responsable de la base de datos.
+          Universo Memorias lo administra <OwnerName />, persona física de Costa Rica. Es quien
+          decide para qué se usan tus datos: la persona responsable de la base de datos.
         </p>
-        <p>Para cualquier duda sobre tus datos escribe a {mail}.</p>
+        <p>
+          El único medio de contacto es el correo {mail}: escríbenos ahí para cualquier duda sobre
+          tus datos.
+        </p>
       </>
     ),
   },
@@ -133,7 +133,10 @@ const SECTIONS: LegalSectionDef[] = [
         <p>
           El uso de la información que recibimos de Google se limita a ofrecer este ingreso y las
           funciones de tu cuenta que ves en el sitio. Google trata tus datos con su propia política:{' '}
-          <Placeholder>enlace a la política de privacidad de Google</Placeholder>.
+          <a className={link} href="https://policies.google.com/privacy" rel="noopener noreferrer">
+            política de privacidad de Google
+          </a>
+          .
         </p>
       </>
     ),
@@ -175,10 +178,7 @@ const SECTIONS: LegalSectionDef[] = [
             si hace falta algo más
           </Proposal>
         </p>
-        <p>
-          País o región de cada proveedor y enlace a su política:{' '}
-          <Placeholder>país o región y enlace a la política de cada proveedor</Placeholder>.
-        </p>
+        <p>Abajo, cada proveedor con su país o región y el enlace a su política.</p>
         <ThirdPartyList />
       </>
     ),
@@ -194,15 +194,12 @@ const SECTIONS: LegalSectionDef[] = [
             tus datos personales se borran en el momento.
           </li>
           <li>
-            <strong>Si pides el borrado por correo:</strong> en un plazo de{' '}
-            <Proposal>5 días hábiles desde que recibimos la solicitud</Proposal>.
+            <strong>Si pides el borrado por correo:</strong> en un plazo de 5 días hábiles desde que
+            recibimos la solicitud.
           </li>
           <li>
-            <strong>Tu sesión en cada dispositivo:</strong>{' '}
-            <Proposal>
-              hasta 30 días desde la última vez que entraste; es lo que usa hoy el sitio
-            </Proposal>
-            .
+            <strong>Tu sesión en cada dispositivo:</strong> hasta 30 días desde la última vez que
+            entraste.
           </li>
           <li>
             <strong>El enlace para recuperar la contraseña:</strong> 30 minutos. Solo guardamos su
@@ -213,28 +210,25 @@ const SECTIONS: LegalSectionDef[] = [
             y a los 30 días (juego).
           </li>
           <li>
-            <strong>Mensajes de contacto guardados:</strong>{' '}
-            <Proposal>365 días; el sitio los borra solo a ese plazo y se puede cambiar</Proposal>.
-            Si borras tu cuenta, no se borran solos: pídenos por correo que los borremos también.
+            <strong>Mensajes de contacto guardados:</strong> 365 días; pasado ese plazo el sitio los
+            borra solo. Si borras tu cuenta, no se borran solos: pídenos por correo que los borremos
+            también.
           </li>
           <li>
             <strong>Resultados ya terminados, cuando borras tu cuenta:</strong> se conservan sin tu
-            nombre ni tu correo, solo para estadística.{' '}
-            <Proposal>
-              conservarlos sin nombre y sin plazo, porque ya no identifican a nadie
-            </Proposal>
+            nombre ni tu correo, solo para estadística y sin plazo, porque ya no identifican a
+            nadie.
           </li>
           <li>
-            <strong>Copias de seguridad:</strong>{' '}
-            <Proposal>
-              copias manuales que se guardan hasta 90 días; un dato borrado puede seguir en una
-              copia hasta que venza
-            </Proposal>
-            .
+            <strong>Copias de seguridad:</strong> copias manuales que se guardan hasta 90 días; un
+            dato borrado puede seguir en una copia hasta que venza.
           </li>
           <li>
-            <strong>Registros de Render y Cloudflare:</strong>{' '}
-            <Placeholder>cuánto tiempo los guarda cada uno</Placeholder>.
+            <strong>Registros de Render y Cloudflare:</strong> Render guarda los registros técnicos
+            del servicio 7 días en nuestro plan actual (según su documentación, consultada el 3 de
+            noviembre de 2026; si cambiamos de plan puede ser más) y nuestros registros no incluyen
+            tu IP. Cloudflare trata datos técnicos de conexión (como la IP) como parte de la red de
+            Render, según su propia política, y no tenemos acceso a esos registros.
           </li>
         </ul>
       </>
@@ -263,18 +257,15 @@ const SECTIONS: LegalSectionDef[] = [
             la cuenta, diciendo qué necesitas.
           </li>
           <li>
-            Te confirmamos que recibimos tu solicitud, con la fecha, y te respondemos en un plazo de{' '}
-            <Proposal>
-              5 días hábiles contados desde el día siguiente a recibirla; si te pedimos más
-              información, el plazo se detiene
-            </Proposal>
-            .
+            Te confirmamos que recibimos tu solicitud, con la fecha, y te respondemos en un plazo de
+            5 días hábiles contados desde el día siguiente a recibirla; si te pedimos más
+            información, el plazo se detiene.
           </li>
         </ol>
         <p>
           También puede hacerlo tu madre, padre o tutor en tu nombre, acreditando que lo es. Si no
-          estás conforme con nuestra respuesta, puedes acudir a{' '}
-          <Placeholder>autoridad de protección de datos del país que aplique</Placeholder>.
+          estás conforme con nuestra respuesta, puedes acudir a la Agencia de Protección de Datos de
+          los Habitantes (PRODHAB) de Costa Rica.
         </p>
       </>
     ),
@@ -288,8 +279,7 @@ const SECTIONS: LegalSectionDef[] = [
           Cuidamos tus datos con medidas razonables: conexión cifrada, contraseñas cifradas y acceso
           restringido al equipo. Ninguna medida es infalible. Si ocurriera un incidente de seguridad
           que afecte tus datos, te avisaremos y te diremos qué pasó, qué datos se vieron
-          comprometidos y qué hacer, en un plazo de{' '}
-          <Proposal>5 días hábiles desde que lo detectemos</Proposal>.
+          comprometidos y qué hacer, en un plazo de 5 días hábiles desde que lo detectemos.
         </p>
       </>
     ),
@@ -301,15 +291,15 @@ const SECTIONS: LegalSectionDef[] = [
       <>
         <p>Si este texto cambia de fondo, cambiará su versión y la publicaremos aquí.</p>
         <p>
-          Ley aplicable y autoridad competente:{' '}
-          <Placeholder>ley y fuero que aplican, según el país de la titular</Placeholder>.
+          Este tratamiento se rige por la Ley N.º 8968 de Protección de la Persona frente al
+          Tratamiento de sus Datos Personales y su reglamento.
         </p>
       </>
     ),
   },
 ];
 
-/** Política de privacidad (borrador). Qué datos se guardan, para qué, con quién, cuánto y cómo pedir su borrado. */
+/** Política de privacidad. Qué datos se guardan, para qué, con quién, cuánto y cómo pedir su borrado. */
 export function PrivacyPage() {
   return (
     <LegalPage

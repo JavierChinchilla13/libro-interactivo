@@ -136,7 +136,8 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
         label: 'Contacto del sitio',
         to: '/admin/ajustes',
         icon: 'contact',
-        description: 'A dónde llegan los mensajes de contacto y cuánto se guardan.',
+        description:
+          'A dónde llegan los mensajes de contacto, cuánto se guardan y el nombre legal de la titular.',
         roles: ADMIN,
       },
     ],
