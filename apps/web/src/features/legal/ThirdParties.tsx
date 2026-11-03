@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { FactList, type Fact } from './FactList';
-import { Placeholder } from './LegalPage';
 
 const link = 'underline underline-offset-4 decoration-1 hover:text-text';
 
@@ -19,7 +18,8 @@ function where(country: string, name: string, href: string): ReactNode {
 /**
  * Quién más interviene cuando alguien usa el sitio. La lista sale de lo que el sitio usa de verdad; cada enlace se
  * comprobó que abre la política oficial del proveedor (3-nov-2026). Si cambia un proveedor o su región, se cambia
- * aquí y sube `LEGAL_VERSION`.
+ * aquí y sube `LEGAL_VERSION`. El almacenamiento de documentos privados (S3) no está porque hoy no se usa: si algún
+ * día se configuran sus variables, se agrega aquí con su país y su política.
  */
 const THIRD_PARTIES: ReadonlyArray<Fact> = [
   {
@@ -120,19 +120,6 @@ const THIRD_PARTIES: ReadonlyArray<Fact> = [
           'Namecheap',
           'https://www.namecheap.com/legal/general/privacy-policy/',
         ),
-      ],
-    ],
-  },
-  {
-    name: 'Almacenamiento de documentos privados',
-    rows: [
-      ['Para qué', 'Archivos de los capítulos extra.'],
-      ['Qué recibe', 'Los archivos que sube el equipo; no recibe datos de las lectoras.'],
-      [
-        'Dónde y su política',
-        <Placeholder key="almacenamiento">
-          proveedor, país y enlace a su política, si se usan capítulos extra con archivo
-        </Placeholder>,
       ],
     ],
   },

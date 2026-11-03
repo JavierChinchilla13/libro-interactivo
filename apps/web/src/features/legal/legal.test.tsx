@@ -78,17 +78,13 @@ describe('páginas legales', () => {
       within(article)
         .queryAllByText(pattern)
         .map((node) => node.textContent);
-    // Sin nombre en el panel: el nombre de la titular y el almacenamiento de documentos privados.
-    expect(marks(/^\[PLACEHOLDER: /)).toEqual([
-      '[PLACEHOLDER: nombre legal de la titular]',
-      '[PLACEHOLDER: proveedor, país y enlace a su política, si se usan capítulos extra con archivo]',
-    ]);
-    // Abiertas: la edad mínima y el consentimiento para proveedores en otros países.
-    expect(marks(/^\[PROPUESTA: /)).toHaveLength(2);
-    // La leyenda del cartel explica las dos etiquetas.
+    // Sin nombre en el panel, lo único pendiente es ese nombre; ya no queda ninguna propuesta abierta.
+    expect(marks(/^\[PLACEHOLDER: /)).toEqual(['[PLACEHOLDER: nombre legal de la titular]']);
+    expect(marks(/^\[PROPUESTA: /)).toEqual([]);
+    // La leyenda del cartel explica la etiqueta de dato pendiente (ya no hay propuestas).
     const note = screen.getByRole('note');
     expect(within(note).getByText('[PLACEHOLDER]')).toBeInTheDocument();
-    expect(within(note).getByText('[PROPUESTA]')).toBeInTheDocument();
+    expect(within(note).queryByText('[PROPUESTA]')).toBeNull();
   });
 
   it('la privacidad tiene la sección de datos de Google con lo que se recibe y lo que no se hace', async () => {
@@ -341,6 +337,23 @@ describe('contenido acordado de los textos', () => {
       'https://policies.google.com/privacy',
     );
     expect(text).not.toMatch(/Decreto/i);
+  });
+
+  it.each(['/privacidad', '/terminos', '/cookies'])(
+    '%s no tiene ninguna [PROPUESTA] abierta',
+    async (path) => {
+      renderAt(path);
+      await screen.findByRole('heading', { level: 1 });
+      expect(screen.getByRole('article').textContent).not.toContain('[PROPUESTA');
+    },
+  );
+
+  it('privacidad: sin la fila del almacenamiento de documentos privados (hoy no se usa)', async () => {
+    renderAt('/privacidad');
+    await screen.findByRole('heading', { level: 1, name: 'Política de privacidad' });
+    const terms = screen.getAllByRole('term').map((node) => node.textContent);
+    expect(terms).not.toContain('Almacenamiento de documentos privados');
+    expect(terms).toHaveLength(7);
   });
 
   it('términos: ley y tribunales de Costa Rica, limitación de responsabilidad y créditos', async () => {

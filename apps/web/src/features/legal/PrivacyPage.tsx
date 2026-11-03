@@ -1,6 +1,6 @@
 import { ADULT_AGE, LEGAL_CONTACT_EMAIL, MIN_ACCOUNT_AGE } from '@libro/shared';
 import { Link } from 'react-router';
-import { LegalPage, OwnerName, Proposal, type LegalSectionDef } from './LegalPage';
+import { LegalPage, OwnerName, type LegalSectionDef } from './LegalPage';
 import { ThirdPartyList } from './ThirdParties';
 
 const list = 'list-disc space-y-2 pl-5';
@@ -37,11 +37,7 @@ const SECTIONS: LegalSectionDef[] = [
         <p>
           El libro y la cuenta son para personas de {MIN_ACCOUNT_AGE} años o más. Si tienes entre{' '}
           {MIN_ACCOUNT_AGE} y {ADULT_AGE - 1} años, tu madre, padre o tutor debe autorizar el uso de
-          tu cuenta y de tus datos.{' '}
-          <Proposal>
-            edad mínima de {MIN_ACCOUNT_AGE} años y autorización de {MIN_ACCOUNT_AGE} a{' '}
-            {ADULT_AGE - 1} años; es una decisión del sitio, la abogada debe confirmarla
-          </Proposal>
+          tu cuenta y de tus datos.
         </p>
         <p>
           Al crear la cuenta nos dices tu edad con tu mes y año de nacimiento y marcando una
@@ -172,11 +168,7 @@ const SECTIONS: LegalSectionDef[] = [
         <p>
           Para que el sitio funcione usamos estos proveedores. Cada uno recibe solo lo que necesita
           para su parte. Varios están en otros países: al aceptar esta política autorizas que tus
-          datos se guarden con ellos.{' '}
-          <Proposal>
-            consentimiento expreso a proveedores fuera del país de la titular; la abogada debe decir
-            si hace falta algo más
-          </Proposal>
+          datos se guarden con ellos.
         </p>
         <p>Abajo, cada proveedor con su país o región y el enlace a su política.</p>
         <ThirdPartyList />

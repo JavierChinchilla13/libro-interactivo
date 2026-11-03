@@ -7,13 +7,11 @@ import { usePageMeta } from '../../shared/seo/usePageMeta';
 import { publicApi, publicKeys } from '../home/api';
 
 /**
- * Las dos etiquetas del borrador. Se leen como una nota al margen (letra de interfaz, más chica que el texto) y se
- * distinguen por la palabra, por el tipo de subrayado y por el tono; ninguna usa el cian de lo interactivo.
+ * La etiqueta de un dato pendiente. Se lee como una nota al margen (letra de interfaz, más chica que el texto), con
+ * subrayado discontinuo y tono de aviso; no usa el cian de lo interactivo.
  */
-const tag =
-  'rounded-sm px-1 font-sans text-[0.8125rem] leading-snug text-text [box-decoration-break:clone]';
-const placeholderTag = `${tag} bg-warning/25 border-b border-dashed border-warning`;
-const proposalTag = `${tag} bg-text/10 border-b border-solid border-muted`;
+const placeholderTag =
+  'rounded-sm px-1 font-sans text-[0.8125rem] leading-snug text-text [box-decoration-break:clone] bg-warning/25 border-b border-dashed border-warning';
 
 /**
  * Dato que solo puede dar la titular del sitio (nombre legal, identificación, domicilio, ley aplicable…). Los textos
@@ -21,14 +19,6 @@ const proposalTag = `${tag} bg-text/10 border-b border-solid border-muted`;
  */
 export function Placeholder({ children }: { children: ReactNode }) {
   return <mark className={placeholderTag}>[PLACEHOLDER: {children}]</mark>;
-}
-
-/**
- * Valor que se propone con base en lo que el sitio hace de verdad (plazos, duración de la sesión…) y que la abogada
- * debe confirmar o cambiar.
- */
-export function Proposal({ children }: { children: ReactNode }) {
-  return <mark className={proposalTag}>[PROPUESTA: {children}]</mark>;
 }
 
 /** Lo que se muestra mientras la administradora no escribe el nombre legal de la titular en el panel. */
@@ -130,8 +120,7 @@ export function LegalPage({
           </p>
           <p className="mt-1.5 text-xs">
             <mark className={placeholderTag}>[PLACEHOLDER]</mark> es un dato que solo puede dar la
-            titular del sitio. <mark className={proposalTag}>[PROPUESTA]</mark> es un valor que la
-            abogada debe confirmar.
+            titular del sitio.
           </p>
         </div>
         <nav aria-label="Textos legales" className="mb-8 mt-2 flex flex-wrap gap-x-7 text-sm">

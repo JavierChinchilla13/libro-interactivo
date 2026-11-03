@@ -1,6 +1,6 @@
 import { ADULT_AGE, LEGAL_CONTACT_EMAIL, MIN_ACCOUNT_AGE } from '@libro/shared';
 import { Link } from 'react-router';
-import { LegalPage, OwnerName, Proposal, type LegalSectionDef } from './LegalPage';
+import { LegalPage, OwnerName, type LegalSectionDef } from './LegalPage';
 
 const list = 'list-disc space-y-2 pl-5';
 const link = 'underline underline-offset-4 decoration-1 hover:text-text';
@@ -15,10 +15,7 @@ const SECTIONS: LegalSectionDef[] = [
           Para tener una cuenta debes tener {MIN_ACCOUNT_AGE} años o más. Si tienes entre{' '}
           {MIN_ACCOUNT_AGE} y {ADULT_AGE - 1} años, tu madre, padre o tutor debe autorizar el uso de
           tu cuenta y de tus datos. Al crearla lo declaras tú; no verificamos tu edad ni quién
-          autoriza.{' '}
-          <Proposal>
-            edad mínima de {MIN_ACCOUNT_AGE} años; decisión del sitio que la abogada debe confirmar
-          </Proposal>
+          autoriza.
         </p>
         <p>
           Al crear tu cuenta aceptas estos términos. El uso de tus datos se explica en la{' '}
