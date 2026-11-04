@@ -155,6 +155,11 @@ export const routes: RouteObject[] = [
                 ...page(() => import('../features/admin/AdminHomePage'), 'AdminHomePage'),
               },
               {
+                // La cuenta propia del equipo, sin salir de administración (reutiliza la misma pantalla del panel).
+                path: 'cuenta',
+                ...page(() => import('../features/reader/AccountPage'), 'AccountPage'),
+              },
+              {
                 path: 'libros',
                 ...page(() => import('../features/admin/books/BookListPage'), 'BookListPage'),
               },

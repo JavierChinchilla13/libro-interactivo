@@ -132,6 +132,24 @@ describe('pestaña Apariencia', () => {
     expect(screen.getByText('Todavía no hay cambios guardados.')).toBeInTheDocument();
   });
 
+  it('avisa cuando lo guardado ya no se puede leer (se ve vacío, pero no se borró nada)', async () => {
+    mockApi(
+      base({
+        [`GET /api/admin/quizzes/${QUIZ_ID}/appearance`]: () =>
+          json({
+            appearance: null,
+            rev: 3,
+            history: [],
+            warnings: ['APPEARANCE_UNREADABLE'],
+          }),
+      }),
+      { session: ADMIN },
+    );
+    await openTab();
+    expect(await screen.findByText('No pudimos leer la apariencia guardada')).toBeInTheDocument();
+    expect(screen.getByText(/No se borró nada/)).toBeInTheDocument();
+  });
+
   it('el velo manual no baja de 78 % y el modo automático bloquea el control', async () => {
     mockApi(
       base({

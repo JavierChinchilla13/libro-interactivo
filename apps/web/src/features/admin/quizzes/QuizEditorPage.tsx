@@ -266,7 +266,11 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           />
         </TabPanel>
         <TabPanel id="etapas" active={tab}>
-          <StagesTab draft={draft} onChange={setDraft} />
+          <StagesTab
+            draft={draft}
+            onChange={setDraft}
+            reservedQuestionIds={quiz.reservedQuestionIds}
+          />
         </TabPanel>
         <TabPanel id="resultados" active={tab}>
           <ResultsTab draft={draft} bookId={quiz.bookId} onChange={setDraft} />

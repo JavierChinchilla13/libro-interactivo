@@ -175,3 +175,25 @@ test.describe('menú de usuario (celular y escritorio)', () => {
     });
   }
 });
+
+test.describe('menú de usuario del equipo en administración', () => {
+  test('«Ajustes» abre /admin/cuenta sin salir de administración, y ahí no se ofrece eliminar la cuenta', async ({
+    page,
+  }) => {
+    await page.goto('/admin');
+    await page.getByLabel('Correo').fill(E2E_ADMIN.email);
+    await page.getByLabel('Contraseña').fill(E2E_ADMIN.password);
+    await page.getByRole('button', { name: 'Ingresar' }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+    await dismissWelcome(page);
+
+    await page.getByRole('button', { name: E2E_ADMIN.name }).click();
+    await page.getByRole('menuitem', { name: 'Ajustes' }).click();
+    await expect(page).toHaveURL(/\/admin\/cuenta$/);
+    await expect(page.getByRole('heading', { name: 'Mi cuenta', level: 1 })).toBeVisible();
+    // Sigue dentro de administración (migas) y no se ofrece eliminar la cuenta del equipo.
+    await expect(page.getByRole('navigation', { name: 'Dónde estás' })).toContainText('Mi cuenta');
+    await expect(page.getByRole('button', { name: /Eliminar mi cuenta/ })).toHaveCount(0);
+    await expect(page.getByText('Tu cuenta es de administración')).toBeVisible();
+  });
+});

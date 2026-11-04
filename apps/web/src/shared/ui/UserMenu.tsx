@@ -26,6 +26,8 @@ export interface UserMenuItem {
   id: string;
   label: string;
   to?: string;
+  /** Destino cuando la persona está en administración (por omisión, el mismo `to`): así no la saca de su zona. */
+  adminTo?: string;
   action?: 'logout';
   icon?: ReactNode;
   roles?: readonly Role[];
@@ -62,7 +64,14 @@ export const USER_MENU_ITEMS: readonly UserMenuItem[] = [
     roles: STAFF,
     group: 'zonas',
   },
-  { id: 'ajustes', label: 'Ajustes', to: '/panel/cuenta', icon: <GearIcon />, group: 'cuenta' },
+  {
+    id: 'ajustes',
+    label: 'Ajustes',
+    to: '/panel/cuenta',
+    adminTo: '/admin/cuenta',
+    icon: <GearIcon />,
+    group: 'cuenta',
+  },
   { id: 'salir', label: 'Salir', action: 'logout', icon: <LogoutIcon />, group: 'cuenta' },
 ];
 
@@ -295,7 +304,8 @@ export function UserMenu({
                       previous && previous.group !== item.group ? (
                         <div role="separator" className="user-menu-sep" />
                       ) : null;
-                    if (item.to) {
+                    const target = currentZone === 'admin' && item.adminTo ? item.adminTo : item.to;
+                    if (target) {
                       return (
                         <Fragment key={item.id}>
                           {separator}
@@ -303,7 +313,7 @@ export function UserMenu({
                             ref={(element) => {
                               refs.current[index] = element;
                             }}
-                            to={item.to}
+                            to={target}
                             {...common}
                             onClick={() => close(false)}
                           >

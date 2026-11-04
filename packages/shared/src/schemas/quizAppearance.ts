@@ -319,6 +319,6 @@ export const quizAppearanceResponseSchema = z.object({
   rev: z.number().int().min(0),
   history: z.array(appearanceHistoryEntrySchema).max(APPEARANCE_HISTORY_LIMIT),
   /** Avisos que no bloquean (por ejemplo, un texto que nombra un resultado). */
-  warnings: z.array(z.enum(['APPEARANCE_MENTIONS_RESULT'])).default([]),
+  warnings: z.array(z.enum(['APPEARANCE_MENTIONS_RESULT', 'APPEARANCE_UNREADABLE'])).default([]),
 });
 export type QuizAppearanceResponse = z.infer<typeof quizAppearanceResponseSchema>;

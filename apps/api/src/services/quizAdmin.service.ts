@@ -100,6 +100,40 @@ export function createQuizAdminService(deps: QuizAdminDeps) {
     );
   }
 
+  /** Ids de pregunta de un contenido de etapas (borrador o versión); tolera datos raros. */
+  function questionIdsOf(stages: unknown): string[] {
+    const ids: string[] = [];
+    for (const stage of Array.isArray(stages) ? (stages as unknown[]) : []) {
+      const questions = (stage as { questions?: unknown } | null)?.questions;
+      for (const question of Array.isArray(questions) ? (questions as unknown[]) : []) {
+        const id = (question as { id?: unknown } | null)?.id;
+        if (typeof id === 'string') ids.push(id);
+      }
+    }
+    return ids;
+  }
+
+  /**
+   * Ids que una pregunta NUEVA no puede usar (los de las versiones publicadas y los de la apariencia, aunque su
+   * pregunta ya no esté en el borrador). Los del borrador actual también se incluyen: el editor no los reasigna.
+   */
+  async function reservedQuestionIds(quiz: QuizLean): Promise<string[]> {
+    const versions = await QuizVersion.find({ quizId: quiz._id }).select('stages').lean();
+    const appearanceQuestions = (quiz.appearance as { questions?: unknown } | null | undefined)
+      ?.questions;
+    const fromAppearance =
+      appearanceQuestions && typeof appearanceQuestions === 'object'
+        ? Object.keys(appearanceQuestions)
+        : [];
+    return [
+      ...new Set([
+        ...questionIdsOf(quiz.draft?.stages),
+        ...versions.flatMap((version) => questionIdsOf(version.stages)),
+        ...fromAppearance,
+      ]),
+    ];
+  }
+
   async function detail(quiz: QuizLean): Promise<QuizDetailResponse> {
     const draft = quizDraftSchema.parse(draftContentOf(quiz));
     const latest = await QuizVersion.findOne({ quizId: quiz._id, version: quiz.currentVersion })
@@ -112,6 +146,7 @@ export function createQuizAdminService(deps: QuizAdminDeps) {
       draft,
       ...(appearance.success ? { appearance: appearance.data } : {}),
       appearanceRev: quiz.appearanceRev ?? 0,
+      reservedQuestionIds: await reservedQuestionIds(quiz),
     };
   }
 
@@ -150,6 +185,18 @@ export function createQuizAdminService(deps: QuizAdminDeps) {
     if (quiz.status === 'archived')
       throw new AppError('CONFLICT', 'Un quiz archivado no se puede editar');
     assertQuizMediaAllowed(draft);
+    // Una pregunta NUEVA (que no estaba en el borrador guardado) no puede estrenar un id ya usado por una versión
+    // publicada o por un ajuste de la apariencia: heredaría en silencio un ajuste huérfano. Lo garantiza el servidor
+    // (regla 1); el editor ya los evita al numerar.
+    const previous = new Set(questionIdsOf(quiz.draft?.stages));
+    const reserved = new Set(await reservedQuestionIds(quiz));
+    const reused = questionIdsOf(draft.stages).find((id) => !previous.has(id) && reserved.has(id));
+    if (reused !== undefined) {
+      throw new AppError(
+        'VALIDATION',
+        `El id «${reused}» ya lo usó una pregunta de este quiz (en una versión publicada o en la apariencia). Recarga el editor para que numere de nuevo.`,
+      );
+    }
     const clean = sanitizeQuizHtml(draft);
     // Con apariencia en vivo, la introducción y la portada se editan allí (sin versión): el borrador deja de tocar
     // esos dos campos de la raíz, que quedan como la copia que se congela en cada versión publicada.

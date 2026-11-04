@@ -212,6 +212,11 @@ export function locate(pathname: string): Located | null {
   return found;
 }
 
+/** La cuenta propia del equipo (no es un elemento del menú: se llega desde el menú de usuario). */
+export const ADMIN_ACCOUNT_PATH = '/admin/cuenta';
+export const isAdminAccount = (pathname: string) =>
+  pathname.replace(/\/+$/, '') === ADMIN_ACCOUNT_PATH;
+
 /** Texto de la última miga cuando la pantalla no dice otro: «nuevo» o «nueva» en las altas, «Editar» en lo demás. */
 function leafLabel(pathname: string, parent: AdminNavItem): string | null {
   const rest = pathname.replace(/\/+$/, '').slice(parent.to.length).replace(/^\//, '');
@@ -223,6 +228,7 @@ function leafLabel(pathname: string, parent: AdminNavItem): string | null {
 
 /** Migas de una ruta: «Grupo › Pantalla › Detalle». Inicio no lleva migas. `leaf` pone el nombre real del detalle. */
 export function crumbsFor(pathname: string, leaf?: string | null): AdminCrumb[] {
+  if (isAdminAccount(pathname)) return [{ label: 'Mi cuenta' }];
   const where = locate(pathname);
   if (!where || where.item.id === 'inicio') return [];
   const crumbs: AdminCrumb[] = [];
@@ -235,6 +241,7 @@ export function crumbsFor(pathname: string, leaf?: string | null): AdminCrumb[] 
 
 /** Título del documento: «Quizzes · Administración · Universo Memorias». */
 export function documentTitle(pathname: string): string {
+  if (isAdminAccount(pathname)) return 'Mi cuenta · Administración · Universo Memorias';
   const where = locate(pathname);
   const name = where ? where.item.label : 'Administración';
   return where?.item.id === 'inicio' || !where

@@ -107,6 +107,12 @@ export const quizDetailResponseSchema = quizSummarySchema.extend({
   /** Apariencia en vivo (fuera de las versiones) y su revisión, para cargar el editor sin otra llamada. */
   appearance: quizAppearanceSchema.optional(),
   appearanceRev: z.number().int().min(0).default(0),
+  /**
+   * Ids de pregunta que ya no se pueden estrenar: los del borrador, los de TODAS las versiones publicadas y las claves de
+   * los ajustes por pregunta de la apariencia (aunque su pregunta ya se haya borrado). Una pregunta nueva nunca debe
+   * reutilizarlos: heredaría en silencio el ajuste huérfano y chocaría con la versión publicada.
+   */
+  reservedQuestionIds: z.array(z.string()).default([]),
 });
 export type QuizDetailResponse = z.infer<typeof quizDetailResponseSchema>;
 
