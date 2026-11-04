@@ -121,6 +121,41 @@ describe('las URLs de contenido solo valen si son de nuestra cuenta', () => {
   });
 });
 
+describe('cambiar solo el texto alternativo de un video ya guardado', () => {
+  it('no vuelve a consultar a Cloudinary: decide por publicId y url, y conserva lo medido', async () => {
+    const cloud = fakeImages([videoAsset('libro/quiz-bg/vid'), videoAsset('libro/quiz-bg/otro')]);
+    const { editor, url } = await world({ env: CLOUD, images: cloud.provider });
+    await editor
+      .put(url)
+      .send({ appearance: { background: { kind: 'video', video: video() } }, expectedRev: 0 })
+      .expect(200);
+    expect(cloud.provider.inspect).toHaveBeenCalledTimes(1);
+
+    // Mismo archivo (publicId y url), otro texto alternativo; el navegador manda además una duración falsa.
+    const altOnly = await editor.put(url).send({
+      appearance: {
+        background: {
+          kind: 'video',
+          video: { ...video(), alt: 'Niebla espesa sobre los tejados', durationSeconds: 1 },
+        },
+      },
+      expectedRev: 1,
+    });
+    expect(altOnly.status, JSON.stringify(altOnly.body)).toBe(200);
+    expect(cloud.provider.inspect).toHaveBeenCalledTimes(1);
+    expect(altOnly.body.appearance.background.video.alt).toBe('Niebla espesa sobre los tejados');
+    // Lo medido sale de lo guardado (lo dijo Cloudinary), nunca de lo que mandó el navegador.
+    expect(altOnly.body.appearance.background.video.durationSeconds).toBe(8.2);
+
+    // Otro archivo (otro publicId y url): ahí sí se consulta.
+    await editor
+      .put(url)
+      .send({ appearance: { background: { kind: 'video', video: video('otro') } }, expectedRev: 2 })
+      .expect(200);
+    expect(cloud.provider.inspect).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('firma de subida para fondos de quiz', () => {
   const signature = '/api/admin/uploads/image-signature';
   it('quiz-bg admite imagen y video, con su carpeta; las lectoras no pueden pedirla', async () => {
