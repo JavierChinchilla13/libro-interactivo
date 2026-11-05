@@ -1,5 +1,5 @@
 import type { Express } from 'express';
-import { createApp, type AppContext } from '../app.js';
+import { createApp, type AppContext, type AppDeps } from '../app.js';
 import { parseEnv, type Env } from '../config/env.js';
 import type { Limits } from '../config/limits.js';
 import { createBackgroundTasks } from '../lib/background.js';
@@ -29,6 +29,8 @@ const RELAXED_LIMITS: Limits = {
   appearanceWrite: { windowMs: 60_000, limit: 10_000, by: 'user' },
   uploadSign: { windowMs: 60_000, limit: 10_000, by: 'user' },
   uploadSignQuizBg: { windowMs: 60_000, limit: 10_000, by: 'user' },
+  backupHour: { windowMs: 60_000, limit: 10_000, by: 'user' },
+  backupDay: { windowMs: 60_000, limit: 10_000, by: 'user' },
 };
 
 interface TestAppOptions {
@@ -47,6 +49,8 @@ interface TestAppOptions {
   storage?: StorageProvider;
   /** Registro propio (para comprobar qué se anota); por defecto uno en silencio. */
   logger?: Logger;
+  /** Ajustes del respaldo descargable (carpeta temporal, tope, scrypt). */
+  backup?: AppDeps['backup'];
   configure?: (app: Express, ctx: AppContext) => void;
 }
 
@@ -72,6 +76,7 @@ export function createTestHarness(options: TestAppOptions = {}) {
       ...(options.images ? { images: options.images } : {}),
       ...(options.google ? { google: options.google } : {}),
       storage: options.storage ?? memoryStorage,
+      ...(options.backup ? { backup: options.backup } : {}),
       limits: { ...RELAXED_LIMITS, ...options.limits },
     },
     options.configure,

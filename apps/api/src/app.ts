@@ -29,6 +29,10 @@ import { createLibraryService } from './services/library.service.js';
 import { createPublicBookService } from './services/publicBook.service.js';
 import { createAdminMetricsService } from './services/adminMetrics.service.js';
 import { createAdminUsersService } from './services/adminUsers.service.js';
+import {
+  createBackupDownloadService,
+  type BackupDownloadDeps,
+} from './services/backupDownload.service.js';
 import { createFanArtService, createReviewService } from './services/community.service.js';
 import { createPostService } from './services/post.service.js';
 import { createPublicWikiService } from './services/publicWiki.service.js';
@@ -108,6 +112,8 @@ export interface AppDeps {
   images?: ImageProvider;
   /** Almacenamiento privado S3-compatible; por defecto el real si hay credenciales o uno en memoria. */
   storage?: StorageProvider;
+  /** Ajustes del respaldo descargable (solo pruebas: carpeta temporal, tope y scrypt más liviano). */
+  backup?: Pick<BackupDownloadDeps, 'tmpDir' | 'maxBytes' | 'scrypt'>;
 }
 
 /** Piezas compartidas que los módulos de rutas reutilizan (guards de sesión y rol, servicio de auth). */
@@ -202,6 +208,13 @@ export function createApp(
   const fanArts = createFanArtService();
   const reviews = createReviewService();
   const siteSettings = createSiteSettingsService();
+  const backups = createBackupDownloadService({
+    clock,
+    mail,
+    tasks,
+    logger: deps.logger,
+    ...deps.backup,
+  });
 
   const app = express();
   app.disable('x-powered-by');
@@ -276,6 +289,7 @@ export function createApp(
       adminMetrics,
       reviews,
       siteSettings,
+      backups,
       clock,
       requireUnlocked,
       guards,

@@ -20,6 +20,8 @@ export const LOG_REDACTION = {
     'req.remoteAddress',
     'req.remotePort',
     '*.password',
+    '*.archivePassword',
+    '*.archivePasswordConfirm',
     '*.passwordHash',
     '*.token',
   ],
