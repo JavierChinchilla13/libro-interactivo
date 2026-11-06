@@ -1,10 +1,10 @@
 import { createReadStream } from 'node:fs';
 import { mkdtemp, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import mongoose from 'mongoose';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { tarStream, type TarEntry } from '../lib/tar.js';
+import { tarHeader, tarStream, type ParsedTarEntry, type TarEntry } from '../lib/tar.js';
 import { User } from '../models/User.js';
 import { createUser } from '../test-utils/auth.js';
 import { useTestDb } from '../test-utils/db.js';
@@ -14,6 +14,7 @@ import {
   detectBackupSource,
   extractBackupTar,
   openBackupSource,
+  planBackupExtraction,
 } from './backupArchive.js';
 import { WRONG_KEY_MESSAGE, createArchiveEncryptor } from './backupCrypto.js';
 
@@ -169,4 +170,97 @@ describe('extractBackupTar solo acepta la forma de un respaldo', () => {
     await expect(openBackupSource(junk, { tmpDir: tmp })).rejects.toThrow(/tar/);
     expect(await readdir(tmp)).toEqual([]);
   });
+});
+
+describe('nombres peligrosos al extraer (aunque el lector de tar los dejara pasar)', () => {
+  const entry = (name: string, type: 'file' | 'dir' = 'file'): ParsedTarEntry => ({
+    name,
+    type,
+    size: 0,
+    offset: 0,
+  });
+  const valid = (top: string, ...files: string[]) => [
+    entry(`${top}/`, 'dir'),
+    ...files.map((f) => entry(`${top}/${f}`)),
+    entry(`${top}/manifiesto.json`),
+  ];
+
+  it.each([['..'], ['.'], ['a\\..\\..'], ['..\\fuera'], ['C:'], ['a b'], ['']])(
+    'rechaza la carpeta principal «%s»',
+    (top) => {
+      expect(() => planBackupExtraction(valid(top), work)).toThrow(/carpeta principal/);
+    },
+  );
+
+  it.each([['..\\..\\..\\algo'], ['..'], ['.'], ['x\\y.json'], ['..\\manifiesto.json']])(
+    'rechaza el archivo «carpeta/%s»',
+    (file) => {
+      expect(() => planBackupExtraction(valid('carpeta', file), work)).toThrow(/no trae/);
+    },
+  );
+
+  it('acepta un respaldo normal y cada destino queda dentro de la carpeta de salida', () => {
+    const plan = planBackupExtraction(valid(NAME, 'users.ndjson.gz'), work);
+    expect(plan.top).toBe(NAME);
+    for (const { target } of plan.files) {
+      expect(target.startsWith(join(work, NAME) + sep)).toBe(true);
+    }
+  });
+
+  /** Cabecera ustar escrita a mano, sin las comprobaciones del escritor (como la haría un archivo malicioso). */
+  function rawHeader(name: string, type: '0' | '5', size: number): Buffer {
+    const buf = tarHeader({ name: 'x', size, mtime: NOW });
+    buf.fill(0, 0, 100);
+    buf.write(name, 0, 100, 'latin1');
+    buf.write(type, 156, 1, 'ascii');
+    buf.fill(0x20, 148, 156);
+    let sum = 0;
+    for (const byte of buf) sum += byte;
+    buf.write(`${sum.toString(8).padStart(6, '0')}\0 `, 148, 8, 'ascii');
+    return buf;
+  }
+  function rawTar(entries: Array<[string, '0' | '5', string]>): Buffer {
+    const parts: Buffer[] = [];
+    for (const [name, type, text] of entries) {
+      const data = Buffer.from(text);
+      parts.push(rawHeader(name, type, data.length));
+      if (data.length > 0) parts.push(data, Buffer.alloc((512 - (data.length % 512)) % 512));
+    }
+    parts.push(Buffer.alloc(1024));
+    return Buffer.concat(parts);
+  }
+
+  it.each([
+    [
+      'carpeta «..»',
+      [
+        ['../', '5', ''],
+        ['../manifiesto.json', '0', '{}'],
+      ],
+    ],
+    [
+      'carpeta «.»',
+      [
+        ['./', '5', ''],
+        ['./manifiesto.json', '0', '{}'],
+      ],
+    ],
+    [
+      'barras invertidas',
+      [
+        ['carpeta/', '5', ''],
+        ['carpeta/manifiesto.json', '0', '{}'],
+        ['carpeta/..\\..\\..\\algo', '0', 'x'],
+      ],
+    ],
+  ] as Array<[string, Array<[string, '0' | '5', string]>]>)(
+    'un .tar con %s se rechaza y no escribe nada fuera de la salida',
+    async (_label, entries) => {
+      const tar = join(work, 'malicioso.tar');
+      await writeFile(tar, rawTar(entries));
+      const out = join(work, 'a', 'b', 'salida');
+      await expect(extractBackupTar(tar, out)).rejects.toThrow();
+      expect((await readdir(work)).sort()).toEqual(['malicioso.tar']);
+    },
+  );
 });
