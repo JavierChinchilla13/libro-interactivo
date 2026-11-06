@@ -11,7 +11,8 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { ApiClientError, saveDownloadedFile } from '../../../shared/api/client';
 import { Badge, Alert, PageHeader } from '../../../shared/ui/layout';
-import { Button, CheckField, TextField } from '../../../shared/ui/controls';
+import { Button, CheckField } from '../../../shared/ui/controls';
+import { PasswordField } from '../../../shared/ui/PasswordField';
 import { useSession } from '../../auth/session';
 import { backupsApi, keys } from '../api';
 import { DataList, type Column } from '../components/DataList';
@@ -104,6 +105,9 @@ export function BackupPage() {
   const [form, setForm] = useState<BackupForm>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [wrongPassword, setWrongPassword] = useState(false);
+  // Cada vez que cambia, las tres contraseñas vuelven a ocultarse (al enviar y al terminar la descarga).
+  const [conceal, setConceal] = useState(0);
+  const hideAll = () => setConceal((count) => count + 1);
 
   const download = useMutation({
     mutationFn: backupsApi.download,
@@ -121,7 +125,10 @@ export function BackupPage() {
       setWrongPassword(wrong);
       if (wrong) setErrors({ password: 'La contraseña no es correcta.' });
     },
-    onSettled: () => void client.invalidateQueries({ queryKey: keys.backups }),
+    onSettled: () => {
+      hideAll();
+      void client.invalidateQueries({ queryKey: keys.backups });
+    },
   });
 
   const set = (patch: Partial<BackupForm>) => setForm((current) => ({ ...current, ...patch }));
@@ -130,6 +137,7 @@ export function BackupPage() {
   function submit(event: FormEvent) {
     event.preventDefault();
     if (busy) return;
+    hideAll();
     const body = {
       password: form.password,
       archivePassword: form.archivePassword,
@@ -206,15 +214,16 @@ export function BackupPage() {
           title="Descargar un respaldo"
           help="Te llegará un correo de aviso cada vez que se descargue uno con tu cuenta."
         >
-          <TextField
+          <PasswordField
             label="Tu contraseña"
-            type="password"
             autoComplete="current-password"
+            required={false}
+            concealKey={conceal}
             value={form.password}
             hint="La de tu cuenta, para confirmar que eres tú."
             error={errors['password']}
             disabled={busy}
-            onChange={(event) => set({ password: event.target.value })}
+            onChange={(value) => set({ password: value })}
           />
           {wrongPassword ? (
             <Alert tone="warning" title="¿Entras con Google?">
@@ -228,24 +237,26 @@ export function BackupPage() {
               </p>
             </Alert>
           ) : null}
-          <TextField
+          <PasswordField
             label="Contraseña para el archivo"
-            type="password"
             autoComplete="new-password"
+            required={false}
+            concealKey={conceal}
             value={form.archivePassword}
             hint={`Al menos ${BACKUP_ARCHIVE_PASSWORD_MIN} caracteres, distinta de la de tu cuenta. Se usa solo para cifrar este archivo; el sitio no la guarda.`}
             error={errors['archivePassword']}
             disabled={busy}
-            onChange={(event) => set({ archivePassword: event.target.value })}
+            onChange={(value) => set({ archivePassword: value })}
           />
-          <TextField
+          <PasswordField
             label="Repite la contraseña para el archivo"
-            type="password"
             autoComplete="new-password"
+            required={false}
+            concealKey={conceal}
             value={form.archivePasswordConfirm}
             error={errors['archivePasswordConfirm']}
             disabled={busy}
-            onChange={(event) => set({ archivePasswordConfirm: event.target.value })}
+            onChange={(value) => set({ archivePasswordConfirm: value })}
           />
           <div>
             <CheckField

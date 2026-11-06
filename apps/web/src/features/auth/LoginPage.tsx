@@ -6,7 +6,7 @@ import { Button, TextField } from '../../shared/ui/controls';
 import { Alert } from '../../shared/ui/layout';
 import { AuthShell, OrDivider, QR_TAGLINE } from './AuthShell';
 import { GOOGLE_CLIENT_ID, GoogleButton } from './GoogleButton';
-import { PasswordField } from './PasswordField';
+import { PasswordField } from '../../shared/ui/PasswordField';
 import { GoogleProfileStep } from './GoogleProfileStep';
 import { landingAfterLogin, useLogin, useSession } from './session';
 import { useGoogleAccess } from './useGoogleAccess';
