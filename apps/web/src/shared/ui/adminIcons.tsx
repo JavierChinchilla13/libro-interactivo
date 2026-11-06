@@ -75,6 +75,12 @@ const PATHS = {
       <path d="M14 14h2.5v2.5H14zM18 18h2M18 14v1.5M14 19v1" />
     </>
   ),
+  archive: (
+    <>
+      <path d="M4 5.5h16v3.5H4z" />
+      <path d="M5.5 9v9.5h13V9M12 11.5v4.5M9.8 13.8 12 16l2.2-2.2" />
+    </>
+  ),
   chart: <path d="M5 19V9M10 19V5M15 19v-7M20 19V8M4 19.5h17" />,
   menu: <path d="M4.5 7h15M4.5 12h15M4.5 17h15" />,
   close: <path d="m6 6 12 12M18 6 6 18" />,
