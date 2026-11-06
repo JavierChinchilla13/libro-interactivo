@@ -22,6 +22,8 @@ import {
   createAdminUsersController,
 } from '../controllers/adminOps.controller.js';
 import { createPublicWikiController } from '../controllers/publicWiki.controller.js';
+import { createAdminBackupController } from '../controllers/adminBackup.controller.js';
+import type { BackupDownloadService } from '../services/backupDownload.service.js';
 import { createAccountController } from '../controllers/account.controller.js';
 import {
   createAdminBookController,
@@ -92,6 +94,7 @@ import {
   createPublicReviewRouter,
 } from './community.routes.js';
 import {
+  createAdminBackupRouter,
   createAdminMessagesRouter,
   createAdminNetworkRouter,
   createAdminStatsRouter,
@@ -143,6 +146,7 @@ export interface RouteDeps {
   fanArts: FanArtService;
   reviews: ReviewService;
   siteSettings: SiteSettingsService;
+  backups: BackupDownloadService;
   extras: ExtraService;
   clock: Clock;
   requireUnlocked: RequireUnlocked;
@@ -202,6 +206,10 @@ export function createApiRouter(deps: RouteDeps): Router {
   );
   router.use('/admin/contact-messages', createAdminMessagesRouter(metrics, deps.guards));
   router.use('/admin/stats', createAdminStatsRouter(metrics, deps.guards));
+  router.use(
+    '/admin/backups',
+    createAdminBackupRouter(createAdminBackupController(deps.backups), deps.guards, deps.limits),
+  );
   router.use(
     '/admin/network-check',
     createAdminNetworkRouter(

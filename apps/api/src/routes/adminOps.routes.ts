@@ -1,4 +1,5 @@
 import {
+  createBackupRequestSchema,
   adminMessageListQuerySchema,
   adminMessageParamsSchema,
   adminUserListQuerySchema,
@@ -13,7 +14,10 @@ import type {
   createAdminNetworkController,
   createAdminUsersController,
 } from '../controllers/adminOps.controller.js';
+import type { createAdminBackupController } from '../controllers/adminBackup.controller.js';
+import type { Limits } from '../config/limits.js';
 import type { Guards } from '../middleware/auth.js';
+import { createRateLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 
 /** Todo esto es solo de administradoras (lista explícita: las editoras no entran). */
@@ -78,5 +82,28 @@ export function createAdminNetworkRouter(
 ): Router {
   const router = adminOnly(guards);
   router.get('/', controller.check);
+  return router;
+}
+
+/**
+ * `/admin/backups`: estado y descarga del respaldo. La descarga es `POST` (la contraseña va en el cuerpo, nunca en la
+ * URL). Primero se valida el cuerpo (un formulario mal llenado no gasta cupo) y después cuentan los límites por hora y
+ * por día de la usuaria: una contraseña incorrecta sí gasta cupo.
+ */
+export function createAdminBackupRouter(
+  controller: ReturnType<typeof createAdminBackupController>,
+  guards: Guards,
+  limits: Limits,
+): Router {
+  const router = adminOnly(guards);
+  const message = 'Ya se descargaron varios respaldos hace poco. Inténtalo de nuevo más tarde.';
+  router.get('/', controller.status);
+  router.post(
+    '/',
+    validate({ body: createBackupRequestSchema }),
+    createRateLimiter({ ...limits.backupHour, message }),
+    createRateLimiter({ ...limits.backupDay, message }),
+    controller.download,
+  );
   return router;
 }

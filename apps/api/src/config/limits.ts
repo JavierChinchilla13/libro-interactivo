@@ -19,6 +19,10 @@ export interface Limits {
   uploadSign: RateLimitOptions;
   /** Firmar subidas de fondos de quiz (`quiz-bg`, videos de hasta 5 MB): tope más bajo. */
   uploadSignQuizBg: RateLimitOptions;
+  /** Descargar un respaldo desde el panel (por usuaria): por hora… */
+  backupHour: RateLimitOptions;
+  /** …y por día. */
+  backupDay: RateLimitOptions;
 }
 
 /**
@@ -58,4 +62,6 @@ export const DEFAULT_LIMITS: Limits = {
   appearanceWrite: { windowMs: 15 * 60_000, limit: 60, by: 'user' },
   uploadSign: { windowMs: 60 * 60_000, limit: 60, by: 'user' },
   uploadSignQuizBg: { windowMs: 60 * 60_000, limit: 20, by: 'user' },
+  backupHour: { windowMs: 60 * 60_000, limit: 3, by: 'user' },
+  backupDay: { windowMs: 24 * 60 * 60_000, limit: 10, by: 'user' },
 };

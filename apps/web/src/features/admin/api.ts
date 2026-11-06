@@ -1,4 +1,6 @@
 import {
+  backupStatusResponseSchema,
+  type CreateBackupRequest,
   adminMessageListResponseSchema,
   adminMessageSchema,
   adminStatsSchema,
@@ -49,7 +51,7 @@ import {
   type WikiKind,
 } from '@libro/shared';
 import { z } from 'zod';
-import { apiRequest } from '../../shared/api/client';
+import { apiDownload, apiRequest } from '../../shared/api/client';
 
 /** Cliente tipado del panel: cada llamada valida la respuesta con el esquema compartido. */
 
@@ -225,6 +227,12 @@ export const messagesApi = {
     apiRequest(`/admin/contact-messages/${id}`, z.null(), { method: 'DELETE' }),
 };
 
+export const backupsApi = {
+  status: () => apiRequest('/admin/backups', backupStatusResponseSchema),
+  download: (body: CreateBackupRequest) =>
+    apiDownload('/admin/backups', body, 'universo-memorias-respaldo.tar.cifrado'),
+};
+
 export const statsApi = {
   get: () => apiRequest('/admin/stats', adminStatsSchema),
 };
@@ -251,6 +259,7 @@ export const keys = {
   user: (id: string) => ['admin', 'users', 'one', id] as const,
   messages: ['admin', 'messages'] as const,
   stats: ['admin', 'stats'] as const,
+  backups: ['admin', 'backups'] as const,
   wiki: ['admin', 'wiki'] as const,
   wikiEntry: (id: string) => ['admin', 'wiki', 'entry', id] as const,
 };

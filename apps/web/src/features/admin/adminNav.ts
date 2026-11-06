@@ -170,6 +170,14 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
         description: 'Lectoras, intentos y resultados.',
         roles: ADMIN,
       },
+      {
+        id: 'respaldo',
+        label: 'Respaldo',
+        to: '/admin/respaldo',
+        icon: 'archive',
+        description: 'Descarga una copia cifrada de toda la base de datos del sitio.',
+        roles: ADMIN,
+      },
     ],
   },
 ];

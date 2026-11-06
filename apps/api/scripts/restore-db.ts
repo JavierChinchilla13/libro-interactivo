@@ -3,9 +3,14 @@
  * Se niega a restaurar sobre un servidor remoto (Atlas) o sobre una base cuyo nombre no contenga «prueba», «test» o
  * «local», y a mezclar con datos que ya existan.
  *
- *   npm run restore:db -w apps/api -- <carpeta-del-respaldo> --a mongodb://127.0.0.1:27017/libro-prueba
- *   npm run restore:db -w apps/api -- <carpeta-del-respaldo> --a mongodb://127.0.0.1:27017/libro-prueba --vaciar
- *   npm run restore:db -w apps/api -- <carpeta-del-respaldo> --solo-verificar     # no toca ninguna base
+ * El respaldo puede ser la carpeta de `backup:db`, un `.tar` con esa carpeta o el `.tar.cifrado` descargado desde el
+ * panel (con `--clave`, que pide la contraseña del archivo en pantalla sin mostrarla; nunca se escribe en la línea de
+ * comandos). Lo que se extrae va a una carpeta temporal y se borra al terminar.
+ *
+ *   npm run restore:db -w apps/api -- <respaldo> --a mongodb://127.0.0.1:27017/libro-prueba
+ *   npm run restore:db -w apps/api -- <respaldo> --a mongodb://127.0.0.1:27017/libro-prueba --vaciar
+ *   npm run restore:db -w apps/api -- <respaldo> --solo-verificar     # no toca ninguna base
+ *   npm run restore:db -w apps/api -- <archivo>.tar.cifrado --clave --solo-verificar
  *
  * Para probar el respaldo de verdad: restaurar, abrir el API local contra esa base (MONGODB_URI=… npm run dev -w
  * apps/api) y entrar con una cuenta.
@@ -19,21 +24,30 @@ import {
   restoreDatabase,
   verifyBackup,
 } from '../src/maintenance/backup.js';
+import { openBackupSource, type OpenedBackup } from '../src/maintenance/backupArchive.js';
+import { askArchiveKey, parseRestoreArgs } from '../src/maintenance/restoreCli.js';
 
-const args = process.argv.slice(2);
-const flag = (name: string) => args.includes(name);
-const value = (name: string) => {
-  const index = args.indexOf(name);
-  return index >= 0 ? args[index + 1] : undefined;
-};
-const folder = args.find((arg, index) => !arg.startsWith('--') && args[index - 1] !== '--a');
-
+let opened: OpenedBackup | undefined;
 try {
-  if (!folder) throw new Error('Indica la carpeta del respaldo (la que tiene manifiesto.json).');
-  const source = resolve(folder);
+  const args = parseRestoreArgs(process.argv.slice(2));
+  if (!args.verifyOnly) {
+    if (!args.target) {
+      throw new Error('Indica la base de destino con --a mongodb://127.0.0.1:27017/libro-prueba');
+    }
+    assertSafeRestoreTarget(args.target);
+  }
+  opened = await openBackupSource(resolve(args.source), {
+    askPassword: args.askKey
+      ? () => askArchiveKey({ input: process.stdin, output: process.stdout }, process.env)
+      : undefined,
+  });
+  if (opened.kind === 'encrypted')
+    console.log('✓ Archivo descifrado: la contraseña es correcta y no fue alterado.');
+  if (opened.kind !== 'folder')
+    console.log('✓ Archivo extraído en una carpeta temporal (se borra al terminar).');
 
-  if (flag('--solo-verificar')) {
-    const { manifest, problems } = await verifyBackup(source);
+  if (args.verifyOnly) {
+    const { manifest, problems } = await verifyBackup(opened.folder);
     console.log(`Respaldo de «${manifest.database}» del ${manifest.createdAt}`);
     for (const entry of manifest.collections)
       console.log(`- ${entry.name}: ${entry.count} documentos`);
@@ -43,14 +57,10 @@ try {
     }
     console.log('✓ El respaldo está completo: huellas y conteos coinciden.');
   } else {
-    const target = value('--a');
-    if (!target)
-      throw new Error('Indica la base de destino con --a mongodb://127.0.0.1:27017/libro-prueba');
-    assertSafeRestoreTarget(target);
-    await connectDb(target);
+    await connectDb(args.target ?? '');
     const db = mongoose.connection.db;
     if (!db) throw new Error('No se pudo abrir la base de destino.');
-    const report = await restoreDatabase(db, source, { empty: flag('--vaciar') });
+    const report = await restoreDatabase(db, opened.folder, { empty: args.empty });
     console.log(`Base de destino: ${report.database}`);
     for (const item of report.restored) {
       console.log(`${item.ok ? '✓' : '✗'} ${item.name}: ${item.actual} de ${item.expected}`);
@@ -62,5 +72,6 @@ try {
   console.error(redactUri(error instanceof Error ? error.message : String(error)));
   process.exitCode = 1;
 } finally {
+  await opened?.cleanup();
   await disconnectDb();
 }

@@ -60,7 +60,15 @@ const stats = (over: object = {}) => ({
   ...over,
 });
 
+const backupStatus = (daysAgo: number | null) => ({
+  lastAt: daysAgo === null ? null : new Date(Date.now() - daysAgo * DAY).toISOString(),
+  daysAgo,
+  staleAfterDays: 7,
+  downloads: [],
+});
+
 const empty = {
+  'GET /api/admin/backups': () => json(backupStatus(1)),
   'GET /api/admin/books': () => json({ books: [] }),
   'GET /api/admin/fan-arts?status=draft': () => json({ fanArts: [] }),
   'GET /api/admin/posts?status=draft': () => json({ posts: [] }),
@@ -226,6 +234,8 @@ describe('inicio de la administración · editora', () => {
     expect(called('GET /api/admin/stats')).toHaveLength(0);
     expect(called('GET /api/admin/access-tokens')).toHaveLength(0);
     expect(called('GET /api/admin/contact-messages?status=unhandled')).toHaveLength(0);
+    expect(called('GET /api/admin/backups')).toHaveLength(0);
+    expect(screen.queryByRole('link', { name: /respaldo/i })).toBeNull();
   });
 
   it('un fallo al cargar los libros se explica y deja reintentar', async () => {
@@ -245,5 +255,56 @@ describe('inicio de la administración · editora', () => {
     fail = false;
     await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
     expect(await screen.findByText('Todo al día')).toBeInTheDocument();
+  });
+});
+
+describe('inicio de la administración · respaldo', () => {
+  it('avisa si nunca hubo un respaldo, con enlace a la pantalla de respaldo', async () => {
+    mockApi(
+      { ...empty, 'GET /api/admin/backups': () => json(backupStatus(null)) },
+      { session: ADMIN },
+    );
+    renderAt('/admin');
+    expect(
+      await screen.findByRole('link', {
+        name: 'Todavía no hay ningún respaldo de la base de datos',
+      }),
+    ).toHaveAttribute('href', '/admin/respaldo');
+    expect(screen.queryByText('Todo al día')).toBeNull();
+  });
+
+  it('avisa a partir de los 7 días y no antes', async () => {
+    mockApi(
+      { ...empty, 'GET /api/admin/backups': () => json(backupStatus(7)) },
+      { session: ADMIN },
+    );
+    const view = renderAt('/admin');
+    expect(
+      await screen.findByRole('link', { name: 'Último respaldo hace 7 días: descarga uno nuevo' }),
+    ).toBeInTheDocument();
+    view.unmount();
+
+    mockApi(
+      { ...empty, 'GET /api/admin/backups': () => json(backupStatus(6)) },
+      { session: ADMIN },
+    );
+    renderAt('/admin');
+    expect(await screen.findByText('Todo al día')).toBeInTheDocument();
+    // El menú lateral sí lleva «Respaldo»; el contenido del inicio no avisa nada.
+    expect(within(main()).queryByRole('link', { name: /respaldo/i })).toBeNull();
+  });
+
+  it('si el estado del respaldo no carga, no afirma «Todo al día»', async () => {
+    mockApi(
+      {
+        ...empty,
+        'GET /api/admin/backups': () => json({ error: { code: 'INTERNAL', message: 'x' } }, 500),
+      },
+      { session: ADMIN },
+    );
+    renderAt('/admin');
+    expect(
+      await screen.findByText('No pudimos revisar todo', {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
   });
 });

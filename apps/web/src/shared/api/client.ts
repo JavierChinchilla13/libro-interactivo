@@ -104,3 +104,66 @@ export async function apiRequest<T>(
 
   return schema.parse(payload);
 }
+
+export interface DownloadedFile {
+  blob: Blob;
+  /** Nombre que propone el servidor (`Content-Disposition`), o `fallbackName`. */
+  fileName: string;
+}
+
+/**
+ * `POST` que devuelve un archivo (por ejemplo, el respaldo cifrado). Los errores llegan como JSON con la forma
+ * estándar y se lanzan como `ApiClientError`; ante un 401 se renueva la sesión y se reintenta una vez, como
+ * `apiRequest`. El cuerpo viaja en JSON, nunca en la URL.
+ */
+export async function apiDownload(
+  path: string,
+  body: unknown,
+  fallbackName: string,
+  retried = false,
+): Promise<DownloadedFile> {
+  let response: Response;
+  try {
+    response = await fetch(`/api${path}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiClientError('NETWORK', 'No se pudo conectar con el servidor');
+  }
+  if (response.status === 401 && !retried && hasSessionHint() && (await refreshSession())) {
+    return apiDownload(path, body, fallbackName, true);
+  }
+  if (!response.ok) {
+    const parsed = apiErrorSchema.safeParse(await response.json().catch(() => null));
+    if (parsed.success) {
+      throw new ApiClientError(parsed.data.error.code, parsed.data.error.message, response.status);
+    }
+    throw new ApiClientError('INTERNAL', 'Respuesta inesperada del servidor', response.status);
+  }
+  let blob: Blob;
+  try {
+    blob = await response.blob();
+  } catch {
+    // La conexión se cortó a mitad de la descarga.
+    throw new ApiClientError('NETWORK', 'La descarga se cortó antes de terminar');
+  }
+  const named = /filename="([^"]+)"/.exec(response.headers.get('Content-Disposition') ?? '');
+  return { blob, fileName: named?.[1] ?? fallbackName };
+}
+
+/** Hace que el navegador guarde `file` con su nombre (sin abrir pestañas). */
+export function saveDownloadedFile(file: DownloadedFile): void {
+  const url = URL.createObjectURL(file.blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = file.fileName;
+  link.rel = 'noopener';
+  document.body.append(link);
+  link.click();
+  link.remove();
+  // Se suelta después: algunos navegadores leen la dirección un instante más tarde.
+  window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}

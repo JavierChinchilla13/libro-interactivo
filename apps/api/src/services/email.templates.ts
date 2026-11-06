@@ -102,3 +102,28 @@ ${input.message}
 Puedes responder directamente a este correo: la respuesta le llegará a ${name}.`;
   return { subject: `Nuevo mensaje de contacto de ${name}`, html, text };
 }
+
+/** Aviso a la administradora cada vez que se descarga un respaldo con su cuenta (D9). */
+export function backupDownloadedEmail(input: { name: string; at: Date }): RenderedEmail {
+  const name = singleLine(input.name);
+  const when = input.at.toLocaleString('es-CR', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: 'America/Costa_Rica',
+  });
+  const html = layout(
+    'Se descargó un respaldo del sitio',
+    `<p>Hola ${escapeHtml(name)},</p>
+      <p>Con tu cuenta se descargó un respaldo cifrado de toda la base de datos del sitio el ${escapeHtml(when)} (hora de Costa Rica).</p>
+      <p>Si fuiste tú, guarda el archivo y su contraseña en un lugar seguro y bórralo a los 90 días.</p>
+      <p style="font-size:13px;color:#5b636d;"><strong>Si no fuiste tú</strong>, cambia tu contraseña de inmediato desde «¿Olvidaste tu contraseña?», revisa en el panel quién tiene cuentas de administración y avísale al desarrollador.</p>`,
+  );
+  const text = `Hola ${name},
+
+Con tu cuenta se descargó un respaldo cifrado de toda la base de datos del sitio el ${when} (hora de Costa Rica).
+
+Si fuiste tú, guarda el archivo y su contraseña en un lugar seguro y bórralo a los 90 días.
+
+Si no fuiste tú, cambia tu contraseña de inmediato desde «¿Olvidaste tu contraseña?», revisa en el panel quién tiene cuentas de administración y avísale al desarrollador.`;
+  return { subject: `Se descargó un respaldo de ${BRAND}`, html, text };
+}

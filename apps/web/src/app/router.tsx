@@ -279,6 +279,10 @@ export const routes: RouteObject[] = [
                     ...page(() => import('../features/admin/ops/StatsPage'), 'StatsPage'),
                   },
                   {
+                    path: 'respaldo',
+                    ...page(() => import('../features/admin/ops/BackupPage'), 'BackupPage'),
+                  },
+                  {
                     path: 'ajustes',
                     ...page(
                       () => import('../features/admin/ops/ContactSettingsPage'),

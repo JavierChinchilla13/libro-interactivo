@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { escapeHtml, singleLine } from '../lib/html.js';
 import {
+  backupDownloadedEmail,
   contactMessageEmail,
   passwordChangedEmail,
   passwordResetEmail,
@@ -63,5 +64,20 @@ describe('plantillas de correo', () => {
     expect(mail.html).not.toContain('<script>');
     expect(mail.text).toContain('Línea 1\nLínea 2');
     expect(mail.text).toContain('ana@ejemplo.com');
+  });
+});
+
+describe('aviso de respaldo descargado', () => {
+  it('dice cuándo (hora de Costa Rica), qué hacer si no fue ella y escapa el nombre', () => {
+    const mail = backupDownloadedEmail({
+      name: 'Ana <b>López</b>',
+      at: new Date('2026-11-05T18:30:00Z'),
+    });
+    expect(mail.subject).toBe('Se descargó un respaldo de Universo Memorias');
+    expect(mail.html).toContain('Ana &lt;b&gt;López&lt;/b&gt;');
+    expect(mail.html).not.toContain('<b>López</b>');
+    expect(mail.text).toMatch(/12:30/);
+    expect(mail.text).toContain('Si no fuiste tú');
+    expect(mail.text).toContain('90 días');
   });
 });
