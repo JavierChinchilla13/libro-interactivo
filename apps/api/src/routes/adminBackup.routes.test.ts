@@ -10,7 +10,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createBackgroundTasks } from '../lib/background.js';
 import { createLogger, LOG_REDACTION } from '../lib/logger.js';
 import { listTar } from '../lib/tar.js';
-import { verifyBackup } from '../maintenance/backup.js';
+import { restoreDatabase, verifyBackup } from '../maintenance/backup.js';
+import { openBackupSource } from '../maintenance/backupArchive.js';
 import { decryptArchiveFile } from '../maintenance/backupCrypto.js';
 import { BackupDownload } from '../models/BackupDownload.js';
 import { User } from '../models/User.js';
@@ -301,6 +302,28 @@ describe('la descarga', () => {
     expect(await BackupDownload.countDocuments()).toBe(50);
     const oldest = await BackupDownload.findOne().sort({ at: 1 }).lean();
     expect(oldest?.at.getTime()).toBe(base + 6 * DAY);
+  });
+});
+
+describe('de la descarga a la restauración', () => {
+  it('el archivo del panel lo abre restore:db con la contraseña y se restaura completo en una base de pruebas', async () => {
+    const { admin } = await world();
+    const res = await admin.post('/api/admin/backups').send(BODY).buffer(true).parse(binary);
+    const file = join(work, 'del-panel.tar.cifrado');
+    await writeFile(file, res.body as Buffer);
+    const opened = await openBackupSource(file, { password: ARCHIVE, tmpDir: tmp });
+    try {
+      const copy = mongoose.connection.useDb('libro-prueba-panel').db!;
+      await copy.dropDatabase();
+      const report = await restoreDatabase(copy, opened.folder);
+      expect(report.ok).toBe(true);
+      expect(await copy.collection('users').countDocuments()).toBe(await User.countDocuments());
+      expect(await copy.collection('refreshTokens').countDocuments()).toBe(0);
+      await copy.dropDatabase();
+    } finally {
+      await opened.cleanup();
+    }
+    expect(await readdir(tmp)).toEqual([]);
   });
 });
 
