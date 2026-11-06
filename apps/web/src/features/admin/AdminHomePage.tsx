@@ -1,3 +1,4 @@
+import { isBackupStale } from '@libro/shared';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { AdminIcon, type AdminIconName } from '../../shared/ui/adminIcons';
@@ -92,6 +93,18 @@ export function AdminHomePage() {
       icon: 'news',
       text: `${plural(overview.postDrafts, 'actualización', 'actualizaciones')} en borrador`,
     });
+  // Respaldo (solo administradoras): si nunca hubo uno o pasaron 7 días o más.
+  const backup = overview.backup;
+  if (isAdmin && backup && isBackupStale(backup))
+    attention.push({
+      id: 'respaldo',
+      to: '/admin/respaldo',
+      icon: 'archive',
+      text:
+        backup.daysAgo === null
+          ? 'Todavía no hay ningún respaldo de la base de datos'
+          : `Último respaldo hace ${backup.daysAgo} días: descarga uno nuevo`,
+    });
   if (upcoming)
     attention.push({
       id: 'lanzamiento',
@@ -105,7 +118,7 @@ export function AdminHomePage() {
     quizzes.ready &&
     overview.fanArtDrafts !== undefined &&
     overview.postDrafts !== undefined &&
-    (!isAdmin || overview.unhandledMessages !== undefined);
+    (!isAdmin || (overview.unhandledMessages !== undefined && overview.backup !== undefined));
 
   const steps: Step[] = [
     {

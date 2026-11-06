@@ -2,6 +2,7 @@ import type { AuthUser } from '@libro/shared';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import {
   accessApi,
+  backupsApi,
   booksApi,
   fanArtsApi,
   keys,
@@ -91,6 +92,12 @@ export function useAdminOverview(role: Role | undefined, now: Date = new Date())
     enabled: isAdmin,
     staleTime: MINUTE,
   });
+  const backups = useQuery({
+    queryKey: keys.backups,
+    queryFn: backupsApi.status,
+    enabled: isAdmin,
+    staleTime: MINUTE,
+  });
   const tokens = useQuery({
     queryKey: overviewKeys.tokens,
     queryFn: () => accessApi.list(),
@@ -118,11 +125,11 @@ export function useAdminOverview(role: Role | undefined, now: Date = new Date())
     failed: books.isError,
     refetch: () => void books.refetch(),
     /** Algún origen secundario falló: no se puede afirmar «Todo al día». */
-    partialFailure: [fanArts, posts, ...quizQueries, ...(isAdmin ? [stats] : [])].some(
+    partialFailure: [fanArts, posts, ...quizQueries, ...(isAdmin ? [stats, backups] : [])].some(
       (query) => query.isError,
     ),
     refetchAll: () => {
-      for (const query of [fanArts, posts, ...quizQueries, ...(isAdmin ? [stats] : [])]) {
+      for (const query of [fanArts, posts, ...quizQueries, ...(isAdmin ? [stats, backups] : [])]) {
         if (query.isError) void query.refetch();
       }
     },
@@ -147,6 +154,8 @@ export function useAdminOverview(role: Role | undefined, now: Date = new Date())
         : (stats.data?.unhandledMessages ?? 0)
       : undefined,
     stats: stats.data,
+    /** Solo administradoras: estado del respaldo (`undefined` mientras carga o para una editora). */
+    backup: isAdmin ? (backups.isPending ? undefined : (backups.data ?? null)) : undefined,
     tokenCount: isAdmin
       ? tokens.data?.tokens.filter((token) => token.status === 'active').length
       : undefined,
