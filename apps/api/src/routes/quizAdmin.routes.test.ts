@@ -12,8 +12,8 @@ import { Quiz } from '../models/Quiz.js';
 import { QuizAttempt } from '../models/QuizAttempt.js';
 import { QuizVersion } from '../models/QuizVersion.js';
 import { UserProgress } from '../models/UserProgress.js';
-import { createTestHarness } from '../test-utils/app.js';
-import { hashQuizContent } from '../services/quizPublish.service.js';
+import { createTestClock, createTestHarness } from '../test-utils/app.js';
+import { PUBLISH_LOCK_MS, hashQuizContent } from '../services/quizPublish.service.js';
 import { createUser, loginAgent } from '../test-utils/auth.js';
 import { useTestDb } from '../test-utils/db.js';
 import {
@@ -181,6 +181,57 @@ describe('POST /api/admin/quizzes/:id/publish', () => {
     );
     expect(statuses.filter((status) => status === 201)).toHaveLength(1);
     expect(await QuizVersion.countDocuments()).toBe(1);
+  });
+
+  it('muchas publicaciones a la vez: siempre una sola versión y una sola aceptada (el resto 409)', async () => {
+    // Antes de la reserva de publicación, una publicación podía leer el quiz antes de que otra lo actualizara y la
+    // última versión después de que otra la creara: dos versiones guardadas, una huérfana. Se fuerza el choque.
+    const { admin, book } = await world();
+    for (let n = 0; n < 20; n += 1) {
+      const quiz = await createQuiz({ bookId: book._id, order: n + 1, content: simpleContent() });
+      const url = `/api/admin/quizzes/${quiz._id.toString()}/publish`;
+      const responses = await Promise.all(Array.from({ length: 8 }, () => admin.post(url)));
+      const statuses = responses.map((res) => res.status).sort();
+      expect(statuses, `quiz ${n}`).toEqual([201, 409, 409, 409, 409, 409, 409, 409]);
+      expect(await QuizVersion.countDocuments({ quizId: quiz._id }), `quiz ${n}`).toBe(1);
+      const stored = await Quiz.findById(quiz._id).lean();
+      expect(stored?.currentVersion).toBe(1);
+      expect(stored?.publishLockUntil).toBeUndefined();
+    }
+  });
+
+  it('una publicación en curso bloquea a otra (409) hasta que termina o caduca su reserva', async () => {
+    const clock = createTestClock();
+    const start = clock();
+    const { app } = createTestHarness({ clock });
+    await createUser({ email: 'admin@ejemplo.com', role: 'ADMIN' });
+    const admin = await loginAgent(app, 'admin@ejemplo.com');
+    const book = await createBook();
+    const quiz = await createQuiz({ bookId: book._id, order: 1, content: simpleContent() });
+    const url = `/api/admin/quizzes/${quiz._id.toString()}/publish`;
+
+    // Una reserva vigente (otra publicación a mitad de camino): 409 y nada se crea.
+    await Quiz.updateOne(
+      { _id: quiz._id },
+      { $set: { publishLockUntil: new Date(start.getTime() + PUBLISH_LOCK_MS) } },
+    );
+    const blocked = await admin.post(url);
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.error.message).toBe('Otra publicación está en curso');
+    expect(await QuizVersion.countDocuments()).toBe(0);
+    // Lo interno no sale en el detalle del panel.
+    expect(
+      JSON.stringify((await admin.get(`/api/admin/quizzes/${quiz._id.toString()}`)).body),
+    ).not.toContain('publishLock');
+
+    // Pasada la reserva (el servidor se cayó a mitad de publicar), se puede publicar y la reserva se suelta.
+    clock.advance(PUBLISH_LOCK_MS);
+    expect((await admin.post(url)).status).toBe(201);
+    expect((await Quiz.findById(quiz._id).lean())?.publishLockUntil).toBeUndefined();
+
+    // Un fallo después de reservar («No hay cambios») también suelta la reserva: no bloquea lo siguiente.
+    expect((await admin.post(url)).status).toBe(409);
+    expect((await Quiz.findById(quiz._id).lean())?.publishLockUntil).toBeUndefined();
   });
 
   it('lo publicado llega a los lectores: antes 404, después se puede jugar', async () => {
