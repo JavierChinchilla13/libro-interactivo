@@ -173,3 +173,36 @@ describe('progreso: cierre del libro', () => {
     expect(progress?.bookCompletedAt).toBeUndefined();
   });
 });
+
+describe('progreso: completaciones simultáneas', () => {
+  it('varios cierres a la vez del mismo quiz, sin avance previo, dejan un solo documento con una sola entrada', async () => {
+    const service = createProgressService({ requireQrUnlock: false });
+    const { userId, bookId, quizzes } = await world({ quizzes: 2 });
+    const quizId = quizzes[0]!._id.toString();
+
+    await Promise.all(
+      Array.from({ length: 5 }, () => completeQuiz(service, { userId, bookId, quizId })),
+    );
+
+    const docs = await UserProgress.find({ userId, bookId }).lean();
+    expect(docs).toHaveLength(1);
+    expect(docs[0]!.completed.map((c) => c.refId.toString())).toEqual([quizId]);
+    expect(docs[0]!.bookCompletedAt).toBeUndefined(); // falta el segundo quiz
+  });
+
+  it('varios cierres a la vez del mismo juego, sin avance previo, dejan una sola entrada y cierran el libro una vez', async () => {
+    const service = createProgressService({ requireQrUnlock: false });
+    const { userId, bookId, story } = await world({ game: true });
+
+    await Promise.all(
+      Array.from({ length: 5 }, () =>
+        completeGame(service, { userId, bookId, storyId: story!.id }),
+      ),
+    );
+
+    const docs = await UserProgress.find({ userId, bookId }).lean();
+    expect(docs).toHaveLength(1);
+    expect(docs[0]!.completed.map((c) => c.kind)).toEqual(['game']);
+    expect(docs[0]!.bookCompletedAt).toEqual(AT);
+  });
+});
