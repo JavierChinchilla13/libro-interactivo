@@ -7,7 +7,7 @@ import { errorMessage, fieldErrors } from '../../shared/api/messages';
 import { Button, TextField } from '../../shared/ui/controls';
 import { Alert, PageHeader } from '../../shared/ui/layout';
 import { accountApi } from '../auth/accountApi';
-import { PasswordField } from '../auth/PasswordField';
+import { PasswordField } from '../../shared/ui/PasswordField';
 import { SESSION_KEY, isStaff, useLogout, useSession } from '../auth/session';
 
 function NameForm() {

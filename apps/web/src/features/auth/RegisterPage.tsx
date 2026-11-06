@@ -14,7 +14,7 @@ import {
   type ConsentValues,
 } from './ConsentFields';
 import { GOOGLE_CLIENT_ID, GoogleButton } from './GoogleButton';
-import { PasswordField } from './PasswordField';
+import { PasswordField } from '../../shared/ui/PasswordField';
 import { GoogleProfileStep } from './GoogleProfileStep';
 import { landingAfterLogin, useRegister, useSession } from './session';
 import { useGoogleAccess } from './useGoogleAccess';

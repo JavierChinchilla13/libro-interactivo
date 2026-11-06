@@ -8,7 +8,7 @@ import { Button } from '../../shared/ui/controls';
 import { Alert } from '../../shared/ui/layout';
 import { accountApi } from './accountApi';
 import { AuthShell } from './AuthShell';
-import { PasswordField } from './PasswordField';
+import { PasswordField } from '../../shared/ui/PasswordField';
 
 /**
  * Página a la que llega el enlace del correo (`/restablecer/:token`). Si la contraseña es débil el enlace NO se gasta;

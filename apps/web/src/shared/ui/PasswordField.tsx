@@ -1,42 +1,60 @@
 import { useId, useState } from 'react';
-import { passwordStrength } from '../../shared/lib/passwordStrength';
-import { Field, fieldClass } from '../../shared/ui/controls';
+import { passwordStrength } from '../lib/passwordStrength';
+import { Field, fieldClass } from './controls';
 
 const BAR_COLORS = ['bg-border', 'bg-danger', 'bg-warning', 'bg-success', 'bg-success'] as const;
 
 /**
  * Contraseña con botón «Mostrar/Ocultar» y, si se pide, medidor orientativo. Avisa con los mismos mensajes del
  * servidor, pero el servidor es quien manda: esto solo ayuda a elegir una buena antes de enviar.
+ * Siempre empieza oculta. `concealKey`: cuando cambia su valor, la contraseña vuelve a ocultarse (por ejemplo, al
+ * enviar el formulario).
  */
 export function PasswordField({
   label,
   value,
   onChange,
   error,
+  hint,
   context,
   showMeter = false,
   autoComplete = 'new-password',
+  required = true,
+  disabled = false,
+  concealKey,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   error?: string | undefined;
+  hint?: string | undefined;
   context?: { name?: string; email?: string };
   showMeter?: boolean;
   autoComplete?: string;
+  /** Marca el campo como obligatorio (asterisco y `required`); por defecto sí. */
+  required?: boolean;
+  disabled?: boolean;
+  concealKey?: unknown;
 }) {
   const meterId = useId();
   const [visible, setVisible] = useState(false);
+  // Estado derivado (sin efecto): si cambió `concealKey`, se oculta en este mismo dibujo.
+  const [seenConcealKey, setSeenConcealKey] = useState(concealKey);
+  if (!Object.is(seenConcealKey, concealKey)) {
+    setSeenConcealKey(concealKey);
+    setVisible(false);
+  }
   const strength = passwordStrength(value, context);
   return (
     <div className="flex flex-col gap-2">
-      <Field label={label} error={error} required>
+      <Field label={label} hint={hint} error={error} required={required}>
         {({ id, describedBy, invalid }) => (
           <div className="relative">
             <input
               id={id}
               type={visible ? 'text' : 'password'}
-              required
+              required={required}
+              disabled={disabled}
               autoComplete={autoComplete}
               value={value}
               aria-invalid={invalid || undefined}
@@ -49,6 +67,7 @@ export function PasswordField({
             />
             <button
               type="button"
+              disabled={disabled}
               aria-pressed={visible}
               aria-controls={id}
               onClick={() => setVisible((current) => !current)}
