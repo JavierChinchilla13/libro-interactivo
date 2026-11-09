@@ -21,6 +21,8 @@ export const APP_ROUTES = [
   '/registro',
   '/olvide-mi-contrasena',
   '/restablecer/*',
+  '/baja',
+  '/confirmar-novedades',
   '/u/*',
   '/privacidad',
   '/terminos',
