@@ -20,6 +20,12 @@ const quizSchema = new Schema(
     /** Última versión publicada (0 = nunca). */
     currentVersion: { type: Number, required: true, default: 0, min: 0 },
     lastPublishedAt: { type: Date },
+    /**
+     * Reserva de publicación: mientras esté en el futuro, otra publicación del mismo quiz recibe 409. Evita que dos
+     * publicaciones simultáneas creen dos versiones (una quedaría huérfana: las versiones nunca se borran). Caduca sola
+     * (`PUBLISH_LOCK_MS`) por si el servidor se cae a mitad de publicar. Interna: no sale en ninguna respuesta.
+     */
+    publishLockUntil: { type: Date },
     settings: { type: Schema.Types.Mixed, required: true },
     /**
      * Apariencia en vivo (fondo, velo, acento, portada y texto de introducción): vive FUERA de `quizVersions` y se edita

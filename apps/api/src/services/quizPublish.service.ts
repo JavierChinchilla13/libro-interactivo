@@ -79,6 +79,9 @@ export function draftContentOf(quiz: {
   };
 }
 
+/** Cuánto dura la reserva de publicación de un quiz (por si el servidor se cae a mitad de publicar). */
+export const PUBLISH_LOCK_MS = 30_000;
+
 type Checked =
   | { ok: true; content: QuizContent; warnings: QuizIssue[] }
   | { ok: false; errors: QuizIssue[]; warnings: QuizIssue[] };
@@ -169,46 +172,81 @@ export function createQuizPublishService(deps: QuizPublishDeps) {
     }
 
     const contentHash = hashQuizContent(checked.content);
-    const last = await QuizVersion.findOne({ quizId })
-      .sort({ version: -1 })
-      .select('version contentHash')
-      .lean();
-    if (isSameQuizContent(checked.content, last?.contentHash) && quiz.status === 'published') {
-      throw new AppError('CONFLICT', 'No hay cambios desde la última versión publicada');
-    }
-    const version = Math.max(quiz.currentVersion, last?.version ?? 0) + 1;
     const publishedAt = deps.clock();
-    try {
-      await QuizVersion.create({
-        quizId: quiz._id,
-        bookId: quiz.bookId,
-        version,
-        title: checked.content.title,
-        instructionsHtml: checked.content.instructionsHtml,
-        ...(checked.content.image ? { image: checked.content.image } : {}),
-        settings: checked.content.settings,
-        stages: checked.content.stages,
-        results: checked.content.results,
-        publishedAt,
-        publishedBy: actor.userId,
-        contentHash,
-      });
-    } catch (error) {
-      if (isDuplicateKey(error)) throw new AppError('CONFLICT', 'Otra publicación está en curso');
-      throw error;
-    }
-    const moved = await Quiz.updateOne(
-      { _id: quizId, currentVersion: quiz.currentVersion },
-      { $set: { status: 'published', currentVersion: version, lastPublishedAt: publishedAt } },
-    );
-    if (moved.matchedCount === 0) throw new AppError('CONFLICT', 'Otra publicación está en curso');
+    const busy = () => new AppError('CONFLICT', 'Otra publicación está en curso');
 
-    return {
-      quizId,
-      version,
-      publishedAt: publishedAt.toISOString(),
-      warnings: checked.warnings,
-    };
+    // Reserva del quiz: una publicación a la vez. Sin ella, dos publicaciones simultáneas podían leer el quiz antes de
+    // que la otra lo actualizara y la última versión después de que la otra la creara: calculaban números distintos,
+    // las dos versiones se guardaban y una quedaba huérfana (las versiones son inmutables: nunca se borran). Exigir el
+    // mismo `currentVersion` que se leyó también rechaza a quien llega con el quiz ya desactualizado.
+    const lockUntil = new Date(publishedAt.getTime() + PUBLISH_LOCK_MS);
+    const claimed = await Quiz.updateOne(
+      {
+        _id: quizId,
+        currentVersion: quiz.currentVersion,
+        status: { $ne: 'archived' },
+        $or: [
+          { publishLockUntil: { $exists: false } },
+          { publishLockUntil: { $lte: publishedAt } },
+        ],
+      },
+      { $set: { publishLockUntil: lockUntil } },
+    );
+    if (claimed.matchedCount === 0) throw busy();
+
+    try {
+      const last = await QuizVersion.findOne({ quizId })
+        .sort({ version: -1 })
+        .select('version contentHash')
+        .lean();
+      if (isSameQuizContent(checked.content, last?.contentHash) && quiz.status === 'published') {
+        throw new AppError('CONFLICT', 'No hay cambios desde la última versión publicada');
+      }
+      // `last` puede ir por delante de `currentVersion` si una publicación se cortó entre crear la versión y marcar el
+      // quiz: se salta ese número en vez de chocar con él para siempre.
+      const version = Math.max(quiz.currentVersion, last?.version ?? 0) + 1;
+      try {
+        await QuizVersion.create({
+          quizId: quiz._id,
+          bookId: quiz.bookId,
+          version,
+          title: checked.content.title,
+          instructionsHtml: checked.content.instructionsHtml,
+          ...(checked.content.image ? { image: checked.content.image } : {}),
+          settings: checked.content.settings,
+          stages: checked.content.stages,
+          results: checked.content.results,
+          publishedAt,
+          publishedBy: actor.userId,
+          contentHash,
+        });
+      } catch (error) {
+        if (isDuplicateKey(error)) throw busy();
+        throw error;
+      }
+      const moved = await Quiz.updateOne(
+        { _id: quizId, publishLockUntil: lockUntil },
+        {
+          $set: { status: 'published', currentVersion: version, lastPublishedAt: publishedAt },
+          $unset: { publishLockUntil: 1 },
+        },
+      );
+      // Solo pasa si la reserva caducó (una publicación de más de `PUBLISH_LOCK_MS`) y otra la tomó.
+      if (moved.matchedCount === 0) throw busy();
+
+      return {
+        quizId,
+        version,
+        publishedAt: publishedAt.toISOString(),
+        warnings: checked.warnings,
+      };
+    } finally {
+      // Si algo falló después de reservar, se suelta la reserva (si el quiz ya se marcó, no queda nada que soltar).
+      await Quiz.updateOne(
+        { _id: quizId, publishLockUntil: lockUntil },
+        { $unset: { publishLockUntil: 1 } },
+      );
+    }
   }
 
   /** Arranca un intento de prueba (`isTest`) sobre la versión publicada; no cuenta en progreso ni estadísticas. */
