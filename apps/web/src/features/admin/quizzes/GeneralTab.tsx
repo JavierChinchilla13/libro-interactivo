@@ -111,8 +111,9 @@ export function GeneralTab({
         <Card className="flex flex-col gap-4">
           <h2 className="font-semibold">Líneas que aparecen antes del resultado</h2>
           <p className="text-sm text-muted">
-            Se muestran una por una mientras se calcula el resultado (iguales para todos los
-            resultados).
+            Se muestran una por una mientras se calcula el resultado. Las ven todas las lectoras,
+            antes de las líneas propias de cada resultado (pestaña Resultados). Si quieres líneas
+            distintas para cada resultado, deja esta lista vacía y escríbelas en Resultados.
           </p>
           <StringListEditor
             label="Líneas"
@@ -123,27 +124,11 @@ export function GeneralTab({
                 ...draft,
                 settings: {
                   ...draft.settings,
-                  ...(lines.length || intro.effect
+                  // Un `effect` guardado antes se conserva mientras haya líneas (el esquema lo admite por
+                  // compatibilidad), pero ya no se edita: ningún estilo lo usaba.
+                  ...(lines.length
                     ? { revealIntro: { ...intro, lines } }
                     : { revealIntro: undefined }),
-                },
-              })
-            }
-          />
-          <TextField
-            label="Animación de la espera"
-            hint="Se elige entre las animaciones disponibles."
-            value={intro.effect ?? ''}
-            maxLength={60}
-            onChange={(event) =>
-              onChange({
-                ...draft,
-                settings: {
-                  ...draft.settings,
-                  revealIntro: {
-                    lines: intro.lines,
-                    ...(event.target.value ? { effect: event.target.value } : {}),
-                  },
                 },
               })
             }

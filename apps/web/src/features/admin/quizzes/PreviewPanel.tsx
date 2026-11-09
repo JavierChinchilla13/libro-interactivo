@@ -163,11 +163,6 @@ function ResultView({ result }: { result: ResultPayload }) {
           ))}
         </ul>
       ) : null}
-      {result.revealIntro?.effect || result.reveal?.effect ? (
-        <p className="text-xs text-muted">
-          Efecto: {result.reveal?.effect ?? result.revealIntro?.effect}
-        </p>
-      ) : null}
       <h3 className="page-title">{result.title}</h3>
       {result.media?.kind === 'image' ? (
         <img
