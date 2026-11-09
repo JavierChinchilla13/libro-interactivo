@@ -140,19 +140,6 @@ function ResultEditor({
         items={reveal.lines}
         onChange={(lines) => set({ reveal: { ...reveal, lines } })}
       />
-      <TextField
-        label="Animación de la espera de este resultado"
-        value={reveal.effect ?? ''}
-        maxLength={60}
-        onChange={(event) =>
-          set({
-            reveal: {
-              lines: reveal.lines,
-              ...(event.target.value ? { effect: event.target.value } : {}),
-            },
-          })
-        }
-      />
       <fieldset className="flex flex-col gap-3">
         <legend className="text-sm font-medium">
           Datos curiosos del resultado (por ejemplo «Tu cápsula»)
