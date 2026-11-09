@@ -16,6 +16,7 @@ const PRODUCTION_ENV = {
   CLOUDINARY_API_KEY: '123456',
   CLOUDINARY_API_SECRET: 'secreto-de-prueba',
   ACCESS_TOKEN_SECRET: 'Qh3kT8wZr1NbV6yMcP4sLd9fGj2XaUe7oIq5RtWn',
+  UNSUBSCRIBE_SECRET: 'Vb7nP2qLx9TzR4mKs8HdW1cFj6YgAe3uNo5QiErT',
   MAIL_PROVIDER: 'resend',
   RESEND_API_KEY: 'clave-de-prueba-0000',
   MAIL_FROM: 'Universo Memorias <hola@ejemplo.com>',

@@ -103,6 +103,19 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((value) => value === 'true'),
+  /**
+   * Firma los enlaces de baja de los correos de novedades (token = id + HMAC). ≥ 32 caracteres y distinta de las demás.
+   * Si se cambia, los enlaces de los correos ya enviados dejan de servir (la baja sigue disponible en la cuenta).
+   */
+  UNSUBSCRIBE_SECRET: z.string().min(32, 'debe tener al menos 32 caracteres'),
+  /**
+   * Secreto del webhook de Resend (`whsec_…`), para dar de baja sola una dirección que rebota o marca un correo como
+   * spam. Sin él, `POST /api/webhooks/resend` responde 404.
+   */
+  RESEND_WEBHOOK_SECRET: z
+    .string()
+    .regex(/^whsec_[A-Za-z0-9+/=]{16,}$/, 'debe ser el secreto del webhook de Resend (whsec_…)')
+    .optional(),
   /** Correo de la autora donde llegan los mensajes de contacto (hasta que se configure en el panel). */
   CONTACT_RECIPIENT_EMAIL: z.email('debe ser un correo válido').optional(),
 });
@@ -122,7 +135,7 @@ function checkProduction(env: z.infer<typeof envSchema>, ctx: z.core.$Refinement
       'es obligatoria en producción (sin ella el sitio no sabe de dónde cargar las imágenes y se rechazaría todo el contenido)',
     );
   }
-  for (const name of ['JWT_ACCESS_SECRET', 'ACCESS_TOKEN_SECRET'] as const) {
+  for (const name of ['JWT_ACCESS_SECRET', 'ACCESS_TOKEN_SECRET', 'UNSUBSCRIBE_SECRET'] as const) {
     if (weakSecret(env[name])) {
       fail(name, 'en producción debe ser aleatoria (no la de desarrollo ni caracteres repetidos)');
     }
@@ -175,6 +188,16 @@ const envSchemaChecked = envSchema.superRefine((env, ctx) => {
         'debe ser distinta de JWT_ACCESS_SECRET (son secretos con usos y respaldos diferentes)',
     });
   }
+  if (
+    env.UNSUBSCRIBE_SECRET === env.JWT_ACCESS_SECRET ||
+    env.UNSUBSCRIBE_SECRET === env.ACCESS_TOKEN_SECRET
+  ) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['UNSUBSCRIBE_SECRET'],
+      message: 'debe ser distinta de JWT_ACCESS_SECRET y de ACCESS_TOKEN_SECRET',
+    });
+  }
   const s3 = [env.S3_ENDPOINT, env.S3_BUCKET, env.S3_ACCESS_KEY_ID, env.S3_SECRET_ACCESS_KEY];
   if (s3.some((value) => value !== undefined) && s3.some((value) => value === undefined)) {
     ctx.addIssue({
@@ -213,6 +236,7 @@ const DEV_DEFAULTS: Record<string, string> = {
   APP_URL: 'http://localhost:5173',
   MAIL_PROVIDER: 'memory',
   ACCESS_TOKEN_SECRET: 'solo-para-desarrollo-token-de-qr-no-usar-en-produccion-9876',
+  UNSUBSCRIBE_SECRET: 'solo-para-desarrollo-enlaces-de-baja-no-usar-en-produccion-5432',
 };
 
 export class EnvError extends Error {
