@@ -31,6 +31,9 @@ const RELAXED_LIMITS: Limits = {
   uploadSignQuizBg: { windowMs: 60_000, limit: 10_000, by: 'user' },
   backupHour: { windowMs: 60_000, limit: 10_000, by: 'user' },
   backupDay: { windowMs: 60_000, limit: 10_000, by: 'user' },
+  newsletterAccount: { windowMs: 60_000, limit: 10_000, by: 'user' },
+  newsletterPublic: { windowMs: 60_000, limit: 10_000 },
+  webhook: { windowMs: 60_000, limit: 10_000 },
 };
 
 interface TestAppOptions {

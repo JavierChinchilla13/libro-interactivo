@@ -39,6 +39,7 @@ import { createPublicWikiService } from './services/publicWiki.service.js';
 import { createSitemapService } from './services/sitemap.service.js';
 import { createSiteSettingsService } from './services/siteSettings.service.js';
 import { createWelcomeService } from './services/welcome.service.js';
+import { createNewsletterService } from './services/newsletter.service.js';
 import { createExtraService } from './services/extra.service.js';
 import { createAccountService } from './services/account.service.js';
 import { AGE_REJECTION_LIMIT, createAgeGate } from './services/ageGate.service.js';
@@ -93,6 +94,8 @@ export interface AppDeps {
     | 'CLOUDINARY_CLOUD_NAME'
     | 'CLOUDINARY_API_KEY'
     | 'CLOUDINARY_API_SECRET'
+    | 'UNSUBSCRIBE_SECRET'
+    | 'RESEND_WEBHOOK_SECRET'
   >;
   logger: Logger;
   isDbUp: () => boolean;
@@ -208,6 +211,15 @@ export function createApp(
   const fanArts = createFanArtService();
   const reviews = createReviewService();
   const siteSettings = createSiteSettingsService();
+  const newsletter = createNewsletterService({
+    clock,
+    mail,
+    tasks,
+    logger: deps.logger,
+    appUrl: deps.env.APP_URL,
+    unsubscribeSecret: deps.env.UNSUBSCRIBE_SECRET,
+    webhookSecret: deps.env.RESEND_WEBHOOK_SECRET,
+  });
   const backups = createBackupDownloadService({
     clock,
     mail,
@@ -248,11 +260,18 @@ export function createApp(
   // Todo lo que sirve el API es JSON o archivos para la aplicación: nunca debe aparecer en un buscador.
   app.use('/api', noIndex);
   app.use(cors({ origin: deps.env.CORS_ORIGIN, credentials: true }));
-  // El informe de la política de contenido tiene su propio lector (8 KB) y va detrás de su límite de ritmo.
+  // El informe de la política de contenido y el webhook de Resend tienen su propio lector (y van detrás de su límite).
   const json = express.json({ limit: '100kb' });
-  app.use((req, res, next) => (req.path === '/api/csp-report' ? next() : json(req, res, next)));
+  const ownReader = new Set(['/api/csp-report', '/api/webhooks/resend']);
+  app.use((req, res, next) => (ownReader.has(req.path) ? next() : json(req, res, next)));
   app.use(cookieParser());
-  app.use('/api', createSameOriginGuard(deps.env.CORS_ORIGIN));
+  // Sin protección de mismo origen: la baja en un clic la manda el cliente de correo (no el sitio) y el webhook viene de
+  // Resend. Ninguna usa cookies: las protege el token firmado o la firma Svix.
+  const sameOrigin = createSameOriginGuard(deps.env.CORS_ORIGIN);
+  const crossOriginOk = new Set(['/newsletter/unsubscribe', '/webhooks/resend']);
+  app.use('/api', (req, res, next) =>
+    crossOriginOk.has(req.path) ? next() : sameOrigin(req, res, next),
+  );
 
   app.use(
     '/api',
@@ -290,6 +309,7 @@ export function createApp(
       reviews,
       siteSettings,
       backups,
+      newsletter,
       clock,
       requireUnlocked,
       guards,

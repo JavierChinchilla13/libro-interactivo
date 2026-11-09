@@ -24,6 +24,13 @@ import {
 import { createPublicWikiController } from '../controllers/publicWiki.controller.js';
 import { createAdminBackupController } from '../controllers/adminBackup.controller.js';
 import type { BackupDownloadService } from '../services/backupDownload.service.js';
+import { createNewsletterController } from '../controllers/newsletter.controller.js';
+import type { NewsletterService } from '../services/newsletter.service.js';
+import {
+  createAccountNewsletterRouter,
+  createPublicNewsletterRouter,
+  createWebhookRouter,
+} from './newsletter.routes.js';
 import { createAccountController } from '../controllers/account.controller.js';
 import {
   createAdminBookController,
@@ -147,6 +154,7 @@ export interface RouteDeps {
   reviews: ReviewService;
   siteSettings: SiteSettingsService;
   backups: BackupDownloadService;
+  newsletter: NewsletterService;
   extras: ExtraService;
   clock: Clock;
   requireUnlocked: RequireUnlocked;
@@ -173,8 +181,16 @@ export function createApiRouter(deps: RouteDeps): Router {
       env: deps.env,
       limits: deps.limits,
       google: deps.google,
+      newsletter: deps.newsletter,
     }),
   );
+  const newsletterController = createNewsletterController(deps.newsletter);
+  router.use(
+    '/me/newsletter',
+    createAccountNewsletterRouter(newsletterController, deps.guards, deps.limits),
+  );
+  router.use('/newsletter', createPublicNewsletterRouter(newsletterController, deps.limits));
+  router.use('/webhooks', createWebhookRouter(newsletterController, deps.limits));
   router.use('/me', createAccountRouter(accountController, deps.guards, deps.limits));
   router.use('/me', createLearningRouter(quizController, deps.guards));
   router.use('/me', createWelcomeRouter(createWelcomeController(deps.welcome), deps.guards));

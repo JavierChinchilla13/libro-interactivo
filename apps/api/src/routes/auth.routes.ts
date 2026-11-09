@@ -17,6 +17,7 @@ import { createRateLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 import type { AuthService } from '../services/auth.service.js';
 import type { GoogleVerifier } from '../services/google.service.js';
+import type { NewsletterService } from '../services/newsletter.service.js';
 import type { PasswordResetService } from '../services/passwordReset.service.js';
 
 export interface AuthRouterDeps {
@@ -28,6 +29,7 @@ export interface AuthRouterDeps {
   limits: Limits;
   /** Sin verificador (no hay GOOGLE_CLIENT_ID) la ruta responde 404. */
   google?: GoogleVerifier | undefined;
+  newsletter: NewsletterService;
 }
 
 export function createAuthRouter({
@@ -38,8 +40,9 @@ export function createAuthRouter({
   env,
   limits,
   google,
+  newsletter,
 }: AuthRouterDeps): Router {
-  const controller = createAuthController(auth, env, google);
+  const controller = createAuthController(auth, env, newsletter, google);
   const recoveryController = createRecoveryController(recovery);
   const router = Router();
 

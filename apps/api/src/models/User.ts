@@ -46,11 +46,44 @@ const userSchema = new Schema(
      * pedir y esta marca se quita. Las cuentas anteriores y las de equipo nunca la tienen.
      */
     consentRequiredAt: { type: Date },
+    /**
+     * Correos de novedades de la autora (opcionales, solo mayores de 18). `status` falta = nunca se apuntó. Se guarda lo
+     * mínimo para demostrar el consentimiento: la última alta (fecha, versión de los textos y desde dónde) y la última
+     * baja (fecha y por qué vía). El enlace de confirmación (para quien no tiene el correo comprobado) se guarda solo
+     * como huella, con caducidad.
+     */
+    newsletter: {
+      type: new Schema(
+        {
+          status: { type: String, enum: ['pending', 'subscribed', 'unsubscribed'] },
+          requestedAt: { type: Date },
+          subscribedAt: { type: Date },
+          version: { type: String, maxlength: 40 },
+          source: { type: String, enum: ['register', 'google', 'login', 'account'] },
+          confirmTokenHash: { type: String, maxlength: 64 },
+          confirmTokenExpiresAt: { type: Date },
+          unsubscribedAt: { type: Date },
+          unsubscribedVia: {
+            type: String,
+            enum: ['account', 'link', 'header', 'bounce', 'complaint'],
+          },
+        },
+        { _id: false },
+      ),
+    },
   },
   { timestamps: true },
 );
 
 userSchema.index({ role: 1, status: 1 });
+userSchema.index(
+  { 'newsletter.status': 1 },
+  { partialFilterExpression: { 'newsletter.status': 'subscribed' } },
+);
+userSchema.index(
+  { 'newsletter.confirmTokenHash': 1 },
+  { unique: true, partialFilterExpression: { 'newsletter.confirmTokenHash': { $type: 'string' } } },
+);
 
 export type UserAttrs = InferSchemaType<typeof userSchema>;
 export type UserDoc = HydratedDocument<UserAttrs>;

@@ -23,6 +23,12 @@ export interface Limits {
   backupHour: RateLimitOptions;
   /** …y por día. */
   backupDay: RateLimitOptions;
+  /** Apuntarse o darse de baja desde la cuenta (por usuaria; cada alta sin correo comprobado manda un correo). */
+  newsletterAccount: RateLimitOptions;
+  /** Confirmar el alta y darse de baja con el enlace del correo (sin sesión, por IP). */
+  newsletterPublic: RateLimitOptions;
+  /** Webhook de Resend (sin sesión, por IP). */
+  webhook: RateLimitOptions;
 }
 
 /**
@@ -64,4 +70,7 @@ export const DEFAULT_LIMITS: Limits = {
   uploadSignQuizBg: { windowMs: 60 * 60_000, limit: 20, by: 'user' },
   backupHour: { windowMs: 60 * 60_000, limit: 3, by: 'user' },
   backupDay: { windowMs: 24 * 60 * 60_000, limit: 10, by: 'user' },
+  newsletterAccount: { windowMs: 60 * 60_000, limit: 10, by: 'user' },
+  newsletterPublic: { windowMs: 15 * 60_000, limit: 60 },
+  webhook: { windowMs: 10 * 60_000, limit: 300 },
 };

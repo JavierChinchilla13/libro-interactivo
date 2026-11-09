@@ -11,6 +11,7 @@ import { getInput } from '../middleware/validate.js';
 import { AppError } from '../lib/errors.js';
 import type { AuthService, RequestMeta } from '../services/auth.service.js';
 import type { GoogleVerifier } from '../services/google.service.js';
+import type { NewsletterService } from '../services/newsletter.service.js';
 
 type CookieEnv = Pick<Env, 'NODE_ENV' | 'COOKIE_DOMAIN'>;
 
@@ -24,10 +25,20 @@ function refreshCookie(req: Request): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-export function createAuthController(auth: AuthService, env: CookieEnv, google?: GoogleVerifier) {
+/**
+ * La casilla de novedades viaja con los consentimientos y ya se validó (edad) antes de crear nada. Si se marcó, se
+ * apunta después de entrar; un fallo ahí nunca hace fallar el alta (la persona puede apuntarse desde la cuenta).
+ */
+export function createAuthController(
+  auth: AuthService,
+  env: CookieEnv,
+  newsletter: NewsletterService,
+  google?: GoogleVerifier,
+) {
   const register: RequestHandler = async (req, res) => {
     const { body } = getInput<RegisterRequest>(res);
     const { user, session } = await auth.register(body, requestMeta(req));
+    if (body.newsletter) await newsletter.optInAfterSignup(user.id, 'register');
     setSessionCookies(res, env, session);
     res.status(201).json({ user });
   };
@@ -40,6 +51,7 @@ export function createAuthController(auth: AuthService, env: CookieEnv, google?:
       res.json({ status: 'needs_profile', name: result.name, email: result.email });
       return;
     }
+    if (body.profile?.newsletter) await newsletter.optInAfterSignup(result.user.id, 'login');
     setSessionCookies(res, env, result.session);
     res.json({ status: 'ok', user: result.user });
   };
@@ -60,6 +72,7 @@ export function createAuthController(auth: AuthService, env: CookieEnv, google?:
       res.json({ status: 'needs_profile', name: result.name, email: result.email });
       return;
     }
+    if (body.profile?.newsletter) await newsletter.optInAfterSignup(result.user.id, 'google');
     setSessionCookies(res, env, result.session);
     res.json({ status: 'ok', user: result.user });
   };

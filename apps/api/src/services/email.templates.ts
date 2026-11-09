@@ -127,3 +127,28 @@ Si fuiste tú, guarda el archivo y su contraseña en un lugar seguro y bórralo 
 Si no fuiste tú, cambia tu contraseña de inmediato desde «¿Olvidaste tu contraseña?», revisa en el panel quién tiene cuentas de administración y avísale al desarrollador.`;
   return { subject: `Se descargó un respaldo de ${BRAND}`, html, text };
 }
+
+/** Doble confirmación de los correos de novedades (solo para cuentas cuyo correo aún no se comprobó). */
+export function newsletterConfirmEmail(input: {
+  name: string;
+  link: string;
+  ttlDays: number;
+}): RenderedEmail {
+  const name = singleLine(input.name);
+  const html = layout(
+    'Confirma que quieres recibir novedades',
+    `<p>Hola ${escapeHtml(name)},</p>
+      <p>Pediste recibir correos con novedades de la autora (actualizaciones y capítulos extra). Para empezar a recibirlos, confirma que este correo es tuyo:</p>
+      ${button(input.link, 'Sí, quiero recibir novedades')}
+      <p style="font-size:13px;color:#5b636d;">Si el botón no funciona, copia y pega este enlace en tu navegador:<br>${escapeHtml(input.link)}</p>
+      <p style="font-size:13px;color:#5b636d;">El enlace caduca en ${input.ttlDays} días. Si tú no lo pediste, ignora este mensaje: no te apuntaremos a nada.</p>`,
+  );
+  const text = `Hola ${name},
+
+Pediste recibir correos con novedades de la autora (actualizaciones y capítulos extra). Para empezar a recibirlos, confirma que este correo es tuyo abriendo este enlace (caduca en ${input.ttlDays} días):
+
+${input.link}
+
+Si tú no lo pediste, ignora este mensaje: no te apuntaremos a nada.`;
+  return { subject: `Confirma tus correos de novedades de ${BRAND}`, html, text };
+}
