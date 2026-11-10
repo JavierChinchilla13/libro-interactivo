@@ -10,7 +10,8 @@ import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
 import { useFormGuard } from '../components/useFormGuard';
-import { booksApi, extrasApi, keys } from '../api';
+import { booksApi, extrasApi, keys, notificationsApi } from '../api';
+import { NotifyByEmail } from '../components/NotifyByEmail';
 import { SkeletonRows } from '../components/Skeleton';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { errorMessage, fieldErrors, slugify } from '../errors';
@@ -63,14 +64,18 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
   const [preview, setPreview] = useState<ExtraPreviewResponse | null>(null);
   const picker = useRef<HTMLInputElement>(null);
   const books = useQuery({ queryKey: keys.books, queryFn: booksApi.list });
+  const [notify, setNotify] = useState(false);
 
   const save = useMutation({
     mutationFn: (payload: ReturnType<typeof payloadFromForm>) =>
       editing ? extrasApi.replace(extraId, payload) : extrasApi.create(payload),
-    onSuccess: async (result) => {
+    onSuccess: async (result, payload) => {
       await client.invalidateQueries({ queryKey: ['admin', 'extras'] });
       guard.markSaved(submitted.current);
-      toast.success('Guardado');
+      // El aviso se pide después de guardar y solo si quedó publicado (el servidor lo vuelve a comprobar).
+      const notice =
+        notify && payload.status === 'published' ? await requestNotice(result.id) : null;
+      toast.success(notice ?? 'Guardado');
       if (!editing) {
         guard.allowLeave();
         void navigate(`/admin/extras/${result.id}`, { replace: true, state: { created: true } });
@@ -81,6 +86,21 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
     mutationFn: () => extrasApi.preview(extraId ?? ''),
     onSuccess: setPreview,
   });
+
+  async function requestNotice(refId: string): Promise<string | null> {
+    try {
+      const { job, created } = await notificationsApi.create({ kind: 'extra', refId });
+      setNotify(false);
+      return created
+        ? `Guardado. Aviso por correo en cola para ${job.totals.recipients} ${job.totals.recipients === 1 ? 'lectora' : 'lectoras'}.`
+        : 'Guardado. Este extra ya se había avisado por correo.';
+    } catch (error) {
+      toast.error(`Se guardó, pero no se pudo pedir el aviso por correo: ${errorMessage(error)}`);
+      return null;
+    } finally {
+      await client.invalidateQueries({ queryKey: keys.notifications });
+    }
+  }
 
   const set = <K extends keyof ExtraForm>(key: K, value: ExtraForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -320,6 +340,15 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
             </>
           )}
         </FormSection>
+
+        <NotifyByEmail
+          kind="extra"
+          refId={extraId}
+          bookId={form.bookId || undefined}
+          published={form.status === 'published'}
+          checked={notify}
+          onChange={setNotify}
+        />
       </div>
       <SaveBar
         dirty={guard.dirty || !editing}

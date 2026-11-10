@@ -17,6 +17,12 @@ import {
   accessTokenResponseSchema,
   attemptResponseSchema,
   bookListResponseSchema,
+  createNotificationResponseSchema,
+  notificationJobSchema,
+  notificationListResponseSchema,
+  notificationPreviewSchema,
+  type NotificationPreviewQuery,
+  type NotificationTarget,
   bookResponseSchema,
   extraListResponseSchema,
   extraPreviewResponseSchema,
@@ -233,6 +239,19 @@ export const backupsApi = {
     apiDownload('/admin/backups', body, 'universo-memorias-respaldo.tar.cifrado'),
 };
 
+export const notificationsApi = {
+  list: () => apiRequest('/admin/notifications', notificationListResponseSchema),
+  preview: (target: NotificationPreviewQuery) =>
+    apiRequest(
+      `/admin/notifications/preview${query({ kind: target.kind, refId: target.refId, bookId: target.bookId })}`,
+      notificationPreviewSchema,
+    ),
+  create: (body: NotificationTarget) =>
+    apiRequest('/admin/notifications', createNotificationResponseSchema, { method: 'POST', body }),
+  cancel: (id: string) =>
+    apiRequest(`/admin/notifications/${id}/cancel`, notificationJobSchema, { method: 'POST' }),
+};
+
 export const statsApi = {
   get: () => apiRequest('/admin/stats', adminStatsSchema),
 };
@@ -260,6 +279,9 @@ export const keys = {
   messages: ['admin', 'messages'] as const,
   stats: ['admin', 'stats'] as const,
   backups: ['admin', 'backups'] as const,
+  notifications: ['admin', 'notifications'] as const,
+  notificationPreview: (kind: string, refId?: string, bookId?: string) =>
+    ['admin', 'notifications', 'preview', kind, refId ?? 'nuevo', bookId ?? ''] as const,
   wiki: ['admin', 'wiki'] as const,
   wikiEntry: (id: string) => ['admin', 'wiki', 'entry', id] as const,
 };
