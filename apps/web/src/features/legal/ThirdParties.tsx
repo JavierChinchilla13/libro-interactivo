@@ -85,9 +85,12 @@ const THIRD_PARTIES: ReadonlyArray<Fact> = [
     rows: [
       [
         'Para qué',
-        'Envío de correos del servicio (recuperar contraseña, avisos de seguridad, mensajes de contacto).',
+        'Envío de correos del servicio (recuperar contraseña, avisos de seguridad, mensajes de contacto) y de los correos de novedades a quien se apunta.',
       ],
-      ['Qué recibe', 'La dirección de correo y el texto del mensaje.'],
+      [
+        'Qué recibe',
+        'La dirección de correo y el texto del mensaje. Si un correo rebota o se marca como spam, nos avisa para dejar de escribir a esa dirección.',
+      ],
       [
         'Dónde y su política',
         where('Estados Unidos', 'Resend', 'https://resend.com/legal/privacy-policy'),
