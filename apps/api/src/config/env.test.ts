@@ -348,3 +348,15 @@ describe('UNSUBSCRIBE_SECRET y RESEND_WEBHOOK_SECRET', () => {
     );
   });
 });
+
+describe('cupo de correos', () => {
+  it('por defecto el plan gratuito de Resend; la reserva debe ser menor que el límite diario', () => {
+    const env = parseEnv({ NODE_ENV: 'test' });
+    expect([env.MAIL_DAILY_LIMIT, env.MAIL_MONTHLY_LIMIT, env.MAIL_TRANSACTIONAL_RESERVE]).toEqual([
+      100, 3000, 20,
+    ]);
+    expect(() =>
+      parseEnv({ NODE_ENV: 'test', MAIL_DAILY_LIMIT: '20', MAIL_TRANSACTIONAL_RESERVE: '20' }),
+    ).toThrow(/MAIL_TRANSACTIONAL_RESERVE/);
+  });
+});

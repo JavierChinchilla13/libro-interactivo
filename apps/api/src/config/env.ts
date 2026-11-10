@@ -116,6 +116,16 @@ const envSchema = z.object({
     .string()
     .regex(/^whsec_[A-Za-z0-9+/=]{16,}$/, 'debe ser el secreto del webhook de Resend (whsec_…)')
     .optional(),
+  /**
+   * Remitente de los correos de novedades (p. ej. `Universo Memorias <novedades@midominio.com>`, del mismo dominio
+   * verificado). Sin él se usa `MAIL_FROM`. Los transaccionales siempre salen con `MAIL_FROM`.
+   */
+  MAIL_FROM_NEWS: z.string().min(3).optional(),
+  /** Cupo de correos del proveedor (por defecto, el plan gratuito de Resend: 100 al día y 3.000 al mes, día UTC). */
+  MAIL_DAILY_LIMIT: z.coerce.number().int().min(1).max(1_000_000).default(100),
+  MAIL_MONTHLY_LIMIT: z.coerce.number().int().min(1).max(10_000_000).default(3000),
+  /** Correos al día que los avisos nunca usan: quedan para los transaccionales (recuperar contraseña, contacto…). */
+  MAIL_TRANSACTIONAL_RESERVE: z.coerce.number().int().min(0).max(100_000).default(20),
   /** Correo de la autora donde llegan los mensajes de contacto (hasta que se configure en el panel). */
   CONTACT_RECIPIENT_EMAIL: z.email('debe ser un correo válido').optional(),
 });
@@ -205,6 +215,13 @@ const envSchemaChecked = envSchema.superRefine((env, ctx) => {
       path: ['S3_ENDPOINT'],
       message:
         'S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID y S3_SECRET_ACCESS_KEY van juntas o ninguna',
+    });
+  }
+  if (env.MAIL_TRANSACTIONAL_RESERVE >= env.MAIL_DAILY_LIMIT) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['MAIL_TRANSACTIONAL_RESERVE'],
+      message: 'debe ser menor que MAIL_DAILY_LIMIT (si no, los avisos nunca saldrían)',
     });
   }
   if (env.NODE_ENV === 'production') checkProduction(env, ctx);
