@@ -1,5 +1,5 @@
 import TextAlign from '@tiptap/extension-text-align';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useEffect, useId, type ReactNode } from 'react';
 
@@ -77,7 +77,26 @@ export function RichTextEditor({
     }
   }, [editor, value]);
 
-  if (!editor) return null;
+  // Qué está activo donde está el cursor: se recalcula en cada cambio (TipTap 3 no vuelve a pintar el componente solo).
+  const active = useEditorState({
+    editor,
+    selector: ({ editor: current }) =>
+      current
+        ? {
+            bold: current.isActive('bold'),
+            italic: current.isActive('italic'),
+            underline: current.isActive('underline'),
+            heading: current.isActive('heading', { level: 2 }),
+            bulletList: current.isActive('bulletList'),
+            orderedList: current.isActive('orderedList'),
+            blockquote: current.isActive('blockquote'),
+            link: current.isActive('link'),
+            center: current.isActive({ textAlign: 'center' }),
+          }
+        : null,
+  });
+
+  if (!editor || !active) return null;
 
   const button = (text: ReactNode, title: string, active: boolean, run: () => void) => (
     <button
@@ -85,6 +104,8 @@ export function RichTextEditor({
       title={title}
       aria-label={title}
       aria-pressed={active}
+      // Con el ratón, el editor no pierde el foco ni el cursor (lo que se escribe enseguida va al lugar correcto).
+      onMouseDown={(event) => event.preventDefault()}
       onClick={run}
       className={`min-h-9 min-w-9 rounded-token px-2 text-sm font-semibold ${active ? 'bg-primary text-primary-contrast' : 'hover:bg-surface-alt'}`}
     >
@@ -111,36 +132,29 @@ export function RichTextEditor({
         aria-label={`Formato de ${label}`}
         className="flex flex-wrap gap-1 rounded-t-token border border-b-0 border-border bg-surface-alt p-1"
       >
-        {button('B', 'Negrita', editor.isActive('bold'), () =>
-          editor.chain().focus().toggleBold().run(),
-        )}
-        {button('I', 'Cursiva', editor.isActive('italic'), () =>
-          editor.chain().focus().toggleItalic().run(),
-        )}
-        {button('U', 'Subrayado', editor.isActive('underline'), () =>
+        {button('B', 'Negrita', active.bold, () => editor.chain().focus().toggleBold().run())}
+        {button('I', 'Cursiva', active.italic, () => editor.chain().focus().toggleItalic().run())}
+        {button('U', 'Subrayado', active.underline, () =>
           editor.chain().focus().toggleUnderline().run(),
         )}
-        {button('Título', 'Título', editor.isActive('heading', { level: 2 }), () =>
+        {button('Título', 'Título', active.heading, () =>
           editor.chain().focus().toggleHeading({ level: 2 }).run(),
         )}
-        {button('• Lista', 'Lista con viñetas', editor.isActive('bulletList'), () =>
+        {button('• Lista', 'Lista con viñetas', active.bulletList, () =>
           editor.chain().focus().toggleBulletList().run(),
         )}
-        {button('1. Lista', 'Lista numerada', editor.isActive('orderedList'), () =>
+        {button('1. Lista', 'Lista numerada', active.orderedList, () =>
           editor.chain().focus().toggleOrderedList().run(),
         )}
-        {button('“ Cita', 'Cita', editor.isActive('blockquote'), () =>
+        {button('“ Cita', 'Cita', active.blockquote, () =>
           editor.chain().focus().toggleBlockquote().run(),
         )}
-        {button('Enlace', 'Enlace', editor.isActive('link'), setLink)}
+        {button('Enlace', 'Enlace', active.link, setLink)}
         <span aria-hidden="true" className="mx-0.5 my-1.5 w-px bg-border" />
-        {button(
-          <AlignIcon center={false} />,
-          'Alinear a la izquierda',
-          !editor.isActive({ textAlign: 'center' }),
-          () => editor.chain().focus().setTextAlign('left').run(),
+        {button(<AlignIcon center={false} />, 'Alinear a la izquierda', !active.center, () =>
+          editor.chain().focus().setTextAlign('left').run(),
         )}
-        {button(<AlignIcon center />, 'Centrar', editor.isActive({ textAlign: 'center' }), () =>
+        {button(<AlignIcon center />, 'Centrar', active.center, () =>
           editor.chain().focus().setTextAlign('center').run(),
         )}
         {pages ? (
