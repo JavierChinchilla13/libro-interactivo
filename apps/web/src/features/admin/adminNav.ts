@@ -111,6 +111,14 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
         description: 'Lo que escriben desde el formulario de contacto.',
         roles: ADMIN,
       },
+      {
+        id: 'avisos',
+        label: 'Avisos por correo',
+        to: '/admin/avisos',
+        icon: 'send',
+        description: 'Los correos de novedades a las lectoras apuntadas: cómo va cada envío.',
+        roles: ADMIN,
+      },
     ],
   },
   {

@@ -283,6 +283,13 @@ export const routes: RouteObject[] = [
                     ...page(() => import('../features/admin/ops/MessagesPage'), 'MessagesPage'),
                   },
                   {
+                    path: 'avisos',
+                    ...page(
+                      () => import('../features/admin/ops/NotificationsPage'),
+                      'NotificationsPage',
+                    ),
+                  },
+                  {
                     path: 'estadisticas',
                     ...page(() => import('../features/admin/ops/StatsPage'), 'StatsPage'),
                   },

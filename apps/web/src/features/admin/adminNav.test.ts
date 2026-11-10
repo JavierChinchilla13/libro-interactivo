@@ -19,6 +19,7 @@ describe('menú de administración por rol', () => {
     );
     for (const hidden of [
       'Mensajes',
+      'Avisos por correo',
       'Contacto del sitio',
       'Usuarios',
       'Códigos QR',
