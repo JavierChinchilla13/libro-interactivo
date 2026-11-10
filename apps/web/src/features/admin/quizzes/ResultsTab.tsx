@@ -6,6 +6,7 @@ import { MediaField } from '../components/MediaFields';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { StringListEditor } from '../components/StringListEditor';
 import { addResult, removeResult, updateResult, type Draft, type DraftResult } from './draft';
+import { anchorId } from './quizTarget';
 
 /** Pestaña «Resultados»: título, descripción, secuencia de revelado, datos e imagen o video corto. */
 export function ResultsTab({
@@ -36,8 +37,9 @@ export function ResultsTab({
         return (
           <section
             key={stage.id}
+            id={anchorId.stageResults(stage.id)}
             aria-labelledby={`results-${stage.id}`}
-            className="flex flex-col gap-4"
+            className="flex scroll-mt-24 flex-col gap-4"
           >
             <h2 id={`results-${stage.id}`} className="text-lg font-semibold">
               Resultados de «{stage.title?.trim() || stage.id}»
@@ -81,112 +83,114 @@ function ResultEditor({
   const reveal = result.reveal ?? { lines: [] };
 
   return (
-    <Card as="article" className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="font-medium">
-          {result.title || 'Resultado sin título'}{' '}
-          <span className="text-xs font-normal text-muted">({result.key})</span>
-        </h3>
-        <Button variant="ghost" onClick={() => onChange(removeResult(draft, result.key))}>
-          Eliminar
-        </Button>
-      </div>
-      <TextField
-        label="Título"
-        value={result.title}
-        maxLength={160}
-        onChange={(event) => set({ title: event.target.value })}
-      />
-      <RichTextEditor
-        label="Descripción"
-        value={result.description ?? ''}
-        onChange={(html) => set({ description: html })}
-      />
-      <MediaField
-        value={result.media}
-        onChange={(media) => {
-          const { media: _removed, ...rest } = result;
-          onChange({
-            ...draft,
-            results: draft.results.map((current) =>
-              current.key === result.key ? (media ? { ...rest, media } : rest) : current,
-            ),
-          });
-        }}
-      />
-      <SelectField
-        label="Campo de poder"
-        value={result.fieldSlug ?? ''}
-        placeholder="Ninguno"
-        hint="Quien obtiene este resultado ve el fondo animado de ese campo. El fondo animado se elige en la ficha del campo, en la wiki."
-        options={fields.map((field) => ({ value: field.slug, label: field.name }))}
-        onChange={(event) => {
-          const { fieldSlug: _removed, ...rest } = result;
-          onChange({
-            ...draft,
-            results: draft.results.map((current) =>
-              current.key === result.key
-                ? event.target.value
-                  ? { ...rest, fieldSlug: event.target.value }
-                  : rest
-                : current,
-            ),
-          });
-        }}
-      />
-      <StringListEditor
-        label="Líneas propias antes de este resultado"
-        addLabel="Línea"
-        items={reveal.lines}
-        onChange={(lines) => set({ reveal: { ...reveal, lines } })}
-      />
-      <fieldset className="flex flex-col gap-3">
-        <legend className="text-sm font-medium">
-          Datos curiosos del resultado (por ejemplo «Tu cápsula»)
-        </legend>
-        {facts.map((fact, index) => (
-          <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-            <TextField
-              label="Nombre del dato"
-              value={fact.label}
-              maxLength={80}
-              onChange={(event) =>
-                set({
-                  facts: facts.map((f, i) =>
-                    i === index ? { ...f, label: event.target.value } : f,
-                  ),
-                })
-              }
-            />
-            <TextField
-              label="Contenido"
-              value={fact.value}
-              maxLength={500}
-              onChange={(event) =>
-                set({
-                  facts: facts.map((f, i) =>
-                    i === index ? { ...f, value: event.target.value } : f,
-                  ),
-                })
-              }
-            />
-            <Button
-              variant="ghost"
-              aria-label={`Quitar el dato ${index + 1}`}
-              onClick={() => set({ facts: facts.filter((_, i) => i !== index) })}
-            >
-              ✕
-            </Button>
-          </div>
-        ))}
-        <Button
-          variant="secondary"
-          className="self-start"
-          onClick={() => set({ facts: [...facts, { label: '', value: '' }] })}
-        >
-          + Dato
-        </Button>
-      </fieldset>
-    </Card>
+    <div id={anchorId.result(result.key)} className="scroll-mt-24">
+      <Card as="article" className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="font-medium">
+            {result.title || 'Resultado sin título'}{' '}
+            <span className="text-xs font-normal text-muted">({result.key})</span>
+          </h3>
+          <Button variant="ghost" onClick={() => onChange(removeResult(draft, result.key))}>
+            Eliminar
+          </Button>
+        </div>
+        <TextField
+          label="Título"
+          value={result.title}
+          maxLength={160}
+          onChange={(event) => set({ title: event.target.value })}
+        />
+        <RichTextEditor
+          label="Descripción"
+          value={result.description ?? ''}
+          onChange={(html) => set({ description: html })}
+        />
+        <MediaField
+          value={result.media}
+          onChange={(media) => {
+            const { media: _removed, ...rest } = result;
+            onChange({
+              ...draft,
+              results: draft.results.map((current) =>
+                current.key === result.key ? (media ? { ...rest, media } : rest) : current,
+              ),
+            });
+          }}
+        />
+        <SelectField
+          label="Campo de poder"
+          value={result.fieldSlug ?? ''}
+          placeholder="Ninguno"
+          hint="Quien obtiene este resultado ve el fondo animado de ese campo. El fondo animado se elige en la ficha del campo, en la wiki."
+          options={fields.map((field) => ({ value: field.slug, label: field.name }))}
+          onChange={(event) => {
+            const { fieldSlug: _removed, ...rest } = result;
+            onChange({
+              ...draft,
+              results: draft.results.map((current) =>
+                current.key === result.key
+                  ? event.target.value
+                    ? { ...rest, fieldSlug: event.target.value }
+                    : rest
+                  : current,
+              ),
+            });
+          }}
+        />
+        <StringListEditor
+          label="Líneas propias antes de este resultado"
+          addLabel="Línea"
+          items={reveal.lines}
+          onChange={(lines) => set({ reveal: { ...reveal, lines } })}
+        />
+        <fieldset className="flex flex-col gap-3">
+          <legend className="text-sm font-medium">
+            Datos curiosos del resultado (por ejemplo «Tu cápsula»)
+          </legend>
+          {facts.map((fact, index) => (
+            <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+              <TextField
+                label="Nombre del dato"
+                value={fact.label}
+                maxLength={80}
+                onChange={(event) =>
+                  set({
+                    facts: facts.map((f, i) =>
+                      i === index ? { ...f, label: event.target.value } : f,
+                    ),
+                  })
+                }
+              />
+              <TextField
+                label="Contenido"
+                value={fact.value}
+                maxLength={500}
+                onChange={(event) =>
+                  set({
+                    facts: facts.map((f, i) =>
+                      i === index ? { ...f, value: event.target.value } : f,
+                    ),
+                  })
+                }
+              />
+              <Button
+                variant="ghost"
+                aria-label={`Quitar el dato ${index + 1}`}
+                onClick={() => set({ facts: facts.filter((_, i) => i !== index) })}
+              >
+                ✕
+              </Button>
+            </div>
+          ))}
+          <Button
+            variant="secondary"
+            className="self-start"
+            onClick={() => set({ facts: [...facts, { label: '', value: '' }] })}
+          >
+            + Dato
+          </Button>
+        </fieldset>
+      </Card>
+    </div>
   );
 }

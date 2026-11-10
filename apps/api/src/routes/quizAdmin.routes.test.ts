@@ -104,7 +104,143 @@ describe('POST /api/admin/quizzes/:id/validate', () => {
       (await admin.post(`/api/admin/quizzes/${quiz._id.toString()}/validate`).expect(200)).body,
     );
     expect(body.valid).toBe(false);
-    expect(body.errors[0]?.code).toBe('SCHEMA');
+    expect(body.errors[0]).toMatchObject({
+      code: 'QUIZ_STAGES',
+      message: 'Preguntas: el quiz todavía no tiene etapas: agrega la primera',
+      where: { tab: 'etapas' },
+    });
+  });
+
+  describe('los mensajes salen en español, dicen dónde y llevan hasta ahí (nunca crudos de Zod)', () => {
+    /** Revisa el borrador con un cambio y devuelve los errores. */
+    async function errorsWith(set: Record<string, unknown>) {
+      const { admin, book } = await world();
+      const quiz = await createQuiz({ bookId: book._id, order: 1, content: simpleContent() });
+      await Quiz.updateOne({ _id: quiz._id }, { $set: set });
+      const body = quizValidationResponseSchema.parse(
+        (await admin.post(`/api/admin/quizzes/${quiz._id.toString()}/validate`).expect(200)).body,
+      );
+      expect(body.valid).toBe(false);
+      for (const item of body.errors) {
+        // Nada en inglés ni el mensaje del formato de los identificadores.
+        expect(item.message).not.toMatch(/too small|too big|expected|invalid|required|Usa letras/i);
+        expect(item.where).toBeDefined();
+      }
+      return body.errors;
+    }
+
+    it('respuesta sin resultado elegido («Ninguno»)', async () => {
+      const errors = await errorsWith({ 'draft.stages.0.questions.2.answers.1.resultKey': '' });
+      expect(errors).toEqual([
+        {
+          code: 'ANSWER_NO_RESULT',
+          path: 'stages.0.questions.2.answers.1.resultKey',
+          message:
+            'Etapa 1 · Pregunta 3 «[PLACEHOLDER] Pregunta 3» · Respuesta 2 «[PLACEHOLDER] Respuesta 2»: elige a qué resultado suma esta respuesta',
+          where: {
+            tab: 'etapas',
+            label:
+              'Etapa 1 · Pregunta 3 «[PLACEHOLDER] Pregunta 3» · Respuesta 2 «[PLACEHOLDER] Respuesta 2»',
+            stageId: 'etapa-1',
+            questionId: 'etapa-1-p3',
+            answerId: 'etapa-1-p3-b',
+            field: 'resultKey',
+          },
+        },
+      ]);
+    });
+
+    it('menos de 2 resultados en el quiz', async () => {
+      const errors = await errorsWith({
+        'draft.results': [],
+        'draft.stages.0.questions.0.answers.0.resultKey': '',
+        'draft.stages.0.questions.1.answers.0.resultKey': '',
+      });
+      expect(errors.map((item) => item.message)).toContain(
+        'Resultados: este quiz necesita al menos 2 resultados',
+      );
+      // Las respuestas de una etapa sin resultados no se listan una por una: un solo aviso de la etapa.
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          code: 'STAGE_NO_RESULTS',
+          message:
+            'Etapa 1: primero crea los resultados de esta etapa en la pestaña Resultados; después elige a cuál suma cada respuesta',
+          where: expect.objectContaining({ tab: 'resultados', stageId: 'etapa-1' }),
+        }),
+      );
+      expect(errors.filter((item) => item.code === 'ANSWER_NO_RESULT')).toHaveLength(0);
+    });
+
+    it('menos de 2 respuestas en una pregunta', async () => {
+      const content = simpleContent();
+      const answers = content.stages[0]!.questions[3 - 1]!.answers.slice(0, 1);
+      const errors = await errorsWith({ 'draft.stages.0.questions.2.answers': answers });
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          code: 'QUESTION_ANSWERS',
+          message:
+            'Etapa 1 · Pregunta 3 «[PLACEHOLDER] Pregunta 3»: necesita al menos 2 respuestas',
+          where: expect.objectContaining({ questionId: 'etapa-1-p3' }),
+        }),
+      );
+    });
+
+    it('pregunta sin texto', async () => {
+      const errors = await errorsWith({ 'draft.stages.0.questions.1.text': '' });
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          code: 'QUESTION_TEXT',
+          message: 'Etapa 1 · Pregunta 2: escribe el texto de la pregunta',
+          where: expect.objectContaining({ questionId: 'etapa-1-p2', field: 'text' }),
+        }),
+      );
+    });
+
+    it('etapa sin preguntas', async () => {
+      const errors = await errorsWith({ 'draft.stages.0.questions': [] });
+      expect(errors).toContainEqual(
+        expect.objectContaining({
+          code: 'STAGE_QUESTIONS',
+          message: 'Etapa 1: esta etapa todavía no tiene preguntas: agrega al menos una',
+          where: expect.objectContaining({ tab: 'etapas', stageId: 'etapa-1' }),
+        }),
+      );
+    });
+
+    it('un resultado sin título y el nombre del quiz vacío', async () => {
+      const errors = await errorsWith({ 'draft.results.1.title': '', title: '' });
+      expect(errors.map((item) => item.message)).toEqual(
+        expect.arrayContaining([
+          'Datos del quiz: escribe el nombre del quiz',
+          'Etapa 1 · Resultado 2: escribe el título del resultado',
+        ]),
+      );
+    });
+
+    it('la validación propia también ubica: un resultado al que nadie suma es una sugerencia con enlace', async () => {
+      const { admin, book } = await world();
+      const quiz = await createQuiz({ bookId: book._id, order: 1, content: simpleContent() });
+      await Quiz.updateOne(
+        { _id: quiz._id },
+        {
+          $set: {
+            'draft.stages.0.questions.0.answers.2.resultKey': 'r1',
+            'draft.stages.0.questions.1.answers.2.resultKey': 'r1',
+            'draft.stages.0.questions.2.answers.2.resultKey': 'r1',
+          },
+        },
+      );
+      const body = quizValidationResponseSchema.parse(
+        (await admin.post(`/api/admin/quizzes/${quiz._id.toString()}/validate`).expect(200)).body,
+      );
+      expect(body.warnings).toContainEqual(
+        expect.objectContaining({
+          code: 'RESULT_UNREACHABLE',
+          message: expect.stringMatching(/^Etapa 1 · Resultado 3 «.+»: ninguna respuesta suma/),
+          where: expect.objectContaining({ tab: 'resultados', resultKey: 'r3' }),
+        }),
+      );
+    });
   });
 });
 

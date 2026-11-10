@@ -257,12 +257,27 @@ describe('editor de quizzes', () => {
   it('la vista previa exige haber publicado al menos una vez', async () => {
     mockApi({ [`GET ${url}`]: () => json(detail()) }, { session: ADMIN });
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    // Con «reducir movimiento», sin desplazamiento suave.
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
     await userEvent.click(await screen.findByRole('button', { name: 'Vista previa' }));
     expect(
       await screen.findByText(
         'Todavía no hay nada publicado que probar. Publica el quiz una vez y vuelve.',
       ),
     ).toBeInTheDocument();
+    // El botón está abajo y el aviso arriba: la vista va al aviso y el foco queda en él.
+    const area = screen.getByRole('region', { name: 'Vista previa como lectora' });
+    await waitFor(() => expect(area).toHaveFocus());
+    expect(scroll).toHaveBeenCalledWith({ behavior: 'auto', block: 'start' });
+    // @ts-expect-error: se quita el simulado (jsdom no lo trae).
+    delete Element.prototype.scrollIntoView;
   });
 
   it('un quiz archivado no se puede editar ni publicar', async () => {
@@ -377,5 +392,133 @@ describe('editor de quizzes', () => {
     );
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
     expect(await screen.findByText('Quiz no encontrado')).toBeInTheDocument();
+  });
+});
+
+describe('revisión con enlaces a cada problema', () => {
+  const url = `/api/admin/quizzes/${QUIZ_ID}`;
+  const question = (stage: string, n: number) => ({
+    id: `${stage}-p${n}`,
+    text: `Pregunta ${n} de ${stage}`,
+    answers: [
+      { id: `${stage}-p${n}-a`, text: 'Sí', resultKey: stage === 's1' ? 'r1' : '' },
+      { id: `${stage}-p${n}-b`, text: 'No', resultKey: '' },
+    ],
+  });
+  const stage = (id: string, order: number, questions: number) => ({
+    id,
+    order,
+    shuffleQuestions: true,
+    shuffleAnswers: true,
+    producesFinal: true,
+    questions: Array.from({ length: questions }, (_, i) => question(id, i + 1)),
+  });
+  const withStages = () =>
+    detail({
+      draft: draft({
+        stages: [stage('s1', 1, 4), stage('s2', 2, 1)],
+        results: [
+          { key: 'r1', stageId: 's1', title: 'Fuego' },
+          { key: 'r2', stageId: 's1', title: 'Agua' },
+        ],
+      }),
+    });
+  const answerIssue = {
+    code: 'ANSWER_NO_RESULT',
+    message:
+      'Etapa 1 · Pregunta 4 «Pregunta 4 de s1» · Respuesta 2 «No»: elige a qué resultado suma esta respuesta',
+    where: {
+      tab: 'etapas',
+      label: 'Etapa 1 · Pregunta 4 «Pregunta 4 de s1» · Respuesta 2 «No»',
+      stageId: 's1',
+      questionId: 's1-p4',
+      answerId: 's1-p4-b',
+      field: 'resultKey',
+    },
+  };
+
+  it('cada problema es un enlace: abre la pestaña, despliega la pregunta y enfoca el selector', async () => {
+    mockApi(
+      {
+        [`GET ${url}`]: () => json(withStages()),
+        [`POST ${url}/validate`]: () =>
+          json({
+            valid: false,
+            errors: [answerIssue],
+            warnings: [
+              {
+                code: 'RESULT_UNREACHABLE',
+                message: 'Etapa 1 · Resultado 2 «Agua»: ninguna respuesta suma a este resultado',
+                where: {
+                  tab: 'resultados',
+                  label: 'Etapa 1 · Resultado 2 «Agua»',
+                  resultKey: 'r2',
+                },
+              },
+            ],
+          }),
+      },
+      { session: ADMIN },
+    );
+    renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    await userEvent.click(await screen.findByRole('button', { name: 'Revisar' }));
+    await userEvent.click(await screen.findByRole('button', { name: answerIssue.message }));
+
+    expect(screen.getByRole('tab', { name: 'Preguntas' })).toHaveAttribute('aria-selected', 'true');
+    // Con 4 preguntas se ven plegadas; la del problema se abre y su selector queda enfocado.
+    const row = await waitFor(() => {
+      const found = document.getElementById('quiz-a-s1-p4-s1-p4-b');
+      expect(found).not.toBeNull();
+      return found as HTMLElement;
+    });
+    await waitFor(() =>
+      expect(
+        within(row).getByRole('combobox', { name: 'Resultado al que suma esta respuesta' }),
+      ).toHaveFocus(),
+    );
+
+    // La sugerencia lleva a la pestaña Resultados, al resultado.
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Etapa 1 · Resultado 2 «Agua»: ninguna respuesta suma a este resultado',
+      }),
+    );
+    expect(screen.getByRole('tab', { name: 'Resultados' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await waitFor(() =>
+      expect(
+        within(document.getElementById('quiz-r-r2') as HTMLElement).getByRole('textbox', {
+          name: /^Título/,
+        }),
+      ).toHaveFocus(),
+    );
+  });
+
+  it('una etapa sin resultados explica qué hacer en lugar del selector «Ninguno» y lleva a Resultados', async () => {
+    mockApi({ [`GET ${url}`]: () => json(withStages()) }, { session: ADMIN });
+    renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    await userEvent.click(await screen.findByRole('tab', { name: 'Preguntas' }));
+    await userEvent.click(screen.getByRole('button', { name: /^s2/ }));
+    expect(
+      await screen.findByText(/Primero crea los resultados de esta etapa en la pestaña Resultados/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('combobox', { name: 'Resultado al que suma esta respuesta' }),
+    ).toBeNull();
+    const links = screen.getAllByRole('button', { name: 'Ir a Resultados' });
+    await userEvent.click(links.at(-1)!);
+    expect(screen.getByRole('tab', { name: 'Resultados' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await waitFor(() =>
+      expect(
+        within(document.getElementById('quiz-results-s2') as HTMLElement).getByRole('button', {
+          name: '+ Resultado en esta etapa',
+        }),
+      ).toHaveFocus(),
+    );
   });
 });
