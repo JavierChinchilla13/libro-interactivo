@@ -71,6 +71,62 @@ describe('ResendMailProvider', () => {
       MailDeliveryError,
     );
   });
+
+  it('un lote va a /emails/batch, un correo por destinataria, con su remitente, sus cabeceras y la clave de idempotencia', async () => {
+    const fetchImpl = vi.fn(async () => new Response('{"data":[]}', { status: 200 }));
+    const headers = {
+      'List-Unsubscribe': '<https://sitio/api/newsletter/unsubscribe?t=x>',
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    };
+    await make(fetchImpl as unknown as typeof fetch).sendBatch(
+      [
+        { ...MESSAGE, from: 'Novedades <novedades@ejemplo.com>', headers },
+        { ...MESSAGE, to: 'otra@ejemplo.com', headers },
+      ],
+      { idempotencyKey: 'aviso-1:lote-1' },
+    );
+    const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe('https://api.resend.com/emails/batch');
+    expect((init.headers as Record<string, string>)['Idempotency-Key']).toBe('aviso-1:lote-1');
+    const body = JSON.parse(init.body as string) as Array<Record<string, unknown>>;
+    expect(body).toHaveLength(2);
+    expect(body[0]).toMatchObject({
+      from: 'Novedades <novedades@ejemplo.com>',
+      to: ['lectora@ejemplo.com'],
+      headers,
+    });
+    // Sin remitente propio se usa el del proveedor; nunca dos destinatarias en el mismo correo.
+    expect(body[1]).toMatchObject({ from: 'Libro <avisos@ejemplo.com>', to: ['otra@ejemplo.com'] });
+  });
+
+  it('distingue el cupo del día, el del mes, el límite de velocidad (con retry-after) y la red', async () => {
+    const fail = async (status: number, text: string, headers: Record<string, string> = {}) =>
+      (await make(
+        vi.fn(async () => new Response(text, { status, headers })) as unknown as typeof fetch,
+      )
+        .sendBatch([MESSAGE])
+        .catch((e: unknown) => e)) as MailDeliveryError;
+    expect((await fail(429, '{"name":"daily_quota_exceeded"}')).reason).toBe('daily_quota');
+    expect((await fail(429, '{"name":"monthly_quota_exceeded"}')).reason).toBe('monthly_quota');
+    const rate = await fail(429, '{"name":"rate_limit_exceeded"}', { 'retry-after': '2' });
+    expect(rate.reason).toBe('rate_limit');
+    expect(rate.retryAfterSeconds).toBe(2);
+    expect((await fail(422, '{"name":"validation_error"}')).reason).toBeUndefined();
+    const network = (await make(
+      vi.fn(async () => {
+        throw new TypeError('fetch failed');
+      }) as unknown as typeof fetch,
+    )
+      .sendBatch([MESSAGE])
+      .catch((e: unknown) => e)) as MailDeliveryError;
+    expect(network.reason).toBe('network');
+  });
+
+  it('un lote vacío no llama al servicio', async () => {
+    const fetchImpl = vi.fn(async () => new Response('{}', { status: 200 }));
+    await make(fetchImpl as unknown as typeof fetch).sendBatch([]);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
 });
 
 describe('SmtpMailProvider / Gmail', () => {
