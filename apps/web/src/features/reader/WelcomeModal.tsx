@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { Button } from '../../shared/ui/controls';
 import { readerApi, readerKeys } from './api';
 import { WelcomeContent } from './WelcomeContent';
 
@@ -44,11 +43,7 @@ export function WelcomeModal() {
           title={welcome.data.title}
           bodyHtml={welcome.data.bodyHtml}
           titleId="welcome-title"
-          actions={
-            <Button autoFocus className="w-full" onClick={() => seen.mutate()}>
-              ¡A la aventura!
-            </Button>
-          }
+          onDone={() => seen.mutate()}
         />
       </div>
     </div>
