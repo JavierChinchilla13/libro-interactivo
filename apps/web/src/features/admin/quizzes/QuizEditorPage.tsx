@@ -87,6 +87,19 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   const savedRef = useRef(snapshot(quiz.draft));
   const [notice, setNotice] = useState<{ tone: 'success' | 'warning'; text: string } | null>(null);
   const [previewing, setPreviewing] = useState(false);
+  // Cada clic en «Vista previa» lleva la vista al panel (o al aviso): el botón está abajo y el panel, arriba.
+  const [reveal, setReveal] = useState(0);
+  const previewArea = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (reveal === 0) return;
+    const area = previewArea.current;
+    if (!area) return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    // jsdom (pruebas) no implementa el desplazamiento.
+    if (typeof area.scrollIntoView === 'function')
+      area.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    area.focus({ preventScroll: true });
+  }, [reveal]);
   const [meta, setMeta] = useState({ slug: quiz.slug, order: String(quiz.order) });
 
   const current = useMemo(() => snapshot(draft), [draft]);
@@ -178,6 +191,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
         tone: 'warning',
         text: 'Todavía no hay nada publicado que probar. Publica el quiz una vez y vuelve.',
       });
+      setReveal((count) => count + 1);
       return;
     }
     if (dirty) {
@@ -187,6 +201,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
       });
     }
     setPreviewing(true);
+    setReveal((count) => count + 1);
   }
 
   const archived = quiz.status === 'archived';
@@ -232,11 +247,6 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           </Alert>
         </div>
       ) : null}
-      {notice ? (
-        <div className="mb-4">
-          <Alert tone={notice.tone}>{notice.text}</Alert>
-        </div>
-      ) : null}
       {report && stale ? (
         <div className="mb-4">
           <Alert tone="warning" title="Vuelve a revisar">
@@ -245,7 +255,24 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
         </div>
       ) : null}
       {report && !stale ? <ValidationReport report={report} /> : null}
-      {previewing ? <PreviewPanel quizId={quizId} onClose={() => setPreviewing(false)} /> : null}
+      {notice || previewing ? (
+        <div
+          ref={previewArea}
+          tabIndex={-1}
+          role="region"
+          aria-label="Vista previa como lectora"
+          className="scroll-mt-24 focus:outline-none"
+        >
+          {notice ? (
+            <div className="mb-4">
+              <Alert tone={notice.tone}>{notice.text}</Alert>
+            </div>
+          ) : null}
+          {previewing ? (
+            <PreviewPanel quizId={quizId} onClose={() => setPreviewing(false)} />
+          ) : null}
+        </div>
+      ) : null}
 
       <Tabs
         label="Secciones del quiz"

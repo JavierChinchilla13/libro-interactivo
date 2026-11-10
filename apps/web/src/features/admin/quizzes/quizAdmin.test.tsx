@@ -257,12 +257,27 @@ describe('editor de quizzes', () => {
   it('la vista previa exige haber publicado al menos una vez', async () => {
     mockApi({ [`GET ${url}`]: () => json(detail()) }, { session: ADMIN });
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    // Con «reducir movimiento», sin desplazamiento suave.
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
     await userEvent.click(await screen.findByRole('button', { name: 'Vista previa' }));
     expect(
       await screen.findByText(
         'Todavía no hay nada publicado que probar. Publica el quiz una vez y vuelve.',
       ),
     ).toBeInTheDocument();
+    // El botón está abajo y el aviso arriba: la vista va al aviso y el foco queda en él.
+    const area = screen.getByRole('region', { name: 'Vista previa como lectora' });
+    await waitFor(() => expect(area).toHaveFocus());
+    expect(scroll).toHaveBeenCalledWith({ behavior: 'auto', block: 'start' });
+    // @ts-expect-error: se quita el simulado (jsdom no lo trae).
+    delete Element.prototype.scrollIntoView;
   });
 
   it('un quiz archivado no se puede editar ni publicar', async () => {
