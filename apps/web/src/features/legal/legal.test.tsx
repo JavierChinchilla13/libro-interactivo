@@ -28,7 +28,7 @@ describe('páginas legales', () => {
       expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
       expect(screen.getByText('Borrador pendiente de revisión legal')).toBeInTheDocument();
       expect(screen.getByText(new RegExp(LEGAL_VERSION))).toBeInTheDocument();
-      expect(screen.getByText('3 de noviembre de 2026')).toBeInTheDocument();
+      expect(screen.getByText('9 de noviembre de 2026')).toBeInTheDocument();
       // Los datos que ya no se publican no aparecen.
       expect(document.body.textContent).not.toMatch(/identificación|domicilio/i);
     },
@@ -64,10 +64,21 @@ describe('páginas legales', () => {
     ]) {
       expect(terms).toContain(name);
     }
-    expect(screen.getByRole('link', { name: /Panel › Cuenta/ })).toHaveAttribute(
-      'href',
-      '/panel/cuenta',
-    );
+    // Se cita al borrar la cuenta y al darse de baja de las novedades: siempre lleva a la cuenta.
+    const links = screen.getAllByRole('link', { name: /Panel › Cuenta/ });
+    expect(links).toHaveLength(2);
+    for (const link of links) expect(link).toHaveAttribute('href', '/panel/cuenta');
+  });
+
+  it('explica los correos de novedades: opcionales, consentimiento aparte, baja y sin seguimiento', async () => {
+    renderAt('/privacidad');
+    await screen.findByRole('heading', { level: 1, name: 'Política de privacidad' });
+    const text = document.getElementById('novedades')?.textContent ?? '';
+    expect(text).toMatch(/^\d+\.Correos de novedades \(solo si te apuntas\)/);
+    expect(text).toMatch(/consentimiento/);
+    expect(text).toMatch(/Darme de baja/);
+    expect(text).toMatch(/no medimos si abres los correos/);
+    expect(text).toMatch(/rebota/);
   });
 
   it('solo quedan marcados los datos y propuestas que siguen abiertos', async () => {

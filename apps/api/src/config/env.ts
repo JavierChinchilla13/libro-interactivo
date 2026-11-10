@@ -103,6 +103,29 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((value) => value === 'true'),
+  /**
+   * Firma los enlaces de baja de los correos de novedades (token = id + HMAC). ≥ 32 caracteres y distinta de las demás.
+   * Si se cambia, los enlaces de los correos ya enviados dejan de servir (la baja sigue disponible en la cuenta).
+   */
+  UNSUBSCRIBE_SECRET: z.string().min(32, 'debe tener al menos 32 caracteres'),
+  /**
+   * Secreto del webhook de Resend (`whsec_…`), para dar de baja sola una dirección que rebota o marca un correo como
+   * spam. Sin él, `POST /api/webhooks/resend` responde 404.
+   */
+  RESEND_WEBHOOK_SECRET: z
+    .string()
+    .regex(/^whsec_[A-Za-z0-9+/=]{16,}$/, 'debe ser el secreto del webhook de Resend (whsec_…)')
+    .optional(),
+  /**
+   * Remitente de los correos de novedades (p. ej. `Universo Memorias <novedades@midominio.com>`, del mismo dominio
+   * verificado). Sin él se usa `MAIL_FROM`. Los transaccionales siempre salen con `MAIL_FROM`.
+   */
+  MAIL_FROM_NEWS: z.string().min(3).optional(),
+  /** Cupo de correos del proveedor (por defecto, el plan gratuito de Resend: 100 al día y 3.000 al mes, día UTC). */
+  MAIL_DAILY_LIMIT: z.coerce.number().int().min(1).max(1_000_000).default(100),
+  MAIL_MONTHLY_LIMIT: z.coerce.number().int().min(1).max(10_000_000).default(3000),
+  /** Correos al día que los avisos nunca usan: quedan para los transaccionales (recuperar contraseña, contacto…). */
+  MAIL_TRANSACTIONAL_RESERVE: z.coerce.number().int().min(0).max(100_000).default(20),
   /** Correo de la autora donde llegan los mensajes de contacto (hasta que se configure en el panel). */
   CONTACT_RECIPIENT_EMAIL: z.email('debe ser un correo válido').optional(),
 });
@@ -122,7 +145,7 @@ function checkProduction(env: z.infer<typeof envSchema>, ctx: z.core.$Refinement
       'es obligatoria en producción (sin ella el sitio no sabe de dónde cargar las imágenes y se rechazaría todo el contenido)',
     );
   }
-  for (const name of ['JWT_ACCESS_SECRET', 'ACCESS_TOKEN_SECRET'] as const) {
+  for (const name of ['JWT_ACCESS_SECRET', 'ACCESS_TOKEN_SECRET', 'UNSUBSCRIBE_SECRET'] as const) {
     if (weakSecret(env[name])) {
       fail(name, 'en producción debe ser aleatoria (no la de desarrollo ni caracteres repetidos)');
     }
@@ -175,6 +198,16 @@ const envSchemaChecked = envSchema.superRefine((env, ctx) => {
         'debe ser distinta de JWT_ACCESS_SECRET (son secretos con usos y respaldos diferentes)',
     });
   }
+  if (
+    env.UNSUBSCRIBE_SECRET === env.JWT_ACCESS_SECRET ||
+    env.UNSUBSCRIBE_SECRET === env.ACCESS_TOKEN_SECRET
+  ) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['UNSUBSCRIBE_SECRET'],
+      message: 'debe ser distinta de JWT_ACCESS_SECRET y de ACCESS_TOKEN_SECRET',
+    });
+  }
   const s3 = [env.S3_ENDPOINT, env.S3_BUCKET, env.S3_ACCESS_KEY_ID, env.S3_SECRET_ACCESS_KEY];
   if (s3.some((value) => value !== undefined) && s3.some((value) => value === undefined)) {
     ctx.addIssue({
@@ -182,6 +215,13 @@ const envSchemaChecked = envSchema.superRefine((env, ctx) => {
       path: ['S3_ENDPOINT'],
       message:
         'S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID y S3_SECRET_ACCESS_KEY van juntas o ninguna',
+    });
+  }
+  if (env.MAIL_TRANSACTIONAL_RESERVE >= env.MAIL_DAILY_LIMIT) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['MAIL_TRANSACTIONAL_RESERVE'],
+      message: 'debe ser menor que MAIL_DAILY_LIMIT (si no, los avisos nunca saldrían)',
     });
   }
   if (env.NODE_ENV === 'production') checkProduction(env, ctx);
@@ -213,6 +253,7 @@ const DEV_DEFAULTS: Record<string, string> = {
   APP_URL: 'http://localhost:5173',
   MAIL_PROVIDER: 'memory',
   ACCESS_TOKEN_SECRET: 'solo-para-desarrollo-token-de-qr-no-usar-en-produccion-9876',
+  UNSUBSCRIBE_SECRET: 'solo-para-desarrollo-enlaces-de-baja-no-usar-en-produccion-5432',
 };
 
 export class EnvError extends Error {

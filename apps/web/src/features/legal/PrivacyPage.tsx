@@ -82,6 +82,13 @@ const SECTIONS: LegalSectionDef[] = [
             poder responderte.
           </li>
           <li>
+            <strong>Si te apuntas a los correos de novedades (opcional):</strong> que te apuntaste,
+            cuándo, desde dónde lo hiciste (al crear la cuenta o en tu cuenta) y la versión de esta
+            política; y, si te das de baja, cuándo y cómo. Mientras confirmas tu correo, guardamos
+            solo la huella cifrada del enlace de confirmación. De cada aviso enviado guardamos a qué
+            cuenta se le envió y cuándo, sin copiar tu correo.
+          </li>
+          <li>
             <strong>De tus sesiones (automático):</strong> una huella cifrada de tu dirección IP (no
             la IP en claro) y el nombre de tu navegador, para mantener y cerrar tus sesiones.
           </li>
@@ -149,6 +156,10 @@ const SECTIONS: LegalSectionDef[] = [
             Enviarte los correos que el servicio necesita (recuperar la contraseña, avisos de
             seguridad).
           </li>
+          <li>
+            Si te apuntas, enviarte un correo cuando haya novedades (ver «Correos de novedades»,
+            abajo).
+          </li>
           <li>Responder los mensajes que nos escribes.</li>
           <li>Proteger el sitio de abusos (límites de intentos).</li>
           <li>Contar, sin nombre, cuántas personas completan cada quiz (estadísticas).</li>
@@ -157,6 +168,48 @@ const SECTIONS: LegalSectionDef[] = [
           No usamos tus datos para publicidad ni para crear perfiles, y{' '}
           <strong>no los vendemos</strong>.
         </p>
+      </>
+    ),
+  },
+  {
+    id: 'novedades',
+    title: 'Correos de novedades (solo si te apuntas)',
+    body: (
+      <>
+        <p>
+          Son opcionales y aparte de tu cuenta: puedes tener cuenta sin recibirlos. Solo pueden
+          apuntarse personas de {ADULT_AGE} años o más, al crear la cuenta o desde{' '}
+          <Link className={link} to="/panel/cuenta">
+            Panel › Cuenta
+          </Link>
+          . Si tu correo aún no está confirmado, te enviamos un enlace para confirmarlo; sin esa
+          confirmación no te llega ningún aviso (el enlace vence a los 7 días).
+        </p>
+        <ul className={list}>
+          <li>
+            <strong>Qué te enviamos:</strong> un correo cuando la autora publica una actualización o
+            un capítulo extra y decide avisar. Los de capítulos extra solo llegan si ya terminaste
+            ese libro, y no dicen nada de su contenido. No enviamos publicidad de terceros.
+          </li>
+          <li>
+            <strong>Base legal:</strong> tu consentimiento, que das al marcar la casilla y que es
+            independiente del que diste para crear la cuenta.
+          </li>
+          <li>
+            <strong>Cómo darte de baja:</strong> con el enlace «Darme de baja» que trae cada correo,
+            con el botón de baja de tu programa de correo o desmarcando la casilla en Panel ›
+            Cuenta. Es inmediato y no borra tu cuenta.
+          </li>
+          <li>
+            <strong>Sin seguimiento:</strong> no medimos si abres los correos ni en qué enlaces
+            haces clic (sin píxeles ni enlaces de rastreo).
+          </li>
+          <li>
+            <strong>Bajas automáticas:</strong> si un correo rebota porque la dirección no existe, o
+            si lo marcas como spam, el servicio de correo nos avisa y esa dirección deja de
+            recibirlos.
+          </li>
+        </ul>
       </>
     ),
   },
@@ -200,6 +253,12 @@ const SECTIONS: LegalSectionDef[] = [
           <li>
             <strong>Quizzes y partidas sin terminar:</strong> se borran solos a los 7 días (quizzes)
             y a los 30 días (juego).
+          </li>
+          <li>
+            <strong>Correos de novedades:</strong> la fecha y la versión de tu alta y de tu baja se
+            guardan mientras la cuenta exista, para poder demostrar que diste tu consentimiento (y
+            que lo retiraste). El registro de a quién se envió cada aviso se borra solo 90 días
+            después de terminar el envío. Si borras tu cuenta, se borra todo en el momento.
           </li>
           <li>
             <strong>Mensajes de contacto guardados:</strong> 365 días; pasado ese plazo el sitio los

@@ -79,7 +79,7 @@ test.describe('titular de los textos legales', () => {
       await view.goto(path);
       await expect(view.getByText(owner).first()).toBeVisible();
       await expect(view.getByText('[PLACEHOLDER: nombre legal de la titular]')).toHaveCount(0);
-      await expect(view.getByText(/Vigente\s+desde el/)).toContainText('3 de noviembre de 2026');
+      await expect(view.getByText(/Vigente\s+desde el/)).toContainText('9 de noviembre de 2026');
     }
     await visitor.close();
 

@@ -1,6 +1,7 @@
 import {
   AGE_RESTRICTED_MESSAGE,
   LEGAL_VERSION,
+  NEWSLETTER_MINOR_MESSAGE,
   ageBand,
   checkBirth,
   expectedDeclaration,
@@ -47,6 +48,10 @@ export function evaluateConsent(
   }
   if (consent.ageDeclaration !== expectedDeclaration(band)) {
     throw new AppError('VALIDATION', 'La casilla de edad no coincide con tu fecha de nacimiento.');
+  }
+  // Los correos de novedades son solo para mayores de 18: se rechaza antes de crear nada.
+  if (consent.newsletter === true && band !== 'adult') {
+    throw new AppError('VALIDATION', NEWSLETTER_MINOR_MESSAGE);
   }
   return {
     birthYear: consent.birth.year,

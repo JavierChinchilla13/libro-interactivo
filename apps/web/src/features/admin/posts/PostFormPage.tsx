@@ -19,7 +19,8 @@ import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
 import { useFormGuard } from '../components/useFormGuard';
-import { booksApi, keys, postsApi } from '../api';
+import { booksApi, keys, notificationsApi, postsApi } from '../api';
+import { NotifyByEmail } from '../components/NotifyByEmail';
 import { SkeletonRows } from '../components/Skeleton';
 import { ImageField } from '../components/MediaFields';
 import { errorMessage, fieldErrors, slugify } from '../errors';
@@ -32,6 +33,7 @@ import {
   type PostForm,
 } from './postForm';
 import { templateFields } from './TemplateFields';
+import { localToIso } from '../../../shared/lib/dates';
 
 /** Paso 1: elegir plantilla (cada tarjeta dice para qué sirve). */
 function TemplatePicker({
@@ -64,6 +66,12 @@ function TemplatePicker({
       ) : null}
     </FormSection>
   );
+}
+
+/** La fecha de publicación del formulario, si es válida (para avisar que una programada sale después). */
+function scheduledFor(local: string): Date | undefined {
+  const iso = localToIso(local);
+  return iso ? new Date(iso) : undefined;
 }
 
 /** Carga la actualización (o pide la plantilla) y entrega el formulario con su valor inicial. */
@@ -108,15 +116,19 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
   const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [changing, setChanging] = useState(false);
+  const [notify, setNotify] = useState(false);
   const books = useQuery({ queryKey: keys.books, queryFn: booksApi.list });
 
   const save = useMutation({
     mutationFn: (payload: PostInputPayload) =>
       editing ? postsApi.replace(postId, payload) : postsApi.create(payload),
-    onSuccess: async (result) => {
+    onSuccess: async (result, payload) => {
       await client.invalidateQueries({ queryKey: keys.posts });
       guard.markSaved(submitted.current);
-      toast.success('Guardado');
+      // El aviso se pide después de guardar y solo si quedó publicada (el servidor lo vuelve a comprobar).
+      const notice =
+        notify && payload.status === 'published' ? await requestNotice(result.id) : null;
+      toast.success(notice ?? 'Guardado');
       if (!editing) {
         guard.allowLeave();
         void navigate(`/admin/actualizaciones/${result.id}`, {
@@ -126,6 +138,21 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
       }
     },
   });
+
+  async function requestNotice(refId: string): Promise<string | null> {
+    try {
+      const { job, created } = await notificationsApi.create({ kind: 'post', refId });
+      setNotify(false);
+      return created
+        ? `Guardado. Aviso por correo en cola para ${job.totals.recipients} ${job.totals.recipients === 1 ? 'lectora' : 'lectoras'}.`
+        : 'Guardado. Esta actualización ya se había avisado por correo.';
+    } catch (error) {
+      toast.error(`Se guardó, pero no se pudo pedir el aviso por correo: ${errorMessage(error)}`);
+      return null;
+    } finally {
+      await client.invalidateQueries({ queryKey: keys.notifications });
+    }
+  }
 
   const set = <K extends keyof PostForm>(key: K, value: PostForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -295,6 +322,15 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
               onChange={(value) => set('thumbnail', value)}
             />
           </FormSection>
+
+          <NotifyByEmail
+            kind="post"
+            refId={postId}
+            published={form.status === 'published'}
+            scheduledFor={scheduledFor(form.publishedAt)}
+            checked={notify}
+            onChange={setNotify}
+          />
 
           <FormSection title="Vista previa">
             <p className="text-sm text-muted">

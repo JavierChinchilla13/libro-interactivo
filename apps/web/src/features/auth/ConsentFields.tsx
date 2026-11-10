@@ -2,6 +2,7 @@ import {
   ADULT_AGE,
   AGE_RESTRICTED_MESSAGE,
   MIN_ACCOUNT_AGE,
+  NEWSLETTER_LABEL,
   ageBand,
   checkBirth,
   type Consent,
@@ -19,6 +20,8 @@ export interface ConsentValues {
   ageCheck: boolean;
   acceptTerms: boolean;
   acceptPrivacy: boolean;
+  /** Correos de novedades: casilla aparte, desmarcada y solo para mayores de 18. */
+  newsletter: boolean;
 }
 
 export const EMPTY_CONSENT: ConsentValues = {
@@ -27,6 +30,7 @@ export const EMPTY_CONSENT: ConsentValues = {
   ageCheck: false,
   acceptTerms: false,
   acceptPrivacy: false,
+  newsletter: false,
 };
 
 export type ConsentErrors = Partial<
@@ -107,6 +111,8 @@ export function resolveConsent(
       ageDeclaration: state.kind === 'minor' ? 'minor_with_guardian' : 'adult',
       acceptTerms: true,
       acceptPrivacy: true,
+      // Solo si es mayor de edad y la marcó (a una menor ni se le muestra; el servidor, además, lo rechaza).
+      ...(state.kind === 'adult' && values.newsletter ? { newsletter: true } : {}),
     },
   };
 }
@@ -196,7 +202,9 @@ export function ConsentFields({
             placeholder="Mes"
             options={MONTH_OPTIONS}
             value={values.month}
-            onChange={(event) => set({ month: event.target.value, ageCheck: false })}
+            onChange={(event) =>
+              set({ month: event.target.value, ageCheck: false, newsletter: false })
+            }
           />
           <SelectField
             label="Año"
@@ -204,7 +212,9 @@ export function ConsentFields({
             placeholder="Año"
             options={yearOptions(now)}
             value={values.year}
-            onChange={(event) => set({ year: event.target.value, ageCheck: false })}
+            onChange={(event) =>
+              set({ year: event.target.value, ageCheck: false, newsletter: false })
+            }
           />
         </div>
         <p className="text-xs text-muted">Solo guardamos el mes y el año, no el día.</p>
@@ -247,6 +257,15 @@ export function ConsentFields({
             en otros países, según la <LegalLink to="/privacidad">política de privacidad</LegalLink>
             .
           </Check>
+          {state.kind === 'adult' ? (
+            <Check checked={values.newsletter} onChange={(newsletter) => set({ newsletter })}>
+              {NEWSLETTER_LABEL}{' '}
+              <span className="text-muted">
+                (opcional; puedes darte de baja cuando quieras desde tu cuenta o desde cualquier
+                correo).
+              </span>
+            </Check>
+          ) : null}
           <p className="text-xs text-muted">
             Los textos legales son un borrador pendiente de revisión legal. Lo que marcas es una
             declaración tuya: no verificamos tu edad.

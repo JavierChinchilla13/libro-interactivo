@@ -39,6 +39,12 @@ export const consentSchema = z.object({
   ageDeclaration: ageDeclarationSchema,
   acceptTerms: z.literal(true, { error: 'Debes aceptar los términos de uso' }),
   acceptPrivacy: z.literal(true, { error: 'Debes autorizar el tratamiento de tus datos' }),
+  /**
+   * Casilla aparte y desmarcada: quiere recibir correos con novedades de la autora. Opcional; solo mayores de 18 (el API
+   * rechaza la petición si la marca alguien menor). Quien no tiene el correo comprobado recibe primero un enlace de
+   * confirmación.
+   */
+  newsletter: z.boolean().optional(),
 });
 export type Consent = z.infer<typeof consentSchema>;
 

@@ -46,6 +46,8 @@ services:
         sync: false
       - key: ACCESS_TOKEN_SECRET
         sync: false
+      - key: UNSUBSCRIBE_SECRET # firma los enlaces de baja de los correos de novedades
+        sync: false
       # Correo (Resend por API HTTP: el plan gratuito de Render bloquea SMTP)
       - key: MAIL_PROVIDER # resend
         sync: false
@@ -53,6 +55,12 @@ services:
         sync: false
       - key: RESEND_API_KEY
         sync: false
+      - key: RESEND_WEBHOOK_SECRET # opcional: webhook de Resend (rebotes y quejas dan de baja de las novedades)
+        sync: false
+      - key: MAIL_FROM_NEWS # remitente de los avisos de novedades (novedades@ del mismo dominio)
+        sync: false
+      # Cupo del plan de Resend (por defecto, el gratuito): 100 al día, 3.000 al mes y 20 de reserva para los transaccionales.
+      # Solo hace falta definirlos si se cambia de plan: MAIL_DAILY_LIMIT, MAIL_MONTHLY_LIMIT, MAIL_TRANSACTIONAL_RESERVE.
       - key: CONTACT_RECIPIENT_EMAIL
         sync: false
       # Ingreso con Google (opcional; el mismo ID público que VITE_GOOGLE_CLIENT_ID)
@@ -137,6 +145,12 @@ services:
         destination: /index.html
       - type: rewrite
         source: /restablecer/*
+        destination: /index.html
+      - type: rewrite
+        source: /baja
+        destination: /index.html
+      - type: rewrite
+        source: /confirmar-novedades
         destination: /index.html
       - type: rewrite
         source: /u/*

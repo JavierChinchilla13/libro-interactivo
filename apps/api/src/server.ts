@@ -41,7 +41,7 @@ try {
 }
 
 const tasks = createBackgroundTasks(logger);
-const app = createApp({ env, logger, isDbUp, tasks });
+const app = createApp({ env, logger, isDbUp, tasks, startWorkers: true });
 logger.info(`Correo: proveedor «${env.MAIL_PROVIDER}»`);
 const server = app.listen(env.PORT, () => {
   logger.info(`API escuchando en http://localhost:${env.PORT}`);
@@ -50,6 +50,7 @@ const server = app.listen(env.PORT, () => {
 async function shutdown(signal: string): Promise<void> {
   logger.info(`${signal} recibido; cerrando…`);
   server.close();
+  (app.locals['stopWorkers'] as (() => void) | undefined)?.();
   await tasks.idle(); // deja terminar los correos en curso
   await disconnectDb().catch(() => undefined);
   process.exit(0);

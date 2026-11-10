@@ -1,5 +1,8 @@
 import {
   createBackupRequestSchema,
+  notificationParamsSchema,
+  notificationPreviewQuerySchema,
+  notificationTargetSchema,
   adminMessageListQuerySchema,
   adminMessageParamsSchema,
   adminUserListQuerySchema,
@@ -15,6 +18,7 @@ import type {
   createAdminUsersController,
 } from '../controllers/adminOps.controller.js';
 import type { createAdminBackupController } from '../controllers/adminBackup.controller.js';
+import type { createNotificationController } from '../controllers/notification.controller.js';
 import type { Limits } from '../config/limits.js';
 import type { Guards } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rateLimit.js';
@@ -105,5 +109,29 @@ export function createAdminBackupRouter(
     createRateLimiter({ ...limits.backupDay, message }),
     controller.download,
   );
+  return router;
+}
+
+/**
+ * `/admin/notifications`: avisos por correo a las apuntadas (decisión P5: solo administradoras los envían y ven su
+ * progreso). Pedir un aviso tiene su propio límite por usuaria.
+ */
+export function createAdminNotificationsRouter(
+  controller: ReturnType<typeof createNotificationController>,
+  guards: Guards,
+  limits: Limits,
+): Router {
+  const router = adminOnly(guards);
+  const params = validate({ params: notificationParamsSchema });
+  router.get('/', controller.list);
+  router.get('/preview', validate({ query: notificationPreviewQuerySchema }), controller.preview);
+  router.post(
+    '/',
+    validate({ body: notificationTargetSchema }),
+    createRateLimiter(limits.notificationCreate),
+    controller.create,
+  );
+  router.get('/:notificationId', params, controller.get);
+  router.post('/:notificationId/cancel', params, controller.cancel);
   return router;
 }

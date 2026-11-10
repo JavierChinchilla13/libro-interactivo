@@ -48,6 +48,7 @@ const PATHS = {
       <path d="m5 8 7 5 7-5" />
     </>
   ),
+  send: <path d="M20 4 9.5 14.5M20 4l-6.5 16-4-5.5L4 10.5z" />,
   cover: (
     <>
       <rect x="4" y="5" width="16" height="14" rx="2" />

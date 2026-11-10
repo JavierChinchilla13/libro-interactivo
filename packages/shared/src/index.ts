@@ -23,3 +23,5 @@ export * from './schemas/adminOps.js';
 export * from './schemas/csp.js';
 export * from './schemas/game.js';
 export * from './schemas/backup.js';
+export * from './schemas/newsletter.js';
+export * from './schemas/notifications.js';

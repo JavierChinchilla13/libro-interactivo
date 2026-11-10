@@ -49,6 +49,7 @@ describe('parseEnv', () => {
       CLOUDINARY_API_KEY: '123456',
       CLOUDINARY_API_SECRET: 'secreto-de-prueba',
       ACCESS_TOKEN_SECRET: 'Qh3kT8wZr1NbV6yMcP4sLd9fGj2XaUe7oIq5RtWn',
+      UNSUBSCRIBE_SECRET: 'Vb7nP2qLx9TzR4mKs8HdW1cFj6YgAe3uNo5QiErT',
       APP_URL: 'https://app.ejemplo.com',
       MAIL_PROVIDER: 'resend',
       RESEND_API_KEY: 'clave-de-prueba',
@@ -122,6 +123,7 @@ describe('parseEnv', () => {
       CLOUDINARY_API_KEY: '123456',
       CLOUDINARY_API_SECRET: 'secreto-de-prueba',
       ACCESS_TOKEN_SECRET: 'Qh3kT8wZr1NbV6yMcP4sLd9fGj2XaUe7oIq5RtWn',
+      UNSUBSCRIBE_SECRET: 'Vb7nP2qLx9TzR4mKs8HdW1cFj6YgAe3uNo5QiErT',
       APP_URL: 'https://app.ejemplo.com/',
       MAIL_PROVIDER: 'resend',
       RESEND_API_KEY: 're_clave_de_prueba',
@@ -143,6 +145,7 @@ describe('parseEnv', () => {
       CLOUDINARY_API_KEY: '123456',
       CLOUDINARY_API_SECRET: 'secreto-de-prueba',
       ACCESS_TOKEN_SECRET: 'Qh3kT8wZr1NbV6yMcP4sLd9fGj2XaUe7oIq5RtWn',
+      UNSUBSCRIBE_SECRET: 'Vb7nP2qLx9TzR4mKs8HdW1cFj6YgAe3uNo5QiErT',
       APP_URL: 'https://app.ejemplo.com',
     };
 
@@ -190,6 +193,7 @@ describe('parseEnv', () => {
       CORS_ORIGIN: 'https://app.ejemplo.com',
       JWT_ACCESS_SECRET: 'Jx7vQ2mP9sLk4RtW8nBz3YcD6fGh1aUe5oIq0XvN',
       ACCESS_TOKEN_SECRET: 'Qh3kT8wZr1NbV6yMcP4sLd9fGj2XaUe7oIq5RtWn',
+      UNSUBSCRIBE_SECRET: 'Vb7nP2qLx9TzR4mKs8HdW1cFj6YgAe3uNo5QiErT',
       APP_URL: 'https://app.ejemplo.com',
       MAIL_PROVIDER: 'resend',
       RESEND_API_KEY: 'clave-de-prueba',
@@ -279,5 +283,80 @@ describe('parseEnv', () => {
         expect(text).not.toContain('Contrasena-Secreta-1');
       }
     });
+  });
+});
+
+describe('UNSUBSCRIBE_SECRET y RESEND_WEBHOOK_SECRET', () => {
+  const prod = {
+    NODE_ENV: 'production',
+    MONGODB_URI: 'mongodb+srv://u:p@cluster.ejemplo.net/libro',
+    CORS_ORIGIN: 'https://universomemorias.com',
+    APP_URL: 'https://universomemorias.com',
+    JWT_ACCESS_SECRET: 'Zk8mQ2xR7vT4nB9wL3pY6sH1dF5gJ0cAeUoIiOtP',
+    ACCESS_TOKEN_SECRET: 'Qh3kT8wZr1NbV6yMcP4sLd9fGj2XaUe7oIq5RtWn',
+    UNSUBSCRIBE_SECRET: 'Vb7nP2qLx9TzR4mKs8HdW1cFj6YgAe3uNo5QiErT',
+    MAIL_PROVIDER: 'resend',
+    RESEND_API_KEY: 're_123456789',
+    MAIL_FROM: 'Universo Memorias <avisos@universomemorias.com>',
+    CLOUDINARY_CLOUD_NAME: 'nube',
+    CLOUDINARY_API_KEY: 'clave',
+    CLOUDINARY_API_SECRET: 'secreto',
+  };
+  const problemsOf = (env: Record<string, string | undefined>) => {
+    try {
+      parseEnv(env);
+      return '';
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error);
+    }
+  };
+
+  it('en desarrollo tiene un valor por defecto; en producción es obligatoria', () => {
+    expect(parseEnv({ NODE_ENV: 'development' }).UNSUBSCRIBE_SECRET.length).toBeGreaterThanOrEqual(
+      32,
+    );
+    expect(problemsOf(prod)).toBe('');
+    expect(problemsOf({ ...prod, UNSUBSCRIBE_SECRET: undefined })).toMatch(/UNSUBSCRIBE_SECRET/);
+  });
+
+  it('en producción no puede ser la de desarrollo, corta, repetida ni igual a otro secreto', () => {
+    expect(
+      problemsOf({
+        ...prod,
+        UNSUBSCRIBE_SECRET: 'solo-para-desarrollo-enlaces-de-baja-no-usar-en-produccion-5432',
+      }),
+    ).toMatch(/UNSUBSCRIBE_SECRET/);
+    expect(problemsOf({ ...prod, UNSUBSCRIBE_SECRET: 'corta' })).toMatch(/UNSUBSCRIBE_SECRET/);
+    expect(problemsOf({ ...prod, UNSUBSCRIBE_SECRET: 'a'.repeat(40) })).toMatch(
+      /UNSUBSCRIBE_SECRET/,
+    );
+    expect(problemsOf({ ...prod, UNSUBSCRIBE_SECRET: prod.JWT_ACCESS_SECRET })).toMatch(
+      /UNSUBSCRIBE_SECRET/,
+    );
+    expect(problemsOf({ ...prod, UNSUBSCRIBE_SECRET: prod.ACCESS_TOKEN_SECRET })).toMatch(
+      /UNSUBSCRIBE_SECRET/,
+    );
+  });
+
+  it('RESEND_WEBHOOK_SECRET es opcional y, si está, tiene la forma whsec_…', () => {
+    expect(parseEnv(prod).RESEND_WEBHOOK_SECRET).toBeUndefined();
+    expect(
+      problemsOf({ ...prod, RESEND_WEBHOOK_SECRET: 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw' }),
+    ).toBe('');
+    expect(problemsOf({ ...prod, RESEND_WEBHOOK_SECRET: 'otra-cosa' })).toMatch(
+      /RESEND_WEBHOOK_SECRET/,
+    );
+  });
+});
+
+describe('cupo de correos', () => {
+  it('por defecto el plan gratuito de Resend; la reserva debe ser menor que el límite diario', () => {
+    const env = parseEnv({ NODE_ENV: 'test' });
+    expect([env.MAIL_DAILY_LIMIT, env.MAIL_MONTHLY_LIMIT, env.MAIL_TRANSACTIONAL_RESERVE]).toEqual([
+      100, 3000, 20,
+    ]);
+    expect(() =>
+      parseEnv({ NODE_ENV: 'test', MAIL_DAILY_LIMIT: '20', MAIL_TRANSACTIONAL_RESERVE: '20' }),
+    ).toThrow(/MAIL_TRANSACTIONAL_RESERVE/);
   });
 });

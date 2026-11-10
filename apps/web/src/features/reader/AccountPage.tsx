@@ -9,6 +9,7 @@ import { Alert, PageHeader } from '../../shared/ui/layout';
 import { accountApi } from '../auth/accountApi';
 import { PasswordField } from '../../shared/ui/PasswordField';
 import { SESSION_KEY, isStaff, useLogout, useSession } from '../auth/session';
+import { NewsletterSection } from '../newsletter/NewsletterSection';
 
 function NameForm() {
   const session = useSession();
@@ -217,6 +218,7 @@ export function AccountPage() {
       <PageHeader title="Mi cuenta" />
       <NameForm />
       <PasswordForm />
+      <NewsletterSection />
       <DeleteAccount />
       <Button
         variant="secondary"

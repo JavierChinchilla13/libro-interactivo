@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { ExtraAccess } from '../models/ExtraAccess.js';
 import { GameSession } from '../models/GameSession.js';
+import { NotificationDelivery } from '../models/NotificationDelivery.js';
 import { PasswordReset } from '../models/PasswordReset.js';
 import { QuizAttempt } from '../models/QuizAttempt.js';
 import { RefreshToken } from '../models/RefreshToken.js';
@@ -27,6 +28,8 @@ export async function eraseUserData(userId: string | Types.ObjectId): Promise<vo
     PasswordReset.deleteMany({ userId: id }),
     UserProgress.deleteMany({ userId: id }),
     ExtraAccess.deleteMany({ userId: id }),
+    // Las filas de los avisos por correo (sin correos, pero ligadas a la cuenta).
+    NotificationDelivery.deleteMany({ userId: id }),
   ]);
   await User.deleteOne({ _id: id });
 }

@@ -61,6 +61,14 @@ export const routes: RouteObject[] = [
         ...page(() => import('../features/auth/ForgotPasswordPage'), 'ForgotPasswordPage'),
       },
       {
+        path: 'baja',
+        ...page(() => import('../features/newsletter/NewsletterPages'), 'UnsubscribePage'),
+      },
+      {
+        path: 'confirmar-novedades',
+        ...page(() => import('../features/newsletter/NewsletterPages'), 'ConfirmNewsletterPage'),
+      },
+      {
         path: 'restablecer/:token',
         ...page(() => import('../features/auth/ResetPasswordPage'), 'ResetPasswordPage'),
       },
@@ -273,6 +281,13 @@ export const routes: RouteObject[] = [
                   {
                     path: 'mensajes',
                     ...page(() => import('../features/admin/ops/MessagesPage'), 'MessagesPage'),
+                  },
+                  {
+                    path: 'avisos',
+                    ...page(
+                      () => import('../features/admin/ops/NotificationsPage'),
+                      'NotificationsPage',
+                    ),
                   },
                   {
                     path: 'estadisticas',

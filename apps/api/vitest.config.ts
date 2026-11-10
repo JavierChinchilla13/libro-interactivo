@@ -24,6 +24,9 @@ export default defineConfig({
         'src/services/progress.service.ts': { lines: 90, branches: 85 },
         'src/services/access.service.ts': { lines: 90, branches: 85 },
         'src/services/quiz.service.ts': { lines: 95, branches: 75 },
+        // Avisos por correo: la cola, el cupo y las bajas (no pueden dejar de funcionar sin que se note).
+        'src/services/notification.service.ts': { lines: 90, branches: 75 },
+        'src/services/newsletter.service.ts': { lines: 90, branches: 85 },
       },
     },
   },
