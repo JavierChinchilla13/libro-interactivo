@@ -96,6 +96,8 @@ function WelcomeForm({ initial }: { initial: WelcomeSettings }) {
           />
           <RichTextEditor
             label="Mensaje"
+            pages
+            hint="«Nueva página» separa el mensaje: la lectora lo lee por páginas, con «Siguiente» y «Anterior»."
             value={form.bodyHtml}
             onChange={(bodyHtml) => set({ bodyHtml })}
           />

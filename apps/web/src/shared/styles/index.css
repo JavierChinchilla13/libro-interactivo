@@ -2355,3 +2355,26 @@
     margin-top: 1.75rem;
   }
 }
+
+/* Separador de páginas en el editor de texto: una línea discontinua con la etiqueta «Nueva página». */
+.rte-content hr {
+  position: relative;
+  margin-block: 1.75rem;
+  border: 0;
+  border-top: 2px dashed var(--token-line);
+  overflow: visible;
+}
+.rte-content hr::after {
+  content: 'Nueva página';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  translate: -50% -55%;
+  padding-inline: 0.5rem;
+  background: var(--token-surface);
+  color: var(--token-muted);
+  font-size: 0.75rem;
+}
+.rte-content hr.ProseMirror-selectednode {
+  border-top-color: var(--token-primary);
+}

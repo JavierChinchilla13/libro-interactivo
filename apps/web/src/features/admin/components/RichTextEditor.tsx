@@ -1,6 +1,24 @@
+import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useEffect, useId } from 'react';
+import { useEffect, useId, type ReactNode } from 'react';
+
+/** Iconos de alineación: líneas de texto (trazo de 1,75 px, como el texto semibold del botón). */
+function AlignIcon({ center }: { center: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      className="size-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+    >
+      <path d={center ? 'M4 5h12M6.5 10h7M4 15h12' : 'M4 5h12M4 10h7.5M4 15h12'} />
+    </svg>
+  );
+}
 
 /**
  * Editor de texto con formato (TipTap). Produce HTML; **el servidor lo sanea al guardar** (lista blanca)
@@ -11,11 +29,14 @@ export function RichTextEditor({
   value,
   onChange,
   hint,
+  pages = false,
 }: {
   label: string;
   value: string;
   onChange: (html: string) => void;
   hint?: string;
+  /** Muestra «Nueva página» (inserta un separador `<hr>`: el mensaje de bienvenida lo muestra por páginas). */
+  pages?: boolean;
 }) {
   const id = useId();
   const editor = useEditor({
@@ -32,6 +53,8 @@ export function RichTextEditor({
           HTMLAttributes: { rel: 'noopener noreferrer' },
         },
       }),
+      // Solo izquierda y centro: es lo único que el servidor conserva de `style`.
+      TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center'] }),
     ],
     content: value,
     editorProps: {
@@ -41,7 +64,7 @@ export function RichTextEditor({
         'aria-multiline': 'true',
         'aria-label': label,
         class:
-          'min-h-32 rounded-b-token border border-border bg-surface p-3 text-base focus-visible:outline-offset-0 [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:text-lg [&_h3]:font-bold [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6',
+          'rte-content min-h-32 rounded-b-token border border-border bg-surface p-3 text-base focus-visible:outline-offset-0 [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:text-lg [&_h3]:font-bold [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6',
       },
     },
     onUpdate: ({ editor: current }) => onChange(current.isEmpty ? '' : current.getHTML()),
@@ -56,7 +79,7 @@ export function RichTextEditor({
 
   if (!editor) return null;
 
-  const button = (text: string, title: string, active: boolean, run: () => void) => (
+  const button = (text: ReactNode, title: string, active: boolean, run: () => void) => (
     <button
       type="button"
       title={title}
@@ -110,6 +133,24 @@ export function RichTextEditor({
           editor.chain().focus().toggleBlockquote().run(),
         )}
         {button('Enlace', 'Enlace', editor.isActive('link'), setLink)}
+        <span aria-hidden="true" className="mx-0.5 my-1.5 w-px bg-border" />
+        {button(
+          <AlignIcon center={false} />,
+          'Alinear a la izquierda',
+          !editor.isActive({ textAlign: 'center' }),
+          () => editor.chain().focus().setTextAlign('left').run(),
+        )}
+        {button(<AlignIcon center />, 'Centrar', editor.isActive({ textAlign: 'center' }), () =>
+          editor.chain().focus().setTextAlign('center').run(),
+        )}
+        {pages ? (
+          <>
+            <span aria-hidden="true" className="mx-0.5 my-1.5 w-px bg-border" />
+            {button('Nueva página', 'Nueva página (separa el mensaje en páginas)', false, () =>
+              editor.chain().focus().setHorizontalRule().run(),
+            )}
+          </>
+        ) : null}
       </div>
       <EditorContent editor={editor} />
       {hint ? <p className="mt-1 text-xs text-muted">{hint}</p> : null}
