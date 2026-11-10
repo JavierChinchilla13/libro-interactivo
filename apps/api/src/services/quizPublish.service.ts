@@ -17,6 +17,7 @@ import { QuizVersion } from '../models/QuizVersion.js';
 import type { Actor } from './progress.service.js';
 import type { QuizService } from './quiz.service.js';
 import { validateQuizContent } from './quiz-engine.js';
+import { createQuizLocator, issue, translateSchemaIssues } from './quizIssues.js';
 import { sanitizeQuizHtml } from './quizContent.js';
 import { findPublishedFields } from './wikiField.js';
 
@@ -107,27 +108,31 @@ export function createQuizPublishService(deps: QuizPublishDeps) {
     ];
     if (slugs.length === 0) return [];
     const bySlug = await findPublishedFields(bookId, slugs);
+    const at = createQuizLocator(content);
     return content.results.flatMap((result, index): QuizIssue[] => {
       if (!result.fieldSlug) return [];
       const field = bySlug.get(result.fieldSlug);
       const path = `results.${index}.fieldSlug`;
+      const where = { ...at.resultAt(index), field: 'fieldSlug' };
       if (!field) {
         return [
-          {
-            code: 'FIELD_NOT_FOUND',
+          issue(
+            'FIELD_NOT_FOUND',
+            where,
+            `el campo de poder «${result.fieldSlug}» no existe, no está publicado o no es de este libro: este resultado no tendrá fondo animado.`,
             path,
-            message: `El campo «${result.fieldSlug}» no existe, no está publicado o no es de este libro: el resultado «${result.title}» no tendrá fondo animado.`,
-          },
+          ),
         ];
       }
       return field.visualKey
         ? []
         : [
-            {
-              code: 'FIELD_WITHOUT_VISUAL',
+            issue(
+              'FIELD_WITHOUT_VISUAL',
+              where,
+              `el campo de poder «${result.fieldSlug}» no tiene fondo animado: elige uno en la wiki para que este resultado lo muestre.`,
               path,
-              message: `El campo «${result.fieldSlug}» no tiene fondo animado: elige uno en la wiki para que el resultado «${result.title}» lo muestre.`,
-            },
+            ),
           ];
     });
   }
@@ -135,13 +140,11 @@ export function createQuizPublishService(deps: QuizPublishDeps) {
   async function check(quizId: string) {
     const quiz = await Quiz.findById(quizId).lean();
     if (!quiz) throw new AppError('NOT_FOUND', 'No encontramos ese quiz');
-    const parsed = quizContentSchema.safeParse(draftContentOf(quiz));
+    const raw = draftContentOf(quiz);
+    const parsed = quizContentSchema.safeParse(raw);
     if (!parsed.success) {
-      const errors = parsed.error.issues.map((issue) => ({
-        code: 'SCHEMA',
-        path: issue.path.join('.'),
-        message: issue.message,
-      }));
+      // En español y con la ubicación: nunca el mensaje crudo de Zod.
+      const errors = translateSchemaIssues(parsed.error.issues, raw);
       return { quiz, checked: { ok: false, errors, warnings: [] } satisfies Checked };
     }
     // El HTML ya se sanea al guardar el borrador; se vuelve a sanear al publicar por si el borrador vino de otra vía (seed).

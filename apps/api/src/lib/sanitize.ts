@@ -4,11 +4,29 @@ import sanitizeHtml from 'sanitize-html';
  * Sanitización de HTML enriquecido (TipTap) con lista blanca. Se aplica SIEMPRE en el servidor al guardar
  * (y de nuevo al publicar); el cliente además lo trata como no confiable al renderizar.
  *
- * Permite: párrafos, encabezados h2–h4, énfasis, listas, citas, saltos, líneas, enlaces http(s)/mailto
- * (siempre con `rel="noopener noreferrer"`) e imágenes alojadas en Cloudinary. Todo lo demás
- * (scripts, estilos, atributos `on*`, iframes, `javascript:`, clases…) se elimina.
+ * Permite: párrafos, encabezados h2–h4, énfasis, listas, citas, saltos, líneas (`<hr>`: separador de páginas del
+ * mensaje de bienvenida), enlaces http(s)/mailto (siempre con `rel="noopener noreferrer"`) e imágenes alojadas en
+ * Cloudinary. De `style` solo sobrevive `text-align` izquierda o centro en `p` y `h2`–`h4` (los botones de alineación
+ * del editor). Todo lo demás (scripts, otros estilos, atributos `on*`, iframes, `javascript:`, clases…) se elimina.
  */
 const CLOUDINARY_IMAGE = /^https:\/\/res\.cloudinary\.com\//i;
+
+/** Única declaración de `style` que se conserva: la alineación izquierda o centro. */
+const TEXT_ALIGN = { 'text-align': [/^left$/, /^center$/] };
+const ALIGNABLE = ['p', 'h2', 'h3', 'h4'] as const;
+
+/**
+ * Reescribe `style` a lo único permitido (`text-align:left|center`, sin `!important`) o lo quita. Va antes del filtro
+ * de estilos, que además lo vuelve a comprobar.
+ */
+function keepAlignment(tagName: string, attribs: sanitizeHtml.Attributes) {
+  const { style, ...rest } = attribs;
+  const align = /(?:^|;)\s*text-align\s*:\s*(left|center)\s*(?:;|$)/i.exec(style ?? '')?.[1];
+  return {
+    tagName,
+    attribs: align ? { ...rest, style: `text-align:${align.toLowerCase()}` } : rest,
+  };
+}
 
 const options: sanitizeHtml.IOptions = {
   allowedTags: [
@@ -34,11 +52,14 @@ const options: sanitizeHtml.IOptions = {
   allowedAttributes: {
     a: ['href', 'rel'],
     img: ['src', 'alt', 'width', 'height'],
+    ...Object.fromEntries(ALIGNABLE.map((tag) => [tag, ['style']])),
   },
+  allowedStyles: Object.fromEntries(ALIGNABLE.map((tag) => [tag, TEXT_ALIGN])),
   allowedSchemes: ['http', 'https', 'mailto'],
   allowedSchemesByTag: { img: ['https'] },
   allowProtocolRelative: false,
   transformTags: {
+    ...Object.fromEntries(ALIGNABLE.map((tag) => [tag, keepAlignment])),
     a: (tagName, attribs) => ({
       tagName,
       attribs: {

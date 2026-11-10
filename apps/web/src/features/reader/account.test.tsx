@@ -242,6 +242,52 @@ describe('mensaje de bienvenida', () => {
     expect(called('POST /api/me/welcome-seen')).toHaveLength(1);
   });
 
+  it('con separadores se lee por páginas: Siguiente, Anterior, flechas, número de página y «Comenzar» al final', async () => {
+    const { called } = mockApi({
+      'GET /api/me/welcome': () =>
+        json({
+          ...welcome,
+          bodyHtml: '<p>Uno</p><hr><p>Dos</p><hr><hr><p>Tres</p><hr>',
+        }),
+    });
+    renderAt('/panel');
+    const dialog = await screen.findByRole('dialog', { name: '[PLACEHOLDER] Bienvenida' });
+    const status = within(dialog).getByText('Página 1 de 3');
+    expect(status).toHaveAttribute('aria-live', 'polite');
+    // Las demás páginas están en el DOM (para fijar el alto) pero ocultas e inertes.
+    const shown = (text: string) =>
+      within(dialog).getByText(text).closest('[aria-hidden="true"]') === null;
+    expect(shown('Uno')).toBe(true);
+    expect(shown('Dos')).toBe(false);
+    expect(within(dialog).queryByRole('button', { name: /Anterior/ })).toBeNull();
+    expect(within(dialog).queryByRole('button', { name: '¡A la aventura!' })).toBeNull();
+    const next = within(dialog).getByRole('button', { name: 'Siguiente ›' });
+    expect(next).toHaveFocus();
+
+    await userEvent.click(next);
+    expect(shown('Dos')).toBe(true);
+    expect(shown('Uno')).toBe(false);
+    expect(within(dialog).getByText('Página 2 de 3')).toBeInTheDocument();
+    // Volver a la primera: «Anterior» desaparece y el foco pasa a «Siguiente».
+    await userEvent.click(within(dialog).getByRole('button', { name: '‹ Anterior' }));
+    expect(shown('Uno')).toBe(true);
+    await waitFor(() =>
+      expect(within(dialog).getByRole('button', { name: 'Siguiente ›' })).toHaveFocus(),
+    );
+
+    // Con el teclado: flecha derecha dos veces llega a la última (los separadores vacíos no cuentan).
+    await userEvent.keyboard('{ArrowRight}{ArrowRight}');
+    expect(shown('Tres')).toBe(true);
+    expect(within(dialog).getByText('Página 3 de 3')).toBeInTheDocument();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(shown('Tres')).toBe(true);
+    expect(called('POST /api/me/welcome-seen')).toHaveLength(0);
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Comenzar' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(called('POST /api/me/welcome-seen')).toHaveLength(1);
+  });
+
   it('Escape también lo cierra', async () => {
     const { called } = mockApi({ 'GET /api/me/welcome': () => json(welcome) });
     renderAt('/panel');

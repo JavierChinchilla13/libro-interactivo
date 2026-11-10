@@ -82,6 +82,40 @@ describe('sanitizeRichHtml', () => {
     expect(once).toContain('5 &lt; 6 &amp;');
   });
 
+  it('conserva la alineación izquierda o centro en párrafos y títulos, y el separador de páginas', () => {
+    const out = sanitizeRichHtml(
+      '<p style="text-align: center;">Centrado</p><hr><h2 style="text-align:left">Izquierda</h2><h3 style="TEXT-ALIGN: Center">T</h3><h4 style="text-align:center">C</h4>',
+    );
+    expect(out).toBe(
+      '<p style="text-align:center">Centrado</p><hr /><h2 style="text-align:left">Izquierda</h2><h3 style="text-align:center">T</h3><h4 style="text-align:center">C</h4>',
+    );
+  });
+
+  it.each([
+    ['otra alineación', '<p style="text-align:right">x</p>'],
+    ['justificado', '<p style="text-align:justify">x</p>'],
+    ['color', '<p style="color:red">x</p>'],
+    ['fondo con url', '<p style="background:url(https://malo.com/a.png)">x</p>'],
+    ['expression', '<p style="width:expression(alert(1))">x</p>'],
+    ['posición fija', '<h2 style="position:fixed;top:0">x</h2>'],
+    ['alineación con !important', '<p style="text-align:center !important">x</p>'],
+    ['alineación en una cita', '<blockquote style="text-align:center">x</blockquote>'],
+    ['alineación en un elemento de lista', '<ul><li style="text-align:center">x</li></ul>'],
+    ['alineación en un enlace', '<a href="https://a.com" style="text-align:center">x</a>'],
+    ['estilo en el separador', '<hr style="border:5px solid red">'],
+  ])('cualquier otro estilo se sigue borrando: %s', (_name, input) => {
+    const out = sanitizeRichHtml(input);
+    expect(out).not.toContain('style=');
+    expect(out).not.toContain('malo.com');
+    expect(out).not.toContain('alert(1)');
+  });
+
+  it('de un estilo mezclado solo queda la alineación permitida', () => {
+    expect(
+      sanitizeRichHtml('<p style="color:red; text-align:center; background:url(x)">x</p>'),
+    ).toBe('<p style="text-align:center">x</p>');
+  });
+
   it('un texto vacío o solo con etiquetas prohibidas queda vacío', () => {
     expect(sanitizeRichHtml('')).toBe('');
     expect(sanitizeRichHtml('<script>x</script>')).toBe('');

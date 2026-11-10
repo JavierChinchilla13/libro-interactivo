@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { SafeHtml } from '../../shared/ui/SafeHtml';
-import { Button } from '../../shared/ui/controls';
 import { readerApi, readerKeys } from './api';
+import { WelcomeContent } from './WelcomeContent';
 
 /**
  * Mensaje de bienvenida (el «pacto» con el lector). El servidor decide si toca mostrarlo
@@ -38,15 +37,14 @@ export function WelcomeModal() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="welcome-title"
-        className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-token-xl border border-line bg-surface p-6 shadow-elev-2"
+        className="welcome-dialog rounded-token-xl border border-line bg-surface shadow-elev-2"
       >
-        <h2 id="welcome-title" className="mb-3 section-title">
-          {welcome.data.title ?? 'Bienvenida'}
-        </h2>
-        <SafeHtml html={welcome.data.bodyHtml} />
-        <Button autoFocus className="mt-5 w-full" onClick={() => seen.mutate()}>
-          ¡A la aventura!
-        </Button>
+        <WelcomeContent
+          title={welcome.data.title}
+          bodyHtml={welcome.data.bodyHtml}
+          titleId="welcome-title"
+          onDone={() => seen.mutate()}
+        />
       </div>
     </div>
   );

@@ -296,11 +296,29 @@ export type ProgressResponse = z.infer<typeof progressResponseSchema>;
 // Administración (mínima en la fase 6; el editor completo llega en la fase 7)
 // ---------------------------------------------------------------------------
 
+/**
+ * Dónde está un problema de la revisión, para que el editor abra la pestaña y lleve a ese elemento. `label` es la
+ * ubicación en palabras de la autora («Etapa 1 · Pregunta 3 «¿Qué harías…» · Respuesta 2»); `field` dice qué campo
+ * enfocar dentro del elemento (por ejemplo `resultKey`: el selector «Resultado al que suma esta respuesta»).
+ */
+export const quizIssueWhereSchema = z.object({
+  tab: z.enum(['general', 'etapas', 'resultados']),
+  label: z.string(),
+  stageId: z.string().optional(),
+  questionId: z.string().optional(),
+  answerId: z.string().optional(),
+  resultKey: z.string().optional(),
+  field: z.string().optional(),
+});
+export type QuizIssueWhere = z.infer<typeof quizIssueWhereSchema>;
+
 export const quizIssueSchema = z.object({
   code: z.string(),
   /** Dónde está el problema, p. ej. `stages.etapa-1.questions.p3`. */
   path: z.string().optional(),
+  /** En español y con la ubicación delante («Etapa 1 · Pregunta 3: …»). Nunca un mensaje crudo de Zod. */
   message: z.string(),
+  where: quizIssueWhereSchema.optional(),
 });
 export type QuizIssue = z.infer<typeof quizIssueSchema>;
 

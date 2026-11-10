@@ -32,6 +32,26 @@ describe('sanitizeForDisplay (el HTML siempre se trata como no confiable)', () =
     expect(out).toContain('<li>uno</li>');
   });
 
+  it('conserva la alineación izquierda o centro en párrafos y títulos, y el separador', () => {
+    expect(
+      sanitizeForDisplay(
+        '<p style="text-align: center;">a</p><hr><h3 style="text-align:LEFT">b</h3>',
+      ),
+    ).toBe('<p style="text-align:center">a</p><hr><h3 style="text-align:left">b</h3>');
+  });
+
+  it.each([
+    '<p style="text-align:right">x</p>',
+    '<p style="color:red">x</p>',
+    '<p style="background:url(https://malo.com/a.png)">x</p>',
+    '<p style="text-align:center !important">x</p>',
+    '<blockquote style="text-align:center">x</blockquote>',
+    '<ul><li style="text-align:center">x</li></ul>',
+    '<hr style="border:5px solid red">',
+  ])('cualquier otro estilo se borra: %s', (html) => {
+    expect(sanitizeForDisplay(html)).not.toContain('style=');
+  });
+
   it('el componente no inyecta scripts en el DOM', () => {
     const { container } = render(
       <SafeHtml html={'<p>Hola</p><script>window.__hack = true</script>'} />,

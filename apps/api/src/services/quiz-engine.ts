@@ -3,11 +3,13 @@ import type {
   ReaderQuestionAppearance,
   QuizContent,
   QuizIssue,
+  QuizIssueWhere,
   ResultDef,
   ResultPayload,
   StageDef,
   StagePayload,
 } from '@libro/shared';
+import { createQuizLocator, issue } from './quizIssues.js';
 
 /**
  * Motor de quizzes: lógica pura (sin BD ni Express) para barajar, contar, resolver empates,
@@ -279,20 +281,40 @@ function duplicates(values: readonly string[]): string[] {
 export function validateQuizContent(content: QuizContent): QuizValidation {
   const errors: QuizIssue[] = [];
   const warnings: QuizIssue[] = [];
-  const error = (code: string, message: string, path?: string) =>
-    errors.push({ code, message, ...(path ? { path } : {}) });
-  const warn = (code: string, message: string, path?: string) =>
-    warnings.push({ code, message, ...(path ? { path } : {}) });
+  // Cada mensaje dice dónde está, en palabras de la autora (número y trozo del texto), y trae `where` para el editor.
+  const at = createQuizLocator(content);
+  const error = (code: string, where: QuizIssueWhere, message: string, path?: string) =>
+    errors.push(issue(code, where, message, path));
+  const warn = (code: string, where: QuizIssueWhere, message: string, path?: string) =>
+    warnings.push(issue(code, where, message, path));
+  const everyStage: QuizIssueWhere = { tab: 'etapas', label: 'Preguntas' };
+  const stageOfQuestion = (questionId: string) =>
+    content.stages.find((stage) => stage.questions.some((q) => q.id === questionId))?.id ?? '';
 
   const stageIds = new Set(content.stages.map((stage) => stage.id));
   for (const id of duplicates(content.stages.map((stage) => stage.id))) {
-    error('DUPLICATE_STAGE', `La etapa «${id}» está repetida`, `stages.${id}`);
+    error(
+      'DUPLICATE_STAGE',
+      at.stage(id),
+      'hay dos etapas con el mismo identificador interno: quita o vuelve a crear una',
+      `stages.${id}`,
+    );
   }
   for (const key of duplicates(content.results.map((result) => result.key))) {
-    error('DUPLICATE_RESULT', `El resultado «${key}» está repetido`, `results.${key}`);
+    error(
+      'DUPLICATE_RESULT',
+      at.result(key),
+      'hay dos resultados con el mismo identificador interno: quita o vuelve a crear uno',
+      `results.${key}`,
+    );
   }
   for (const id of duplicates(content.stages.flatMap((s) => s.questions.map((q) => q.id)))) {
-    error('DUPLICATE_QUESTION', `La pregunta «${id}» está repetida en el quiz`, `questions.${id}`);
+    error(
+      'DUPLICATE_QUESTION',
+      at.question(stageOfQuestion(id), id),
+      'esta pregunta está repetida en el quiz (mismo identificador interno): quita una de las copias',
+      `questions.${id}`,
+    );
   }
 
   const resultsByStage = new Map<string, ResultDef[]>();
@@ -300,7 +322,8 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
     if (!stageIds.has(result.stageId)) {
       error(
         'RESULT_UNKNOWN_STAGE',
-        `El resultado «${result.key}» pertenece a una etapa que no existe (${result.stageId})`,
+        at.result(result.key),
+        'pertenece a una etapa que ya no existe: elimínalo o vuelve a crearlo en otra etapa',
         `results.${result.key}`,
       );
       continue;
@@ -315,21 +338,30 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
     if (stageResults.length < 2) {
       error(
         'STAGE_FEW_RESULTS',
-        `La etapa «${stage.id}» necesita al menos 2 resultados`,
+        at.stageResults(stage.id),
+        stageResults.length === 0
+          ? 'esta etapa todavía no tiene resultados: crea al menos 2'
+          : 'esta etapa necesita al menos 2 resultados (tiene 1)',
         `stages.${stage.id}`,
       );
     }
     for (const question of stage.questions) {
       const path = `stages.${stage.id}.questions.${question.id}`;
-      for (const id of duplicates(question.answers.map((answer) => answer.id))) {
-        error('DUPLICATE_ANSWER', `La respuesta «${id}» está repetida en la pregunta`, path);
+      for (const _id of duplicates(question.answers.map((answer) => answer.id))) {
+        error(
+          'DUPLICATE_ANSWER',
+          at.question(stage.id, question.id),
+          'dos respuestas tienen el mismo identificador interno: quita una y vuelve a escribirla',
+          path,
+        );
       }
       for (const answer of question.answers) {
         if (stageKeys.has(answer.resultKey)) referenced.add(answer.resultKey);
         else {
           error(
             'ANSWER_UNKNOWN_RESULT',
-            `La respuesta «${answer.id}» apunta a «${answer.resultKey}», que no es un resultado de la etapa «${stage.id}»`,
+            { ...at.answer(stage.id, question.id, answer.id), field: 'resultKey' },
+            'el resultado al que sumaba ya no existe en esta etapa: elige otro',
             path,
           );
         }
@@ -342,9 +374,10 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
   if (roots.length !== 1) {
     error(
       'STAGE_ROOT',
+      everyStage,
       roots.length === 0
-        ? 'Falta la etapa inicial (una sin condición)'
-        : 'Solo puede haber una etapa inicial (sin condición)',
+        ? 'falta la etapa inicial (una que no venga después de otra)'
+        : 'solo puede haber una etapa inicial: las demás deben venir después de otra etapa',
     );
   }
   const byId = new Map(content.stages.map((stage) => [stage.id, stage]));
@@ -354,7 +387,12 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
     const hasParent = stage.conditionStageId !== undefined;
     const hasKey = stage.conditionResultKey !== undefined;
     if (hasParent !== hasKey) {
-      error('STAGE_CONDITION', 'La condición necesita la etapa y el resultado a la vez', path);
+      error(
+        'STAGE_CONDITION',
+        at.stage(stage.id),
+        'elige después de qué etapa va y con qué resultado se activa (faltan los dos datos juntos)',
+        path,
+      );
       continue;
     }
     if (!hasParent) continue;
@@ -362,7 +400,8 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
     if (!parent || parent.id === stage.id) {
       error(
         'STAGE_CONDITION',
-        `La etapa «${stage.id}» depende de una etapa que no existe o de sí misma`,
+        at.stage(stage.id),
+        'viene después de una etapa que ya no existe (o de sí misma): elige otra',
         path,
       );
       continue;
@@ -370,7 +409,8 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
     if (parent.producesFinal) {
       error(
         'STAGE_AFTER_FINAL',
-        `La etapa «${stage.id}» sigue a una etapa que ya da el resultado final`,
+        at.stage(stage.id),
+        'viene después de una etapa que ya da el resultado final: quita la marca de final en la anterior o cambia la condición',
         path,
       );
     }
@@ -378,7 +418,8 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
     if (!parentKeys.has(stage.conditionResultKey as string)) {
       error(
         'STAGE_CONDITION',
-        `«${stage.conditionResultKey}» no es un resultado de la etapa «${parent.id}»`,
+        at.stage(stage.id),
+        'el resultado con el que se activa ya no existe en la etapa anterior: elige otro',
         path,
       );
     }
@@ -386,7 +427,8 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
     if (branches.has(branch)) {
       error(
         'STAGE_AMBIGUOUS',
-        `Dos etapas se activan con el mismo resultado de «${parent.id}»`,
+        at.stage(stage.id),
+        'otra etapa ya se activa con el mismo resultado de la etapa anterior: elige un resultado distinto',
         path,
       );
     }
@@ -395,7 +437,12 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
     let cursor: StageDef | undefined = parent;
     for (let hops = 0; cursor && hops <= content.stages.length; hops += 1) {
       if (cursor.id === stage.id) {
-        error('STAGE_CYCLE', `Las etapas forman un ciclo en «${stage.id}»`, path);
+        error(
+          'STAGE_CYCLE',
+          at.stage(stage.id),
+          'las etapas forman un círculo (una termina viniendo después de sí misma): revisa «¿Después de qué etapa?»',
+          path,
+        );
         break;
       }
       cursor = cursor.conditionStageId ? byId.get(cursor.conditionStageId) : undefined;
@@ -403,7 +450,11 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
   }
 
   if (!content.stages.some((stage) => stage.producesFinal)) {
-    error('NO_FINAL_STAGE', 'Ninguna etapa produce el resultado final');
+    error(
+      'NO_FINAL_STAGE',
+      everyStage,
+      'ninguna etapa da el resultado final: marca «Esta etapa da el resultado final» en la última',
+    );
   }
 
   // Cada resultado alcanzable de una etapa que no es final necesita una etapa que continúe.
@@ -412,7 +463,8 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
       if (!referenced.has(result.key)) {
         warn(
           'RESULT_UNREACHABLE',
-          `Ninguna respuesta lleva al resultado «${result.key}»`,
+          at.result(result.key),
+          'ninguna respuesta suma a este resultado, así que nadie lo va a obtener',
           `results.${result.key}`,
         );
         continue;
@@ -420,7 +472,8 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
       if (!stage.producesFinal && !nextStage(content, stage.id, result.key)) {
         error(
           'BRANCH_WITHOUT_STAGE',
-          `Si el resultado de la etapa «${stage.id}» es «${result.key}», el quiz no tiene cómo continuar`,
+          at.result(result.key),
+          'si la lectora obtiene este resultado, el quiz no sabe cómo seguir: crea una etapa que venga después con este resultado o marca su etapa como final',
           `results.${result.key}`,
         );
       }

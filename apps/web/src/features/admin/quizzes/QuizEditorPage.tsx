@@ -1,6 +1,11 @@
-import type { QuizDetailResponse, QuizValidationResponse } from '@libro/shared';
+import type {
+  QuizDetailResponse,
+  QuizIssue,
+  QuizIssueWhere,
+  QuizValidationResponse,
+} from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { Button } from '../../../shared/ui/controls';
 import { Alert, PageHeader, TabPanel, Tabs } from '../../../shared/ui/layout';
@@ -17,6 +22,7 @@ import type { Draft } from './draft';
 import { AppearanceTab } from './AppearanceTab';
 import { GeneralTab } from './GeneralTab';
 import { PreviewPanel } from './PreviewPanel';
+import { revealTarget, type QuizTarget } from './quizTarget';
 import { ResultsTab } from './ResultsTab';
 import { StagesTab } from './StagesTab';
 import { VersionsTab } from './VersionsTab';
@@ -79,6 +85,25 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
     if (next === 'apariencia') setAppearanceOpened(true);
     setTab(next);
   };
+  // «Ir a» desde la revisión (o desde «Primero crea los resultados»): abre la pestaña, la etapa y la pregunta, y enfoca.
+  const [target, setTarget] = useState<QuizTarget | null>(null);
+  const nonce = useRef(0);
+  const goTo = useCallback((where: QuizIssueWhere) => {
+    nonce.current += 1;
+    setTab(where.tab);
+    setTarget({ where, nonce: nonce.current });
+  }, []);
+  useEffect(() => {
+    if (!target) return;
+    // Al llegar se olvida: volver a la pestaña después no debe abrir otra vez lo mismo.
+    revealTarget(target.where, () =>
+      setTarget((current) => (current?.nonce === target.nonce ? null : current)),
+    );
+  }, [target]);
+  const openResults = useCallback(
+    (stageId: string) => goTo({ tab: 'resultados', label: 'Resultados', stageId }),
+    [goTo],
+  );
   // La revisión recuerda sobre qué borrador se hizo: si después se edita algo, deja de valer.
   const [reviewed, setReviewed] = useState<{ report: QuizValidationResponse; at: string } | null>(
     null,
@@ -87,6 +112,19 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   const savedRef = useRef(snapshot(quiz.draft));
   const [notice, setNotice] = useState<{ tone: 'success' | 'warning'; text: string } | null>(null);
   const [previewing, setPreviewing] = useState(false);
+  // Cada clic en «Vista previa» lleva la vista al panel (o al aviso): el botón está abajo y el panel, arriba.
+  const [reveal, setReveal] = useState(0);
+  const previewArea = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (reveal === 0) return;
+    const area = previewArea.current;
+    if (!area) return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    // jsdom (pruebas) no implementa el desplazamiento.
+    if (typeof area.scrollIntoView === 'function')
+      area.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    area.focus({ preventScroll: true });
+  }, [reveal]);
   const [meta, setMeta] = useState({ slug: quiz.slug, order: String(quiz.order) });
 
   const current = useMemo(() => snapshot(draft), [draft]);
@@ -178,6 +216,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
         tone: 'warning',
         text: 'Todavía no hay nada publicado que probar. Publica el quiz una vez y vuelve.',
       });
+      setReveal((count) => count + 1);
       return;
     }
     if (dirty) {
@@ -187,6 +226,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
       });
     }
     setPreviewing(true);
+    setReveal((count) => count + 1);
   }
 
   const archived = quiz.status === 'archived';
@@ -232,11 +272,6 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           </Alert>
         </div>
       ) : null}
-      {notice ? (
-        <div className="mb-4">
-          <Alert tone={notice.tone}>{notice.text}</Alert>
-        </div>
-      ) : null}
       {report && stale ? (
         <div className="mb-4">
           <Alert tone="warning" title="Vuelve a revisar">
@@ -244,8 +279,25 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           </Alert>
         </div>
       ) : null}
-      {report && !stale ? <ValidationReport report={report} /> : null}
-      {previewing ? <PreviewPanel quizId={quizId} onClose={() => setPreviewing(false)} /> : null}
+      {report && !stale ? <ValidationReport report={report} onGo={goTo} /> : null}
+      {notice || previewing ? (
+        <div
+          ref={previewArea}
+          tabIndex={-1}
+          role="region"
+          aria-label="Vista previa como lectora"
+          className="scroll-mt-24 focus:outline-none"
+        >
+          {notice ? (
+            <div className="mb-4">
+              <Alert tone={notice.tone}>{notice.text}</Alert>
+            </div>
+          ) : null}
+          {previewing ? (
+            <PreviewPanel quizId={quizId} onClose={() => setPreviewing(false)} />
+          ) : null}
+        </div>
+      ) : null}
 
       <Tabs
         label="Secciones del quiz"
@@ -269,6 +321,8 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           <StagesTab
             draft={draft}
             onChange={setDraft}
+            target={target}
+            onOpenResults={openResults}
             reservedQuestionIds={quiz.reservedQuestionIds}
           />
         </TabPanel>
@@ -362,7 +416,30 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   );
 }
 
-function ValidationReport({ report }: { report: QuizValidationResponse }) {
+/** Un problema de la revisión: si sabe dónde está, es un enlace que lleva hasta ahí. */
+function IssueItem({ issue, onGo }: { issue: QuizIssue; onGo: (where: QuizIssueWhere) => void }) {
+  const { where } = issue;
+  if (!where) return <li>{issue.message}</li>;
+  return (
+    <li>
+      <button
+        type="button"
+        className="inline text-left underline decoration-1 underline-offset-2 hover:decoration-2"
+        onClick={() => onGo(where)}
+      >
+        {issue.message}
+      </button>
+    </li>
+  );
+}
+
+function ValidationReport({
+  report,
+  onGo,
+}: {
+  report: QuizValidationResponse;
+  onGo: (where: QuizIssueWhere) => void;
+}) {
   return (
     <div className="mb-4 flex flex-col gap-3" aria-label="Resultado de la revisión">
       {report.valid && report.errors.length === 0 ? (
@@ -373,7 +450,7 @@ function ValidationReport({ report }: { report: QuizValidationResponse }) {
         >
           <ul className="mt-1 list-disc pl-5">
             {report.errors.map((issue, index) => (
-              <li key={index}>{issue.message}</li>
+              <IssueItem key={index} issue={issue} onGo={onGo} />
             ))}
           </ul>
         </Alert>
@@ -385,7 +462,7 @@ function ValidationReport({ report }: { report: QuizValidationResponse }) {
         >
           <ul className="mt-1 list-disc pl-5">
             {report.warnings.map((issue, index) => (
-              <li key={index}>{issue.message}</li>
+              <IssueItem key={index} issue={issue} onGo={onGo} />
             ))}
           </ul>
         </Alert>

@@ -1,7 +1,7 @@
 import { welcomeSettingsSchema, type WelcomeSettings } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
-import { SafeHtml } from '../../../shared/ui/SafeHtml';
+import { WelcomeContent } from '../../reader/WelcomeContent';
 import { CheckField, SelectField, TextField } from '../../../shared/ui/controls';
 import { Alert, Card, PageHeader } from '../../../shared/ui/layout';
 import { FormSection } from '../components/FormSection';
@@ -96,6 +96,8 @@ function WelcomeForm({ initial }: { initial: WelcomeSettings }) {
           />
           <RichTextEditor
             label="Mensaje"
+            pages
+            hint="«Nueva página» separa el mensaje: la lectora lo lee por páginas, con «Siguiente» y «Anterior»."
             value={form.bodyHtml}
             onChange={(bodyHtml) => set({ bodyHtml })}
           />
@@ -104,10 +106,9 @@ function WelcomeForm({ initial }: { initial: WelcomeSettings }) {
         <Card>
           <h2 className="mb-2 font-semibold">Así lo verá el lector</h2>
           {form.bodyHtml ? (
-            <>
-              {form.title ? <p className="section-title mb-2">{form.title}</p> : null}
-              <SafeHtml html={form.bodyHtml} />
-            </>
+            <div className="welcome-dialog mx-auto rounded-token-xl border border-line bg-surface">
+              <WelcomeContent title={form.title || undefined} bodyHtml={form.bodyHtml} />
+            </div>
           ) : (
             <p className="text-sm text-muted">Escribe el mensaje para ver la vista previa.</p>
           )}
