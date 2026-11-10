@@ -65,6 +65,18 @@ export const mailQuotaSchema = z.object({
 });
 export type MailQuota = z.infer<typeof mailQuotaSchema>;
 
+/**
+ * Vista previa: con `refId`, la de un elemento ya guardado; sin él (una actualización o un extra que aún no se
+ * guardó), cuántas lectoras lo recibirían al publicarlo y el cupo. De un extra hace falta `bookId` (solo lo reciben
+ * las que terminaron ese libro).
+ */
+export const notificationPreviewQuerySchema = z.object({
+  kind: notificationKindSchema,
+  refId: objectIdSchema.optional(),
+  bookId: objectIdSchema.optional(),
+});
+export type NotificationPreviewQuery = z.infer<typeof notificationPreviewQuerySchema>;
+
 export const notificationPreviewSchema = z.object({
   /** ¿Se puede avisar? (`reason` dice por qué no). */
   available: z.boolean(),

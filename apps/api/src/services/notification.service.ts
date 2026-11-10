@@ -3,6 +3,7 @@ import {
   type NotificationJob as NotificationJobView,
   type NotificationKind,
   type NotificationPreview,
+  type NotificationPreviewQuery,
   type NotificationTarget,
 } from '@libro/shared';
 import { Types } from 'mongoose';
@@ -148,6 +149,8 @@ export function createNotificationService(deps: NotificationDeps) {
   ): Promise<Types.ObjectId[]> {
     const filter: Record<string, unknown> = { status: 'active', 'newsletter.status': 'subscribed' };
     if (kind === 'extra') {
+      // Sin libro no hay a quién avisar (nunca «cualquier libro»).
+      if (!bookId) return [];
       const completed = await UserProgress.find({
         bookId,
         bookCompletedAt: { $exists: true, $ne: null },
@@ -483,7 +486,25 @@ export function createNotificationService(deps: NotificationDeps) {
     tick,
     kick,
 
-    async preview(target: NotificationTarget): Promise<NotificationPreview> {
+    async preview(query: NotificationPreviewQuery): Promise<NotificationPreview> {
+      if (!query.refId) {
+        // Aún no guardado: a cuántas lectoras llegaría al publicarlo y el cupo.
+        const quota = await deps.quota.quota();
+        const recipients = (
+          await recipientIds(
+            query.kind,
+            query.bookId ? new Types.ObjectId(query.bookId) : undefined,
+          )
+        ).length;
+        return {
+          available: true,
+          recipients,
+          quota,
+          estimatedDays: estimateDays(quota, recipients),
+          existing: null,
+        };
+      }
+      const target: NotificationTarget = { kind: query.kind, refId: query.refId };
       const built = await build(target);
       const existing = await NotificationJob.findOne({ kind: target.kind, refId: target.refId });
       const quota = await deps.quota.quota();
@@ -560,6 +581,8 @@ export function createNotificationService(deps: NotificationDeps) {
 
     async list(): Promise<NotificationJobView[]> {
       const jobs = await NotificationJob.find().sort({ createdAt: -1 }).limit(50);
+      // La pantalla de avisos se refresca sola: de paso despierta la cola (Render duerme el servicio sin visitas).
+      if (jobs.some((job) => job.status === 'queued' || job.status === 'sending')) kick();
       return Promise.all(jobs.map((job) => view(job)));
     },
 

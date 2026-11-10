@@ -1,4 +1,8 @@
-import type { NotificationParams, NotificationTarget } from '@libro/shared';
+import type {
+  NotificationParams,
+  NotificationPreviewQuery,
+  NotificationTarget,
+} from '@libro/shared';
 import type { RequestHandler } from 'express';
 import { getAuth } from '../middleware/auth.js';
 import { getInput } from '../middleware/validate.js';
@@ -10,7 +14,7 @@ export function createNotificationController(notifications: NotificationService)
     res.set('Cache-Control', 'no-store').json({ jobs: await notifications.list() });
   };
   const preview: RequestHandler = async (_req, res) => {
-    const { query } = getInput<unknown, NotificationTarget>(res);
+    const { query } = getInput<unknown, NotificationPreviewQuery>(res);
     res.set('Cache-Control', 'no-store').json(await notifications.preview(query));
   };
   const create: RequestHandler = async (_req, res) => {

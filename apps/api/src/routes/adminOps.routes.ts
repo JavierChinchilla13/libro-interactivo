@@ -1,6 +1,7 @@
 import {
   createBackupRequestSchema,
   notificationParamsSchema,
+  notificationPreviewQuerySchema,
   notificationTargetSchema,
   adminMessageListQuerySchema,
   adminMessageParamsSchema,
@@ -123,7 +124,7 @@ export function createAdminNotificationsRouter(
   const router = adminOnly(guards);
   const params = validate({ params: notificationParamsSchema });
   router.get('/', controller.list);
-  router.get('/preview', validate({ query: notificationTargetSchema }), controller.preview);
+  router.get('/preview', validate({ query: notificationPreviewQuerySchema }), controller.preview);
   router.post(
     '/',
     validate({ body: notificationTargetSchema }),

@@ -191,6 +191,31 @@ describe('vista previa y una sola vez por elemento', () => {
   });
 });
 
+describe('vista previa antes de guardar', () => {
+  it('sin refId: a cuántas apuntadas llegaría al publicar; de un extra, solo las que terminaron ese libro', async () => {
+    const world = await staffWorld();
+    const [done] = await readers(2);
+    const book = await createBook();
+    await UserProgress.create({ userId: done, bookId: book._id, bookCompletedAt: new Date() });
+    const ofPost = notificationPreviewSchema.parse(
+      (await world.admin.get('/api/admin/notifications/preview?kind=post').expect(200)).body,
+    );
+    expect(ofPost).toMatchObject({ available: true, recipients: 2, existing: null });
+    const ofExtra = notificationPreviewSchema.parse(
+      (
+        await world.admin
+          .get(`/api/admin/notifications/preview?kind=extra&bookId=${String(book._id)}`)
+          .expect(200)
+      ).body,
+    );
+    expect(ofExtra.recipients).toBe(1);
+    const noBook = notificationPreviewSchema.parse(
+      (await world.admin.get('/api/admin/notifications/preview?kind=extra').expect(200)).body,
+    );
+    expect(noBook.recipients).toBe(0);
+  });
+});
+
 describe('el envío', () => {
   it('un correo por apuntada, con remitente de novedades, cabeceras de baja en un clic y enlace de baja firmado', async () => {
     const world = await staffWorld({ env: { MAIL_FROM_NEWS: NEWS_FROM } });
@@ -314,6 +339,28 @@ describe('cupo y cola', () => {
     expect(state?.status).toBe('done');
     expect(state?.totals.sent).toBe(8);
     expect(await NotificationDelivery.countDocuments({ status: 'sent' })).toBe(8);
+  });
+
+  it('la lista de avisos también despierta la cola si hay uno en marcha (la pantalla se refresca sola)', async () => {
+    const clock = createTestClock();
+    const world = await staffWorld({
+      clock,
+      env: { MAIL_DAILY_LIMIT: '25', MAIL_TRANSACTIONAL_RESERVE: '20' },
+    });
+    await readers(7);
+    const item = await post(world, { publishedAt: clock() });
+    const job = createNotificationResponseSchema.parse((await notify(world, item._id)).body).job;
+    expect((await NotificationJob.findById(job.id).lean())?.totals.sent).toBe(5);
+    clock.advance(DAY);
+    const admin = await loginAgent(world.app, 'admin@ejemplo.com');
+    await admin.get('/api/admin/notifications').expect(200);
+    await world.flush();
+    expect((await NotificationJob.findById(job.id).lean())?.status).toBe('done');
+    // Sin nada en marcha, mirar la lista no lanza pasadas.
+    const batches = world.mail.batches.length;
+    await admin.get('/api/admin/notifications').expect(200);
+    await world.flush();
+    expect(world.mail.batches).toHaveLength(batches);
   });
 
   it('los transaccionales que pasan de la reserva le quitan cupo a los avisos (prioridad)', async () => {
