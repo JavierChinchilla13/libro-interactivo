@@ -40,6 +40,8 @@ import { createSitemapService } from './services/sitemap.service.js';
 import { createSiteSettingsService } from './services/siteSettings.service.js';
 import { createWelcomeService } from './services/welcome.service.js';
 import { createNewsletterService } from './services/newsletter.service.js';
+import { createNotificationService } from './services/notification.service.js';
+import { CountingMailProvider, createMailQuota } from './services/mailQuota.service.js';
 import { createExtraService } from './services/extra.service.js';
 import { createAccountService } from './services/account.service.js';
 import { AGE_REJECTION_LIMIT, createAgeGate } from './services/ageGate.service.js';
@@ -96,6 +98,10 @@ export interface AppDeps {
     | 'CLOUDINARY_API_SECRET'
     | 'UNSUBSCRIBE_SECRET'
     | 'RESEND_WEBHOOK_SECRET'
+    | 'MAIL_FROM_NEWS'
+    | 'MAIL_DAILY_LIMIT'
+    | 'MAIL_MONTHLY_LIMIT'
+    | 'MAIL_TRANSACTIONAL_RESERVE'
   >;
   logger: Logger;
   isDbUp: () => boolean;
@@ -115,6 +121,11 @@ export interface AppDeps {
   images?: ImageProvider;
   /** Almacenamiento privado S3-compatible; por defecto el real si hay credenciales o uno en memoria. */
   storage?: StorageProvider;
+  /**
+   * Arranca el trabajador de la cola de avisos por correo (una pasada al poco de arrancar y cada 5 minutos). Solo el
+   * servidor real lo enciende; las pruebas llaman a la pasada a mano.
+   */
+  startWorkers?: boolean;
   /** Ajustes del respaldo descargable (solo pruebas: carpeta temporal, tope y scrypt más liviano). */
   backup?: Pick<BackupDownloadDeps, 'tmpDir' | 'maxBytes' | 'scrypt'>;
 }
@@ -134,7 +145,20 @@ export function createApp(
   configure?: (app: Express, ctx: AppContext) => void,
 ): Express {
   const clock = deps.clock ?? systemClock;
-  const mail = deps.mail ?? createMailProvider(deps.env, deps.logger);
+  // Todo correo pasa por el contador del cupo (los transaccionales y los avisos), por día UTC.
+  const quota = createMailQuota({
+    clock,
+    config: {
+      dailyLimit: deps.env.MAIL_DAILY_LIMIT,
+      monthlyLimit: deps.env.MAIL_MONTHLY_LIMIT,
+      reserve: deps.env.MAIL_TRANSACTIONAL_RESERVE,
+    },
+  });
+  const mail = new CountingMailProvider(
+    deps.mail ?? createMailProvider(deps.env, deps.logger),
+    quota,
+    deps.logger,
+  );
   const tasks = deps.tasks ?? createBackgroundTasks(deps.logger);
 
   const auth = createAuthService({
@@ -219,6 +243,16 @@ export function createApp(
     appUrl: deps.env.APP_URL,
     unsubscribeSecret: deps.env.UNSUBSCRIBE_SECRET,
     webhookSecret: deps.env.RESEND_WEBHOOK_SECRET,
+  });
+  const notifications = createNotificationService({
+    clock,
+    mail,
+    quota,
+    tasks,
+    logger: deps.logger,
+    appUrl: deps.env.APP_URL,
+    unsubscribeSecret: deps.env.UNSUBSCRIBE_SECRET,
+    fromNews: deps.env.MAIL_FROM_NEWS,
   });
   const backups = createBackupDownloadService({
     clock,
@@ -310,6 +344,7 @@ export function createApp(
       siteSettings,
       backups,
       newsletter,
+      notifications,
       clock,
       requireUnlocked,
       guards,
@@ -320,5 +355,17 @@ export function createApp(
 
   app.use(notFoundHandler);
   app.use(createErrorHandler(deps.logger));
+
+  if (deps.startWorkers) {
+    // La cola vive en la base: se retoma al arrancar (Render puede reiniciar) y cada 5 minutos mientras esté despierto.
+    const first = setTimeout(() => void notifications.tick(), 5_000);
+    const every = setInterval(() => void notifications.tick(), 5 * 60_000);
+    first.unref();
+    every.unref();
+    app.locals['stopWorkers'] = () => {
+      clearTimeout(first);
+      clearInterval(every);
+    };
+  }
   return app;
 }

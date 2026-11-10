@@ -29,6 +29,8 @@ export interface Limits {
   newsletterPublic: RateLimitOptions;
   /** Webhook de Resend (sin sesión, por IP). */
   webhook: RateLimitOptions;
+  /** Pedir un aviso por correo (por usuaria). */
+  notificationCreate: RateLimitOptions;
 }
 
 /**
@@ -73,4 +75,5 @@ export const DEFAULT_LIMITS: Limits = {
   newsletterAccount: { windowMs: 60 * 60_000, limit: 10, by: 'user' },
   newsletterPublic: { windowMs: 15 * 60_000, limit: 60 },
   webhook: { windowMs: 10 * 60_000, limit: 300 },
+  notificationCreate: { windowMs: 60 * 60_000, limit: 30, by: 'user' },
 };

@@ -152,3 +152,50 @@ ${input.link}
 Si tú no lo pediste, ignora este mensaje: no te apuntaremos a nada.`;
   return { subject: `Confirma tus correos de novedades de ${BRAND}`, html, text };
 }
+
+/**
+ * Miniatura de Cloudinary para un correo: 600 px de ancho como máximo y en **JPG** (varios clientes de correo no
+ * muestran WebP ni AVIF). Una dirección que no es de Cloudinary se deja tal cual.
+ */
+export function emailImageUrl(url: string): string {
+  return url.replace(/\/image\/upload\//, '/image/upload/w_600,c_limit,q_auto,f_jpg/');
+}
+
+/**
+ * Aviso de novedades (actualización o capítulo extra). Todo escapado; sin píxeles ni enlaces con seguimiento: los
+ * enlaces van directos al sitio y son iguales para todas, salvo el de baja (firmado para cada persona).
+ * De un capítulo extra nunca va nada de su contenido (lo arma quien pide el aviso).
+ */
+export function notificationEmail(input: {
+  name: string;
+  subject: string;
+  title: string;
+  summary?: string | undefined;
+  imageUrl?: string | undefined;
+  imageAlt?: string | undefined;
+  link: string;
+  unsubscribeUrl: string;
+}): RenderedEmail {
+  const name = singleLine(input.name);
+  const summary = input.summary?.trim();
+  const image = input.imageUrl
+    ? `<p style="margin:0 0 16px;"><img src="${escapeHtml(input.imageUrl)}" alt="${escapeHtml(input.imageAlt ?? '')}" width="504" style="display:block;width:100%;max-width:504px;height:auto;border-radius:8px;"></p>`
+    : '';
+  const html = layout(
+    input.title,
+    `${image}<p>Hola ${escapeHtml(name)},</p>
+      ${summary ? `<p>${escapeHtml(summary)}</p>` : ''}
+      ${button(input.link, 'Ver en Universo Memorias')}
+      <p style="font-size:13px;color:#5b636d;">Recibes este correo porque te apuntaste a las novedades de la autora en tu cuenta de ${escapeHtml(BRAND)}. No medimos si lo abres ni en qué haces clic.</p>
+      <p style="font-size:13px;color:#5b636d;"><a href="${escapeHtml(input.unsubscribeUrl)}" style="color:#5b636d;">Darme de baja</a> (un clic, sin iniciar sesión).</p>`,
+  );
+  const text = `Hola ${name},
+
+${input.title}
+${summary ? `\n${summary}\n` : ''}
+Ver en ${BRAND}: ${input.link}
+
+Recibes este correo porque te apuntaste a las novedades de la autora en tu cuenta de ${BRAND}. No medimos si lo abres ni en qué haces clic.
+Darme de baja (un clic, sin iniciar sesión): ${input.unsubscribeUrl}`;
+  return { subject: singleLine(input.subject, 200), html, text };
+}

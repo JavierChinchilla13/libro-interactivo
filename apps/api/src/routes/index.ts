@@ -26,6 +26,8 @@ import { createAdminBackupController } from '../controllers/adminBackup.controll
 import type { BackupDownloadService } from '../services/backupDownload.service.js';
 import { createNewsletterController } from '../controllers/newsletter.controller.js';
 import type { NewsletterService } from '../services/newsletter.service.js';
+import { createNotificationController } from '../controllers/notification.controller.js';
+import type { NotificationService } from '../services/notification.service.js';
 import {
   createAccountNewsletterRouter,
   createPublicNewsletterRouter,
@@ -102,6 +104,7 @@ import {
 } from './community.routes.js';
 import {
   createAdminBackupRouter,
+  createAdminNotificationsRouter,
   createAdminMessagesRouter,
   createAdminNetworkRouter,
   createAdminStatsRouter,
@@ -155,6 +158,7 @@ export interface RouteDeps {
   siteSettings: SiteSettingsService;
   backups: BackupDownloadService;
   newsletter: NewsletterService;
+  notifications: NotificationService;
   extras: ExtraService;
   clock: Clock;
   requireUnlocked: RequireUnlocked;
@@ -191,6 +195,14 @@ export function createApiRouter(deps: RouteDeps): Router {
   );
   router.use('/newsletter', createPublicNewsletterRouter(newsletterController, deps.limits));
   router.use('/webhooks', createWebhookRouter(newsletterController, deps.limits));
+  router.use(
+    '/admin/notifications',
+    createAdminNotificationsRouter(
+      createNotificationController(deps.notifications),
+      deps.guards,
+      deps.limits,
+    ),
+  );
   router.use('/me', createAccountRouter(accountController, deps.guards, deps.limits));
   router.use('/me', createLearningRouter(quizController, deps.guards));
   router.use('/me', createWelcomeRouter(createWelcomeController(deps.welcome), deps.guards));
