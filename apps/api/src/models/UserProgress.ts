@@ -2,7 +2,8 @@ import { Schema, model, type HydratedDocument, type InferSchemaType } from 'mong
 
 const unlockedSchema = new Schema(
   {
-    kind: { type: String, enum: ['quiz', 'game'], required: true },
+    // `card`: una carta abierta con su QR (para siempre en la cuenta; no abre el libro ni cuenta como avance).
+    kind: { type: String, enum: ['quiz', 'game', 'card'], required: true },
     refId: { type: Schema.Types.ObjectId, required: true },
     accessTokenId: { type: Schema.Types.ObjectId },
     at: { type: Date, required: true },

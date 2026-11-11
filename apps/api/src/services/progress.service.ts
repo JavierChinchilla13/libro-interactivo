@@ -1,4 +1,4 @@
-import type { ProgressResponse, Role } from '@libro/shared';
+import type { AccessTargetKind, ProgressResponse, Role } from '@libro/shared';
 import { Types } from 'mongoose';
 import { AppError } from '../lib/errors.js';
 import { isDuplicateKey } from '../lib/mongoErrors.js';
@@ -125,7 +125,12 @@ export function createProgressService(deps: ProgressDeps) {
       .lean();
     return new Set(
       progress
-        .filter((doc) => (doc.unlocked ?? []).length > 0 || (doc.completed ?? []).length > 0)
+        // Abrir una carta no abre el libro: solo cuentan los QR de quizzes y del juego.
+        .filter(
+          (doc) =>
+            (doc.unlocked ?? []).some((entry) => entry.kind !== 'card') ||
+            (doc.completed ?? []).length > 0,
+        )
         .map((doc) => doc.bookId.toString()),
     );
   }
@@ -395,7 +400,7 @@ export function createProgressService(deps: ProgressDeps) {
   async function unlock(input: {
     userId: string;
     bookId: string;
-    kind: 'quiz' | 'game';
+    kind: AccessTargetKind;
     refId: string;
     accessTokenId: string;
     at: Date;

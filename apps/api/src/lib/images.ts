@@ -58,3 +58,13 @@ export function assertCloudinaryUrls(urls: readonly (string | undefined)[]): voi
     }
   }
 }
+
+/**
+ * URL de entrega de una imagen de carta, optimizada (`f_auto,q_auto`) y con el ancho acotado (`c_limit`). Se arma al
+ * servir (nunca se guarda) con la cuenta de Cloudinary configurada (`demo` solo fuera de producción, para semillas y
+ * pruebas). Solo debe salir del API tras validar sesión y desbloqueo.
+ */
+export function cardImageUrl(publicId: string, width: number): string {
+  const cloud = account.cloudName ?? DEMO_CLOUD;
+  return `https://${CLOUDINARY_HOST}/${encodeURIComponent(cloud)}/image/upload/f_auto,q_auto,c_limit,w_${width}/${publicId}`;
+}

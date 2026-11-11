@@ -14,6 +14,7 @@ export * from './schemas/book.js';
 export * from './schemas/upload.js';
 export * from './schemas/wiki.js';
 export * from './schemas/access.js';
+export * from './schemas/cards.js';
 export * from './schemas/extra.js';
 export * from './schemas/site.js';
 export * from './schemas/publicWiki.js';
