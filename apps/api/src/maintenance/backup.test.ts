@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import mongoose from 'mongoose';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { Card } from '../models/Card.js';
 import { ContactMessage } from '../models/ContactMessage.js';
 import { PasswordReset } from '../models/PasswordReset.js';
 import { RefreshToken } from '../models/RefreshToken.js';
@@ -103,6 +104,36 @@ describe('respaldo y restauración', () => {
     expect(readdirSync(folder)).toContain('manifiesto.json');
     // La sesión y el enlace de recuperación no quedaron en ningún archivo.
     expect(readdirSync(folder).join(' ')).not.toMatch(/refreshTokens|passwordResets/);
+  });
+
+  it('las cartas entran solas en el respaldo (colección nueva, sin lista que mantener) y se restauran', async () => {
+    const { reader, book } = await populate();
+    const card = await Card.create({
+      bookId: book._id,
+      title: '[PLACEHOLDER] Carta',
+      order: 1,
+      status: 'published',
+      image: {
+        publicId: 'libro/cartas/AbCdEfGhIjKlMnOpQrStUvWx',
+        format: 'jpg',
+        width: 1200,
+        height: 1800,
+        bytes: 1_200_000,
+      },
+      createdBy: reader._id,
+    });
+    const folder = tempFolder();
+    const manifest = await exportDatabase(sourceDb(), folder, NOW);
+    const cards = manifest.collections.find((c) => c.name === 'cards');
+    expect(cards?.count).toBe(1);
+    // El índice único de la imagen viaja en el manifiesto.
+    expect(cards?.indexes.some((i) => i.unique && 'image.publicId' in i.key)).toBe(true);
+
+    await restoreDatabase(copyDb(), folder);
+    const restored = await copyDb().collection('cards').find({}).toArray();
+    expect(restored).toHaveLength(1);
+    expect(String(restored[0]?._id)).toBe(card._id.toString());
+    expect(restored[0]?.image.publicId).toBe('libro/cartas/AbCdEfGhIjKlMnOpQrStUvWx');
   });
 
   it('con --con-sesiones sí las incluye', async () => {
