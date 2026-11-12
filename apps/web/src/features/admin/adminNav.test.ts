@@ -20,6 +20,7 @@ describe('menú de administración por rol', () => {
     for (const hidden of [
       'Mensajes',
       'Avisos por correo',
+      'Hallazgos',
       'Contacto del sitio',
       'Usuarios',
       'Códigos QR',
@@ -91,5 +92,33 @@ describe('migas y título', () => {
     expect(documentTitle('/admin/quizzes')).toBe('Quizzes · Administración · Universo Memorias');
     expect(documentTitle('/admin')).toBe('Administración · Universo Memorias');
     expect(documentTitle('/admin/desconocida')).toBe('Administración · Universo Memorias');
+  });
+});
+
+describe('nombre editable de la sección de cartas', () => {
+  it('«Hallazgos» por defecto, solo para administradoras, y el nombre de la autora cambia el menú, las migas y el título', () => {
+    expect(labels('ADMIN')).toContain('Hallazgos');
+    expect(labels('EDITOR')).not.toContain('Hallazgos');
+    const custom = { cartas: 'Reliquias' };
+    const names = navForRole('ADMIN', custom).flatMap((group) =>
+      group.items.map((item) => item.label),
+    );
+    expect(names).toContain('Reliquias');
+    expect(names).not.toContain('Hallazgos');
+    // La dirección interna no cambia.
+    expect(
+      navForRole('ADMIN', custom)
+        .flatMap((group) => group.items)
+        .find((item) => item.id === 'cartas')?.to,
+    ).toBe('/admin/cartas');
+    expect(documentTitle('/admin/cartas', custom)).toBe(
+      'Reliquias · Administración · Universo Memorias',
+    );
+    expect(documentTitle('/admin/cartas')).toBe('Hallazgos · Administración · Universo Memorias');
+    expect(crumbsFor('/admin/cartas/nueva', null, custom)).toEqual([
+      { label: 'Contenido del universo' },
+      { label: 'Reliquias', to: '/admin/cartas' },
+      { label: 'Nueva' },
+    ]);
   });
 });

@@ -1,5 +1,9 @@
 import {
+  adminCardListResponseSchema,
+  adminCardSchema,
   backupStatusResponseSchema,
+  type CardInputPayload,
+  type CardReorderRequest,
   type CreateBackupRequest,
   adminMessageListResponseSchema,
   adminMessageSchema,
@@ -252,6 +256,24 @@ export const notificationsApi = {
     apiRequest(`/admin/notifications/${id}/cancel`, notificationJobSchema, { method: 'POST' }),
 };
 
+export const cardsApi = {
+  list: (bookId: string) =>
+    apiRequest(`/admin/cards${query({ bookId })}`, adminCardListResponseSchema),
+  get: (id: string) => apiRequest(`/admin/cards/${id}`, adminCardSchema),
+  create: (body: CardInputPayload) =>
+    apiRequest('/admin/cards', adminCardSchema, { method: 'POST', body }),
+  replace: (id: string, body: CardInputPayload) =>
+    apiRequest(`/admin/cards/${id}`, adminCardSchema, { method: 'PUT', body }),
+  reorder: (body: CardReorderRequest) =>
+    apiRequest('/admin/cards/reorder', adminCardListResponseSchema, { method: 'PATCH', body }),
+  /** Una firma por imagen: el servidor elige el nombre (público e impredecible) de cada una. */
+  sign: (bookId: string) =>
+    apiRequest('/admin/cards/upload-signature', imageSignatureResponseSchema, {
+      method: 'POST',
+      body: { bookId },
+    }),
+};
+
 export const statsApi = {
   get: () => apiRequest('/admin/stats', adminStatsSchema),
 };
@@ -279,6 +301,8 @@ export const keys = {
   messages: ['admin', 'messages'] as const,
   stats: ['admin', 'stats'] as const,
   backups: ['admin', 'backups'] as const,
+  cards: (bookId: string) => ['admin', 'cards', 'list', bookId] as const,
+  card: (id: string) => ['admin', 'cards', 'one', id] as const,
   notifications: ['admin', 'notifications'] as const,
   notificationPreview: (kind: string, refId?: string, bookId?: string) =>
     ['admin', 'notifications', 'preview', kind, refId ?? 'nuevo', bookId ?? ''] as const,

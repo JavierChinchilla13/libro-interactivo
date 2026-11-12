@@ -49,6 +49,12 @@ const PATHS = {
     </>
   ),
   send: <path d="M20 4 9.5 14.5M20 4l-6.5 16-4-5.5L4 10.5z" />,
+  card: (
+    <>
+      <rect x="6.5" y="4" width="11" height="16" rx="2" />
+      <path d="M9.5 8.5h5M9.5 12h5M9.5 15.5h2.5" />
+    </>
+  ),
   cover: (
     <>
       <rect x="4" y="5" width="16" height="14" rx="2" />

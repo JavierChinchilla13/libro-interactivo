@@ -140,6 +140,15 @@ export const routes: RouteObject[] = [
             ...page(() => import('../features/reader/ExtrasPage'), 'ExtraViewPage'),
           },
           {
+            // Cartas con QR: el nombre que ve la lectora lo elige la autora; la dirección interna no cambia.
+            path: 'cartas',
+            ...page(() => import('../features/cards/CardsPage'), 'CardsPage'),
+          },
+          {
+            path: 'cartas/:cardId',
+            ...page(() => import('../features/cards/CardsPage'), 'CardsPage'),
+          },
+          {
             path: 'cuenta',
             ...page(() => import('../features/reader/AccountPage'), 'AccountPage'),
           },
@@ -269,6 +278,18 @@ export const routes: RouteObject[] = [
                   {
                     path: 'qr',
                     ...page(() => import('../features/admin/access/AccessPage'), 'AccessPage'),
+                  },
+                  {
+                    path: 'cartas',
+                    ...page(() => import('../features/admin/cards/CardListPage'), 'CardListPage'),
+                  },
+                  {
+                    path: 'cartas/nueva',
+                    ...page(() => import('../features/admin/cards/CardFormPage'), 'CardFormPage'),
+                  },
+                  {
+                    path: 'cartas/:cardId',
+                    ...page(() => import('../features/admin/cards/CardFormPage'), 'CardFormPage'),
                   },
                   {
                     path: 'usuarios',
