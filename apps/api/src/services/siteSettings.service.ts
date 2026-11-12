@@ -1,4 +1,6 @@
 import {
+  CARDS_LABEL_DEFAULT,
+  CARDS_LABEL_MAX,
   imageRefSchema,
   type AuthorSettings,
   type ContactSettings as ContactSettingsResponse,
@@ -13,6 +15,7 @@ import {
 import { AppError } from '../lib/errors.js';
 import { assertCloudinaryUrls } from '../lib/images.js';
 import { sanitizeRichHtml } from '../lib/sanitize.js';
+import { plainText } from '../lib/text.js';
 import { SiteSettings } from '../models/SiteSettings.js';
 import type { Actor } from './progress.service.js';
 
@@ -116,6 +119,7 @@ export function createSiteSettingsService() {
       lock: settings?.lock?.message ? { message: settings.lock.message } : {},
       ...(role === 'ADMIN' ? { contact } : {}),
       ...(settings?.legalOwnerName ? { legalOwnerName: settings.legalOwnerName } : {}),
+      cardsLabel: settings?.cardsLabel || CARDS_LABEL_DEFAULT,
     };
   }
 
@@ -131,7 +135,8 @@ export function createSiteSettingsService() {
       else unset[path] = 1;
     };
 
-    const { welcome, universe, author, social, lock, contact, legalOwnerName } = request;
+    const { welcome, universe, author, social, lock, contact, legalOwnerName, cardsLabel } =
+      request;
     if (contact && actor.role !== 'ADMIN') {
       throw new AppError('FORBIDDEN', 'Solo una administradora puede cambiar el contacto');
     }
@@ -139,6 +144,13 @@ export function createSiteSettingsService() {
       throw new AppError(
         'FORBIDDEN',
         'Solo una administradora puede cambiar el nombre legal de la titular',
+      );
+    }
+
+    if (cardsLabel !== undefined && actor.role !== 'ADMIN') {
+      throw new AppError(
+        'FORBIDDEN',
+        'Solo una administradora puede cambiar el nombre de la sección',
       );
     }
 
@@ -174,6 +186,9 @@ export function createSiteSettingsService() {
     if (social) set['social'] = social;
     if (lock) optional('lock.message', lock.message);
     if (legalOwnerName !== undefined) optional('legalOwnerName', legalOwnerName);
+    // Texto plano (sin marcado) y de un máximo de largo; vacío vuelve al nombre por defecto.
+    if (cardsLabel !== undefined)
+      optional('cardsLabel', plainText(cardsLabel).slice(0, CARDS_LABEL_MAX));
     if (contact) {
       optional('contact.recipientEmail', contact.recipientEmail);
       set['contact.storeMessages'] = contact.storeMessages;
@@ -197,6 +212,7 @@ export function createSiteSettingsService() {
       social: toSocial(settings),
       lockMessage: settings?.lock?.message || DEFAULT_LOCK_MESSAGE,
       ...(settings?.legalOwnerName ? { legalOwnerName: settings.legalOwnerName } : {}),
+      cardsLabel: settings?.cardsLabel || CARDS_LABEL_DEFAULT,
     };
   }
 

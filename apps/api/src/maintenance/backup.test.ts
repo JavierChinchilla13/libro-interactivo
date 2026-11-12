@@ -113,13 +113,15 @@ describe('respaldo y restauración', () => {
       title: '[PLACEHOLDER] Carta',
       order: 1,
       status: 'published',
-      image: {
-        publicId: 'libro/cartas/AbCdEfGhIjKlMnOpQrStUvWx',
-        format: 'jpg',
-        width: 1200,
-        height: 1800,
-        bytes: 1_200_000,
-      },
+      images: [
+        {
+          publicId: 'libro/cartas/AbCdEfGhIjKlMnOpQrStUvWx',
+          format: 'jpg',
+          width: 1200,
+          height: 1800,
+          bytes: 1_200_000,
+        },
+      ],
       createdBy: reader._id,
     });
     const folder = tempFolder();
@@ -127,13 +129,13 @@ describe('respaldo y restauración', () => {
     const cards = manifest.collections.find((c) => c.name === 'cards');
     expect(cards?.count).toBe(1);
     // El índice único de la imagen viaja en el manifiesto.
-    expect(cards?.indexes.some((i) => i.unique && 'image.publicId' in i.key)).toBe(true);
+    expect(cards?.indexes.some((i) => i.unique && 'images.publicId' in i.key)).toBe(true);
 
     await restoreDatabase(copyDb(), folder);
     const restored = await copyDb().collection('cards').find({}).toArray();
     expect(restored).toHaveLength(1);
     expect(String(restored[0]?._id)).toBe(card._id.toString());
-    expect(restored[0]?.image.publicId).toBe('libro/cartas/AbCdEfGhIjKlMnOpQrStUvWx');
+    expect(restored[0]?.images[0].publicId).toBe('libro/cartas/AbCdEfGhIjKlMnOpQrStUvWx');
   });
 
   it('con --con-sesiones sí las incluye', async () => {

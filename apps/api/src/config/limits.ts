@@ -17,6 +17,8 @@ export interface Limits {
   appearanceWrite: RateLimitOptions;
   /** Firmar subidas a Cloudinary (por usuaria y propósito). */
   uploadSign: RateLimitOptions;
+  /** Firmar subidas de imágenes de cartas (por usuaria): una firma por imagen, hasta 12 por carta. */
+  cardUploadSign: RateLimitOptions;
   /** Firmar subidas de fondos de quiz (`quiz-bg`, videos de hasta 5 MB): tope más bajo. */
   uploadSignQuizBg: RateLimitOptions;
   /** Descargar un respaldo desde el panel (por usuaria): por hora… */
@@ -70,6 +72,7 @@ export const DEFAULT_LIMITS: Limits = {
   appearanceWrite: { windowMs: 15 * 60_000, limit: 60, by: 'user' },
   uploadSign: { windowMs: 60 * 60_000, limit: 60, by: 'user' },
   uploadSignQuizBg: { windowMs: 60 * 60_000, limit: 20, by: 'user' },
+  cardUploadSign: { windowMs: 60 * 60_000, limit: 240, by: 'user' },
   backupHour: { windowMs: 60 * 60_000, limit: 3, by: 'user' },
   backupDay: { windowMs: 24 * 60 * 60_000, limit: 10, by: 'user' },
   newsletterAccount: { windowMs: 60 * 60_000, limit: 10, by: 'user' },

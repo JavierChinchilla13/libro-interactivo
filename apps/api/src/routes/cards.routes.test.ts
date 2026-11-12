@@ -5,7 +5,7 @@ import {
   adminCardSchema,
   apiErrorSchema,
   imageSignatureResponseSchema,
-  readerCardSchema,
+  readerCardDetailSchema,
   readerCardsResponseSchema,
   resolveAccessResponseSchema,
 } from '@libro/shared';
@@ -48,7 +48,7 @@ async function world() {
     title: '[PLACEHOLDER] Carta uno',
     order: 1,
     status: 'published',
-    image: { publicId: upload() },
+    images: [{ publicId: upload() }],
     ...over,
   });
   const create = async (over: Record<string, unknown> = {}) =>
@@ -129,19 +129,27 @@ describe('crear, editar, ordenar y archivar', () => {
     const publicId = upload({ width: 1000, height: 1500, bytes: 900_000, format: 'png' });
     const res = await admin
       .post('/api/admin/cards')
-      .send(input({ image: { publicId }, alt: '  Una carta con un dragón  ' }))
+      .send(input({ images: [{ publicId, alt: '  Un dragón sobre una torre  ' }] }))
       .expect(201);
     const card = adminCardSchema.parse(res.body);
     expect(card).toMatchObject({
       bookId: book._id.toString(),
       title: '[PLACEHOLDER] Carta uno',
-      alt: 'Una carta con un dragón',
       status: 'published',
-      image: { publicId, width: 1000, height: 1500, bytes: 900_000, format: 'png' },
+      images: [
+        {
+          publicId,
+          alt: 'Un dragón sobre una torre',
+          width: 1000,
+          height: 1500,
+          bytes: 900_000,
+          format: 'png',
+        },
+      ],
     });
     // Entrega optimizada y con el ancho acotado.
-    expect(card.image.url).toContain('/image/upload/f_auto,q_auto,c_limit,w_480/');
-    expect(card.image.url.endsWith(publicId)).toBe(true);
+    expect(card.images[0]?.url).toContain('/image/upload/f_auto,q_auto,c_limit,w_480/');
+    expect(card.images[0]?.url.endsWith(publicId)).toBe(true);
     const stored = await Card.findById(card.id).lean();
     expect(JSON.stringify(stored)).not.toMatch(/https?:\/\//);
     expect(stored?.createdBy.toString()).toBe(adminUser._id.toString());
@@ -152,9 +160,19 @@ describe('crear, editar, ordenar y archivar', () => {
     for (const bad of [
       { title: '   ' },
       { title: 'x'.repeat(121) },
-      { image: { publicId: 'libro/quiz-bg/aaaaaaaaaaaaaaaaaaaaaaaa' } },
-      { image: { publicId: 'libro/cartas/corto' } },
-      { image: { publicId: 'libro/cartas/../quiz-bg/aaaaaaaaaaaaaaaaaaaaaaaa' } },
+      { images: [{ publicId: 'libro/quiz-bg/aaaaaaaaaaaaaaaaaaaaaaaa' }] },
+      { images: [{ publicId: 'libro/cartas/corto' }] },
+      { images: [{ publicId: 'libro/cartas/../quiz-bg/aaaaaaaaaaaaaaaaaaaaaaaa' }] },
+      { images: [] },
+      { images: Array.from({ length: 13 }, () => ({ publicId: cardPublicId() })) },
+      {
+        images: [
+          { publicId: 'libro/cartas/AbCdEfGhIjKlMnOpQrStUvWx' },
+          { publicId: 'libro/cartas/AbCdEfGhIjKlMnOpQrStUvWx' },
+        ],
+      },
+      { images: [{ publicId: cardPublicId(), alt: 'x'.repeat(301) }] },
+      { image: { publicId: cardPublicId() }, images: undefined },
       { order: 0 },
       { status: 'draft' },
       { bookId: 'no-es-un-id' },
@@ -168,15 +186,23 @@ describe('crear, editar, ordenar y archivar', () => {
   it('verifica la imagen en Cloudinary: inexistente, pesada, de otro formato o de tamaño raro se rechazan', async () => {
     const { admin, input, upload } = await world();
     const cases: Array<[string, Record<string, unknown>, RegExp]> = [
-      ['no existe', { image: { publicId: cardPublicId() } }, /No encontramos esa imagen/],
+      ['no existe', { images: [{ publicId: cardPublicId() }] }, /No encontramos esa imagen/],
       [
         'pesa 9 MB',
-        { image: { publicId: upload({ bytes: 9 * 1024 * 1024 }) } },
+        { images: [{ publicId: upload({ bytes: 9 * 1024 * 1024 }) }] },
         /pesa 9,0 MB; el máximo es 8 MB/,
       ],
-      ['es un gif', { image: { publicId: upload({ format: 'gif' }) } }, /JPG, PNG o WebP/],
-      ['muy pequeña', { image: { publicId: upload({ width: 200, height: 400 }) } }, /muy pequeña/],
-      ['descomunal', { image: { publicId: upload({ width: 9000, height: 3000 }) } }, /muy grande/],
+      ['es un gif', { images: [{ publicId: upload({ format: 'gif' }) }] }, /JPG, PNG o WebP/],
+      [
+        'muy pequeña',
+        { images: [{ publicId: upload({ width: 200, height: 400 }) }] },
+        /muy pequeña/,
+      ],
+      [
+        'descomunal',
+        { images: [{ publicId: upload({ width: 9000, height: 3000 }) }] },
+        /muy grande/,
+      ],
     ];
     for (const [name, body, message] of cases) {
       const res = await admin.post('/api/admin/cards').send(input(body));
@@ -194,18 +220,19 @@ describe('crear, editar, ordenar y archivar', () => {
     const first = await create();
     const dup = await admin
       .post('/api/admin/cards')
-      .send(input({ image: { publicId: first.image.publicId } }));
+      .send(input({ images: [{ publicId: first.images[0]?.publicId }] }));
     expect(dup.status).toBe(409);
     expect(apiErrorSchema.parse(dup.body).error.code).toBe('CONFLICT');
   });
 
-  it('edita título, texto alternativo y estado; cambiar la imagen la vuelve a verificar; no cambia de libro', async () => {
+  it('edita título y estado; solo las imágenes nuevas se verifican; no cambia de libro ni toca Cloudinary', async () => {
     const { admin, book, input, create, upload, cloud } = await world();
-    const card = await create({ alt: 'Alt viejo' });
+    const card = await create();
+    const first = card.images[0]?.publicId ?? '';
     const inspected = cloud.provider.inspect as unknown as { mock: { calls: unknown[] } };
     const before = inspected.mock.calls.length;
 
-    // Misma imagen: no se vuelve a consultar a Cloudinary.
+    // Misma imagen (solo cambia su texto alternativo): no se vuelve a consultar a Cloudinary.
     const edited = adminCardSchema.parse(
       (
         await admin
@@ -213,34 +240,38 @@ describe('crear, editar, ordenar y archivar', () => {
           .send(
             input({
               title: 'Título nuevo',
-              alt: '',
               status: 'archived',
-              image: { publicId: card.image.publicId },
+              images: [{ publicId: first, alt: 'Alt nuevo' }],
             }),
           )
           .expect(200)
       ).body,
     );
     expect(edited).toMatchObject({ title: 'Título nuevo', status: 'archived' });
-    expect(edited.alt).toBeUndefined();
+    expect(edited.images[0]?.alt).toBe('Alt nuevo');
     expect(inspected.mock.calls.length).toBe(before);
 
-    // Imagen nueva: se verifica (y una que no cumple se rechaza sin tocar la carta).
+    // Una imagen nueva que no cumple se rechaza sin tocar la carta.
     const bad = await admin
       .put(`/api/admin/cards/${card.id}`)
-      .send(input({ image: { publicId: upload({ format: 'gif' }) } }));
+      .send(input({ images: [{ publicId: first }, { publicId: upload({ format: 'gif' }) }] }));
     expect(bad.status).toBe(400);
+    expect((await Card.findById(card.id).lean())?.images).toHaveLength(1);
+
+    // Una imagen nueva buena se agrega; la vieja no se vuelve a consultar.
     const next = upload({ width: 800, height: 1200 });
     const swapped = adminCardSchema.parse(
       (
         await admin
           .put(`/api/admin/cards/${card.id}`)
-          .send(input({ image: { publicId: next } }))
+          .send(input({ images: [{ publicId: next }] }))
           .expect(200)
       ).body,
     );
-    expect(swapped.image).toMatchObject({ publicId: next, width: 800, height: 1200 });
-    // El API nunca borra la imagen anterior de Cloudinary.
+    expect(swapped.images).toHaveLength(1);
+    expect(swapped.images[0]).toMatchObject({ publicId: next, width: 800, height: 1200 });
+    expect(swapped.images[0]?.alt).toBeUndefined();
+    // El API nunca borra la imagen que se quitó de Cloudinary.
     expect(cloud.destroyed).toEqual([]);
 
     const other = await Book.create({ slug: 'otro', title: 'Otro', order: 2, status: 'published' });
@@ -248,12 +279,57 @@ describe('crear, editar, ordenar y archivar', () => {
       (
         await admin
           .put(`/api/admin/cards/${card.id}`)
-          .send(input({ bookId: other._id.toString(), image: { publicId: next } }))
+          .send(input({ bookId: other._id.toString(), images: [{ publicId: next }] }))
       ).status,
     ).toBe(400);
     expect((await admin.put(`/api/admin/cards/${MISSING}`).send(input())).status).toBe(404);
     expect((await admin.get(`/api/admin/cards/${MISSING}`)).status).toBe(404);
     expect(book).toBeDefined();
+  });
+
+  it('una carta con varias imágenes: se guardan en el orden pedido, se pueden reordenar y quitar, hasta 12', async () => {
+    const { admin, input, create, upload, cloud } = await world();
+    const ids = Array.from({ length: 12 }, () => upload());
+    const card = await create({
+      images: ids.map((publicId, n) => ({ publicId, alt: `Imagen ${n + 1}` })),
+    });
+    expect(card.images.map((image) => image.publicId)).toEqual(ids);
+    expect(card.images.map((image) => image.alt)).toEqual(ids.map((_, n) => `Imagen ${n + 1}`));
+
+    // Reordenar (la última pasa a ser la portada) y quitar una: sin volver a consultar a Cloudinary.
+    const inspected = cloud.provider.inspect as unknown as { mock: { calls: unknown[] } };
+    const before = inspected.mock.calls.length;
+    const wanted = [ids[11], ids[0], ids[5]].map((publicId) => ({ publicId }));
+    const next = adminCardSchema.parse(
+      (
+        await admin
+          .put(`/api/admin/cards/${card.id}`)
+          .send(input({ images: wanted }))
+          .expect(200)
+      ).body,
+    );
+    expect(next.images.map((image) => image.publicId)).toEqual([ids[11], ids[0], ids[5]]);
+    expect(inspected.mock.calls.length).toBe(before);
+    expect(cloud.destroyed).toEqual([]);
+    expect((await Card.findById(card.id).lean())?.images.map((image) => image.publicId)).toEqual([
+      ids[11],
+      ids[0],
+      ids[5],
+    ]);
+  });
+
+  it('el mismo archivo no puede estar en dos cartas ni repetido en una', async () => {
+    const { admin, input, create, upload } = await world();
+    const shared = upload();
+    await create({ images: [{ publicId: shared }, { publicId: upload() }] });
+    const other = await admin
+      .post('/api/admin/cards')
+      .send(input({ images: [{ publicId: upload() }, { publicId: shared }] }));
+    expect(other.status).toBe(409);
+    const twice = await admin
+      .post('/api/admin/cards')
+      .send(input({ images: [{ publicId: shared }, { publicId: shared }] }));
+    expect(twice.status).toBe(400);
   });
 
   it('lista por libro en orden y reordena; una lista que ya cambió responde 409', async () => {
@@ -300,7 +376,7 @@ describe('QR de una carta (reutiliza el sistema de QR)', () => {
       target: { kind: 'card', refId: card.id },
       bookId: book._id.toString(),
     });
-    expect(code.label).toBe('[PLACEHOLDER] Libro 1 — Carta: [PLACEHOLDER] La carta secreta');
+    expect(code.label).toBe('[PLACEHOLDER] Libro 1 — [PLACEHOLDER] La carta secreta');
     const stored = await AccessToken.findById(code.id).lean();
     expect(stored?.tokenHash).toMatch(/^sha256:[0-9a-f]{64}$/);
     expect(JSON.stringify(stored)).not.toContain(code.token.split('.')[1]);
@@ -360,8 +436,11 @@ describe('la lectora: solo ve lo que abrió', () => {
   });
 
   it('al escanear su QR la carta se abre y queda en la cuenta: lista, vista grande y cabeceras privadas', async () => {
-    const { reader, create, qr, book } = await world();
-    const card = await create({ title: '[PLACEHOLDER] Abierta', alt: 'Un dragón sobre una torre' });
+    const { reader, create, qr, book, upload } = await world();
+    const card = await create({
+      title: '[PLACEHOLDER] Abierta',
+      images: [{ publicId: upload(), alt: 'Un dragón sobre una torre' }],
+    });
     const { token } = await qr(card.id);
 
     const redeemed = await reader.post('/api/access/redeem').send({ token }).expect(200);
@@ -387,14 +466,56 @@ describe('la lectora: solo ve lo que abrió', () => {
       title: '[PLACEHOLDER] Abierta',
       alt: 'Un dragón sobre una torre',
       bookTitle: '[PLACEHOLDER] Libro 1',
+      imageCount: 1,
     });
     expect(cards[0]?.imageUrl).toContain('/f_auto,q_auto,c_limit,w_480/libro/cartas/');
 
     const one = await reader.get(`/api/cards/${card.id}`).expect(200);
     expect(one.headers['cache-control']).toBe('private, no-store');
-    expect(readerCardSchema.parse(one.body).imageUrl).toContain(
-      '/f_auto,q_auto,c_limit,w_1200/libro/cartas/',
-    );
+    const detail = readerCardDetailSchema.parse(one.body);
+    expect(detail.images).toHaveLength(1);
+    expect(detail.images[0]?.url).toContain('/f_auto,q_auto,c_limit,w_1200/libro/cartas/');
+    expect(detail.images[0]?.alt).toBe('Un dragón sobre una torre');
+  });
+
+  it('con varias imágenes: la lista trae solo la portada y su cantidad; al abrirla salen todas, en orden y con su texto alternativo', async () => {
+    const { reader, create, qr, upload } = await world();
+    const ids = [upload(), upload(), upload()];
+    const card = await create({
+      title: '[PLACEHOLDER] Galería',
+      images: [
+        { publicId: ids[0] },
+        { publicId: ids[1], alt: 'Un mapa antiguo' },
+        { publicId: ids[2] },
+      ],
+    });
+    // Sin abrir: ninguna URL de ninguna imagen.
+    const closed = await reader.get('/api/cards').expect(200);
+    expect(JSON.stringify(closed.body)).not.toContain('libro/cartas');
+
+    await reader
+      .post('/api/access/redeem')
+      .send({ token: (await qr(card.id)).token })
+      .expect(200);
+    const list = await reader.get('/api/cards').expect(200);
+    const { cards } = readerCardsResponseSchema.parse(list.body);
+    expect(cards[0]).toMatchObject({
+      title: '[PLACEHOLDER] Galería',
+      imageCount: 3,
+      alt: '[PLACEHOLDER] Galería, imagen 1 de 3',
+    });
+    expect(cards[0]?.imageUrl).toContain(ids[0]);
+    // La lista NO trae las URL de las demás imágenes.
+    expect(list.text).not.toContain(ids[1]);
+    expect(list.text).not.toContain(ids[2]);
+
+    const detail = readerCardDetailSchema.parse((await reader.get(`/api/cards/${card.id}`)).body);
+    expect(detail.images.map((image) => image.url.split('w_1200/')[1])).toEqual(ids);
+    expect(detail.images.map((image) => image.alt)).toEqual([
+      '[PLACEHOLDER] Galería, imagen 1 de 3',
+      'Un mapa antiguo',
+      '[PLACEHOLDER] Galería, imagen 3 de 3',
+    ]);
   });
 
   it('sin texto alternativo propio, el alt es el título', async () => {
@@ -404,9 +525,9 @@ describe('la lectora: solo ve lo que abrió', () => {
       .post('/api/access/redeem')
       .send({ token: (await qr(card.id)).token })
       .expect(200);
-    expect(readerCardSchema.parse((await reader.get(`/api/cards/${card.id}`)).body).alt).toBe(
-      '[PLACEHOLDER] Solo título',
-    );
+    expect(
+      readerCardDetailSchema.parse((await reader.get(`/api/cards/${card.id}`)).body).images[0]?.alt,
+    ).toBe('[PLACEHOLDER] Solo título');
   });
 
   it('se abre en cualquier momento, sin prerrequisitos; una carta de otra lectora no se ve', async () => {
@@ -480,7 +601,7 @@ describe('la lectora: solo ve lo que abrió', () => {
     const archive = (status: string) =>
       admin
         .put(`/api/admin/cards/${card.id}`)
-        .send(input({ status, image: { publicId: card.image.publicId } }));
+        .send(input({ status, images: [{ publicId: card.images[0]?.publicId }] }));
     await archive('archived').then((res) => expect(res.status).toBe(200));
 
     expect(
@@ -588,7 +709,7 @@ describe('la imagen no sale por ningún otro lado', () => {
       .post('/api/access/redeem')
       .send({ token: (await qr(card.id)).token })
       .expect(200);
-    const publicId = card.image.publicId;
+    const publicId = card.images[0]?.publicId ?? '';
     const urls = [
       '/api/books',
       `/api/books/${book.slug}`,

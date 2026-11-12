@@ -17,7 +17,7 @@ import { validate } from '../middleware/validate.js';
 
 /**
  * `/admin/cards`: SOLO administradoras (las cartas son secretos hasta que se abren con su QR: ni siquiera las editoras
- * ven su lista). La firma de subida comparte el cupo de las demás subidas a Cloudinary.
+ * ven su lista). Cada imagen pide su propia firma (hasta 12 por carta): tiene su cupo.
  */
 export function createAdminCardRouter(
   controller: ReturnType<typeof createAdminCardController>,
@@ -33,7 +33,7 @@ export function createAdminCardRouter(
   router.patch('/reorder', validate({ body: cardReorderRequestSchema }), controller.reorder);
   router.post(
     '/upload-signature',
-    createRateLimiter({ ...limits.uploadSign, keyPart: () => 'cartas' }),
+    createRateLimiter(limits.cardUploadSign),
     validate({ body: cardUploadSignatureRequestSchema }),
     controller.uploadSignature,
   );

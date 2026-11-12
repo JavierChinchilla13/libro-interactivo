@@ -14,15 +14,21 @@ export async function createCard(input: {
   title?: string;
   order?: number;
   status?: 'published' | 'archived';
-  alt?: string;
+  /** Cuántas imágenes lleva (por defecto 1). */
+  images?: number;
 }) {
   return Card.create({
     bookId: input.bookId,
     title: input.title ?? '[PLACEHOLDER] Carta',
-    ...(input.alt ? { alt: input.alt } : {}),
     order: input.order ?? 1,
     status: input.status ?? 'published',
-    image: { publicId: cardPublicId(), format: 'jpg', width: 1200, height: 1800, bytes: 1_200_000 },
+    images: Array.from({ length: input.images ?? 1 }, () => ({
+      publicId: cardPublicId(),
+      format: 'jpg',
+      width: 1200,
+      height: 1800,
+      bytes: 1_200_000,
+    })),
     createdBy: input.createdBy,
   });
 }

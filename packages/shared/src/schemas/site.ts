@@ -80,6 +80,18 @@ export const legalOwnerNameSchema = z
   .trim()
   .max(160, 'El nombre legal no puede superar los 160 caracteres');
 
+/**
+ * Cómo se llama la sección de cartas (menú del panel de la lectora, títulos de sus pantallas y panel de administración).
+ * Lo escribe una administradora; se guarda como texto plano (sin marcado). Vacío = el nombre por defecto. Los
+ * identificadores internos (`cards`, `card`) no cambian.
+ */
+export const CARDS_LABEL_DEFAULT = 'Hallazgos';
+export const CARDS_LABEL_MAX = 40;
+export const cardsLabelSchema = z
+  .string()
+  .trim()
+  .max(CARDS_LABEL_MAX, `El nombre no puede superar los ${CARDS_LABEL_MAX} caracteres`);
+
 export const siteSettingsResponseSchema = z.object({
   welcome: welcomeSettingsSchema,
   universe: universeSettingsSchema,
@@ -89,6 +101,8 @@ export const siteSettingsResponseSchema = z.object({
   /** Solo la ven las administradoras. */
   contact: contactSettingsSchema.optional(),
   legalOwnerName: z.string().optional(),
+  /** Nombre de la sección de cartas (siempre viene: el de la autora o «Hallazgos»). */
+  cardsLabel: z.string().default(CARDS_LABEL_DEFAULT),
 });
 export type SiteSettingsResponse = z.infer<typeof siteSettingsResponseSchema>;
 
@@ -104,6 +118,8 @@ export const updateSiteSettingsRequestSchema = z
     contact: contactSettingsSchema.optional(),
     /** Solo administradoras (`403` para una editora). Vacío lo quita. */
     legalOwnerName: legalOwnerNameSchema.optional(),
+    /** Solo administradoras (`403` para una editora). Vacío vuelve al nombre por defecto. */
+    cardsLabel: cardsLabelSchema.optional(),
   })
   .refine((body) => Object.values(body).some((section) => section !== undefined), {
     message: 'No hay nada que guardar',
@@ -118,6 +134,8 @@ export const publicSiteResponseSchema = z.object({
   lockMessage: z.string(),
   /** Para la política de privacidad y los términos (ausente si aún no se escribió). */
   legalOwnerName: z.string().optional(),
+  /** Nombre de la sección de cartas: lo usan el menú y los títulos del panel de la lectora. */
+  cardsLabel: z.string().default(CARDS_LABEL_DEFAULT),
 });
 export type PublicSiteResponse = z.infer<typeof publicSiteResponseSchema>;
 

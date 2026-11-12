@@ -117,7 +117,8 @@ export function createAccessService(deps: AccessDeps) {
       const id = await insert(
         { kind: 'card', refId: request.refId },
         card.bookId,
-        `${book?.title ?? 'Libro'} — Carta: ${card.title}`,
+        // Sin la palabra «carta»: la autora le pone el nombre que quiera a la sección y la etiqueta quedaría vieja.
+        `${book?.title ?? 'Libro'} — ${card.title}`,
         actor,
       );
       return toResponse(await mustFind(id.toString()));

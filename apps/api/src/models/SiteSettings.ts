@@ -53,6 +53,8 @@ const siteSettingsSchema = new Schema(
     lock: { message: { type: String, trim: true, maxlength: 200 } },
     /** Nombre legal de la titular del sitio: lo citan la privacidad y los términos. Solo lo cambia una administradora. */
     legalOwnerName: { type: String, trim: true, maxlength: 160 },
+    /** Cómo se llama la sección de cartas (texto plano). Vacío = «Hallazgos». Solo lo cambia una administradora. */
+    cardsLabel: { type: String, trim: true, maxlength: 40 },
     updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true },

@@ -8,10 +8,10 @@ import {
   type CardReorderRequest,
   type ImageSignatureResponse,
   type ReaderCard,
+  type ReaderCardDetail,
   type ReaderCardsResponse,
   type Role,
 } from '@libro/shared';
-import type { Types } from 'mongoose';
 import type { Clock } from '../lib/clock.js';
 import { randomToken } from '../lib/crypto.js';
 import { AppError } from '../lib/errors.js';
@@ -35,25 +35,41 @@ function megabytes(bytes: number): string {
   return (bytes / (1024 * 1024)).toFixed(1).replace('.', ',');
 }
 
+/** Una imagen tal como se guarda (forma plana, sin los métodos de Mongoose). */
+interface StoredImage {
+  publicId: string;
+  alt?: string | null | undefined;
+  format: string;
+  width: number;
+  height: number;
+  bytes: number;
+}
+
 function toAdmin(card: CardLean): AdminCard {
   return {
     id: card._id.toString(),
     bookId: card.bookId.toString(),
     title: card.title,
-    ...(card.alt ? { alt: card.alt } : {}),
     order: card.order,
     status: card.status,
-    image: {
-      publicId: card.image.publicId,
-      width: card.image.width,
-      height: card.image.height,
-      bytes: card.image.bytes,
-      format: card.image.format,
-      url: cardImageUrl(card.image.publicId, CARD_WIDTHS.thumb),
-    },
+    images: card.images.map((image) => ({
+      publicId: image.publicId,
+      ...(image.alt ? { alt: image.alt } : {}),
+      width: image.width,
+      height: image.height,
+      bytes: image.bytes,
+      format: image.format,
+      url: cardImageUrl(image.publicId, CARD_WIDTHS.thumb),
+    })),
     createdAt: card.createdAt.toISOString(),
     updatedAt: card.updatedAt.toISOString(),
   };
+}
+
+/** Texto alternativo: el propio de la imagen o, si no hay, el título («Título, imagen 2 de 5» si son varias). */
+function altOf(image: StoredImage, title: string, position: number, total: number): string {
+  if (image.alt) return image.alt;
+  return total > 1 ? `${title}, imagen ${position} de ${total}` : title;
 }
 
 export interface CardDeps {
@@ -92,7 +108,7 @@ export function createCardService(deps: CardDeps) {
 
   // ----- Panel (solo ADMIN) -----
 
-  /** Firma la subida de una imagen de carta con un identificador nuevo que elige el servidor. */
+  /** Firma la subida de UNA imagen de carta con un identificador nuevo que elige el servidor (una firma por imagen). */
   async function signUpload(bookId: string): Promise<ImageSignatureResponse> {
     await assertBook(bookId);
     const publicId = `${CARD_FOLDER}/${randomToken(18)}`;
@@ -147,17 +163,40 @@ export function createCardService(deps: CardDeps) {
     return toAdmin(await mustFind(id));
   }
 
+  /**
+   * Las imágenes de la carta, en el orden pedido y con sus medidas reales. Las que ya estaban guardadas no se vuelven a
+   * consultar (cuida la cuota de Cloudinary); solo cambia su texto alternativo. Las nuevas se verifican todas.
+   */
+  async function resolveImages(
+    wanted: CardInput['images'],
+    stored: readonly StoredImage[] = [],
+  ): Promise<StoredImage[]> {
+    const known = new Map(stored.map((image) => [image.publicId, image]));
+    const checked: StoredImage[] = [];
+    for (const item of wanted) {
+      const base = known.get(item.publicId) ?? (await inspectImage(item.publicId));
+      checked.push({
+        publicId: base.publicId,
+        format: base.format,
+        width: base.width,
+        height: base.height,
+        bytes: base.bytes,
+        ...(item.alt ? { alt: item.alt } : {}),
+      });
+    }
+    return checked;
+  }
+
   async function create(actorId: string, input: CardInput): Promise<AdminCard> {
     await assertBook(input.bookId);
-    const image = await inspectImage(input.image.publicId);
+    const images = await resolveImages(input.images);
     try {
       const card = await Card.create({
         bookId: input.bookId,
         title: input.title,
-        ...(input.alt ? { alt: input.alt } : {}),
         order: input.order,
         status: input.status,
-        image,
+        images,
         createdBy: actorId,
       });
       return get(card._id.toString());
@@ -166,35 +205,17 @@ export function createCardService(deps: CardDeps) {
     }
   }
 
-  /** Reemplaza la carta. Una imagen distinta se vuelve a verificar; la anterior queda en Cloudinary (el API nunca borra). */
+  /** Reemplaza la carta. Una imagen nueva se verifica; las que se quitan quedan en Cloudinary (el API nunca borra). */
   async function replace(id: string, input: CardInput): Promise<AdminCard> {
     const current = await mustFind(id);
     if (current.bookId.toString() !== input.bookId) {
       throw new AppError('VALIDATION', 'Una carta no se puede mover a otro libro');
     }
-    const image =
-      input.image.publicId === current.image.publicId
-        ? {
-            publicId: current.image.publicId,
-            format: current.image.format,
-            width: current.image.width,
-            height: current.image.height,
-            bytes: current.image.bytes,
-          }
-        : await inspectImage(input.image.publicId);
+    const images = await resolveImages(input.images, current.images);
     try {
       await Card.updateOne(
         { _id: id },
-        {
-          $set: {
-            title: input.title,
-            order: input.order,
-            status: input.status,
-            image,
-            ...(input.alt ? { alt: input.alt } : {}),
-          },
-          ...(input.alt ? {} : { $unset: { alt: 1 } }),
-        },
+        { $set: { title: input.title, order: input.order, status: input.status, images } },
       );
     } catch (error) {
       return conflict(error);
@@ -238,26 +259,36 @@ export function createCardService(deps: CardDeps) {
     );
   }
 
-  function toReader(
-    card: {
-      _id: Types.ObjectId;
-      bookId: Types.ObjectId;
-      title: string;
-      alt?: string | null;
-      image: CardLean['image'];
-    },
-    bookTitle: string,
-    width: number,
-  ): ReaderCard {
+  /** La lista solo entrega la primera imagen (portada): las demás URL salen al abrir la carta. */
+  function toReader(card: CardLean, bookTitle: string): ReaderCard {
+    const cover = card.images[0];
+    if (!cover) throw new AppError('INTERNAL', 'La carta no tiene imágenes');
     return {
       id: card._id.toString(),
       bookId: card.bookId.toString(),
       bookTitle,
       title: card.title,
-      alt: card.alt || card.title,
-      imageUrl: cardImageUrl(card.image.publicId, width),
-      width: card.image.width,
-      height: card.image.height,
+      alt: altOf(cover, card.title, 1, card.images.length),
+      imageUrl: cardImageUrl(cover.publicId, CARD_WIDTHS.thumb),
+      width: cover.width,
+      height: cover.height,
+      imageCount: card.images.length,
+    };
+  }
+
+  function toDetail(card: CardLean, bookTitle: string): ReaderCardDetail {
+    const total = card.images.length;
+    return {
+      id: card._id.toString(),
+      bookId: card.bookId.toString(),
+      bookTitle,
+      title: card.title,
+      images: card.images.map((image, index) => ({
+        url: cardImageUrl(image.publicId, CARD_WIDTHS.large),
+        alt: altOf(image, card.title, index + 1, total),
+        width: image.width,
+        height: image.height,
+      })),
     };
   }
 
@@ -288,9 +319,7 @@ export function createCardService(deps: CardDeps) {
         const bookB = byBook.get(b.bookId.toString())?.order ?? 0;
         return bookA - bookB || a.order - b.order || a.createdAt.getTime() - b.createdAt.getTime();
       })
-      .map((card) =>
-        toReader(card, byBook.get(card.bookId.toString())?.title ?? '', CARD_WIDTHS.thumb),
-      );
+      .map((card) => toReader(card, byBook.get(card.bookId.toString())?.title ?? ''));
 
     if (showLocked && !testMode) {
       const publishedBooks = await Book.find({ status: 'published' }).select('_id').lean();
@@ -307,7 +336,7 @@ export function createCardService(deps: CardDeps) {
    * Una carta abierta, en grande. Se comprueba CADA vez: carta publicada, libro publicado y abierta por esta cuenta (o
    * administradora). Cualquier otro caso es el mismo 404, para no revelar qué cartas existen.
    */
-  async function openForReader(viewer: CardViewer, cardId: string): Promise<ReaderCard> {
+  async function openForReader(viewer: CardViewer, cardId: string): Promise<ReaderCardDetail> {
     const card = await findLean(cardId);
     if (!card || card.status !== 'published') throw new AppError('NOT_FOUND', NOT_FOUND);
     const book = await Book.findById(card.bookId).select('title status').lean();
@@ -316,7 +345,7 @@ export function createCardService(deps: CardDeps) {
       if (book.status !== 'published') throw new AppError('NOT_FOUND', NOT_FOUND);
       if (!(await openedIds(viewer.userId)).has(cardId)) throw new AppError('NOT_FOUND', NOT_FOUND);
     }
-    return toReader(card, book.title, CARD_WIDTHS.large);
+    return toDetail(card, book.title);
   }
 
   return { signUpload, list, get, create, replace, reorder, listForReader, openForReader };
