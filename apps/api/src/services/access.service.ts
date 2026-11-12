@@ -1,4 +1,5 @@
 import type {
+  AccessTargetKind,
   AccessTokenResponse,
   CreateAccessTokenRequest,
   RedeemAccessResponse,
@@ -12,6 +13,7 @@ import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { qrPdf, qrSvg } from '../lib/qr.js';
 import { AccessToken } from '../models/AccessToken.js';
 import { Book } from '../models/Book.js';
+import { Card } from '../models/Card.js';
 import { GameStory } from '../models/GameStory.js';
 import { Quiz } from '../models/Quiz.js';
 import type { Actor, ProgressService } from './progress.service.js';
@@ -28,7 +30,7 @@ export interface AccessDeps {
 type TokenLean = NonNullable<Awaited<ReturnType<typeof findLean>>>;
 
 /** El destino siempre existe (es obligatorio en el esquema); esto solo le da forma no nula al tipo. */
-function targetOf(token: { target?: { kind: 'quiz' | 'game'; refId: Types.ObjectId } | null }) {
+function targetOf(token: { target?: { kind: AccessTargetKind; refId: Types.ObjectId } | null }) {
   if (!token.target) throw new AppError('INTERNAL', 'El código no tiene destino');
   return token.target;
 }
@@ -69,7 +71,7 @@ export function createAccessService(deps: AccessDeps) {
 
   /** Crea el documento con su token (el id se genera antes para poder firmarlo). */
   async function insert(
-    target: { kind: 'quiz' | 'game'; refId: string },
+    target: { kind: AccessTargetKind; refId: string },
     bookId: Types.ObjectId,
     label: string,
     actor: Actor,
@@ -108,6 +110,19 @@ export function createAccessService(deps: AccessDeps) {
     actor: Actor,
     request: CreateAccessTokenRequest,
   ): Promise<AccessTokenResponse> {
+    if (request.kind === 'card') {
+      const card = await Card.findById(request.refId).select('bookId title').lean();
+      if (!card) throw new AppError('NOT_FOUND', 'No encontramos esa carta');
+      const book = await Book.findById(card.bookId).select('title').lean();
+      const id = await insert(
+        { kind: 'card', refId: request.refId },
+        card.bookId,
+        // Sin la palabra «carta»: la autora le pone el nombre que quiera a la sección y la etiqueta quedaría vieja.
+        `${book?.title ?? 'Libro'} — ${card.title}`,
+        actor,
+      );
+      return toResponse(await mustFind(id.toString()));
+    }
     if (request.kind === 'game') {
       const story = await GameStory.findById(request.refId).select('bookId title').lean();
       if (!story) throw new AppError('NOT_FOUND', 'No encontramos ese juego');
@@ -216,7 +231,14 @@ export function createAccessService(deps: AccessDeps) {
     }).lean();
     if (!doc) return null;
     let experience: { bookId: Types.ObjectId; refId: Types.ObjectId; title: string };
-    if (targetOf(doc).kind === 'game') {
+    if (targetOf(doc).kind === 'card') {
+      // Una carta archivada no se abre (su QR queda como cualquier código inválido).
+      const card = await Card.findOne({ _id: targetOf(doc).refId, status: 'published' })
+        .select('bookId title')
+        .lean();
+      if (!card) return null;
+      experience = { bookId: card.bookId, refId: card._id, title: card.title };
+    } else if (targetOf(doc).kind === 'game') {
       const story = await GameStory.findOne({
         _id: targetOf(doc).refId,
         status: 'published',
@@ -241,11 +263,13 @@ export function createAccessService(deps: AccessDeps) {
   async function resolve(token: string): Promise<ResolveAccessResponse | null> {
     const found = await lookup(token);
     if (!found) return null;
+    const kind = targetOf(found.doc).kind;
     return {
       valid: true,
       bookTitle: found.book.title,
-      kind: targetOf(found.doc).kind,
-      title: found.experience.title,
+      kind,
+      // Esta respuesta es pública (sin sesión): el título de una carta es un secreto hasta abrirla.
+      title: kind === 'card' ? 'Una carta' : found.experience.title,
     };
   }
 

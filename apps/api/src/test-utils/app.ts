@@ -29,6 +29,7 @@ const RELAXED_LIMITS: Limits = {
   appearanceWrite: { windowMs: 60_000, limit: 10_000, by: 'user' },
   uploadSign: { windowMs: 60_000, limit: 10_000, by: 'user' },
   uploadSignQuizBg: { windowMs: 60_000, limit: 10_000, by: 'user' },
+  cardUploadSign: { windowMs: 60_000, limit: 10_000, by: 'user' },
   backupHour: { windowMs: 60_000, limit: 10_000, by: 'user' },
   backupDay: { windowMs: 60_000, limit: 10_000, by: 'user' },
   newsletterAccount: { windowMs: 60_000, limit: 10_000, by: 'user' },

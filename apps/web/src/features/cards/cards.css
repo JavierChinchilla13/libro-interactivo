@@ -1,0 +1,288 @@
+/*
+ * Cartas con QR (lectora): cuadrícula de portadas y vista grande en un diálogo nativo. Fuera de las capas de Tailwind
+ * (como las demás hojas de pantalla). Solo se anima `transform` y `opacity`; con «reducir movimiento», nada se mueve.
+ * Radios concéntricos: el cuadro del diálogo (1.25 rem) = el de la imagen (0.5 rem) + el relleno entre ambos (0.75 rem).
+ */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 1.5rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 640px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+    gap: 2rem 1.5rem;
+  }
+}
+
+.card-tile {
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+  color: inherit;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--token-dur-fast) var(--token-ease-out);
+}
+.card-tile:focus-visible {
+  outline: 2px solid var(--token-primary);
+  outline-offset: 4px;
+  border-radius: 0.875rem;
+}
+.card-tile:active {
+  transform: scale(0.97);
+}
+.card-frame {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: var(--token-surface);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.5),
+    0 8px 20px -10px rgb(0 0 0 / 0.6);
+  transition: box-shadow var(--token-dur-fast) var(--token-ease-out);
+}
+.card-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* Contorno fino de luz sobre la imagen (nunca un borde tintado). */
+  outline: 1px solid oklch(1 0 0 / 0.1);
+  outline-offset: -1px;
+  border-radius: inherit;
+}
+@media (hover: hover) and (pointer: fine) {
+  .card-tile:hover .card-frame {
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.5),
+      0 14px 28px -10px rgb(0 0 0 / 0.7),
+      0 0 0 1px color-mix(in srgb, var(--token-primary) 45%, transparent);
+  }
+}
+.card-tile-title {
+  font-weight: 600;
+  line-height: 1.3;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card-tile-meta {
+  margin-top: -0.35rem;
+  font-size: 0.8125rem;
+  color: var(--token-muted);
+}
+.card-tile-locked {
+  opacity: 0.7;
+}
+.card-tile-locked .card-frame {
+  border: 1px dashed var(--token-line);
+  background: transparent;
+  box-shadow: none;
+}
+.card-lock {
+  font-size: 2.5rem;
+  color: var(--token-muted);
+}
+
+/* Diálogo de la carta */
+.card-dialog {
+  width: min(94vw, 46rem);
+  max-width: none;
+  max-height: 94dvh;
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  color: var(--token-text);
+  background: var(--token-surface);
+  border: 1px solid var(--token-line);
+  border-radius: 1.25rem;
+  box-shadow: 0 24px 60px -12px rgb(0 0 0 / 0.75);
+}
+.card-dialog[open] {
+  animation: card-dialog-in 200ms var(--token-ease-out) both;
+}
+.card-dialog::backdrop {
+  background: rgb(2 8 20 / 0.76);
+}
+.card-dialog[open]::backdrop {
+  animation: card-backdrop-in 200ms var(--token-ease-out) both;
+}
+.card-dialog-inner {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+.card-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.25rem 0.25rem 0 0.5rem;
+}
+.card-dialog-title {
+  margin: 0;
+  font-family: var(--token-font-display);
+  font-size: 1.25rem;
+  line-height: 1.25;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.card-dialog-book {
+  margin: 0.2rem 0 0;
+  font-size: 0.875rem;
+  color: var(--token-muted);
+}
+.card-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  color: var(--token-text);
+  background: var(--token-surface-alt);
+  transition:
+    scale var(--token-dur-fast) var(--token-ease-out),
+    background-color var(--token-dur-fast) var(--token-ease-out);
+}
+.card-close:active {
+  scale: 0.96;
+}
+.card-close:focus-visible,
+.card-nav:focus-visible {
+  outline: 2px solid var(--token-primary);
+  outline-offset: 2px;
+}
+
+/* Galería: una imagen a la vez */
+.card-gallery {
+  display: grid;
+  gap: 0.5rem;
+}
+.card-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: var(--token-bg);
+  /* El gesto vertical sigue desplazando la página; el horizontal lo recibe la galería. */
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.card-slide {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: min(68dvh, 42rem);
+  object-fit: contain;
+  outline: 1px solid oklch(1 0 0 / 0.1);
+  outline-offset: -1px;
+  border-radius: 0.5rem;
+}
+.card-slide[data-direction='next'] {
+  animation: card-slide-in 220ms var(--token-ease-out) both;
+  --card-from: 1.5rem;
+}
+.card-slide[data-direction='prev'] {
+  animation: card-slide-in 220ms var(--token-ease-out) both;
+  --card-from: -1.5rem;
+}
+.card-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  translate: 0 -50%;
+  border-radius: 9999px;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--token-text);
+  background: rgb(6 20 43 / 0.72);
+  border: 1px solid var(--token-line);
+  transition:
+    scale var(--token-dur-fast) var(--token-ease-out),
+    opacity var(--token-dur-fast) var(--token-ease-out);
+}
+.card-nav > span {
+  /* Los signos ‹ › quedan bajos dentro de su caja: se suben a ojo para que se vean centrados. */
+  transform: translateY(-0.08em);
+}
+.card-nav:active:not([aria-disabled='true']) {
+  scale: 0.96;
+}
+.card-nav[aria-disabled='true'] {
+  opacity: 0.3;
+  cursor: default;
+}
+.card-nav-prev {
+  left: 0.5rem;
+}
+.card-nav-next {
+  right: 0.5rem;
+}
+.card-counter {
+  margin: 0;
+  text-align: center;
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--token-muted);
+}
+
+@keyframes card-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@keyframes card-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes card-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--card-from, 1.5rem));
+  }
+}
+
+@media (max-width: 639px) {
+  .card-dialog {
+    width: 100vw;
+    max-height: 100dvh;
+    border-radius: 1.25rem 1.25rem 0 0;
+    margin-bottom: 0;
+  }
+  .card-slide {
+    max-height: 62dvh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-tile,
+  .card-frame,
+  .card-close,
+  .card-nav {
+    transition: none;
+  }
+  .card-dialog[open],
+  .card-dialog[open]::backdrop,
+  .card-slide[data-direction] {
+    animation: none;
+  }
+}

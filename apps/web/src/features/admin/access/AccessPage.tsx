@@ -4,7 +4,8 @@ import { Link } from 'react-router';
 import { Button, SelectField } from '../../../shared/ui/controls';
 import { AdminIcon } from '../../../shared/ui/adminIcons';
 import { Alert, Card, EmptyState, PageHeader } from '../../../shared/ui/layout';
-import { accessApi, booksApi, keys, quizzesApi } from '../api';
+import { useCardsLabel } from '../../cards/useCardsLabel';
+import { accessApi, booksApi, cardsApi, keys, quizzesApi } from '../api';
 import { useConfirm } from '../components/ConfirmDialog';
 import { FormSection } from '../components/FormSection';
 import { HelpTip } from '../components/HelpTip';
@@ -23,6 +24,8 @@ export function AccessPage() {
   const books = useQuery({ queryKey: keys.books, queryFn: booksApi.list });
   const [chosen, setChosen] = useState('');
   const [quizId, setQuizId] = useState('');
+  const [cardId, setCardId] = useState('');
+  const cardsLabel = useCardsLabel();
   const bookId = chosen || books.data?.books[0]?.id || '';
 
   const tokens = useQuery({
@@ -36,6 +39,12 @@ export function AccessPage() {
     enabled: bookId !== '',
   });
 
+  const cards = useQuery({
+    queryKey: keys.cards(bookId),
+    queryFn: () => cardsApi.list(bookId),
+    enabled: bookId !== '',
+  });
+
   const refresh = async () => {
     // También el inicio («Genera el código QR» se marca solo).
     await client.invalidateQueries({ queryKey: ['admin', 'access'] });
@@ -44,6 +53,14 @@ export function AccessPage() {
     mutationFn: () => accessApi.create({ kind: 'quiz', refId: quizId }),
     onSuccess: async () => {
       setQuizId('');
+      await refresh();
+      toast.success('Código creado');
+    },
+  });
+  const createCard = useMutation({
+    mutationFn: () => accessApi.create({ kind: 'card', refId: cardId }),
+    onSuccess: async () => {
+      setCardId('');
       await refresh();
       toast.success('Código creado');
     },
@@ -70,19 +87,24 @@ export function AccessPage() {
   const free = (quizzes.data?.quizzes ?? []).filter(
     (quiz) => quiz.status === 'published' && !covered.has(quiz.id),
   );
-  const error = create.error ?? revoke.error ?? rotate.error;
+  // Solo las publicadas: una archivada no se abre con su código.
+  const freeCards = (cards.data?.cards ?? []).filter(
+    (card) => card.status === 'published' && !covered.has(card.id),
+  );
+  const error = create.error ?? createCard.error ?? revoke.error ?? rotate.error;
 
   return (
     <>
       <PageHeader
         title="Códigos QR"
-        subtitle="Un código por quiz, igual en todos los ejemplares. Quien lo escanea lo desbloquea en su cuenta."
+        subtitle={`Un código por quiz y uno por cada elemento de «${cardsLabel}», igual en todos los ejemplares. Quien lo escanea lo desbloquea en su cuenta.`}
       />
       <div className="mb-4">
         <HelpTip>
-          Un código por quiz y uno para el juego, igual en todos los ejemplares y sin caducidad.
-          Quien lo escanea lo desbloquea en su cuenta. Si un código se filtra, puedes revocarlo o
-          crear uno nuevo; quienes ya lo usaron conservan el acceso.
+          Un código por quiz, uno para el juego y uno por cada elemento de «{cardsLabel}», igual en
+          todos los ejemplares y sin caducidad. Quien lo escanea lo desbloquea en su cuenta. Si un
+          código se filtra, puedes revocarlo o crear uno nuevo; quienes ya lo usaron conservan el
+          acceso.
         </HelpTip>
       </div>
       {books.isPending ? <SkeletonRows rows={3} /> : null}
@@ -110,12 +132,13 @@ export function AccessPage() {
             onChange={(event) => {
               setChosen(event.target.value);
               setQuizId('');
+              setCardId('');
             }}
           />
 
           <FormSection
             title="Crear un código"
-            help="Solo quizzes publicados que todavía no tengan un código activo. El del juego se podrá crear cuando exista el juego."
+            help="Solo lo publicado que todavía no tenga un código activo."
           >
             <div className="flex flex-wrap items-end gap-3">
               <SelectField
@@ -146,6 +169,32 @@ export function AccessPage() {
                   : 'Elige un quiz primero.'}
               </p>
             ) : null}
+            <div className="flex flex-wrap items-end gap-3">
+              <SelectField
+                label={cardsLabel}
+                wrapperClassName="min-w-64 flex-1"
+                value={cardId}
+                placeholder={freeCards.length === 0 ? 'No hay nada disponible' : 'Elige uno'}
+                disabled={freeCards.length === 0}
+                options={freeCards.map((card) => ({ value: card.id, label: card.title }))}
+                onChange={(event) => setCardId(event.target.value)}
+              />
+              <Button
+                disabled={cardId === ''}
+                loading={createCard.isPending}
+                aria-label={`Crear código de «${cardsLabel}»`}
+                onClick={() => createCard.mutate()}
+              >
+                Crear código
+              </Button>
+            </div>
+            {cardId === '' ? (
+              <p className="text-sm text-muted">
+                {freeCards.length === 0
+                  ? `Todo lo publicado de «${cardsLabel}» en este libro ya tiene un código activo (o todavía no hay nada).`
+                  : `Elige qué elemento de «${cardsLabel}» abrirá este código.`}
+              </p>
+            ) : null}
           </FormSection>
 
           {error ? <Alert>{errorMessage(error)}</Alert> : null}
@@ -173,7 +222,14 @@ export function AccessPage() {
                         />
                       ) : null}
                       <div className="min-w-0">
-                        <p className="font-medium">{token.label}</p>
+                        <p className="font-medium">
+                          {token.target.kind === 'card' ? (
+                            <span className="mr-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                              {cardsLabel}
+                            </span>
+                          ) : null}
+                          {token.label}
+                        </p>
                         <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
                           <StatusBadge
                             status={token.status === 'active' ? 'active' : 'inactive'}

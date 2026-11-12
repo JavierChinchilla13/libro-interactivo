@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import {
+  CARD_IMAGE_LIMITS,
   QUIZ_VIDEO_LIMITS,
   type ImageSignatureResponse,
   type UPLOAD_PURPOSES,
@@ -37,6 +38,11 @@ export interface AssetInfo {
  */
 export interface ImageProvider {
   signUpload(input: SignUploadInput): ImageSignatureResponse;
+  /**
+   * Firma la subida de la imagen de una carta con un `public_id` que ya generó el servidor (aleatorio, no adivinable).
+   * Solo imágenes jpg, png o webp. La firma sirve para ESE identificador: el navegador no elige el nombre.
+   */
+  signCardUpload(input: { publicId: string; timestamp: number }): ImageSignatureResponse;
   /** Datos reales de un archivo subido; `null` si no existe. Responde 503 si el proveedor no está configurado. */
   inspect(input: { publicId: string; resource: UploadResource }): Promise<AssetInfo | null>;
   /** Todos los archivos bajo un prefijo (con paginación). Solo para mantenimiento. */
@@ -81,6 +87,35 @@ export class CloudinaryImageProvider implements ImageProvider {
     private readonly fetchImpl: FetchLike = (url, init) => fetch(url, init),
   ) {}
 
+  /** Firma de Cloudinary: parámetros ordenados `k=v` unidos con `&` + secreto, en SHA-1 hexadecimal. */
+  private signature(params: Record<string, string>): string {
+    const toSign = Object.keys(params)
+      .sort()
+      .map((key) => `${key}=${params[key]}`)
+      .join('&');
+    return createHash('sha1')
+      .update(toSign + this.credentials.apiSecret)
+      .digest('hex');
+  }
+
+  signCardUpload({ publicId, timestamp }: { publicId: string; timestamp: number }) {
+    // `public_id` con su ruta completa (no `folder`): así el identificador final es el mismo en cualquier modo de
+    // carpetas de la cuenta y el navegador no puede cambiarlo sin invalidar la firma.
+    const params: Record<string, string> = {
+      allowed_formats: 'jpg,jpeg,png,webp',
+      public_id: publicId,
+      timestamp: String(timestamp),
+    };
+    return {
+      uploadUrl: `https://api.cloudinary.com/v1_1/${this.credentials.cloudName}/image/upload`,
+      cloudName: this.credentials.cloudName,
+      apiKey: this.credentials.apiKey,
+      signature: this.signature(params),
+      params,
+      maxBytes: CARD_IMAGE_LIMITS.maxBytes,
+    };
+  }
+
   signUpload({ purpose, resource, timestamp }: SignUploadInput): ImageSignatureResponse {
     if (resource === 'video' && !VIDEO_PURPOSES.includes(purpose)) {
       throw new AppError(
@@ -94,19 +129,11 @@ export class CloudinaryImageProvider implements ImageProvider {
       folder: `libro/${purpose}`,
       timestamp: String(timestamp),
     };
-    // Firma de Cloudinary: parámetros ordenados `k=v` unidos con `&` + secreto, en SHA-1 hexadecimal.
-    const toSign = Object.keys(params)
-      .sort()
-      .map((key) => `${key}=${params[key]}`)
-      .join('&');
-    const signature = createHash('sha1')
-      .update(toSign + this.credentials.apiSecret)
-      .digest('hex');
     return {
       uploadUrl: `https://api.cloudinary.com/v1_1/${this.credentials.cloudName}/${resource}/upload`,
       cloudName: this.credentials.cloudName,
       apiKey: this.credentials.apiKey,
-      signature,
+      signature: this.signature(params),
       params,
       maxBytes: limits.maxBytes,
     };
@@ -193,6 +220,9 @@ export class CloudinaryImageProvider implements ImageProvider {
 /** Cuando no hay credenciales: la subida responde 503 con un mensaje claro (el resto del panel sigue funcionando). */
 export class DisabledImageProvider implements ImageProvider {
   signUpload(): ImageSignatureResponse {
+    throw new AppError('UNAVAILABLE', 'La subida de imágenes no está configurada todavía');
+  }
+  signCardUpload(): ImageSignatureResponse {
     throw new AppError('UNAVAILABLE', 'La subida de imágenes no está configurada todavía');
   }
   inspect(): Promise<AssetInfo | null> {

@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { objectIdSchema } from './common.js';
 
-/** Códigos QR de desbloqueo. Solo existen para quizzes y para el juego. */
-export const ACCESS_TARGET_KINDS = ['quiz', 'game'] as const;
+/** Códigos QR de desbloqueo. Existen para quizzes, para el juego y para cada carta. */
+export const ACCESS_TARGET_KINDS = ['quiz', 'game', 'card'] as const;
 export const accessTargetKindSchema = z.enum(ACCESS_TARGET_KINDS);
+export type AccessTargetKind = z.infer<typeof accessTargetKindSchema>;
 
 export const createAccessTokenRequestSchema = z.object({
   kind: accessTargetKindSchema,

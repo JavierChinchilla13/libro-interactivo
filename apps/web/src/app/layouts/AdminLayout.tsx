@@ -20,6 +20,7 @@ import { Breadcrumbs, CrumbLeafProvider } from '../../features/admin/components/
 import { ConfirmProvider } from '../../features/admin/components/ConfirmDialog';
 import { ToastProvider } from '../../features/admin/components/Toast';
 import { useSession } from '../../features/auth/session';
+import { useCardsLabel } from '../../features/cards/useCardsLabel';
 import { AdminIcon } from '../../shared/ui/adminIcons';
 import { MAIN_ID, SkipLink } from '../../shared/ui/nav';
 import { UserMenu } from '../../shared/ui/UserMenu';
@@ -64,7 +65,10 @@ export function AdminLayout() {
   const drawer = useRef<HTMLElement>(null);
   const navScroll = useRef<HTMLElement>(null);
   const moreBelow = useMoreBelow(navScroll);
-  const groups = navForRole(session.data?.role);
+  // El nombre de la sección de cartas lo elige la autora: solo se pide si la cuenta es administradora (la ve).
+  const cardsLabel = useCardsLabel(session.data?.role === 'ADMIN');
+  const navLabels: Record<string, string> = { cartas: cardsLabel };
+  const groups = navForRole(session.data?.role, navLabels);
   const counts = useNavCounts(session.data?.role);
   const where = locate(pathname);
 
@@ -76,11 +80,11 @@ export function AdminLayout() {
   // Título de la pestaña del navegador: «Quizzes · Administración · Universo Memorias».
   useEffect(() => {
     const previous = document.title;
-    document.title = documentTitle(pathname);
+    document.title = documentTitle(pathname, { cartas: cardsLabel });
     return () => {
       document.title = previous;
     };
-  }, [pathname]);
+  }, [pathname, cardsLabel]);
 
   // Al navegar se cierra el cajón y la miga vuelve a ser genérica hasta que la nueva pantalla ponga su nombre.
   const [shownPath, setShownPath] = useState(pathname);
@@ -235,7 +239,11 @@ export function AdminLayout() {
                   <AdminIcon name="menu" />
                 </button>
                 <p className="min-w-0 flex-1 truncate text-base font-semibold lg:hidden">
-                  {isAdminAccount(pathname) ? 'Mi cuenta' : (where?.item.label ?? 'Administración')}
+                  {isAdminAccount(pathname)
+                    ? 'Mi cuenta'
+                    : where
+                      ? (navLabels[where.item.id] ?? where.item.label)
+                      : 'Administración'}
                 </p>
                 <UserMenu className="ml-auto" />
               </header>
@@ -245,7 +253,7 @@ export function AdminLayout() {
                 className="min-w-0 flex-1 px-4 py-6 focus:outline-none sm:px-8 sm:py-8"
               >
                 <div className="fade-up mx-auto w-full max-w-[72rem]">
-                  <Breadcrumbs crumbs={crumbsFor(pathname, leaf)} />
+                  <Breadcrumbs crumbs={crumbsFor(pathname, leaf, navLabels)} />
                   <Outlet />
                 </div>
               </main>

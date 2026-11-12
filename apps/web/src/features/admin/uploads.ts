@@ -1,4 +1,6 @@
 import {
+  CARD_IMAGE_LIMITS,
+  CARD_PUBLIC_ID_PATTERN,
   QUIZ_BG_FOLDER,
   QUIZ_VIDEO_LIMITS,
   formatDecimal,
@@ -11,7 +13,7 @@ import {
 } from '@libro/shared';
 import { z } from 'zod';
 import { ApiClientError } from '../../shared/api/client';
-import { uploadsApi } from './api';
+import { cardsApi, uploadsApi } from './api';
 
 type Purpose = (typeof UPLOAD_PURPOSES)[number];
 
@@ -146,5 +148,53 @@ export async function uploadBackgroundVideo(file: File, alt: string): Promise<Ba
     durationSeconds: result.duration ?? 1,
     posterUrl: videoPosterUrl(result.secure_url),
     alt,
+  };
+}
+
+/** Lo que muestra el formulario de una carta de una imagen recién subida. */
+export interface UploadedCardImage {
+  publicId: string;
+  width: number;
+  height: number;
+  /** Miniatura para mostrarla en el formulario (la URL de entrega acotada en ancho). */
+  previewUrl: string;
+}
+
+/** Revisa la imagen ANTES de subirla (así no se sube nada que el servidor va a rechazar). `null` si cumple. */
+export function cardImageProblem(file: {
+  size: number;
+  type: string;
+  name?: string;
+}): string | null {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+    return `«${file.name ?? 'El archivo'}» no es JPG, PNG ni WebP.`;
+  }
+  if (file.size > CARD_IMAGE_LIMITS.maxBytes) {
+    const mb = formatDecimal(file.size / 1024 / 1024);
+    const max = CARD_IMAGE_LIMITS.maxBytes / 1024 / 1024;
+    return `«${file.name ?? 'La imagen'}» pesa ${mb} MB y el máximo es ${max} MB.`;
+  }
+  return null;
+}
+
+/**
+ * Sube UNA imagen de carta con su propia firma (el servidor elige el nombre, público e impredecible). El servidor
+ * vuelve a verificar todo con Cloudinary al guardar la carta.
+ */
+export async function uploadCardImage(file: File, bookId: string): Promise<UploadedCardImage> {
+  const before = cardImageProblem(file);
+  if (before) throw new ApiClientError('VALIDATION', before);
+  const result = await upload(file, await cardsApi.sign(bookId));
+  if (!CARD_PUBLIC_ID_PATTERN.test(result.public_id)) {
+    throw new ApiClientError(
+      'VALIDATION',
+      'La imagen se subió, pero no quedó con el nombre que eligió el servidor. Avisa a quien administra Cloudinary.',
+    );
+  }
+  return {
+    publicId: result.public_id,
+    width: result.width,
+    height: result.height,
+    previewUrl: result.secure_url.replace('/upload/', '/upload/f_auto,q_auto,c_limit,w_480/'),
   };
 }

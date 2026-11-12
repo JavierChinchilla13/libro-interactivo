@@ -3,6 +3,10 @@ import { AppError } from '../lib/errors.js';
 import type { Env } from '../config/env.js';
 import type { Logger } from '../lib/logger.js';
 import type { Limits } from '../config/limits.js';
+import {
+  createAdminCardController,
+  createReaderCardController,
+} from '../controllers/card.controller.js';
 import { createGameController } from '../controllers/game.controller.js';
 import type { GameService } from '../services/game.service.js';
 import type { GoogleVerifier } from '../services/google.service.js';
@@ -66,6 +70,7 @@ import type { SitemapService } from '../services/sitemap.service.js';
 import type { SiteSettingsService } from '../services/siteSettings.service.js';
 import type { WelcomeService } from '../services/welcome.service.js';
 import type { AccessService } from '../services/access.service.js';
+import type { CardService } from '../services/card.service.js';
 import type { ExtraService } from '../services/extra.service.js';
 import type { BookService } from '../services/book.service.js';
 import type { QuizAdminService } from '../services/quizAdmin.service.js';
@@ -81,6 +86,7 @@ import type { ProgressService } from '../services/progress.service.js';
 import type { QuizService } from '../services/quiz.service.js';
 import type { QuizPublishService } from '../services/quizPublish.service.js';
 import { createAccountRouter } from './account.routes.js';
+import { createAdminCardRouter, createReaderCardRouter } from './card.routes.js';
 import {
   createAccessRouter,
   createAdminAccessRouter,
@@ -160,6 +166,7 @@ export interface RouteDeps {
   newsletter: NewsletterService;
   notifications: NotificationService;
   extras: ExtraService;
+  cards: CardService;
   clock: Clock;
   requireUnlocked: RequireUnlocked;
   game: GameService;
@@ -293,6 +300,11 @@ export function createApiRouter(deps: RouteDeps): Router {
     '/extras',
     createReaderExtraRouter(createReaderExtraController(deps.extras), deps.guards),
   );
+  router.use(
+    '/admin/cards',
+    createAdminCardRouter(createAdminCardController(deps.cards), deps.guards, deps.limits),
+  );
+  router.use('/cards', createReaderCardRouter(createReaderCardController(deps.cards), deps.guards));
   router.use(
     '/admin/books',
     createAdminBookRouter(createAdminBookController(deps.books), deps.guards),

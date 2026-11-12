@@ -113,6 +113,8 @@ describe('limpieza manual de fondos de quiz huérfanos', () => {
       picture('libro/wiki/ficha', daysAgo(500)),
       picture('libro/quiz/resultado', daysAgo(500)),
       picture('libro/quiz-bg-extra/x', daysAgo(500)),
+      // Las cartas son secretas y nunca se borran desde el API ni con esta limpieza.
+      picture('libro/cartas/AbCdEfGhIjKlMnOpQrStUvWx', daysAgo(500)),
       picture('libro/quiz-bg/huerfana', daysAgo(500)),
     ]);
     const report = await cleanupOrphanMedia({ images: cloud.provider, clock, apply: true });

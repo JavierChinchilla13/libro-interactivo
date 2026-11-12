@@ -5,6 +5,7 @@ import { Link, useParams } from 'react-router';
 import { ApiClientError, apiRequest } from '../../shared/api/client';
 import { Alert, Loading } from '../../shared/ui/layout';
 import { AuthShell, QR_TAGLINE } from '../auth/AuthShell';
+import { useCardsLabel } from '../cards/useCardsLabel';
 import { useSession } from '../auth/session';
 
 /** Clave donde se recuerda el código mientras la persona inicia sesión o se registra (se borra al canjear). */
@@ -36,6 +37,7 @@ const INVALID = 'Este código no es válido.';
 export function RedeemPage() {
   const { token = '' } = useParams();
   const session = useSession();
+  const cardsLabel = useCardsLabel();
   const requested = useRef(false);
 
   const resolved = useQuery({
@@ -84,7 +86,8 @@ export function RedeemPage() {
         <p>
           <span className="text-muted">{info.bookTitle}</span>
           <br />
-          <strong>{info.title}</strong>
+          {/* El título de una carta es un secreto hasta abrirla: antes de ingresar solo se dice de qué sección es. */}
+          <strong>{info.kind === 'card' ? `Algo nuevo para «${cardsLabel}»` : info.title}</strong>
         </p>
 
         {!loggedIn ? (
@@ -128,9 +131,14 @@ export function RedeemPage() {
                   Empezar «{redeem.data.title}»
                 </Link>
               ) : null}
+              {redeem.data.kind === 'card' ? (
+                <Link to={`/panel/cartas/${redeem.data.refId}`} className="btn btn-primary btn-lg">
+                  Ver «{redeem.data.title}»
+                </Link>
+              ) : null}
               <Link
                 to="/panel"
-                className={`btn btn-lg ${redeem.data.kind === 'quiz' ? 'btn-secondary' : 'btn-primary'}`}
+                className={`btn btn-lg ${redeem.data.kind === 'quiz' || redeem.data.kind === 'card' ? 'btn-secondary' : 'btn-primary'}`}
               >
                 Ir a mi panel
               </Link>

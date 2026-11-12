@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { CloudinaryImageProvider, DisabledImageProvider } from './ImageProvider.js';
 
@@ -25,6 +26,41 @@ describe('firma de subida para fondos de quiz (quiz-bg)', () => {
     expect(() =>
       provider.signUpload({ purpose: 'quiz', resource: 'video', timestamp: 1 }),
     ).not.toThrow();
+  });
+});
+
+describe('firma de subida para cartas', () => {
+  const provider = new CloudinaryImageProvider(credentials);
+  const publicId = 'libro/cartas/AbCdEfGhIjKlMnOpQrStUvWx';
+
+  it('firma el public_id que eligió el servidor, solo imágenes jpg, png y webp, con tope de 8 MB', () => {
+    const signed = provider.signCardUpload({ publicId, timestamp: 1700000000 });
+    expect(signed.params).toEqual({
+      allowed_formats: 'jpg,jpeg,png,webp',
+      public_id: publicId,
+      timestamp: '1700000000',
+    });
+    expect(signed.maxBytes).toBe(8 * 1024 * 1024);
+    expect(signed.uploadUrl).toBe('https://api.cloudinary.com/v1_1/mi-cuenta/image/upload');
+    expect(signed.apiKey).toBe('123');
+    // Firma de Cloudinary: SHA-1 de los parámetros ordenados + el secreto (el secreto nunca viaja).
+    const expected = createHash('sha1')
+      .update(
+        `allowed_formats=jpg,jpeg,png,webp&public_id=${publicId}&timestamp=1700000000secreto-de-prueba`,
+      )
+      .digest('hex');
+    expect(signed.signature).toBe(expected);
+    expect(JSON.stringify(signed)).not.toContain('secreto-de-prueba');
+  });
+
+  it('otro identificador da otra firma (el navegador no puede cambiar el nombre)', () => {
+    const a = provider.signCardUpload({ publicId, timestamp: 1 });
+    const b = provider.signCardUpload({ publicId: `${publicId}x`, timestamp: 1 });
+    expect(a.signature).not.toBe(b.signature);
+  });
+
+  it('sin credenciales responde que la subida no está configurada', () => {
+    expect(() => new DisabledImageProvider().signCardUpload()).toThrow(/no está configurada/);
   });
 });
 

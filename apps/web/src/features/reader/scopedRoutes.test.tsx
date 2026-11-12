@@ -156,7 +156,7 @@ describe('marco del libro: migas, subnavegador y barra', { timeout: 30_000 }, ()
     );
   });
 
-  it('fuera de un libro la barra es la general: Tus libros, Resultados y Extras', async () => {
+  it('fuera de un libro la barra es la general: Tus libros, Resultados, Extras y Hallazgos', async () => {
     world([entry(1, 'open')]);
     renderAt('/panel');
     await screen.findByRole('heading', { name: /^Hola, / });
@@ -164,13 +164,13 @@ describe('marco del libro: migas, subnavegador y barra', { timeout: 30_000 }, ()
       within(generalTabs())
         .getAllByRole('link')
         .map((link) => link.textContent),
-    ).toEqual(['Tus libros', 'Resultados', 'Extras']);
+    ).toEqual(['Tus libros', 'Resultados', 'Extras', 'Hallazgos']);
     const bottom = screen.getByRole('navigation', { name: 'Panel (móvil)' });
     expect(
       within(bottom)
         .getAllByRole('link')
         .map((link) => link.textContent),
-    ).toEqual(['Tus libros', 'Resultados', 'Extras']);
+    ).toEqual(['Tus libros', 'Resultados', 'Extras', 'Hallazgos']);
   });
 
   it('en Resultados hay cabecera compacta con el título del libro, migas con la sección y la sección marcada', async () => {

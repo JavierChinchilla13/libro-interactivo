@@ -42,6 +42,7 @@ import { createWelcomeService } from './services/welcome.service.js';
 import { createNewsletterService } from './services/newsletter.service.js';
 import { createNotificationService } from './services/notification.service.js';
 import { CountingMailProvider, createMailQuota } from './services/mailQuota.service.js';
+import { createCardService } from './services/card.service.js';
 import { createExtraService } from './services/extra.service.js';
 import { createAccountService } from './services/account.service.js';
 import { AGE_REJECTION_LIMIT, createAgeGate } from './services/ageGate.service.js';
@@ -225,6 +226,7 @@ export function createApp(
     progress,
   });
   const extras = createExtraService({ storage, progress, clock });
+  const cards = createCardService({ images, clock });
   const welcome = createWelcomeService({ clock });
   const publicBooks = createPublicBookService();
   const publicWiki = createPublicWikiService();
@@ -330,6 +332,7 @@ export function createApp(
       images,
       access,
       extras,
+      cards,
       welcome,
       publicBooks,
       library,

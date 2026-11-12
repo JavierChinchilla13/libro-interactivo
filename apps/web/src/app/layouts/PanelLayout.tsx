@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation, useMatch } from 'react-router';
+import { useCardsLabel } from '../../features/cards/useCardsLabel';
 import { BOOK_SECTIONS, bookSectionOf } from '../../features/reader/bookSections';
 import { useLibrary } from '../../features/reader/useLibrary';
 import { WelcomeModal } from '../../features/reader/WelcomeModal';
@@ -11,6 +12,8 @@ const ITEMS = [
   { to: '/panel', label: 'Tus libros', section: 'panel' },
   { to: '/panel/resultados', label: 'Resultados', section: 'resultados' },
   { to: '/panel/extras', label: 'Extras', section: 'extras' },
+  // El nombre lo elige la autora (por defecto «Hallazgos»): se reemplaza al dibujar el menú.
+  { to: '/panel/cartas', label: 'Hallazgos', section: 'cartas' },
 ] as const;
 
 type Section = (typeof ITEMS)[number]['section'];
@@ -28,6 +31,7 @@ export function sectionOf(pathname: string): Section | null {
   if (path.startsWith('/panel/extras') || /^\/panel\/libros\/[^/]+\/extras/.test(path)) {
     return 'extras';
   }
+  if (path === '/panel/cartas' || path.startsWith('/panel/cartas/')) return 'cartas';
   return null;
 }
 
@@ -43,6 +47,10 @@ export function bookSlugOf(pathname: string): string | null {
 export function PanelLayout() {
   const { pathname } = useLocation();
   const current = sectionOf(pathname);
+  const cardsLabel = useCardsLabel();
+  const items = ITEMS.map((item) =>
+    item.section === 'cartas' ? { ...item, label: cardsLabel } : item,
+  );
   // Dentro de un libro las categorías son las del libro: arriba solo queda volver a «Tus libros».
   const bookSlug = bookSlugOf(pathname);
   const bookSection = bookSectionOf(pathname);
@@ -62,23 +70,24 @@ export function PanelLayout() {
       <SkipLink />
       <PageBackground fallback="first" />
       <header className="site-header sticky top-3 z-40 px-3">
-        <div className="nav-pill mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-4 py-1.5 pl-5 pr-2">
+        <div className="nav-pill mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-4 py-1.5 pl-5 pr-2 max-lg:gap-2">
           <Brand to="/panel" />
           {immersive ? null : (
             <>
-              <nav aria-label="Panel" className="hidden gap-1 sm:flex">
+              <nav aria-label="Panel" className="hidden gap-1 max-lg:gap-0 sm:flex">
                 {bookSlug ? (
                   <Link to="/panel" viewTransition className={navTab({ isActive: false })}>
                     ‹ Tus libros
                   </Link>
                 ) : (
-                  ITEMS.map((item) => (
+                  items.map((item) => (
                     <Link
                       key={item.to}
                       to={item.to}
                       viewTransition
                       aria-current={current === item.section ? 'page' : undefined}
-                      className={navTab({ isActive: current === item.section })}
+                      // Con cuatro pestañas, entre 640 y 1024 px el relleno se acorta para que quepa el nombre largo.
+                      className={`${navTab({ isActive: current === item.section })} max-lg:px-1.5 max-lg:after:inset-x-1.5`}
                     >
                       {item.label}
                     </Link>
@@ -123,14 +132,15 @@ export function PanelLayout() {
               ))}
             </>
           ) : (
-            ITEMS.map((item) => (
+            items.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
                 aria-current={current === item.section ? 'page' : undefined}
                 className={bottomTab({ isActive: current === item.section })}
               >
-                {item.label}
+                {/* Con un nombre largo la pestaña no se parte: se acorta con puntos suspensivos. */}
+                <span className="block max-w-full truncate px-1">{item.label}</span>
               </Link>
             ))
           )}

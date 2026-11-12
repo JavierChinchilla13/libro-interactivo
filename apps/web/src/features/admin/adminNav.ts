@@ -70,6 +70,15 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
         description: 'Personajes, campos y poderes, lugares y glosario.',
       },
       {
+        id: 'cartas',
+        // El nombre lo cambia la autora (ajustes del sitio): este es el de siempre; el menú usa el suyo.
+        label: 'Hallazgos',
+        to: '/admin/cartas',
+        icon: 'card',
+        description: 'Cartas con QR: imágenes que se abren al escanear su código.',
+        roles: ADMIN,
+      },
+      {
         id: 'extras',
         label: 'Capítulos extra',
         to: '/admin/extras',
@@ -193,11 +202,17 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
 const canSee = (item: AdminNavItem, role: Role | undefined) =>
   !item.roles || (role !== undefined && item.roles.includes(role));
 
+/** Nombres que cambian por elemento del menú (`id` → nombre): hoy, el de la sección de cartas. */
+export type NavLabels = Readonly<Record<string, string | undefined>>;
+const labelOf = (item: AdminNavItem, labels?: NavLabels) => labels?.[item.id] ?? item.label;
+
 /** El menú de una cuenta: sin elementos que no puede usar y sin grupos que quedan vacíos. */
-export function navForRole(role: Role | undefined): AdminNavGroup[] {
+export function navForRole(role: Role | undefined, labels?: NavLabels): AdminNavGroup[] {
   return ADMIN_NAV.map((group) => ({
     ...group,
-    items: group.items.filter((item) => canSee(item, role)),
+    items: group.items
+      .filter((item) => canSee(item, role))
+      .map((item) => ({ ...item, label: labelOf(item, labels) })),
   })).filter((group) => group.items.length > 0);
 }
 
@@ -243,23 +258,28 @@ function leafLabel(pathname: string, parent: AdminNavItem): string | null {
 }
 
 /** Migas de una ruta: «Grupo › Pantalla › Detalle». Inicio no lleva migas. `leaf` pone el nombre real del detalle. */
-export function crumbsFor(pathname: string, leaf?: string | null): AdminCrumb[] {
+export function crumbsFor(
+  pathname: string,
+  leaf?: string | null,
+  labels?: NavLabels,
+): AdminCrumb[] {
   if (isAdminAccount(pathname)) return [{ label: 'Mi cuenta' }];
   const where = locate(pathname);
   if (!where || where.item.id === 'inicio') return [];
   const crumbs: AdminCrumb[] = [];
   if (where.group.label) crumbs.push({ label: where.group.label });
   const last = leaf ?? leafLabel(pathname, where.item);
-  crumbs.push(last ? { label: where.item.label, to: where.item.to } : { label: where.item.label });
+  const name = labelOf(where.item, labels);
+  crumbs.push(last ? { label: name, to: where.item.to } : { label: name });
   if (last) crumbs.push({ label: last });
   return crumbs;
 }
 
 /** Título del documento: «Quizzes · Administración · Universo Memorias». */
-export function documentTitle(pathname: string): string {
+export function documentTitle(pathname: string, labels?: NavLabels): string {
   if (isAdminAccount(pathname)) return 'Mi cuenta · Administración · Universo Memorias';
   const where = locate(pathname);
-  const name = where ? where.item.label : 'Administración';
+  const name = where ? labelOf(where.item, labels) : 'Administración';
   return where?.item.id === 'inicio' || !where
     ? 'Administración · Universo Memorias'
     : `${name} · Administración · Universo Memorias`;
