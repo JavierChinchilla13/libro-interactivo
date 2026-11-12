@@ -39,6 +39,8 @@ describe('GET /api/site (público)', () => {
       author: { bioHtml: '' },
       social: [],
       lockMessage: 'Bloqueado: avanza en tu lectura',
+      // El nombre de la sección de cartas: «Hallazgos» mientras la autora no elija otro.
+      cardsLabel: 'Hallazgos',
     });
     expect(res.headers['cache-control']).toBe('public, max-age=60');
   });

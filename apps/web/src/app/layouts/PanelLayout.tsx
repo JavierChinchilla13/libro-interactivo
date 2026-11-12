@@ -70,11 +70,11 @@ export function PanelLayout() {
       <SkipLink />
       <PageBackground fallback="first" />
       <header className="site-header sticky top-3 z-40 px-3">
-        <div className="nav-pill mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-4 py-1.5 pl-5 pr-2">
+        <div className="nav-pill mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-4 py-1.5 pl-5 pr-2 max-lg:gap-2">
           <Brand to="/panel" />
           {immersive ? null : (
             <>
-              <nav aria-label="Panel" className="hidden gap-1 sm:flex">
+              <nav aria-label="Panel" className="hidden gap-1 max-lg:gap-0 sm:flex">
                 {bookSlug ? (
                   <Link to="/panel" viewTransition className={navTab({ isActive: false })}>
                     ‹ Tus libros
@@ -86,7 +86,8 @@ export function PanelLayout() {
                       to={item.to}
                       viewTransition
                       aria-current={current === item.section ? 'page' : undefined}
-                      className={navTab({ isActive: current === item.section })}
+                      // Con cuatro pestañas, entre 640 y 1024 px el relleno se acorta para que quepa el nombre largo.
+                      className={`${navTab({ isActive: current === item.section })} max-lg:px-1.5 max-lg:after:inset-x-1.5`}
                     >
                       {item.label}
                     </Link>

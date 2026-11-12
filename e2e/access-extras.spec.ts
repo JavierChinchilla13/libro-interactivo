@@ -37,7 +37,7 @@ test.describe('códigos QR y capítulos extra', () => {
     await expect(page.getByRole('link', { name: 'Códigos QR' })).toBeVisible();
     await page.getByLabel('Libro', { exact: true }).selectOption({ label: bookTitle });
     await page.getByLabel('Quiz', { exact: true }).selectOption({ index: 1 });
-    await page.getByRole('button', { name: 'Crear código' }).click();
+    await page.getByRole('button', { name: 'Crear código', exact: true }).click();
 
     const card = page.getByRole('article').filter({ hasText: 'Quiz con código' });
     await expect(card).toBeVisible();

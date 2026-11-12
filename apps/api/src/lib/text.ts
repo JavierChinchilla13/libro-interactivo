@@ -11,17 +11,19 @@ export function plainText(value: string): string {
     allowedAttributes: {},
     nonTextTags: ['script', 'style', 'textarea', 'option', 'noscript', 'iframe', 'object', 'embed'],
   });
-  return stripped
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, '&')
-    // Caracteres de control y de ancho cero: se vuelven espacios (y luego se colapsan).
-    // eslint-disable-next-line no-control-regex
-    .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028\u2029\ufeff]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    stripped
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, '&')
+      // Caracteres de control y de ancho cero: se vuelven espacios (y luego se colapsan).
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028\u2029\ufeff]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 
 /** Texto sin acentos y en minúsculas: sirve para buscar y ordenar sin distinguir acentos ni mayúsculas. */
