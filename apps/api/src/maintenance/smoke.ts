@@ -55,6 +55,32 @@ function setCookies(response: Response): string[] {
   return single ? [single] : [];
 }
 
+/**
+ * Las reglas del grupo `User-agent: *` de un `robots.txt` (un grupo termina donde empieza otro `User-agent` después de
+ * reglas). Sirve para no confundir el bloqueo de los rastreadores de IA con el bloqueo de todo el sitio.
+ */
+export function wildcardGroup(text: string): string {
+  const rules: string[] = [];
+  let agents: string[] = [];
+  let sawRule = false;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (line === '' || line.startsWith('#')) continue;
+    const agent = /^user-agent:\s*(.+)$/i.exec(line);
+    if (agent) {
+      if (sawRule) {
+        agents = [];
+        sawRule = false;
+      }
+      agents.push(agent[1]?.trim() ?? '');
+    } else if (/^(allow|disallow):/i.test(line)) {
+      sawRule = true;
+      if (agents.includes('*')) rules.push(line);
+    }
+  }
+  return rules.join('\n');
+}
+
 export async function runSmoke(options: SmokeOptions): Promise<SmokeCheck[]> {
   const origin = new URL(options.baseUrl).origin;
   const host = new URL(origin).hostname;
@@ -176,7 +202,8 @@ export async function runSmoke(options: SmokeOptions): Promise<SmokeCheck[]> {
       const res = await get('/robots.txt');
       const text = await res.text();
       if (res.status !== 200) return ['fail', `HTTP ${res.status}`];
-      const blocksAll = /^Disallow:\s*\/\s*$/m.test(text);
+      // Solo cuenta el grupo de todos los rastreadores (`User-agent: *`): el de los rastreadores de IA SÍ dice `Disallow: /`.
+      const blocksAll = /^Disallow:\s*\/\s*$/m.test(wildcardGroup(text));
       if (mode === 'noindex') {
         return blocksAll && !/^Allow:/m.test(text)
           ? ['ok', 'Disallow: / (todo cerrado)']

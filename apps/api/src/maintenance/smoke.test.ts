@@ -90,6 +90,33 @@ describe('runSmoke (comprobación de humo)', () => {
     expect(names(wrong, 'fail').join(' | ')).toMatch(/noindex|robots\.txt|sitemap/);
   });
 
+  it('abierto, el bloqueo de los rastreadores de IA no cuenta como «bloquea todo»; un bloqueo de todos sí', async () => {
+    const ai = 'User-agent: GPTBot\nUser-agent: CCBot\nDisallow: /\n';
+    const zones = 'Disallow: /admin\nDisallow: /panel\nDisallow: /u/\nDisallow: /api/\n';
+    const sitemap = `\nSitemap: ${ORIGIN}/sitemap.xml\n`;
+    const robots =
+      (text: string) =>
+      ({ path }: { path: string }) =>
+        path === '/robots.txt' ? new Response(text) : undefined;
+    const run = async (text: string) =>
+      names(
+        await runSmoke({
+          baseUrl: ORIGIN,
+          mode: 'indexable',
+          fetchFn: fakeSite('indexable', robots(text)).fetchFn,
+        }),
+        'fail',
+      );
+    // Como el `robots.txt` real: todos abiertos y los de IA con su `Disallow: /`.
+    expect(await run(`User-agent: *\nAllow: /\n${zones}\n${ai}${sitemap}`)).toEqual([]);
+    // Con los de IA primero y los demás después, también.
+    expect(await run(`${ai}\nUser-agent: *\nAllow: /\n${zones}${sitemap}`)).toEqual([]);
+    // Un `Disallow: /` en el grupo de todos sí cierra el sitio, aunque también haya grupo de IA.
+    expect(
+      (await run(`User-agent: *\nDisallow: /\n${zones}\n${ai}${sitemap}`)).join(' | '),
+    ).toMatch(/robots\.txt/);
+  });
+
   it('un sitio cerrado falla si se espera abierto (el día del lanzamiento se nota)', async () => {
     const closed = fakeSite('noindex');
     const checks = await runSmoke({ baseUrl: ORIGIN, mode: 'indexable', fetchFn: closed.fetchFn });

@@ -54,8 +54,24 @@ describe('robots.txt', () => {
     }
     expect(text).toContain('Sitemap: https://ejemplo.com/sitemap.xml');
     expect(text).not.toContain('{{SITE_URL}}');
-    // Los rastreadores de IA quedan como decisión pendiente: solo comentados.
-    expect(text).not.toMatch(/^User-agent: (?!\*)/m);
+  });
+
+  it('encendido: pide a los rastreadores de entrenamiento de IA que no usen el sitio, deja a los buscadores y a PerplexityBot', () => {
+    const text = robotsTxt({ allow: true, siteUrl: 'https://ejemplo.com' });
+    // Un solo grupo con los cinco agentes y su `Disallow: /`.
+    const block = /((?:^User-agent: [^\n*]+\n)+)Disallow: \/\n/m.exec(text);
+    expect(block).not.toBeNull();
+    const agents = [...(block?.[1] ?? '').matchAll(/^User-agent: (.+)$/gm)].map((m) => m[1]);
+    expect(agents).toEqual(['GPTBot', 'CCBot', 'Google-Extended', 'ClaudeBot', 'anthropic-ai']);
+    // El grupo de todos los demás (buscadores incluidos) sigue abierto: su único bloqueo es de las zonas privadas.
+    const everyone = text.slice(text.indexOf('User-agent: *'), text.indexOf('User-agent: GPTBot'));
+    expect(everyone).toMatch(/^Allow: \/$/m);
+    expect(everyone).not.toMatch(/^Disallow: \/$/m);
+    expect(text).not.toMatch(/^User-agent: (Googlebot|Bingbot|PerplexityBot)/im);
+    // La petición se explica como cortesía y ya no queda «decisión pendiente».
+    expect(text).toMatch(/cortesía/);
+    expect(text).not.toMatch(/pendiente/i);
+    expect(text).not.toMatch(/^# User-agent/m);
   });
 });
 
@@ -96,6 +112,9 @@ describe('indexingControl en un build real de Vite', () => {
     const files = await assets({ allow: true, siteUrl: 'https://ejemplo.com' });
     expect(files['index.html']).not.toMatch(/noindex/);
     expect(files['robots.txt']).toContain('Sitemap: https://ejemplo.com/sitemap.xml');
-    expect(files['robots.txt']).not.toMatch(/^Disallow: \/$/m);
+    // El sitio sigue abierto: el único `Disallow: /` es el de los rastreadores de IA, no el de todos.
+    const everyone = files['robots.txt']?.split('User-agent: GPTBot')[0] ?? '';
+    expect(everyone).not.toMatch(/^Disallow: \/$/m);
+    expect(files['robots.txt']).toMatch(/^User-agent: GPTBot$/m);
   });
 });
