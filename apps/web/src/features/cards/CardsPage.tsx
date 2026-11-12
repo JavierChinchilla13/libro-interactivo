@@ -15,7 +15,12 @@ import { useCardsLabel } from './useCardsLabel';
 function CardTile({ card }: { card: ReaderCard }) {
   return (
     <li>
-      <Link to={`/panel/cartas/${card.id}`} className="card-tile" aria-label={card.title}>
+      <Link
+        to={`/panel/cartas/${card.id}`}
+        state={{ fromList: true }}
+        className="card-tile"
+        aria-label={card.title}
+      >
         <span className="card-frame">
           <img
             src={card.imageUrl}
@@ -79,9 +84,13 @@ function CardDialog({ cardId }: { cardId: string }) {
     }
   }, []);
 
-  /** Cerrar vuelve a la lista: un paso atrás si se llegó desde ella; si se entró directo por el enlace, a la lista. */
+  /**
+   * Cerrar vuelve SIEMPRE a la lista: un paso atrás si se llegó tocando una carta de ella (así no se duplica la entrada
+   * del historial); si se llegó de otro lado (el QR, un enlace), la lista reemplaza a la carta.
+   */
   const close = () => {
-    if (location.key !== 'default') void navigate(-1);
+    const fromList = (location.state as { fromList?: boolean } | null)?.fromList === true;
+    if (fromList) void navigate(-1);
     else void navigate('/panel/cartas', { replace: true });
   };
   const missing = card.error instanceof ApiClientError && card.error.status === 404;

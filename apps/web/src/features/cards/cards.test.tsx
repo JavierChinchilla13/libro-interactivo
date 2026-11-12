@@ -288,6 +288,16 @@ describe('vista grande: galería accesible', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
+  it('si se llegó a la carta por otro lado (el QR, un enlace), cerrar lleva a la lista y no a la página anterior', async () => {
+    open();
+    renderAt(`/panel/cartas/${ID_A}`);
+    const dialog = await screen.findByRole('dialog');
+    await within(dialog).findByRole('img');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cerrar' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(await screen.findByRole('list', { name: 'Hallazgos' })).toBeInTheDocument();
+  });
+
   it('una carta que no abrió (o que no existe) dice lo mismo: escanea el código; no filtra nada', async () => {
     mockApi({
       ...list([]),
