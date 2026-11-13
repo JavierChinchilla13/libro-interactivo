@@ -3,14 +3,12 @@ import {
   AGE_RESTRICTED_MESSAGE,
   MIN_ACCOUNT_AGE,
   NEWSLETTER_LABEL,
-  ageBand,
-  checkBirth,
   type Consent,
 } from '@libro/shared';
 import { useId, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { SelectField } from '../../shared/ui/controls';
 import { Alert } from '../../shared/ui/layout';
+import { BirthFields, birthBand } from './BirthFields';
 
 /** Lo que la persona escribe en el formulario de edad y consentimientos (todo en texto, como lo da el navegador). */
 export interface ConsentValues {
@@ -37,32 +35,6 @@ export type ConsentErrors = Partial<
   Record<'birth' | 'ageCheck' | 'acceptTerms' | 'acceptPrivacy', string>
 >;
 
-const MONTHS = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
-];
-
-const MONTH_OPTIONS = MONTHS.map((label, index) => ({ value: String(index + 1), label }));
-
-/** De este año hacia atrás, 100 años. */
-function yearOptions(now: Date) {
-  const current = now.getUTCFullYear();
-  return Array.from({ length: 101 }, (_, i) => {
-    const year = String(current - i);
-    return { value: year, label: year };
-  });
-}
-
 /** Qué se sabe de la fecha elegida: nada todavía, una menor de 16, o la franja de edad en que cae. */
 export type BirthState =
   | { kind: 'empty' }
@@ -72,10 +44,7 @@ export type BirthState =
   | { kind: 'adult' };
 
 export function birthState(values: ConsentValues, now: Date): BirthState {
-  if (!values.month || !values.year) return { kind: 'empty' };
-  const check = checkBirth({ year: Number(values.year), month: Number(values.month) }, now);
-  if (!check.valid) return { kind: 'invalid' };
-  return { kind: ageBand(check.age) };
+  return birthBand(values.month, values.year, now);
 }
 
 /**
@@ -193,37 +162,13 @@ export function ConsentFields({
   const blocked = state.kind === 'under';
   return (
     <div className="flex flex-col gap-4">
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium">Fecha de nacimiento</legend>
-        <div className="grid grid-cols-2 gap-3">
-          <SelectField
-            label="Mes"
-            required
-            placeholder="Mes"
-            options={MONTH_OPTIONS}
-            value={values.month}
-            onChange={(event) =>
-              set({ month: event.target.value, ageCheck: false, newsletter: false })
-            }
-          />
-          <SelectField
-            label="Año"
-            required
-            placeholder="Año"
-            options={yearOptions(now)}
-            value={values.year}
-            onChange={(event) =>
-              set({ year: event.target.value, ageCheck: false, newsletter: false })
-            }
-          />
-        </div>
-        <p className="text-xs text-muted">Solo guardamos el mes y el año, no el día.</p>
-        {errors.birth && !blocked ? (
-          <p role="alert" className="text-xs text-danger">
-            {errors.birth}
-          </p>
-        ) : null}
-      </fieldset>
+      <BirthFields
+        month={values.month}
+        year={values.year}
+        now={now}
+        error={errors.birth && !blocked ? errors.birth : undefined}
+        onChange={(next) => set({ ...next, ageCheck: false, newsletter: false })}
+      />
 
       {blocked ? <Alert tone="warning">{AGE_RESTRICTED_MESSAGE}</Alert> : null}
 
