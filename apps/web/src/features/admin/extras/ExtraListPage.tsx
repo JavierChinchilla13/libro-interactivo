@@ -1,3 +1,5 @@
+import { LifecycleButtons, useLifecycle } from '../components/lifecycle';
+import { EXTRA_LIFECYCLE } from '../lifecycleConfigs';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router';
@@ -49,6 +51,7 @@ const READY: ListState = {
 
 /** Capítulos extra: se abren al completar todo el libro, sin QR. */
 export function ExtraListPage() {
+  const lifecycle = useLifecycle(EXTRA_LIFECYCLE);
   const books = useQuery({ queryKey: keys.books, queryFn: booksApi.list });
   const [chosen, setChosen] = useState('');
   const bookId = chosen || books.data?.books[0]?.id || '';
@@ -124,6 +127,13 @@ export function ExtraListPage() {
       }
     >
       <DataList
+        rowActions={(row) => (
+          <LifecycleButtons
+            item={{ id: row.id, title: row.title, status: row.status }}
+            lifecycle={lifecycle}
+            compact
+          />
+        )}
         label="Capítulos extra"
         rows={search.visible ?? []}
         rowKey={(extra) => extra.id}

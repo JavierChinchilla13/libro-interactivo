@@ -1,3 +1,5 @@
+import { LifecyclePanel, useLifecycle } from '../components/lifecycle';
+import { WIKI_LIFECYCLE } from '../lifecycleConfigs';
 import {
   FIELD_VISUAL_KEYS,
   FIELD_VISUAL_LABELS,
@@ -53,7 +55,11 @@ export function WikiFormPage() {
     if (entry.isError) return <Alert>{errorMessage(entry.error)}</Alert>;
     if (!entry.data) return <SkeletonRows rows={4} />;
     return (
-      <WikiFormView key={entry.data.id} entryId={entryId} initial={formFromEntry(entry.data)} />
+      <WikiFormView
+        key={`${entry.data.id}:${entry.data.status}`}
+        entryId={entryId}
+        initial={formFromEntry(entry.data)}
+      />
     );
   }
   return (
@@ -68,6 +74,7 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
   const client = useQueryClient();
   const [form, setForm] = useState<WikiForm>(initial);
   const guard = useFormGuard(form, initial);
+  const lifecycle = useLifecycle(WIKI_LIFECYCLE);
   const toast = useToast();
   const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -375,6 +382,15 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
           ) : null}
         </FormSection>
       </div>
+      {entryId ? (
+        <LifecyclePanel
+          item={{ id: entryId, title: guard.saved.name, status: guard.saved.status }}
+          lifecycle={lifecycle}
+          dirty={guard.dirty}
+          noun="la entrada"
+          after={() => void navigate('/admin/wiki')}
+        />
+      ) : null}
       <SaveBar
         dirty={guard.dirty || !editing}
         dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}

@@ -1,3 +1,5 @@
+import { LifecycleButtons, useLifecycle } from '../components/lifecycle';
+import { POST_LIFECYCLE } from '../lifecycleConfigs';
 import { POST_CATEGORY_LABELS, postTemplates } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -79,6 +81,7 @@ const columns: Column<PostRow>[] = [
 
 /** Actualizaciones del sitio: filtros por estado, tipo y título. */
 export function PostListPage() {
+  const lifecycle = useLifecycle(POST_LIFECYCLE);
   const [status, setStatus] = useState('');
   const [category, setCategory] = useState('');
   const [text, setText] = useState('');
@@ -148,6 +151,13 @@ export function PostListPage() {
       }}
     >
       <DataList
+        rowActions={(row) => (
+          <LifecycleButtons
+            item={{ id: row.id, title: row.title, status: row.status }}
+            lifecycle={lifecycle}
+            compact
+          />
+        )}
         label="Actualizaciones"
         rows={posts.data?.posts ?? []}
         rowKey={(post) => post.id}

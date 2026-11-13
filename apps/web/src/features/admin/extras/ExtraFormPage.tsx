@@ -1,3 +1,5 @@
+import { LifecyclePanel, useLifecycle } from '../components/lifecycle';
+import { EXTRA_LIFECYCLE } from '../lifecycleConfigs';
 import { extraInputSchema, type ExtraPreviewResponse, plural } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
@@ -40,7 +42,11 @@ export function ExtraFormPage() {
     if (extra.isError) return <Alert>{errorMessage(extra.error)}</Alert>;
     if (!extra.data) return <SkeletonRows rows={4} />;
     return (
-      <ExtraFormView key={extra.data.id} extraId={extraId} initial={formFromExtra(extra.data)} />
+      <ExtraFormView
+        key={`${extra.data.id}:${extra.data.status}`}
+        extraId={extraId}
+        initial={formFromExtra(extra.data)}
+      />
     );
   }
   if (books.isError) return <Alert>{errorMessage(books.error)}</Alert>;
@@ -56,6 +62,7 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
   const client = useQueryClient();
   const [form, setForm] = useState<ExtraForm>(initial);
   const guard = useFormGuard(form, initial);
+  const lifecycle = useLifecycle(EXTRA_LIFECYCLE);
   const toast = useToast();
   const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -350,6 +357,15 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
           onChange={setNotify}
         />
       </div>
+      {extraId ? (
+        <LifecyclePanel
+          item={{ id: extraId, title: guard.saved.title, status: guard.saved.status }}
+          lifecycle={lifecycle}
+          dirty={guard.dirty}
+          noun="el capítulo extra"
+          after={() => void navigate('/admin/extras')}
+        />
+      ) : null}
       <SaveBar
         dirty={guard.dirty || !editing}
         dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}

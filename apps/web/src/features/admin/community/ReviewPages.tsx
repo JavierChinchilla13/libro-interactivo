@@ -1,3 +1,5 @@
+import { LifecycleButtons, LifecyclePanel, useLifecycle } from '../components/lifecycle';
+import { REVIEW_LIFECYCLE } from '../lifecycleConfigs';
 import {
   reviewInputSchema,
   type AdminReview,
@@ -20,7 +22,7 @@ import { booksApi, keys, reviewsApi } from '../api';
 import { SkeletonRows } from '../components/Skeleton';
 import { errorMessage, fieldErrors } from '../errors';
 
-const STATUS_LABEL: Record<ReviewStatus, string> = { published: 'Publicada', hidden: 'Oculta' };
+const STATUS_LABEL: Record<ReviewStatus, string> = { published: 'Publicada', hidden: 'Archivada' };
 
 const useReviews = () => useQuery({ queryKey: keys.reviews, queryFn: () => reviewsApi.list() });
 type ReviewRow = NonNullable<ReturnType<typeof useReviews>['data']>['reviews'][number];
@@ -64,6 +66,7 @@ const reviewColumns: Column<ReviewRow>[] = [
 
 /** Reseñas de lectores: las carga la autora y decide cuáles se muestran. */
 export function ReviewListPage() {
+  const lifecycle = useLifecycle(REVIEW_LIFECYCLE);
   const reviews = useReviews();
   const search = useRowSearch(
     reviews.data?.reviews,
@@ -95,6 +98,13 @@ export function ReviewListPage() {
       }}
     >
       <DataList
+        rowActions={(row) => (
+          <LifecycleButtons
+            item={{ id: row.id, title: row.authorName, status: row.status }}
+            lifecycle={lifecycle}
+            compact
+          />
+        )}
         label="Reseñas"
         rows={search.visible ?? []}
         rowKey={(review) => review.id}
@@ -174,7 +184,7 @@ export function ReviewFormPage() {
     if (!review.data) return <SkeletonRows rows={4} />;
     return (
       <ReviewFormView
-        key={review.data.id}
+        key={`${review.data.id}:${review.data.status}`}
         reviewId={reviewId}
         initial={formFromReview(review.data)}
       />
@@ -191,6 +201,7 @@ function ReviewFormView({ reviewId, initial }: { reviewId?: string; initial: Rev
   const client = useQueryClient();
   const [form, setForm] = useState<ReviewForm>(initial);
   const guard = useFormGuard(form, initial);
+  const lifecycle = useLifecycle(REVIEW_LIFECYCLE);
   const toast = useToast();
   const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -291,6 +302,15 @@ function ReviewFormView({ reviewId, initial }: { reviewId?: string; initial: Rev
           />
         </div>
       </FormSection>
+      {reviewId ? (
+        <LifecyclePanel
+          item={{ id: reviewId, title: guard.saved.authorName, status: guard.saved.status }}
+          lifecycle={lifecycle}
+          dirty={guard.dirty}
+          noun="la reseña"
+          after={() => void navigate('/admin/resenas')}
+        />
+      ) : null}
       <SaveBar
         dirty={guard.dirty || !editing}
         dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}

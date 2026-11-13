@@ -1,3 +1,5 @@
+import { LifecyclePanel, useLifecycle } from '../components/lifecycle';
+import { CARD_LIFECYCLE } from '../lifecycleConfigs';
 import {
   CARD_IMAGES,
   CARD_IMAGE_LIMITS,
@@ -82,7 +84,13 @@ export function CardFormPage() {
   if (editing) {
     if (card.isError) return <Alert>{errorMessage(card.error)}</Alert>;
     if (!card.data) return <SkeletonRows rows={4} />;
-    return <CardFormView key={card.data.id} cardId={cardId} initial={formFromCard(card.data)} />;
+    return (
+      <CardFormView
+        key={`${card.data.id}:${card.data.status}`}
+        cardId={cardId}
+        initial={formFromCard(card.data)}
+      />
+    );
   }
   if (books.isError) return <Alert>{errorMessage(books.error)}</Alert>;
   if (!books.data) return <SkeletonRows rows={4} />;
@@ -107,6 +115,7 @@ function CardFormView({ cardId, initial }: { cardId?: string; initial: CardForm 
   const label = useCardsLabel();
   const [form, setForm] = useState<CardForm>(initial);
   const guard = useFormGuard(form, initial);
+  const lifecycle = useLifecycle(CARD_LIFECYCLE);
   const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
   /** Imágenes que se están subiendo ahora mismo (nombre de archivo) y lo que salió mal con cada una. */
@@ -398,6 +407,15 @@ function CardFormView({ cardId, initial }: { cardId?: string; initial: CardForm 
         ) : null}
       </div>
 
+      {cardId ? (
+        <LifecyclePanel
+          item={{ id: cardId, title: guard.saved.title, status: guard.saved.status }}
+          lifecycle={lifecycle}
+          dirty={guard.dirty}
+          noun="la carta"
+          after={() => void navigate('/admin/cartas')}
+        />
+      ) : null}
       <SaveBar
         dirty={guard.dirty || !editing}
         dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}

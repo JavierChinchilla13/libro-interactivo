@@ -1,3 +1,5 @@
+import { LifecyclePanel, useLifecycle } from '../components/lifecycle';
+import { POST_LIFECYCLE } from '../lifecycleConfigs';
 import {
   plural,
   POST_CATEGORY_LABELS,
@@ -92,7 +94,13 @@ export function PostFormPage() {
   if (editing) {
     if (post.isError) return <Alert>{errorMessage(post.error)}</Alert>;
     if (!post.data) return <SkeletonRows rows={4} />;
-    return <PostFormView key={post.data.id} postId={postId} initial={formFromPost(post.data)} />;
+    return (
+      <PostFormView
+        key={`${post.data.id}:${post.data.status}`}
+        postId={postId}
+        initial={formFromPost(post.data)}
+      />
+    );
   }
   const template = postTemplateSchema.safeParse(params.get('plantilla'));
   if (!template.success) {
@@ -113,6 +121,7 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
   const client = useQueryClient();
   const [form, setForm] = useState<PostForm>(initial);
   const guard = useFormGuard(form, initial);
+  const lifecycle = useLifecycle(POST_LIFECYCLE);
   const toast = useToast();
   const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -343,6 +352,15 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
           </FormSection>
         </div>
       )}
+      {postId ? (
+        <LifecyclePanel
+          item={{ id: postId, title: guard.saved.title, status: guard.saved.status }}
+          lifecycle={lifecycle}
+          dirty={guard.dirty}
+          noun="la actualización"
+          after={() => void navigate('/admin/actualizaciones')}
+        />
+      ) : null}
       <SaveBar
         dirty={guard.dirty || !editing}
         dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}

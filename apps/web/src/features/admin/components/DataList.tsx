@@ -37,6 +37,7 @@ export function DataList<T>({
   rowKey,
   columns,
   action,
+  rowActions,
   pageSize = PAGE_SIZE,
 }: {
   /** Nombre de la lista para lectores de pantalla («Quizzes»). */
@@ -45,6 +46,8 @@ export function DataList<T>({
   rowKey: (row: T) => string;
   columns: readonly Column<T>[];
   action?: RowAction<T>;
+  /** Más botones de la fila (por ejemplo, Archivar o Eliminar), junto al de editar. */
+  rowActions?: (row: T) => ReactNode;
   pageSize?: number;
 }) {
   const wide = useMediaQuery(BREAKPOINT, true);
@@ -101,6 +104,7 @@ export function DataList<T>({
                   {actionLabel} <span className="sr-only">{action.name(row)}</span>
                 </Link>
               ) : null}
+              {rowActions ? <div className="admin-row-extra">{rowActions(row)}</div> : null}
             </li>
           ))}
         </ul>
@@ -121,7 +125,7 @@ export function DataList<T>({
                   {column.header}
                 </th>
               ))}
-              {action ? (
+              {action || rowActions ? (
                 <th scope="col">
                   <span className="sr-only">Acciones</span>
                 </th>
@@ -139,11 +143,18 @@ export function DataList<T>({
                     {column.cell(row)}
                   </td>
                 ))}
-                {action ? (
-                  <td className="admin-actions-cell">
-                    <Link to={action.to(row)} className="admin-edit-link">
-                      {actionLabel} <span className="sr-only">{action.name(row)}</span>
-                    </Link>
+                {action || rowActions ? (
+                  <td
+                    className={`admin-actions-cell ${rowActions ? 'admin-actions-cell-wrap' : ''}`}
+                  >
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {action ? (
+                        <Link to={action.to(row)} className="admin-edit-link">
+                          {actionLabel} <span className="sr-only">{action.name(row)}</span>
+                        </Link>
+                      ) : null}
+                      {rowActions ? rowActions(row) : null}
+                    </div>
                   </td>
                 ) : null}
               </tr>

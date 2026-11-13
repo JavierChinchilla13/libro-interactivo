@@ -198,7 +198,7 @@ describe('fan arts del panel', () => {
 });
 
 describe('reseñas del panel', () => {
-  it('lista con el estado (Publicada / Oculta) y las estrellas', async () => {
+  it('lista con el estado (Publicada / Archivada) y las estrellas', async () => {
     mockApi(
       {
         'GET /api/admin/reviews': () =>
@@ -220,7 +220,7 @@ describe('reseñas del panel', () => {
     expect(
       await screen.findByRole('row', { name: /Me encantó.*Lector.*★★★★★.*Publicada/ }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('row', { name: /Otra.*Oculta/ })).toBeInTheDocument();
+    expect(screen.getByRole('row', { name: /Otra.*Archivada/ })).toBeInTheDocument();
   });
 
   it('crea una reseña: lo vacío no viaja y el texto se guarda tal cual', async () => {
