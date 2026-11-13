@@ -7,7 +7,7 @@ import {
   type LoginRequest,
   type RegisterRequest,
 } from '@libro/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { ApiClientError, apiRequest } from '../../shared/api/client';
 import { hasSessionHint } from '../../shared/api/sessionHint';
@@ -27,6 +27,16 @@ async function fetchSession(): Promise<AuthUser | null> {
 }
 
 /** Estado de sesión (`GET /me`). El navegador nunca ve los tokens: viajan en cookies httpOnly. */
+/**
+ * Abre la sesión de una persona: antes de guardarla se descarta todo lo que hubiera en la caché que no sea de la sesión
+ * (lo que quedó de otra cuenta, p. ej. si la sesión anterior caducó y no hubo «Salir»). Así una cuenta nunca ve, ni
+ * siquiera un momento, números o listas de otra.
+ */
+function startSession(client: QueryClient, user: AuthUser): void {
+  client.removeQueries({ predicate: (query) => query.queryKey[0] !== 'session' });
+  client.setQueryData(SESSION_KEY, user);
+}
+
 export function useSession() {
   return useQuery({
     queryKey: SESSION_KEY,
@@ -43,7 +53,7 @@ export function useLogin() {
       apiRequest('/auth/login', loginResponseSchema, { method: 'POST', body: input }),
     // `needs_profile`: la contraseña es correcta pero hay que volver a declarar la edad; todavía no hay sesión.
     onSuccess: (data) => {
-      if (data.status === 'ok') client.setQueryData(SESSION_KEY, data.user);
+      if (data.status === 'ok') startSession(client, data.user);
     },
   });
 }
@@ -58,7 +68,7 @@ export function useGoogleLogin() {
     mutationFn: (input: { credential: string; profile?: Consent }) =>
       apiRequest('/auth/google', googleLoginResponseSchema, { method: 'POST', body: input }),
     onSuccess: (data) => {
-      if (data.status === 'ok') client.setQueryData(SESSION_KEY, data.user);
+      if (data.status === 'ok') startSession(client, data.user);
     },
   });
 }
@@ -68,7 +78,7 @@ export function useRegister() {
   return useMutation({
     mutationFn: (input: RegisterRequest) =>
       apiRequest('/auth/register', authResponseSchema, { method: 'POST', body: input }),
-    onSuccess: (data) => client.setQueryData(SESSION_KEY, data.user),
+    onSuccess: (data) => startSession(client, data.user),
   });
 }
 
