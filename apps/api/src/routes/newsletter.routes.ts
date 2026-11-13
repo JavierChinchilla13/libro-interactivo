@@ -1,5 +1,6 @@
 import {
   confirmNewsletterRequestSchema,
+  invitationAnswerRequestSchema,
   unsubscribeQuerySchema,
   updateNewsletterRequestSchema,
 } from '@libro/shared';
@@ -26,6 +27,13 @@ export function createAccountNewsletterRouter(
     validate({ body: updateNewsletterRequestSchema }),
     createRateLimiter(limits.newsletterAccount),
     controller.update,
+  );
+  // «No, gracias» a la invitación única del panel («Sí» usa el PUT de arriba).
+  router.put(
+    '/invitation',
+    validate({ body: invitationAnswerRequestSchema }),
+    createRateLimiter(limits.newsletterAccount),
+    controller.declineInvitation,
   );
   return router;
 }

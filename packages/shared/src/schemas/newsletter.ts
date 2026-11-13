@@ -35,11 +35,23 @@ export const newsletterStateSchema = z.object({
   subscribedAt: z.string().optional(),
   /** Desde cuándo espera la confirmación (`pending`). */
   pendingSince: z.string().optional(),
+  /**
+   * ¿Se le muestra la invitación única del panel? Solo si puede apuntarse, no está apuntada (ni a medias ni dada de
+   * baja) y no ha respondido antes. El servidor lo decide; el cliente solo lo pinta.
+   */
+  invitation: z.boolean().default(false),
 });
 export type NewsletterState = z.infer<typeof newsletterStateSchema>;
 
 export const updateNewsletterRequestSchema = z.object({ subscribed: z.boolean() });
 export type UpdateNewsletterRequest = z.infer<typeof updateNewsletterRequestSchema>;
+
+/** Respuesta «No, gracias» a la invitación del panel («Sí» usa `updateNewsletterRequestSchema`). */
+export const invitationAnswerRequestSchema = z.object({ answer: z.literal('declined') });
+export type InvitationAnswerRequest = z.infer<typeof invitationAnswerRequestSchema>;
+
+/** Texto de la invitación única del panel. */
+export const NEWSLETTER_INVITATION_QUESTION = '¿Quieres recibir novedades de la autora por correo?';
 
 /** Token del enlace de confirmación (llega por correo). */
 export const confirmNewsletterRequestSchema = z.object({

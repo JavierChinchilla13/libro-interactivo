@@ -56,7 +56,7 @@ describe('alta desde el registro', () => {
       .post('/api/auth/register')
       .send({ ...NEW_ACCOUNT, ...ADULT_CONSENT })
       .expect(201);
-    expect(await stateOf(agent)).toEqual({ status: 'none', eligible: true });
+    expect(await stateOf(agent)).toEqual({ status: 'none', eligible: true, invitation: true });
     await harness.flush();
     expect(harness.mail.sent).toHaveLength(0);
   });
@@ -164,7 +164,7 @@ describe('la casilla de la cuenta', () => {
   it('correo comprobado: apuntarse es inmediato y darse de baja también', async () => {
     const harness = createTestHarness();
     const { agent } = await adult(harness, { verified: true });
-    expect(await stateOf(agent)).toEqual({ status: 'none', eligible: true });
+    expect(await stateOf(agent)).toEqual({ status: 'none', eligible: true, invitation: true });
     const on = await agent.put('/api/me/newsletter').send({ subscribed: true }).expect(200);
     expect(newsletterStateSchema.parse(on.body).status).toBe('subscribed');
     const off = await agent.put('/api/me/newsletter').send({ subscribed: false }).expect(200);
@@ -376,5 +376,145 @@ describe('webhook de Resend (rebotes y quejas)', () => {
     tampered.raw = tampered.raw.replace('complained', 'bounced');
     expect((await send(harness.app, tampered)).status).toBe(400);
     expect((await User.findById(a.user._id).lean())?.newsletter?.status).toBe('subscribed');
+  });
+});
+
+describe('invitación única del panel', () => {
+  const DECLINE = { answer: 'declined' };
+  const answeredAt = async (id: unknown) =>
+    (await User.findById(id).lean())?.newsletter?.invitationAnsweredAt;
+
+  it('una adulta que nunca respondió la ve; «No, gracias» no la apunta y no vuelve a salir', async () => {
+    const harness = createTestHarness();
+    const { agent, user } = await adult(harness, { verified: true });
+    expect((await stateOf(agent)).invitation).toBe(true);
+
+    const res = await agent.put('/api/me/newsletter/invitation').send(DECLINE).expect(200);
+    expect(newsletterStateSchema.parse(res.body)).toEqual({
+      status: 'none',
+      eligible: true,
+      invitation: false,
+    });
+    expect(await answeredAt(user._id)).toBeInstanceOf(Date);
+    // Sigue sin estar apuntada y sin recibir nada.
+    expect((await User.findById(user._id).lean())?.newsletter?.status).toBeUndefined();
+    await harness.flush();
+    expect(harness.mail.sent).toHaveLength(0);
+    // Ni en la siguiente visita ni en otra sesión.
+    expect((await stateOf(agent)).invitation).toBe(false);
+    const other = await loginAgent(harness.app, 'lectora@ejemplo.com');
+    expect((await stateOf(other)).invitation).toBe(false);
+  });
+
+  it('responder dos veces es inocuo y conserva la primera fecha', async () => {
+    const harness = createTestHarness();
+    const { agent, user } = await adult(harness);
+    await agent.put('/api/me/newsletter/invitation').send(DECLINE).expect(200);
+    const first = await answeredAt(user._id);
+    await agent.put('/api/me/newsletter/invitation').send(DECLINE).expect(200);
+    expect(await answeredAt(user._id)).toEqual(first);
+  });
+
+  it('«No, gracias» y luego apuntarse desde la cuenta: funciona, y al darse de baja no vuelve a salir', async () => {
+    const harness = createTestHarness();
+    const { agent, user } = await adult(harness, { verified: true });
+    await agent.put('/api/me/newsletter/invitation').send(DECLINE).expect(200);
+    const first = await answeredAt(user._id);
+    const on = await agent.put('/api/me/newsletter').send({ subscribed: true }).expect(200);
+    expect(newsletterStateSchema.parse(on.body).status).toBe('subscribed');
+    expect(await answeredAt(user._id)).toEqual(first);
+    const off = await agent.put('/api/me/newsletter').send({ subscribed: false }).expect(200);
+    expect(newsletterStateSchema.parse(off.body)).toMatchObject({
+      status: 'none',
+      invitation: false,
+    });
+  });
+
+  it('«Sí» con el correo comprobado: queda apuntada al instante y la invitación se da por respondida', async () => {
+    const harness = createTestHarness();
+    const { agent, user } = await adult(harness, { verified: true });
+    const res = await agent.put('/api/me/newsletter').send({ subscribed: true }).expect(200);
+    expect(newsletterStateSchema.parse(res.body)).toMatchObject({
+      status: 'subscribed',
+      invitation: false,
+    });
+    expect(await answeredAt(user._id)).toBeInstanceOf(Date);
+    expect((await User.findById(user._id).lean())?.newsletter?.source).toBe('account');
+  });
+
+  it('«Sí» con el correo sin comprobar: doble confirmación (pendiente y llega el enlace) y no se vuelve a ofrecer', async () => {
+    const harness = createTestHarness();
+    const { agent } = await adult(harness);
+    const res = await agent.put('/api/me/newsletter').send({ subscribed: true }).expect(200);
+    expect(newsletterStateSchema.parse(res.body)).toMatchObject({
+      status: 'pending',
+      invitation: false,
+    });
+    await harness.flush();
+    expect(harness.mail.sent).toHaveLength(1);
+    // Si cancela el alta pendiente, tampoco se le vuelve a preguntar.
+    await agent.put('/api/me/newsletter').send({ subscribed: false }).expect(200);
+    expect((await stateOf(agent)).invitation).toBe(false);
+  });
+
+  it('quien se apuntó por otro camino (al registrarse) no la ve', async () => {
+    const harness = createTestHarness();
+    const agent = request.agent(harness.app);
+    await agent
+      .post('/api/auth/register')
+      .send({ ...NEW_ACCOUNT, ...ADULT_CONSENT, newsletter: true })
+      .expect(201);
+    expect(await stateOf(agent)).toMatchObject({ status: 'pending', invitation: false });
+  });
+
+  it('quien ya está apuntada o ya se dio de baja (cuentas anteriores a la invitación) no la ve', async () => {
+    const harness = createTestHarness();
+    const a = await adult(harness, { verified: true, email: 'apuntada@ejemplo.com' });
+    await User.updateOne(
+      { _id: a.user._id },
+      { $set: { 'newsletter.status': 'subscribed', 'newsletter.subscribedAt': new Date() } },
+    );
+    expect(await stateOf(a.agent)).toMatchObject({ status: 'subscribed', invitation: false });
+
+    const b = await adult(harness, { verified: true, email: 'baja@ejemplo.com' });
+    await User.updateOne(
+      { _id: b.user._id },
+      { $set: { 'newsletter.status': 'unsubscribed', 'newsletter.unsubscribedVia': 'link' } },
+    );
+    expect(await stateOf(b.agent)).toMatchObject({ status: 'none', invitation: false });
+  });
+
+  it('menores y cuentas sin fecha de nacimiento no la ven y «No, gracias» no les guarda nada', async () => {
+    const harness = createTestHarness();
+    const minor = await adult(harness, {
+      email: 'menor@ejemplo.com',
+      birthYear: new Date().getUTCFullYear() - 17,
+    });
+    expect(await stateOf(minor.agent)).toMatchObject({ eligible: false, invitation: false });
+    await minor.agent.put('/api/me/newsletter/invitation').send(DECLINE).expect(200);
+    expect(await answeredAt(minor.user._id)).toBeUndefined();
+
+    const noBirth = await createUser({ email: 'sinfecha@ejemplo.com' });
+    const agent = await loginAgent(harness.app, 'sinfecha@ejemplo.com');
+    expect(await stateOf(agent)).toMatchObject({ eligible: false, invitation: false });
+    await agent.put('/api/me/newsletter/invitation').send(DECLINE).expect(200);
+    expect(await answeredAt(noBirth._id)).toBeUndefined();
+  });
+
+  it('pide sesión, valida el cuerpo y sigue protegida por el mismo origen', async () => {
+    const harness = createTestHarness();
+    expect(
+      (await request(harness.app).put('/api/me/newsletter/invitation').send(DECLINE)).status,
+    ).toBe(401);
+    const { agent, user } = await adult(harness, { verified: true });
+    for (const body of [{}, { answer: 'accepted' }, { answer: true }]) {
+      expect((await agent.put('/api/me/newsletter/invitation').send(body)).status).toBe(400);
+    }
+    const foreign = await agent
+      .put('/api/me/newsletter/invitation')
+      .set('Origin', 'https://otro-sitio.example')
+      .send(DECLINE);
+    expect(foreign.status).toBe(403);
+    expect(await answeredAt(user._id)).toBeUndefined();
   });
 });

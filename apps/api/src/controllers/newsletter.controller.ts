@@ -21,6 +21,12 @@ export function createNewsletterController(newsletter: NewsletterService) {
       .json(await newsletter.setFromAccount(getAuth(res).userId, body.subscribed));
   };
 
+  const declineInvitation: RequestHandler = async (_req, res) => {
+    res
+      .set('Cache-Control', 'no-store')
+      .json(await newsletter.declineInvitation(getAuth(res).userId));
+  };
+
   const confirm: RequestHandler = async (_req, res) => {
     const { body } = getInput<ConfirmNewsletterRequest>(res);
     res.set('Cache-Control', 'no-store').json(await newsletter.confirm(body.token));
@@ -46,5 +52,5 @@ export function createNewsletterController(newsletter: NewsletterService) {
     res.status(204).end();
   };
 
-  return { state, update, confirm, unsubscribe, resendWebhook };
+  return { state, update, declineInvitation, confirm, unsubscribe, resendWebhook };
 }

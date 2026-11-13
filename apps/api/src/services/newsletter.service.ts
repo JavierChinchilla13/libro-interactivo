@@ -59,9 +59,12 @@ export function createNewsletterService(deps: NewsletterDeps) {
   function stateOf(user: UserDoc): NewsletterState {
     const n = user.newsletter;
     const status = n?.status === 'subscribed' || n?.status === 'pending' ? n.status : 'none';
+    const eligible = user.status === 'active' && canSubscribeToNewsletter(birthOf(user), clock());
     return {
       status,
-      eligible: user.status === 'active' && canSubscribeToNewsletter(birthOf(user), clock()),
+      eligible,
+      // Invitación única: nunca a quien ya se apuntó, pidió apuntarse o se dio de baja, ni a quien ya respondió.
+      invitation: eligible && !n?.status && !n?.invitationAnsweredAt,
       ...(status === 'subscribed' && n?.subscribedAt
         ? { subscribedAt: n.subscribedAt.toISOString() }
         : {}),
@@ -102,6 +105,8 @@ export function createNewsletterService(deps: NewsletterDeps) {
             'newsletter.version': LEGAL_VERSION,
             'newsletter.source': source,
           },
+          // Apuntarse por cualquier camino cuenta como responder a la invitación (se conserva la primera fecha).
+          $min: { 'newsletter.invitationAnsweredAt': now },
           $unset: {
             'newsletter.confirmTokenHash': 1,
             'newsletter.confirmTokenExpiresAt': 1,
@@ -132,6 +137,7 @@ export function createNewsletterService(deps: NewsletterDeps) {
           'newsletter.confirmTokenHash': sha256Hex(token),
           'newsletter.confirmTokenExpiresAt': addDays(now, NEWSLETTER_CONFIRM_TTL_DAYS),
         },
+        $min: { 'newsletter.invitationAnsweredAt': now },
         $unset: { 'newsletter.subscribedAt': 1 },
       },
     );
@@ -178,6 +184,21 @@ export function createNewsletterService(deps: NewsletterDeps) {
     async setFromAccount(userId: string, subscribed: boolean): Promise<NewsletterState> {
       if (subscribed) return optIn(userId, 'account');
       await optOut(userId, 'account');
+      return stateOf(await activeUser(userId));
+    },
+
+    /**
+     * «No, gracias» a la invitación del panel: se guarda la respuesta y no vuelve a salir nunca. Idempotente. A quien no
+     * puede apuntarse no se le guarda nada (no se le ofrece).
+     */
+    async declineInvitation(userId: string): Promise<NewsletterState> {
+      const user = await activeUser(userId);
+      if (stateOf(user).eligible) {
+        await User.updateOne(
+          { _id: user._id },
+          { $min: { 'newsletter.invitationAnsweredAt': clock() } },
+        );
+      }
       return stateOf(await activeUser(userId));
     },
 
