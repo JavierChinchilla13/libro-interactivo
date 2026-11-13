@@ -17,7 +17,7 @@ describe('administración de usuarios', () => {
     expect(adminUserListQuerySchema.safeParse({ role: 'DIOS' }).success).toBe(false);
   });
 
-  it('solo se crean cuentas de editora o administradora, nunca de lectora', () => {
+  it('solo se crean cuentas de editor o administrador, nunca de lector', () => {
     const base = { name: 'Ana Pérez', email: 'ana@ejemplo.com' };
     expect(createStaffUserRequestSchema.safeParse({ ...base, role: 'EDITOR' }).success).toBe(true);
     expect(createStaffUserRequestSchema.safeParse({ ...base, role: 'ADMIN' }).success).toBe(true);

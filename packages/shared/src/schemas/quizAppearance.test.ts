@@ -110,7 +110,7 @@ describe('apariencia del quiz', () => {
     expect(overlayMinimum('auto')).toBe(OVERLAY_MIN);
   });
 
-  it('la lectora recibe el mismo velo ya validado (manual por debajo del piso no cabe)', () => {
+  it('el lector recibe el mismo velo ya validado (manual por debajo del piso no cabe)', () => {
     expect(
       readerAppearanceSchema.safeParse({ overlay: { mode: 'manual', strength: 0.6 } }).success,
     ).toBe(false);
@@ -194,7 +194,7 @@ describe('apariencia del quiz', () => {
   });
 });
 
-describe('lo que recibe la lectora', () => {
+describe('lo que recibe el lector', () => {
   it('solo trae fondo, velo y acento: ni introducción ni portada ni nada de edición', () => {
     expect(readerAppearanceSchema.safeParse({ background: { kind: 'image', image } }).success).toBe(
       true,
@@ -255,7 +255,7 @@ describe('edición, auditoría y reversión', () => {
     const entry = (rev: number) => ({
       rev,
       at: '2026-10-24T10:00:00.000Z',
-      by: { id: 'c'.repeat(24), name: rev % 2 ? 'Editora' : null },
+      by: { id: 'c'.repeat(24), name: rev % 2 ? 'Editor' : null },
       action: 'update' as const,
       changed: ['background', 'overlay'] as ('background' | 'overlay')[],
     });

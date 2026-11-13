@@ -4,12 +4,12 @@ import { objectIdSchema } from './common.js';
 /**
  * Cartas con QR (ampliación fuera de la propuesta v2.0). Una carta es un título y de 1 a 12 imágenes (por ahora solo
  * imágenes: ni texto, ni video, ni PDF). Cada carta tiene su propio QR; se abre al escanearlo en cualquier momento (con
- * sesión) y queda guardada para siempre en la cuenta. Las no abiertas son secretas: la lectora no ve ni sus imágenes,
+ * sesión) y queda guardada para siempre en la cuenta. Las no abiertas son secretas: el lector no ve ni sus imágenes,
  * ni su título, ni cuántas hay. Cómo se llama la sección lo decide la autora (`cardsLabel` en los ajustes del sitio);
  * los identificadores internos (`cards`, `card`) no cambian.
  */
 
-/** Una carta archivada deja de verse para las lectoras (y su QR deja de abrirla) hasta que se vuelva a publicar. */
+/** Una carta archivada deja de verse para los lectores (y su QR deja de abrirla) hasta que se vuelva a publicar. */
 export const CARD_STATUSES = ['published', 'archived'] as const;
 export const cardStatusSchema = z.enum(CARD_STATUSES);
 export type CardStatus = z.infer<typeof cardStatusSchema>;
@@ -109,9 +109,9 @@ export const adminCardListResponseSchema = z.object({ cards: z.array(adminCardSc
 export type AdminCardListResponse = z.infer<typeof adminCardListResponseSchema>;
 
 /**
- * Una carta abierta en la lista de la lectora: título y SOLO la primera imagen (la portada). Las demás imágenes salen
+ * Una carta abierta en la lista del lector: título y SOLO la primera imagen (la portada). Las demás imágenes salen
  * únicamente al abrir la carta. Las URL solo salen del API tras validar sesión y que la carta esté abierta (o que sea
- * una administradora): es la ÚNICA forma de llegar a una imagen.
+ * un administrador): es la ÚNICA forma de llegar a una imagen.
  */
 export const readerCardSchema = z.object({
   id: objectIdSchema,
@@ -151,7 +151,7 @@ export type ReaderCardDetail = z.infer<typeof readerCardDetailSchema>;
 export const readerCardsResponseSchema = z.object({
   /** Orden: libros por su posición y, dentro de cada libro, el orden de la autora. */
   cards: z.array(readerCardSchema),
-  /** `true` para una administradora: ve todas las publicadas (modo prueba), no solo las abiertas. */
+  /** `true` para un administrador: ve todas las publicadas (modo prueba), no solo las abiertas. */
   testMode: z.boolean(),
   /** Cuántas faltan por abrir. Solo viaja si `CARDS_SHOW_LOCKED` está encendido. */
   locked: z.number().int().nonnegative().optional(),

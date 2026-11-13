@@ -4,7 +4,7 @@ import { objectIdSchema, roleSchema } from './common.js';
 
 /**
  * Administración (fase 11): usuarios, mensajes de contacto, estadísticas y borrado de cuenta. Todo esto es **solo de
- * administradoras**; los intentos de prueba (`isTest`) nunca cuentan.
+ * administradores**; los intentos de prueba (`isTest`) nunca cuentan.
  */
 
 // --- Usuarios ------------------------------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ export const adminUserSchema = z.object({
   status: userStatusSchema,
   createdAt: z.string(),
   lastLoginAt: z.string().optional(),
-  /** Quizzes completados (sin contar las pruebas de las administradoras). */
+  /** Quizzes completados (sin contar las pruebas de los administradores). */
   completedQuizzes: z.number().int(),
 });
 export type AdminUser = z.infer<typeof adminUserSchema>;
@@ -73,7 +73,7 @@ export const adminUserDetailSchema = z.object({
 });
 export type AdminUserDetail = z.infer<typeof adminUserDetailSchema>;
 
-/** Solo una administradora crea cuentas de administración. La persona elige su contraseña con el correo que recibe. */
+/** Solo un administrador crea cuentas de administración. La persona elige su contraseña con el correo que recibe. */
 export const createStaffUserRequestSchema = z.object({
   name: z.string().trim().min(2, 'Escribe el nombre').max(80),
   email: emailSchema,
@@ -154,7 +154,7 @@ export const adminStatsSchema = z.object({
 export type AdminStats = z.infer<typeof adminStatsSchema>;
 
 /**
- * Diagnóstico de red (solo administradoras): describe la cadena de proxies de **la propia petición** de quien lo
+ * Diagnóstico de red (solo administradores): describe la cadena de proxies de **la propia petición** de quien lo
  * consulta, con las direcciones enmascaradas. Nada de esto se guarda ni se registra.
  */
 export const networkCheckResponseSchema = z.object({
@@ -182,7 +182,7 @@ export const networkCheckResponseSchema = z.object({
     z.object({
       hops: z.number().int().min(0),
       masked: z.string(),
-      /** Dirección privada, local o de uso interno: casi seguro es un proxy de la plataforma, no una lectora. */
+      /** Dirección privada, local o de uso interno: casi seguro es un proxy de la plataforma, no un lector. */
       looksInternal: z.boolean(),
       current: z.boolean(),
     }),

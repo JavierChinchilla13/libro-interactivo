@@ -3,7 +3,7 @@ import { httpUrlSchema, imageRefSchema, objectIdSchema } from './common.js';
 
 /**
  * Comunidad: fan arts y reseñas. En la v1 **no hay envío público**: la autora (o
- * la editora) las carga desde el panel. Los fan arts solo se publican con el permiso del artista confirmado.
+ * el editor) las carga desde el panel. Los fan arts solo se publican con el permiso del artista confirmado.
  */
 
 // --- Fan arts ------------------------------------------------------------------------------------------------------

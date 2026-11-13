@@ -77,7 +77,7 @@ export const bookInputSchema = z
     releaseDate: z.iso.date().optional(),
     /**
      * Solo para libros «próximamente»: si la autora lo enciende, el libro aparece en «Tus libros» del panel de las
-     * lectoras (con cuenta atrás si tiene fecha). Apagado por defecto; un libro publicado no lo necesita.
+     * lectores (con cuenta atrás si tiene fecha). Apagado por defecto; un libro publicado no lo necesita.
      */
     showInReaderPanel: z.boolean().default(false),
     purchaseLinks: z.array(purchaseLinkSchema).max(12).default([]),
