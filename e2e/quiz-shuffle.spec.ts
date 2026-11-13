@@ -95,7 +95,7 @@ type Stage = {
 };
 
 test.describe('barajado de respuestas', () => {
-  test('la lectora ve las respuestas barajadas, la fija queda al final, el orden sobrevive a recargar y el resultado es el correcto', async ({
+  test('el lector ve las respuestas barajadas, la fija queda al final, el orden sobrevive a recargar y el resultado es el correcto', async ({
     page,
     browser,
   }) => {
@@ -110,7 +110,7 @@ test.describe('barajado de respuestas', () => {
         await reader.request.post('/api/auth/register', {
           data: {
             ...ADULT_CONSENT,
-            name: 'Lectora Baraja',
+            name: 'Lector Baraja',
             email: `lectora-baraja-${stamp}@ejemplo.com`,
             password: PASSWORD,
           },

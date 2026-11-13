@@ -71,7 +71,7 @@ test.describe('avisos por correo de punta a punta', () => {
     const stamp = Date.now();
     const email = `aviso-${stamp}@ejemplo.com`;
 
-    // 1. Una lectora con el correo comprobado se apunta desde su cuenta.
+    // 1. Un lector con el correo comprobado se apunta desde su cuenta.
     const api = await playwright.request.newContext({ baseURL });
     expect(
       (
@@ -114,7 +114,7 @@ test.describe('avisos por correo de punta a punta', () => {
       .getByRole('textbox', { name: 'Texto', exact: true })
       .fill('Hay novedades del libro.');
     const notify = author.getByRole('checkbox', {
-      name: 'Avisar por correo a las lectoras apuntadas a las novedades',
+      name: 'Avisar por correo a los lectores apuntados a las novedades',
     });
     await expect(author.getByText(/Lo recibirían/)).toBeVisible();
     await notify.click();

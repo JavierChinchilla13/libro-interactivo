@@ -88,13 +88,13 @@ test.describe('«Tus libros» del panel (celular y escritorio)', () => {
     await book('oculto', { order: 3, status: 'upcoming', showInReaderPanel: false });
     await book('borrador', { order: 4, status: 'draft', showInReaderPanel: true });
 
-    // La lectora se registra por API y entra por la interfaz.
+    // El lector se registra por API y entra por la interfaz.
     const email = `tus-libros-${stamp}@ejemplo.com`;
     const reader = await playwright.request.newContext({ baseURL });
     expect(
       (
         await reader.post('/api/auth/register', {
-          data: { ...ADULT_CONSENT, name: 'Lectora Libros', email, password: PASSWORD },
+          data: { ...ADULT_CONSENT, name: 'Lector Libros', email, password: PASSWORD },
         })
       ).status(),
     ).toBe(201);
@@ -107,7 +107,7 @@ test.describe('«Tus libros» del panel (celular y escritorio)', () => {
     await page.getByLabel('Contraseña').fill(PASSWORD);
     await page.getByRole('button', { name: 'Ingresar' }).click();
     const { show } = (await (await welcome).json()) as { show: boolean };
-    await expect(page.getByRole('heading', { name: 'Hola, Lectora Libros' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Hola, Lector Libros' })).toBeVisible();
     if (show) await page.getByRole('button', { name: '¡A la aventura!' }).click();
 
     // Bloqueado: portada y título, el candado y la indicación del QR; sin enlaces.
@@ -131,7 +131,7 @@ test.describe('«Tus libros» del panel (celular y escritorio)', () => {
     await expect(page.getByText(`Quiz cerrado ${stamp}`)).toHaveCount(0);
     const direct = await page.request.get(`/api/quizzes/${quiz.id}`);
     expect(direct.status()).toBe(403);
-    // Un libro «próximamente» apagado no tiene página para la lectora.
+    // Un libro «próximamente» apagado no tiene página para el lector.
     await page.goto(`/panel/libros/tus-libros-oculto-${stamp}`);
     await expect(page.getByText('Página no encontrada')).toBeVisible();
   });

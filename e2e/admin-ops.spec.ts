@@ -27,7 +27,7 @@ async function adminApi(
 test.describe('administración: usuarios, mensajes y borrado de cuenta (escritorio)', () => {
   test.skip(({ isMobile }) => isMobile, 'Flujo de administración de escritorio.');
 
-  test('la administradora ve a una lectora, la desactiva (no puede ingresar) y la reactiva', async ({
+  test('el administrador ve a un lector, lo desactiva (no puede ingresar) y lo reactiva', async ({
     page,
     browser,
     playwright,
@@ -40,7 +40,7 @@ test.describe('administración: usuarios, mensajes y borrado de cuenta (escritor
     expect(
       (
         await anon.post('/api/auth/register', {
-          data: { ...ADULT_CONSENT, name: `Lectora Ops ${stamp}`, email, password: PASSWORD },
+          data: { ...ADULT_CONSENT, name: `Lector Ops ${stamp}`, email, password: PASSWORD },
         })
       ).status(),
     ).toBe(201);
@@ -49,8 +49,8 @@ test.describe('administración: usuarios, mensajes y borrado de cuenta (escritor
     await page.goto('/admin/usuarios');
     await page.getByLabel('Buscar por nombre o correo').fill(`Ops ${stamp}`);
     await page.getByRole('button', { name: 'Buscar' }).click();
-    await page.getByRole('link', { name: `Lectora Ops ${stamp}` }).click();
-    await expect(page.getByRole('heading', { name: `Lectora Ops ${stamp}` })).toBeVisible();
+    await page.getByRole('link', { name: `Lector Ops ${stamp}` }).click();
+    await expect(page.getByRole('heading', { name: `Lector Ops ${stamp}` })).toBeVisible();
 
     await page.getByRole('button', { name: 'Desactivar cuenta' }).click();
     await page
@@ -107,7 +107,7 @@ test.describe('administración: usuarios, mensajes y borrado de cuenta (escritor
     await expect(page.getByRole('article').filter({ hasText: `(${stamp})` })).toBeVisible();
   });
 
-  test('la administradora invita a una editora, que elige su contraseña y no ve las secciones de administración', async ({
+  test('el administrador invita a un editor, que elige su contraseña y no ve las secciones de administración', async ({
     page,
     browser,
   }) => {
@@ -115,24 +115,24 @@ test.describe('administración: usuarios, mensajes y borrado de cuenta (escritor
     await loginAs(page, E2E_ADMIN.email, E2E_ADMIN.password, /\/admin/);
     await page.goto('/admin/usuarios');
     await page.getByRole('button', { name: 'Nueva cuenta del equipo' }).click();
-    await page.getByLabel('Nombre', { exact: true }).fill(`Editora E2E ${stamp}`);
+    await page.getByLabel('Nombre', { exact: true }).fill(`Editor E2E ${stamp}`);
     await page
       .getByLabel('Correo electrónico', { exact: true })
       .fill(`editora-${stamp}@ejemplo.com`);
     await page.getByRole('button', { name: 'Crear y enviar invitación' }).click();
-    await page.getByLabel('Buscar por nombre o correo').fill(`Editora E2E ${stamp}`);
+    await page.getByLabel('Buscar por nombre o correo').fill(`Editor E2E ${stamp}`);
     await page.getByRole('button', { name: 'Buscar' }).click();
     await expect(
-      page.getByRole('row', { name: new RegExp(`Editora E2E ${stamp}.*Editora.*Activa`) }),
+      page.getByRole('row', { name: new RegExp(`Editor E2E ${stamp}.*Editor.*Activa`) }),
     ).toBeVisible();
-    await page.getByRole('link', { name: `Editora E2E ${stamp}` }).click();
+    await page.getByRole('link', { name: `Editor E2E ${stamp}` }).click();
     // Es una cuenta de administración: se desactiva, no se elimina.
     await expect(page.getByRole('button', { name: 'Desactivar cuenta' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Eliminar cuenta' })).toHaveCount(0);
     void browser;
   });
 
-  test('una lectora elimina su cuenta con su contraseña y ya no puede ingresar', async ({
+  test('un lector elimina su cuenta con su contraseña y ya no puede ingresar', async ({
     page,
     playwright,
     baseURL,

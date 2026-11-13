@@ -31,7 +31,7 @@ async function fillForm(page: Page, password: string) {
 test.describe('respaldo desde el panel (escritorio)', () => {
   test.skip(({ isMobile }) => isMobile, 'Uno a la vez en el servidor: solo en escritorio.');
 
-  test('la administradora descarga un respaldo cifrado, queda en el historial y restore:db lo abre', async ({
+  test('el administrador descarga un respaldo cifrado, queda en el historial y restore:db lo abre', async ({
     page,
   }) => {
     test.setTimeout(120_000);
@@ -79,7 +79,7 @@ test.describe('respaldo desde el panel (escritorio)', () => {
     expect(stdout).toContain('✓ El respaldo está completo');
   });
 
-  test('una editora no ve «Respaldo» en el menú ni puede abrir la pantalla', async ({
+  test('un editor no ve «Respaldo» en el menú ni puede abrir la pantalla', async ({
     page,
     playwright,
     baseURL,
@@ -90,7 +90,7 @@ test.describe('respaldo desde el panel (escritorio)', () => {
     expect(
       (
         await anon.post('/api/auth/register', {
-          data: { ...ADULT_CONSENT, name: `Editora Respaldo ${stamp}`, email, password: PASSWORD },
+          data: { ...ADULT_CONSENT, name: `Editor Respaldo ${stamp}`, email, password: PASSWORD },
         })
       ).status(),
     ).toBe(201);

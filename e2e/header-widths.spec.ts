@@ -67,7 +67,7 @@ test.describe('cabeceras a todos los anchos', () => {
   test.skip(({ isMobile }) => isMobile, 'Recorre los anchos por su cuenta; basta un proyecto.');
   test.setTimeout(240_000);
 
-  test('sitio, panel y administración: sin partirse, sin desborde y sin pisarse, con administradora, nombre largo y sin sesión', async ({
+  test('sitio, panel y administración: sin partirse, sin desborde y sin pisarse, con administrador, nombre largo y sin sesión', async ({
     browser,
   }) => {
     const stamp = Date.now();

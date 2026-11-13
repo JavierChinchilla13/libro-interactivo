@@ -28,7 +28,7 @@ test.describe('códigos QR y capítulos extra', () => {
     await expect(page.getByRole('main').getByRole('link', { name: 'Ingresar' })).toHaveCount(0);
   });
 
-  test('la administradora crea, descarga y revoca un código', async ({ page }) => {
+  test('el administrador crea, descarga y revoca un código', async ({ page }) => {
     const stamp = Date.now();
     await login(page);
     const { bookTitle } = await seedPublishedQuiz(page.request, stamp);
@@ -78,7 +78,7 @@ test.describe('códigos QR y capítulos extra', () => {
     const register = await reader.request.post('/api/auth/register', {
       data: {
         ...ADULT_CONSENT,
-        name: 'Lectora E2E',
+        name: 'Lector E2E',
         email: `lectora-${stamp}@ejemplo.com`,
         password: 'Nube-Azul-Cuatro-87',
       },

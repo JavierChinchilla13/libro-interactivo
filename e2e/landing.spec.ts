@@ -108,7 +108,7 @@ test.describe('landing pública', () => {
     await expect(author.getByLabel(/Nombre completo/)).toHaveCount(0);
     await author.getByRole('link', { name: 'Escríbele a la autora' }).click();
     await expect(page).toHaveURL(/\/contacto$/);
-    await page.getByLabel(/Nombre completo/).fill('Lectora E2E');
+    await page.getByLabel(/Nombre completo/).fill('Lector E2E');
     await page.getByLabel(/Correo electrónico/).fill('lectora-e2e@ejemplo.com');
     await page.getByLabel(/^Mensaje/).fill('Hola, este es un mensaje de prueba E2E.');
     const sent = page.waitForResponse((r) => r.url().endsWith('/api/contact'));

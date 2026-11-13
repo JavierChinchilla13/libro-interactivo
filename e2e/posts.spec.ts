@@ -17,7 +17,7 @@ test.describe('actualizaciones (escritorio)', () => {
     const stamp = Date.now();
     const title = `Feria E2E ${stamp}`;
 
-    // Contenido que NO debe verse: un borrador y una programada (por API, como administradora).
+    // Contenido que NO debe verse: un borrador y una programada (por API, como administrador).
     const api = await playwright.request.newContext({ baseURL });
     expect(
       (

@@ -63,7 +63,7 @@ async function loginAdmin(page: Page) {
   expect(response.status()).toBe(200);
 }
 
-/** Libro con un quiz publicado, su código QR y una lectora sin desbloquear. */
+/** Libro con un quiz publicado, su código QR y un lector sin desbloquear. */
 async function seed(page: Page) {
   const stamp = Date.now() + Math.floor(Math.random() * 1000);
   await loginAdmin(page);
@@ -79,7 +79,7 @@ async function newReader(browser: Browser, stamp: number, label: string) {
   const register = await context.request.post('/api/auth/register', {
     data: {
       ...ADULT_CONSENT,
-      name: `Lectora ${label}`,
+      name: `Lector ${label}`,
       email: `lectora-${label}-${stamp}@ejemplo.com`,
       password: PASSWORD,
     },
@@ -100,17 +100,17 @@ const putAppearance = (
   expectedRev: number,
 ) => api.put(`/api/admin/quizzes/${quizId}/appearance`, { data: { appearance, expectedRev } });
 
-test.describe('apariencia del quiz: editor y lectora', () => {
+test.describe('apariencia del quiz: editor y lector', () => {
   test.skip(
     ({ isMobile }) => isMobile,
-    'El editor es de escritorio; la lectora se prueba aparte en celular.',
+    'El editor es de escritorio; el lector se prueba aparte en celular.',
   );
 
-  test('la autora edita la apariencia en el panel y la lectora desbloqueada la ve cambiar, quitarse y revertirse', async ({
+  test('la autora edita la apariencia en el panel y el lector desbloqueado la ve cambiar, quitarse y revertirse', async ({
     page,
     browser,
   }) => {
-    // Es un recorrido largo (autora y lectora): se da más margen que el estándar.
+    // Es un recorrido largo (autora y lector): se da más margen que el estándar.
     test.setTimeout(120_000);
     const { stamp, quizId, token } = await seed(page);
     await fakeCloudinary(page);
@@ -141,14 +141,14 @@ test.describe('apariencia del quiz: editor y lectora', () => {
     const versions = await (await page.request.get(`/api/admin/quizzes/${quizId}/versions`)).json();
     expect(versions.versions).toHaveLength(1);
 
-    // 3) La lectora sin QR no recibe nada de la apariencia.
+    // 3) El lector sin QR no recibe nada de la apariencia.
     const locked = await newReader(browser, stamp, 'bloqueada');
     const denied = await locked.request.get(`/api/quizzes/${quizId}`);
     expect(denied.status()).toBe(403);
     expect(await denied.text()).not.toMatch(/appearance|e2e-uno|cloudinary|niebla/i);
     await locked.close();
 
-    // 4) La lectora desbloqueada ve el fondo, el velo, el acento y la introducción nuevos.
+    // 4) El lector desbloqueado ve el fondo, el velo, el acento y la introducción nuevos.
     const reader = await newReader(browser, stamp, 'desbloqueada');
     await unlock(reader, token);
     await fakeCloudinary(reader);
@@ -174,13 +174,13 @@ test.describe('apariencia del quiz: editor y lectora', () => {
     await expect(page.getByText('Cambios sin guardar')).toBeVisible();
     await page.getByRole('button', { name: 'Guardar apariencia' }).click();
     await expect(
-      page.getByText(/Ya lo ven las lectoras, sin publicar una versión nueva/),
+      page.getByText(/Ya lo ven los lectores, sin publicar una versión nueva/),
     ).toBeVisible();
     await expect(page.getByText('Todo guardado')).toBeVisible();
     await readerPage.reload();
     await expect(readerPage.locator('[style*="--quiz-accent: #5fe3ae"]')).toHaveCount(1);
 
-    // 6) Quitar el fondo: la lectora vuelve a ver la página de siempre (sin versión nueva).
+    // 6) Quitar el fondo: el lector vuelve a ver la página de siempre (sin versión nueva).
     await page.getByText('Sin fondo', { exact: true }).click();
     await page.getByRole('button', { name: 'Guardar apariencia' }).click();
     await expect(page.getByText('Todo guardado')).toBeVisible();
@@ -204,7 +204,7 @@ test.describe('apariencia del quiz: editor y lectora', () => {
     await reader.close();
   });
 
-  test('acento libre: la autora escribe un #RRGGBB que no se leería, el panel avisa del ajuste y la lectora ve el color ajustado', async ({
+  test('acento libre: la autora escribe un #RRGGBB que no se leería, el panel avisa del ajuste y el lector ve el color ajustado', async ({
     page,
     browser,
   }) => {
@@ -231,7 +231,7 @@ test.describe('apariencia del quiz: editor y lectora', () => {
     await page.getByRole('button', { name: 'Guardar apariencia' }).click();
     await expect(page.getByText('Todo guardado')).toBeVisible();
 
-    // Se guardó lo que ella eligió; la lectora ve el color aclarado lo mínimo para leerse.
+    // Se guardó lo que ella eligió; el lector ve el color aclarado lo mínimo para leerse.
     const stored = await (await page.request.get(`/api/admin/quizzes/${quizId}/appearance`)).json();
     expect(stored.appearance.accent).toBe('#1a3a6e');
     const reader = await newReader(browser, stamp, 'acento');
@@ -281,7 +281,7 @@ test.describe('apariencia del quiz: editor y lectora', () => {
   });
 });
 
-test.describe('apariencia del quiz: reglas de la lectora (celular y escritorio)', () => {
+test.describe('apariencia del quiz: reglas del lector (celular y escritorio)', () => {
   test('sin desbloqueo no hay apariencia: ni en la respuesta ni en la pantalla ni en la red', async ({
     page,
     browser,
@@ -352,7 +352,7 @@ test.describe('apariencia del quiz: reglas de la lectora (celular y escritorio)'
         await context.request.post('/api/auth/register', {
           data: {
             ...ADULT_CONSENT,
-            name: 'Lectora Reducida',
+            name: 'Lector Reducida',
             email: `lectora-reducida-${stamp}@ejemplo.com`,
             password: PASSWORD,
           },

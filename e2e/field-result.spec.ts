@@ -86,11 +86,11 @@ async function seedFieldQuiz(api: APIRequestContext, stamp: string) {
   };
 }
 
-/** Registra a la lectora con el QR del quiz y la deja dentro del quiz, lista para responder. */
+/** Registra al lector con el QR del quiz y la deja dentro del quiz, lista para responder. */
 async function startQuiz(page: Page, seeded: { token: string; quizTitle: string }, stamp: string) {
   await page.goto(`/u/${seeded.token}`);
   await page.getByRole('main').getByRole('link', { name: 'Crear cuenta' }).click();
-  await page.getByLabel(/^Nombre/).fill('Lectora del campo');
+  await page.getByLabel(/^Nombre/).fill('Lector del campo');
   await page.getByLabel(/^Correo/).fill(`campo-${stamp}@ejemplo.com`);
   await page.getByLabel(/^Contraseña/).fill(PASSWORD);
   await fillConsent(page);

@@ -43,7 +43,7 @@ async function login(page: Page, email: string, password = PASSWORD) {
 test.describe('cartas con QR (de punta a punta)', () => {
   test.skip(({ isMobile }) => isMobile, 'Flujo de escritorio.');
 
-  test('la administradora las carga y les pone QR; la lectora solo ve las que abre con su código; revocado o sin código, nada', async ({
+  test('el administrador las carga y les pone QR; el lector solo ve las que abre con su código; revocado o sin código, nada', async ({
     page,
     browser,
     playwright,
@@ -60,7 +60,7 @@ test.describe('cartas con QR (de punta a punta)', () => {
       ).status(),
     ).toBe(200);
 
-    // Registrar una cuenta inicia su sesión en el contexto que lo pide: las lectoras se registran aparte.
+    // Registrar una cuenta inicia su sesión en el contexto que lo pide: los lectores se registran aparte.
     const registrar = await playwright.request.newContext({ baseURL });
 
     // Un libro publicado (por API) y dos cartas (directo en la base: las imágenes no se verifican con Cloudinary aquí).
@@ -122,7 +122,7 @@ test.describe('cartas con QR (de punta a punta)', () => {
       await client.close();
     }
 
-    // 1. La administradora: ve sus cartas, cambia el nombre de la sección y crea el QR de la primera desde «Códigos QR».
+    // 1. El administrador: ve sus cartas, cambia el nombre de la sección y crea el QR de la primera desde «Códigos QR».
     await fakeCloudinary(page);
     await login(page, E2E_ADMIN.email, E2E_ADMIN.password);
     await expect(page).toHaveURL(/\/admin/);
@@ -163,12 +163,12 @@ test.describe('cartas con QR (de punta a punta)', () => {
     const tokenA = tokenFor(codeA.tokens.find((token) => token.target.refId === idA)?.id ?? '');
     const tokenB = tokenFor(codeB.id);
 
-    // 2. La lectora A (sin abrir nada): ni la lista ni la API dejan ver una carta, ni cuántas hay.
+    // 2. El lector A (sin abrir nada): ni la lista ni la API dejan ver una carta, ni cuántas hay.
     const emailA = `lectora-cartas-${stamp}@ejemplo.com`;
     expect(
       (
         await registrar.post('/api/auth/register', {
-          data: { ...ADULT_CONSENT, name: `Lectora ${stamp}`, email: emailA, password: PASSWORD },
+          data: { ...ADULT_CONSENT, name: `Lector ${stamp}`, email: emailA, password: PASSWORD },
         })
       ).status(),
     ).toBe(201);

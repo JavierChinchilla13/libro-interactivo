@@ -50,7 +50,7 @@ test.describe('páginas legales', () => {
 });
 
 test.describe('titular de los textos legales', () => {
-  test('la administradora escribe el nombre legal en el panel y lo muestran la privacidad y los términos', async ({
+  test('el administrador escribe el nombre legal en el panel y lo muestran la privacidad y los términos', async ({
     page,
     browser,
   }) => {

@@ -75,7 +75,7 @@ test.describe('juego (celular y escritorio)', () => {
     // 1) Canjea el QR del juego creando su cuenta.
     await page.goto(`/u/${token}`);
     await page.getByRole('main').getByRole('link', { name: 'Crear cuenta' }).click();
-    await page.getByLabel(/^Nombre/).fill('Jugadora E2E');
+    await page.getByLabel(/^Nombre/).fill('Jugador E2E');
     await page.getByLabel(/^Correo/).fill(`jugadora-${stamp}@ejemplo.com`);
     await page.getByLabel(/^Contraseña/).fill(PASSWORD);
     await fillConsent(page);

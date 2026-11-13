@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext } from '@playwright/test';
 
-/** Prepara por API (con la sesión de la administradora) un libro publicado con un quiz publicado. */
+/** Prepara por API (con la sesión del administrador) un libro publicado con un quiz publicado. */
 export async function seedPublishedQuiz(
   api: APIRequestContext,
   stamp: number,
