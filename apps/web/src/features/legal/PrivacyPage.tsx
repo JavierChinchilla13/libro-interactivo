@@ -84,9 +84,11 @@ const SECTIONS: LegalSectionDef[] = [
           <li>
             <strong>Si te apuntas a los correos de novedades (opcional):</strong> que te apuntaste,
             cuándo, desde dónde lo hiciste (al crear la cuenta o en tu cuenta) y la versión de esta
-            política; y, si te das de baja, cuándo y cómo. Mientras confirmas tu correo, guardamos
-            solo la huella cifrada del enlace de confirmación. De cada aviso enviado guardamos a qué
-            cuenta se le envió y cuándo, sin copiar tu correo.
+            política; y, si te das de baja, cuándo y cómo. Si respondes a la invitación única de tu
+            panel (también con «No, gracias»), guardamos solo la fecha de tu respuesta para no
+            volver a preguntarte. Mientras confirmas tu correo, guardamos solo la huella cifrada del
+            enlace de confirmación. De cada aviso enviado guardamos a qué cuenta se le envió y
+            cuándo, sin copiar tu correo.
           </li>
           <li>
             <strong>De tus sesiones (automático):</strong> una huella cifrada de tu dirección IP (no
@@ -182,8 +184,11 @@ const SECTIONS: LegalSectionDef[] = [
           <Link className={link} to="/panel/cuenta">
             Panel › Cuenta
           </Link>
-          . Si tu correo aún no está confirmado, te enviamos un enlace para confirmarlo; sin esa
-          confirmación no te llega ningún aviso (el enlace vence a los 7 días).
+          . Si eres mayor de edad y aún no te apuntaste, te lo preguntamos una sola vez en tu panel,
+          con los botones «Sí, apuntarme» y «No, gracias» (ninguno viene marcado de antemano); si
+          respondes que no, no vuelve a salir. Si tu correo aún no está confirmado, te enviamos un
+          enlace para confirmarlo; sin esa confirmación no te llega ningún aviso (el enlace vence a
+          los 7 días).
         </p>
         <ul className={list}>
           <li>
@@ -255,9 +260,10 @@ const SECTIONS: LegalSectionDef[] = [
             y a los 30 días (juego).
           </li>
           <li>
-            <strong>Correos de novedades:</strong> la fecha y la versión de tu alta y de tu baja se
-            guardan mientras la cuenta exista, para poder demostrar que diste tu consentimiento (y
-            que lo retiraste). El registro de a quién se envió cada aviso se borra solo 90 días
+            <strong>Correos de novedades:</strong> la fecha y la versión de tu alta y de tu baja, y
+            la fecha en que respondiste a la invitación del panel, se guardan mientras la cuenta
+            exista, para poder demostrar que diste tu consentimiento (y que lo retiraste) y no
+            volver a preguntarte. El registro de a quién se envió cada aviso se borra solo 90 días
             después de terminar el envío. Si borras tu cuenta, se borra todo en el momento.
           </li>
           <li>

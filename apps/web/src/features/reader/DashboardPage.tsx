@@ -7,6 +7,7 @@ import { Alert, EmptyState } from '../../shared/ui/layout';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { useSession } from '../auth/session';
 import { publicApi, publicKeys } from '../home/api';
+import { NewsletterInvitation } from '../newsletter/NewsletterInvitation';
 import { HowItWorks } from './HowItWorks';
 import { LibraryBookCard, type LibraryEntry } from './LibraryBookCard';
 import { nextHref } from './nextStep';
@@ -161,6 +162,8 @@ export function DashboardPage() {
       </div>
 
       {library.data && !noneOpen ? <HowItWorks /> : null}
+
+      <NewsletterInvitation />
 
       <nav aria-label="Atajos" className="border-t border-line pt-2">
         <ul>
