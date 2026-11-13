@@ -103,7 +103,9 @@ test.describe('menú de usuario (celular y escritorio)', () => {
     await expect(page).toHaveURL(/\/ingresar$/);
   });
 
-  test('un lector (USER) no ve las tres zonas a 1920 px', async ({ page }) => {
+  test('un lector (USER) ve «Ver sitio» y «Mi panel», nunca «Admin», a 1920 px', async ({
+    page,
+  }) => {
     const stamp = `${Date.now()}-${test.info().project.name}`;
     const register = await page.request.post('/api/auth/register', {
       data: {
@@ -119,8 +121,18 @@ test.describe('menú de usuario (celular y escritorio)', () => {
     await page.goto('/panel');
     await dismissWelcome(page);
     await page.getByRole('button', { name: 'Lector Zonas' }).click();
-    await expect(page.getByRole('menuitem')).toHaveText(['Ajustes', 'Salir']);
+    await expect(page.getByRole('menuitem')).toHaveText([
+      'Ver sitio',
+      'Mi panel',
+      'Ajustes',
+      'Salir',
+    ]);
     await expect(page.getByRole('menuitem', { name: 'Admin' })).toHaveCount(0);
+    await expect(page.getByRole('menuitem', { current: 'page' })).toHaveText('Mi panel');
+    // Sale al sitio sin cerrar la sesión.
+    await page.getByRole('menuitem', { name: 'Ver sitio' }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole('button', { name: 'Lector Zonas' })).toBeVisible();
   });
 
   const NAMES = [

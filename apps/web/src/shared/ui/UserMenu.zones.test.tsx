@@ -80,20 +80,50 @@ describe('zonas dentro del menú de usuario', { timeout: 30_000 }, () => {
     ]);
   });
 
-  it('un lector normal no ve las tres zonas en ninguna parte', async () => {
-    for (const path of ['/', '/panel']) {
+  it('un lector ve «Ver sitio» y «Mi panel» (nunca «Admin») en el sitio y en el panel, con la zona actual marcada', async () => {
+    for (const [path, active] of [
+      ['/', 'Ver sitio'],
+      ['/panel', 'Mi panel'],
+    ] as const) {
       mockApi(handlers, { session: READER });
       const view = renderAt(path);
       await screen.findByRole('banner');
       expect(switcher()).not.toBeInTheDocument();
+      // En el sitio el nombre está dentro del menú desplegable del encabezado.
+      if (path === '/') await userEvent.click(await screen.findByRole('button', { name: 'Menú' }));
       const button = await screen.findByRole('button', { name: READER.name });
       await userEvent.click(button);
-      expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      const items = screen.getAllByRole('menuitem');
+      expect(items.map((item) => item.textContent)).toEqual([
+        'Ver sitio',
+        'Mi panel',
         'Ajustes',
         'Salir',
       ]);
+      expect(items.slice(0, 2).map((item) => item.getAttribute('href'))).toEqual(['/', '/panel']);
+      expect(screen.queryByRole('menuitem', { name: 'Admin' })).toBeNull();
+      expect(screen.getByRole('menuitem', { current: 'page' })).toHaveTextContent(active);
       view.unmount();
     }
+  });
+
+  it('un lector sale al sitio y vuelve al panel con el teclado, y el foco regresa al botón al cerrar', async () => {
+    mockApi(handlers, { session: READER });
+    renderAt('/panel');
+    const user = userEvent.setup();
+    const button = await screen.findByRole('button', { name: READER.name });
+    button.focus();
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'Ver sitio' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(button).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
+    await user.keyboard('{Enter}');
+    // «Ver sitio» lleva a la portada sin cerrar la sesión.
+    expect(await screen.findByRole('banner')).toBeInTheDocument();
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Menú' })).toBeInTheDocument();
   });
 
   it('sin sesión no se ve', async () => {
