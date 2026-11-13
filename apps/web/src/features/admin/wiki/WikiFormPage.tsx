@@ -219,8 +219,8 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
               value={form.status}
               options={[
                 { value: 'draft', label: 'Borrador' },
-                { value: 'published', label: 'Publicado' },
-                { value: 'archived', label: 'Archivado' },
+                { value: 'published', label: 'Publicada' },
+                { value: 'archived', label: 'Archivada' },
               ]}
               onChange={(event) => set('status', event.target.value as WikiForm['status'])}
             />

@@ -1,6 +1,8 @@
 /**
  * Etiqueta de estado única de la administración: un punto de color más el texto (el color nunca es el único canal).
- * Un estado nuevo = una entrada nueva aquí.
+ * Un estado nuevo = una entrada nueva aquí. Las etiquetas por defecto van en masculino (libro, quiz, código, usuario,
+ * mensaje, aviso, extra, fan art): cuando el sujeto es femenino (carta, actualización, reseña, entrada de la wiki,
+ * versión) la pantalla pasa su propia `label` («Publicada», «Archivada»…).
  */
 const STATUSES = {
   published: { label: 'Publicado', tone: 'success' },
@@ -12,8 +14,8 @@ const STATUSES = {
   changes: { label: 'Cambios sin publicar', tone: 'warning' },
   unread: { label: 'Sin leer', tone: 'warning' },
   read: { label: 'Leído', tone: 'neutral' },
-  active: { label: 'Activa', tone: 'success' },
-  inactive: { label: 'Desactivada', tone: 'neutral' },
+  active: { label: 'Activo', tone: 'success' },
+  inactive: { label: 'Desactivado', tone: 'neutral' },
   failed: { label: 'Con problemas', tone: 'danger' },
 } as const;
 

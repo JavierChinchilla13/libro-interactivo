@@ -205,8 +205,8 @@ export function UserListPage() {
             value={status}
             placeholder="Todos"
             options={[
-              { value: 'active', label: 'Activas' },
-              { value: 'disabled', label: 'Desactivadas' },
+              { value: 'active', label: 'Activos' },
+              { value: 'disabled', label: 'Desactivados' },
             ]}
             onChange={(event) => {
               setPage(1);
