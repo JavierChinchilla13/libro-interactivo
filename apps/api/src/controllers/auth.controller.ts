@@ -27,7 +27,8 @@ function refreshCookie(req: Request): string | undefined {
 
 /**
  * La casilla de novedades viaja con los consentimientos y ya se validó (edad) antes de crear nada. Si se marcó, se
- * apunta después de entrar; un fallo ahí nunca hace fallar el alta (la persona puede apuntarse desde la cuenta).
+ * apunta después de entrar; si no, y es mayor de edad (vio la casilla y no la marcó), se da por respondida la
+ * invitación del panel. Un fallo ahí nunca hace fallar el alta (la persona puede apuntarse desde la cuenta).
  */
 export function createAuthController(
   auth: AuthService,
@@ -38,7 +39,7 @@ export function createAuthController(
   const register: RequestHandler = async (req, res) => {
     const { body } = getInput<RegisterRequest>(res);
     const { user, session } = await auth.register(body, requestMeta(req));
-    if (body.newsletter) await newsletter.optInAfterSignup(user.id, 'register');
+    await newsletter.afterSignup(user.id, 'register', body.newsletter);
     setSessionCookies(res, env, session);
     res.status(201).json({ user });
   };
@@ -51,7 +52,9 @@ export function createAuthController(
       res.json({ status: 'needs_profile', name: result.name, email: result.email });
       return;
     }
-    if (body.profile?.newsletter) await newsletter.optInAfterSignup(result.user.id, 'login');
+    if (body.profile) {
+      await newsletter.afterSignup(result.user.id, 'login', body.profile.newsletter);
+    }
     setSessionCookies(res, env, result.session);
     res.json({ status: 'ok', user: result.user });
   };
@@ -72,7 +75,9 @@ export function createAuthController(
       res.json({ status: 'needs_profile', name: result.name, email: result.email });
       return;
     }
-    if (body.profile?.newsletter) await newsletter.optInAfterSignup(result.user.id, 'google');
+    if (body.profile) {
+      await newsletter.afterSignup(result.user.id, 'google', body.profile.newsletter);
+    }
     setSessionCookies(res, env, result.session);
     res.json({ status: 'ok', user: result.user });
   };

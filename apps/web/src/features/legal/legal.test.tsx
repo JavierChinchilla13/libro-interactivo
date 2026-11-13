@@ -79,6 +79,13 @@ describe('páginas legales', () => {
     expect(text).toMatch(/Darme de baja/);
     expect(text).toMatch(/no medimos si abres los correos/);
     expect(text).toMatch(/rebota/);
+    // La invitación única del panel: se pregunta una vez, sin casilla marcada, y qué se guarda de la respuesta.
+    expect(text).toMatch(/una sola vez en tu panel/);
+    expect(text).toMatch(/ninguno viene marcado de antemano/);
+    // Qué se guarda de la respuesta, en «qué datos guardamos» y en «cuánto tiempo».
+    const whole = document.body.textContent ?? '';
+    expect(whole).toMatch(/guardamos solo la fecha de tu respuesta/);
+    expect(whole).toMatch(/la fecha en que respondiste a la invitación del panel/);
   });
 
   it('solo quedan marcados los datos y propuestas que siguen abiertos', async () => {

@@ -63,6 +63,8 @@ const userSchema = new Schema(
           confirmTokenHash: { type: String, maxlength: 64 },
           confirmTokenExpiresAt: { type: Date },
           unsubscribedAt: { type: Date },
+          /** Cuándo respondió a la invitación única del panel (o se apuntó por otro camino): no se vuelve a mostrar. */
+          invitationAnsweredAt: { type: Date },
           unsubscribedVia: {
             type: String,
             enum: ['account', 'link', 'header', 'bounce', 'complaint'],

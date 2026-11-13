@@ -59,9 +59,12 @@ export function createNewsletterService(deps: NewsletterDeps) {
   function stateOf(user: UserDoc): NewsletterState {
     const n = user.newsletter;
     const status = n?.status === 'subscribed' || n?.status === 'pending' ? n.status : 'none';
+    const eligible = user.status === 'active' && canSubscribeToNewsletter(birthOf(user), clock());
     return {
       status,
-      eligible: user.status === 'active' && canSubscribeToNewsletter(birthOf(user), clock()),
+      eligible,
+      // Invitación única: nunca a quien ya se apuntó, pidió apuntarse o se dio de baja, ni a quien ya respondió.
+      invitation: eligible && !n?.status && !n?.invitationAnsweredAt,
       ...(status === 'subscribed' && n?.subscribedAt
         ? { subscribedAt: n.subscribedAt.toISOString() }
         : {}),
@@ -102,6 +105,8 @@ export function createNewsletterService(deps: NewsletterDeps) {
             'newsletter.version': LEGAL_VERSION,
             'newsletter.source': source,
           },
+          // Apuntarse por cualquier camino cuenta como responder a la invitación (se conserva la primera fecha).
+          $min: { 'newsletter.invitationAnsweredAt': now },
           $unset: {
             'newsletter.confirmTokenHash': 1,
             'newsletter.confirmTokenExpiresAt': 1,
@@ -132,6 +137,7 @@ export function createNewsletterService(deps: NewsletterDeps) {
           'newsletter.confirmTokenHash': sha256Hex(token),
           'newsletter.confirmTokenExpiresAt': addDays(now, NEWSLETTER_CONFIRM_TTL_DAYS),
         },
+        $min: { 'newsletter.invitationAnsweredAt': now },
         $unset: { 'newsletter.subscribedAt': 1 },
       },
     );
@@ -182,16 +188,47 @@ export function createNewsletterService(deps: NewsletterDeps) {
     },
 
     /**
-     * Después de crear la cuenta o de entrar (registro, Google, volver a declarar): la casilla ya se validó con los
-     * consentimientos. Nunca hace fallar el alta: un problema aquí se anota y la persona puede apuntarse desde la cuenta.
+     * «No, gracias» a la invitación del panel: se guarda la respuesta y no vuelve a salir nunca. Idempotente. A quien no
+     * puede apuntarse no se le guarda nada (no se le ofrece).
      */
-    async optInAfterSignup(userId: string, source: NewsletterSource): Promise<void> {
+    async declineInvitation(userId: string): Promise<NewsletterState> {
+      const user = await activeUser(userId);
+      if (stateOf(user).eligible) {
+        await User.updateOne(
+          { _id: user._id },
+          { $min: { 'newsletter.invitationAnsweredAt': clock() } },
+        );
+      }
+      return stateOf(await activeUser(userId));
+    },
+
+    /**
+     * Después de declarar la edad y los consentimientos (registro, segundo paso de Google, volver a declarar). Quien
+     * marcó la casilla se apunta; quien la vio (mayor de edad) y no la marcó ya respondió que no: se guarda como
+     * respondida la invitación del panel para no volver a preguntarle. Las menores no ven la casilla ni la invitación.
+     * Nunca hace fallar el alta: un problema aquí se anota y la persona puede apuntarse desde la cuenta.
+     */
+    async afterSignup(
+      userId: string,
+      source: NewsletterSource,
+      checked: boolean | undefined,
+    ): Promise<void> {
       try {
-        await optIn(userId, source);
+        if (checked) {
+          await optIn(userId, source);
+          return;
+        }
+        const user = await activeUser(userId);
+        if (stateOf(user).eligible) {
+          await User.updateOne(
+            { _id: user._id },
+            { $min: { 'newsletter.invitationAnsweredAt': clock() } },
+          );
+        }
       } catch (error) {
         deps.logger.warn(
           { userId, reason: error instanceof Error ? error.message : String(error) },
-          'No se pudo apuntar a los correos de novedades después del alta',
+          'No se pudo guardar la respuesta a la casilla de novedades después del alta',
         );
       }
     },

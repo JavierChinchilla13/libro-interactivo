@@ -9,6 +9,12 @@ export const newsletterApi = {
       method: 'PUT',
       body: { subscribed },
     }),
+  /** «No, gracias» a la invitación única del panel («Sí» es `update(true)`). */
+  declineInvitation: () =>
+    apiRequest('/me/newsletter/invitation', newsletterStateSchema, {
+      method: 'PUT',
+      body: { answer: 'declined' },
+    }),
   confirm: (token: string): Promise<NewsletterState> =>
     apiRequest('/newsletter/confirm', newsletterStateSchema, {
       method: 'POST',
