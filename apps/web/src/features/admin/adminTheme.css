@@ -591,6 +591,28 @@
     width: 100%;
     white-space: nowrap;
   }
+  /* Archivar / Restaurar / Eliminar de una fila: debajo del botón de editar, en el celular. */
+  .admin-row-extra {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .admin-row-extra .admin-lifecycle-compact {
+    width: 100%;
+  }
+  .admin-row-extra .admin-lifecycle-compact .btn {
+    flex: 1 1 auto;
+    white-space: nowrap;
+  }
+  /* Con botones de archivar o eliminar la celda de acciones se parte en líneas (sin barra horizontal). */
+  .admin-table .admin-actions-cell.admin-actions-cell-wrap {
+    width: 15rem;
+    min-width: 12rem;
+    white-space: normal;
+  }
+  .admin-table .admin-lifecycle-compact {
+    justify-content: flex-end;
+  }
   .admin-list-more {
     display: flex;
     flex-wrap: wrap;

@@ -17,6 +17,8 @@ import type {
 import type { Guards } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 
+import { mountLifecycle } from './lifecycle.js';
+
 /** `/fan-arts`: público, solo lo publicado con el permiso del artista confirmado. */
 export function createPublicFanArtRouter(
   controller: ReturnType<typeof createPublicCommunityController>,
@@ -55,6 +57,12 @@ export function createAdminFanArtRouter(
     validate({ params: adminFanArtParamsSchema, body: fanArtInputSchema }),
     controller.replace,
   );
+  mountLifecycle(router, {
+    path: '/:fanArtId',
+    params: validate({ params: adminFanArtParamsSchema }),
+    handlers: controller,
+    guards,
+  });
   return router;
 }
 
@@ -72,5 +80,11 @@ export function createAdminReviewRouter(
     validate({ params: adminReviewParamsSchema, body: reviewInputSchema }),
     controller.replace,
   );
+  mountLifecycle(router, {
+    path: '/:reviewId',
+    params: validate({ params: adminReviewParamsSchema }),
+    handlers: controller,
+    guards,
+  });
   return router;
 }

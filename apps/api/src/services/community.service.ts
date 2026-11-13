@@ -12,6 +12,8 @@ import { assertCloudinaryUrls } from '../lib/images.js';
 import { Book } from '../models/Book.js';
 import { FanArt } from '../models/FanArt.js';
 import { Review } from '../models/Review.js';
+import type { Logger } from '../lib/logger.js';
+import { auditDeletion, notArchivedError, notDeletableError, type Noun } from './lifecycle.js';
 
 type FanArtLean = NonNullable<Awaited<ReturnType<typeof loadFanArt>>>;
 type ReviewLean = NonNullable<Awaited<ReturnType<typeof loadReview>>>;
@@ -91,7 +93,7 @@ function setAndUnset(doc: Record<string, unknown>) {
  * Fan arts. La autora los carga y archiva; el público solo ve los **publicados con el permiso del artista
  * confirmado** (se comprueban las dos cosas aunque el estado diga «publicado»). Nada se borra.
  */
-export function createFanArtService() {
+export function createFanArtService(deps: { logger?: Logger } = {}) {
   const document = (input: FanArtInput) => ({
     bookId: input.bookId,
     title: input.title || undefined,
@@ -149,11 +151,46 @@ export function createFanArtService() {
     return arts.map(toPublicFanArt);
   }
 
-  return { adminList, adminGet, create, replace, publicList };
+  // --- Archivar, restaurar y eliminar (ver `lifecycle.ts`) -------------------------------------------------------
+
+  const NOUN: Noun = { name: 'fan art', feminine: false };
+
+  /** Reversible: deja de verse en público. */
+  async function archive(id: string): Promise<AdminFanArt> {
+    await adminGet(id);
+    await FanArt.updateOne({ _id: id }, { $set: { status: 'archived' } });
+    return adminGet(id);
+  }
+
+  /** Vuelve a borrador: nada reaparece en público sin publicarse a propósito. */
+  async function restore(id: string): Promise<AdminFanArt> {
+    const art = await loadFanArt(id);
+    if (!art) throw new AppError('NOT_FOUND', 'No encontramos ese fan art');
+    if (art.status !== 'archived') throw notArchivedError(NOUN);
+    await FanArt.updateOne({ _id: id, status: 'archived' }, { $set: { status: 'draft' } });
+    return adminGet(id);
+  }
+
+  /** Definitivo. Solo lo archivado o en borrador. La imagen de Cloudinary no se toca (solo `cleanup:orphans`). */
+  async function remove(id: string, actorId: string): Promise<void> {
+    const art = await loadFanArt(id);
+    if (!art) throw new AppError('NOT_FOUND', 'No encontramos ese fan art');
+    if (art.status === 'published') throw notDeletableError(NOUN);
+    const result = await FanArt.deleteOne({ _id: id, status: { $in: ['draft', 'archived'] } });
+    if (result.deletedCount === 0) throw notDeletableError(NOUN);
+    auditDeletion(deps.logger, {
+      entity: 'fanArt',
+      id,
+      title: art.title ?? art.artistName,
+      actorId,
+    });
+  }
+
+  return { adminList, adminGet, create, replace, publicList, archive, restore, remove };
 }
 
 /** Reseñas de lectores cargadas por la autora; el público ve solo las publicadas. */
-export function createReviewService() {
+export function createReviewService(deps: { logger?: Logger } = {}) {
   const document = (input: ReviewInput) => ({
     bookId: input.bookId,
     text: input.text,
@@ -201,7 +238,37 @@ export function createReviewService() {
     return reviews.map(toPublicReview);
   }
 
-  return { adminList, adminGet, create, replace, publicList };
+  // --- Archivar, restaurar y eliminar (ver `lifecycle.ts`) -------------------------------------------------------
+
+  const NOUN: Noun = { name: 'reseña', feminine: true };
+
+  /** «Archivar» una reseña es ocultarla (`status: 'hidden'`): reversible, deja de verse en la página principal. */
+  async function archive(id: string): Promise<AdminReview> {
+    await adminGet(id);
+    await Review.updateOne({ _id: id }, { $set: { status: 'hidden' } });
+    return adminGet(id);
+  }
+
+  /** Una reseña no tiene borrador: restaurar la vuelve a publicar. */
+  async function restore(id: string): Promise<AdminReview> {
+    const review = await loadReview(id);
+    if (!review) throw new AppError('NOT_FOUND', 'No encontramos esa reseña');
+    if (review.status !== 'hidden') throw notArchivedError(NOUN);
+    await Review.updateOne({ _id: id, status: 'hidden' }, { $set: { status: 'published' } });
+    return adminGet(id);
+  }
+
+  /** Definitivo. Solo una reseña archivada (oculta). */
+  async function remove(id: string, actorId: string): Promise<void> {
+    const review = await loadReview(id);
+    if (!review) throw new AppError('NOT_FOUND', 'No encontramos esa reseña');
+    if (review.status !== 'hidden') throw notDeletableError(NOUN, false);
+    const result = await Review.deleteOne({ _id: id, status: 'hidden' });
+    if (result.deletedCount === 0) throw notDeletableError(NOUN, false);
+    auditDeletion(deps.logger, { entity: 'review', id, title: review.authorName, actorId });
+  }
+
+  return { adminList, adminGet, create, replace, publicList, archive, restore, remove };
 }
 
 export type FanArtService = ReturnType<typeof createFanArtService>;

@@ -9,6 +9,8 @@ interface CardParams {
 }
 
 /** `/admin/cards`: cartas con QR, solo administradores. La firma de subida no se guarda en cachés. */
+import { createLifecycleHandlers } from './lifecycle.js';
+
 export function createAdminCardController(cards: CardService) {
   const list: RequestHandler = async (_req, res) => {
     const { query } = getInput<unknown, { bookId: string }>(res);
@@ -34,7 +36,15 @@ export function createAdminCardController(cards: CardService) {
     const { body } = getInput<CardUploadSignatureRequest>(res);
     res.set('Cache-Control', 'no-store').json(await cards.signUpload(body.bookId));
   };
-  return { list, get, create, replace, reorder, uploadSignature };
+  return {
+    list,
+    get,
+    create,
+    replace,
+    reorder,
+    uploadSignature,
+    ...createLifecycleHandlers(cards, 'cardId'),
+  };
 }
 
 /** `/cards`: lo que ve el lector. Siempre `private, no-store`: la URL de la imagen no se cachea en ningún lado. */

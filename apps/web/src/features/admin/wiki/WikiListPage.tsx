@@ -1,3 +1,5 @@
+import { LifecycleButtons, useLifecycle } from '../components/lifecycle';
+import { WIKI_LIFECYCLE } from '../lifecycleConfigs';
 import type { WikiEntryResponse, WikiKind } from '@libro/shared';
 import {
   keepPreviousData,
@@ -58,6 +60,7 @@ const LETTERS = [
 
 /** Lista de la wiki: una pestaña por tipo, búsqueda, filtro por letra y orden manual. */
 export function WikiListPage() {
+  const lifecycle = useLifecycle(WIKI_LIFECYCLE);
   const client = useQueryClient();
   const [tabId, setTabId] = useState<TabId>('character');
   const [bookId, setBookId] = useState('');
@@ -291,6 +294,13 @@ export function WikiListPage() {
         </p>
       ) : null}
       <DataList
+        rowActions={(row) => (
+          <LifecycleButtons
+            item={{ id: row.id, title: row.name, status: row.status }}
+            lifecycle={lifecycle}
+            compact
+          />
+        )}
         label="Entradas de la wiki"
         rows={ordered}
         rowKey={(entry) => entry.id}

@@ -1,3 +1,5 @@
+import { LifecycleButtons, LifecyclePanel, useLifecycle } from '../components/lifecycle';
+import { FAN_ART_LIFECYCLE } from '../lifecycleConfigs';
 import {
   fanArtInputSchema,
   type AdminFanArt,
@@ -79,6 +81,7 @@ const fanArtColumns: Column<FanArtRow>[] = [
 
 /** Fan arts: los carga la autora; solo se publican con el permiso del artista. */
 export function FanArtListPage() {
+  const lifecycle = useLifecycle(FAN_ART_LIFECYCLE);
   const arts = useFanArts();
   const search = useRowSearch(arts.data?.fanArts, (art) => `${art.title ?? ''} ${art.artistName}`);
   return (
@@ -107,6 +110,13 @@ export function FanArtListPage() {
       }}
     >
       <DataList
+        rowActions={(row) => (
+          <LifecycleButtons
+            item={{ id: row.id, title: row.title ?? row.artistName, status: row.status }}
+            lifecycle={lifecycle}
+            compact
+          />
+        )}
         label="Fan arts"
         rows={search.visible ?? []}
         rowKey={(art) => art.id}
@@ -192,7 +202,13 @@ export function FanArtFormPage() {
   if (editing) {
     if (art.isError) return <Alert>{errorMessage(art.error)}</Alert>;
     if (!art.data) return <SkeletonRows rows={4} />;
-    return <FanArtFormView key={art.data.id} fanArtId={fanArtId} initial={formFromArt(art.data)} />;
+    return (
+      <FanArtFormView
+        key={`${art.data.id}:${art.data.status}`}
+        fanArtId={fanArtId}
+        initial={formFromArt(art.data)}
+      />
+    );
   }
   if (all.isError) return <Alert>{errorMessage(all.error)}</Alert>;
   if (!all.data) return <SkeletonRows rows={4} />;
@@ -205,6 +221,7 @@ function FanArtFormView({ fanArtId, initial }: { fanArtId?: string; initial: Fan
   const client = useQueryClient();
   const [form, setForm] = useState<FanArtForm>(initial);
   const guard = useFormGuard(form, initial);
+  const lifecycle = useLifecycle(FAN_ART_LIFECYCLE);
   const toast = useToast();
   const submitted = useRef(form);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -325,6 +342,19 @@ function FanArtFormView({ fanArtId, initial }: { fanArtId?: string; initial: Fan
           />
         </div>
       </FormSection>
+      {fanArtId ? (
+        <LifecyclePanel
+          item={{
+            id: fanArtId,
+            title: guard.saved.title || guard.saved.artistName,
+            status: guard.saved.status,
+          }}
+          lifecycle={lifecycle}
+          dirty={guard.dirty}
+          noun="el fan art"
+          after={() => void navigate('/admin/fan-arts')}
+        />
+      ) : null}
       <SaveBar
         dirty={guard.dirty || !editing}
         dirtyLabel={editing ? undefined : 'Aún no se ha guardado'}

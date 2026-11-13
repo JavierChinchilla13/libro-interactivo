@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BOOK, BOOK_ID, READER, json, mockApi, renderAt } from '../../../test/mockApi';
+import { BOOK, BOOK_ID, READER, apiError, json, mockApi, renderAt } from '../../../test/mockApi';
 
 afterEach(() => vi.unstubAllGlobals());
 beforeEach(() => {
@@ -173,27 +173,66 @@ describe('/admin/cartas (lista)', () => {
     );
   });
 
-  it('archivar manda la carta completa (con sus imágenes y su texto alternativo) y publicar la devuelve', async () => {
+  it('Archivar y Restaurar llaman a sus endpoints (sin reenviar la carta) y Eliminar solo sale en una archivada', async () => {
+    let status = 'published';
     const { called } = mockApi(
       {
         ...books,
-        [LIST]: () => json({ cards: [card(C1, 1, { images: [image(1, 'Un mapa'), image(2)] })] }),
-        [`PUT /api/admin/cards/${C1}`]: ({ body }) =>
-          json(card(C1, 1, { status: (body as { status: string }).status })),
+        [LIST]: () => json({ cards: [card(C1, 1, { status })] }),
+        [`POST /api/admin/cards/${C1}/archive`]: () => {
+          status = 'archived';
+          return json(card(C1, 1, { status }));
+        },
+        [`POST /api/admin/cards/${C1}/restore`]: () => {
+          status = 'published';
+          return json(card(C1, 1, { status }));
+        },
       },
       { session: ADMIN },
     );
     renderAt('/admin/cartas');
+    // Publicada: se archiva, pero no se elimina.
+    expect(screen.queryByRole('button', { name: /Eliminar definitivamente/ })).toBeNull();
     await userEvent.click(await screen.findByRole('button', { name: /^Archivar/ }));
-    await waitFor(() => expect(called(`PUT /api/admin/cards/${C1}`)).toHaveLength(1));
-    expect(called(`PUT /api/admin/cards/${C1}`)[0]?.body).toEqual({
-      bookId: BOOK_ID,
-      title: '[PLACEHOLDER] Carta 1',
-      order: 1,
-      status: 'archived',
-      images: [{ publicId: pid(1), alt: 'Un mapa' }, { publicId: pid(2) }],
-    });
+    await waitFor(() => expect(called(`POST /api/admin/cards/${C1}/archive`)).toHaveLength(1));
+    expect(called(`POST /api/admin/cards/${C1}/archive`)[0]?.body).toBeUndefined();
     expect(await screen.findByText('Archivada')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Eliminar definitivamente/ })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /^Restaurar/ }));
+    await waitFor(() => expect(called(`POST /api/admin/cards/${C1}/restore`)).toHaveLength(1));
+    expect(await screen.findByText('Publicada')).toBeInTheDocument();
+    // Una carta no tiene borrador: nada de PUT para archivar.
+    expect(called(`PUT /api/admin/cards/${C1}`)).toHaveLength(0);
+  });
+
+  it('eliminar una archivada: la confirmación dice qué se borra y que Cloudinary no se toca; el servidor puede bloquearla', async () => {
+    const { called } = mockApi(
+      {
+        ...books,
+        [LIST]: () => json({ cards: [card(C1, 1, { status: 'archived' })] }),
+        [`DELETE /api/admin/cards/${C1}`]: () =>
+          apiError(
+            'CONFLICT',
+            'Esta carta ya la abrieron lectores: eliminarla les quitaría lo que ya tienen en su cuenta. Déjala archivada.',
+            409,
+          ),
+      },
+      { session: ADMIN },
+    );
+    renderAt('/admin/cartas');
+    await userEvent.click(await screen.findByRole('button', { name: /Eliminar definitivamente/ }));
+    const dialog = await screen.findByRole('dialog', {
+      name: '¿Eliminar definitivamente «[PLACEHOLDER] Carta 1»?',
+    });
+    expect(
+      within(dialog).getByText(/Se borrará la carta y la lista de sus imágenes/),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByText('No se puede deshacer.')).toBeInTheDocument();
+    expect(within(dialog).getByText(/no se borran de Cloudinary/)).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Eliminar definitivamente' }));
+    expect(await screen.findByText(/ya la abrieron lectores/)).toBeInTheDocument();
+    expect(called(`DELETE /api/admin/cards/${C1}`)).toHaveLength(1);
+    expect(screen.getAllByText('[PLACEHOLDER] Carta 1').length).toBeGreaterThan(0);
   });
 
   it('el nombre de la sección: se guarda sin formato, el menú y el título cambian al instante y vacío vuelve a «Hallazgos»', async () => {

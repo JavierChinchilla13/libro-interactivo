@@ -29,6 +29,8 @@ interface WikiParams {
   entryId: string;
 }
 
+import { createLifecycleHandlers } from './lifecycle.js';
+
 export function createAdminBookController(books: BookService) {
   const list: RequestHandler = async (_req, res) => {
     res.json({ books: await books.list() });
@@ -137,7 +139,7 @@ export function createAdminWikiController(wiki: WikiService) {
     const { body } = getInput<WikiReorderRequest>(res);
     res.json({ entries: await wiki.reorder(body) });
   };
-  return { list, get, create, replace, reorder };
+  return { list, get, create, replace, reorder, ...createLifecycleHandlers(wiki, 'entryId') };
 }
 
 export function createAdminUploadController(images: ImageProvider, clock: Clock) {

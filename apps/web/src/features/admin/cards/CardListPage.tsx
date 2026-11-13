@@ -1,10 +1,6 @@
-import {
-  type AdminCard,
-  type CardInputPayload,
-  CARDS_LABEL_DEFAULT,
-  CARDS_LABEL_MAX,
-  plural,
-} from '@libro/shared';
+import { LifecycleButtons, useLifecycle } from '../components/lifecycle';
+import { CARD_LIFECYCLE } from '../lifecycleConfigs';
+import { CARDS_LABEL_DEFAULT, CARDS_LABEL_MAX, plural } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
@@ -72,23 +68,12 @@ function LabelForm() {
   );
 }
 
-const toPayload = (card: AdminCard, over: Partial<CardInputPayload> = {}): CardInputPayload => ({
-  bookId: card.bookId,
-  title: card.title,
-  order: card.order,
-  status: card.status,
-  images: card.images.map((image) => ({
-    publicId: image.publicId,
-    ...(image.alt ? { alt: image.alt } : {}),
-  })),
-  ...over,
-});
-
 /**
  * Cartas con QR (solo administradores): lista por libro con su portada, cuántas imágenes tiene, su estado y su orden.
  * Se ordenan con las flechas; archivar quita la carta de la vista de los lectores y deja su QR sin efecto.
  */
 export function CardListPage() {
+  const lifecycle = useLifecycle(CARD_LIFECYCLE);
   const client = useQueryClient();
   const toast = useToast();
   const label = useCardsLabel();
@@ -110,18 +95,6 @@ export function CardListPage() {
       toast.success('Orden guardado');
     },
   });
-  const toggle = useMutation({
-    mutationFn: (card: AdminCard) =>
-      cardsApi.replace(
-        card.id,
-        toPayload(card, { status: card.status === 'published' ? 'archived' : 'published' }),
-      ),
-    onSuccess: async (card) => {
-      await refresh();
-      toast.success(card.status === 'archived' ? 'Archivada' : 'Publicada');
-    },
-  });
-
   function move(index: number, by: -1 | 1) {
     const ids = list.map((card) => card.id);
     const target = index + by;
@@ -131,8 +104,8 @@ export function CardListPage() {
     reorder.mutate(ids);
   }
 
-  const busy = reorder.isPending || toggle.isPending;
-  const error = reorder.error ?? toggle.error;
+  const busy = reorder.isPending || lifecycle.busy;
+  const error = reorder.error;
 
   return (
     <>
@@ -255,15 +228,12 @@ export function CardListPage() {
                           <Link to={`/admin/cartas/${card.id}`} className="btn btn-secondary">
                             Editar<span className="sr-only"> «{card.title}»</span>
                           </Link>
-                          <Button
-                            variant="secondary"
+                          <LifecycleButtons
+                            item={{ id: card.id, title: card.title, status: card.status }}
+                            lifecycle={lifecycle}
+                            compact
                             disabled={busy}
-                            loading={toggle.isPending && toggle.variables?.id === card.id}
-                            onClick={() => toggle.mutate(card)}
-                          >
-                            {card.status === 'published' ? 'Archivar' : 'Publicar'}
-                            <span className="sr-only"> «{card.title}»</span>
-                          </Button>
+                          />
                         </div>
                       </Card>
                     </li>

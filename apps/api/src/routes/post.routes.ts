@@ -12,6 +12,7 @@ import type {
 } from '../controllers/post.controller.js';
 import type { Guards } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { mountLifecycle } from './lifecycle.js';
 
 /** `/posts`: lista (con filtro por tipo, destacadas y paginación) y detalle por slug. Público. */
 export function createPublicPostRouter(
@@ -38,5 +39,11 @@ export function createAdminPostRouter(
     validate({ params: adminPostParamsSchema, body: postInputSchema }),
     controller.replace,
   );
+  mountLifecycle(router, {
+    path: '/:postId',
+    params: validate({ params: adminPostParamsSchema }),
+    handlers: controller,
+    guards,
+  });
   return router;
 }

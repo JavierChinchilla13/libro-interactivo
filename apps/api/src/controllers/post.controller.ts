@@ -3,6 +3,7 @@ import type { RequestHandler } from 'express';
 import { getAuth } from '../middleware/auth.js';
 import { getInput } from '../middleware/validate.js';
 import type { PostService } from '../services/post.service.js';
+import { createLifecycleHandlers } from './lifecycle.js';
 
 /** `/posts`: las actualizaciones que ya se pueden ver (publicadas y con la fecha cumplida). */
 export function createPublicPostController(posts: PostService) {
@@ -38,5 +39,5 @@ export function createAdminPostController(posts: PostService) {
     const { body, params } = getInput<PostInput, unknown, PostParams>(res);
     res.json(await posts.replace(params.postId, body));
   };
-  return { list, get, create, replace };
+  return { list, get, create, replace, ...createLifecycleHandlers(posts, 'postId') };
 }

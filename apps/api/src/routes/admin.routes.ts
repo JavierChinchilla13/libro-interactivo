@@ -27,6 +27,8 @@ import type { Guards } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 
+import { mountLifecycle } from './lifecycle.js';
+
 /** Todo `/admin/*` exige sesión y rol EDITOR o ADMIN (lista explícita: se valida en el servidor). */
 function staffRouter(guards: Guards): Router {
   const router = Router();
@@ -107,6 +109,12 @@ export function createAdminWikiRouter(
     validate({ params: wikiParamsSchema, body: wikiEntryInputSchema }),
     controller.replace,
   );
+  mountLifecycle(router, {
+    path: '/:entryId',
+    params: validate({ params: wikiParamsSchema }),
+    handlers: controller,
+    guards,
+  });
   return router;
 }
 
