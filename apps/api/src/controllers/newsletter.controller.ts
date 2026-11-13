@@ -18,7 +18,7 @@ export function createNewsletterController(newsletter: NewsletterService) {
     const { body } = getInput<UpdateNewsletterRequest>(res);
     res
       .set('Cache-Control', 'no-store')
-      .json(await newsletter.setFromAccount(getAuth(res).userId, body.subscribed));
+      .json(await newsletter.setFromAccount(getAuth(res).userId, body.subscribed, body.birth));
   };
 
   const declineInvitation: RequestHandler = async (_req, res) => {

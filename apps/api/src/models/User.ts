@@ -33,6 +33,12 @@ const userSchema = new Schema(
      */
     birthYear: { type: Number, min: 1900, max: 2200 },
     birthMonth: { type: Number, min: 1, max: 12 },
+    /**
+     * Solo en cuentas anteriores al paso de edad que declararon su mes y año al apuntarse a las novedades (mayores de 18):
+     * cuándo lo declararon y con qué versión de los textos. No es la aceptación de términos (esa no se pidió ahí).
+     */
+    birthDeclaredAt: { type: Date },
+    birthDeclaredVersion: { type: String, maxlength: 40 },
     /** Madre, padre o tutor autorizó la cuenta (solo de 16 a 17 años). Es una declaración, no una verificación. */
     guardianAuthorized: { type: Boolean },
     termsAcceptedAt: { type: Date },

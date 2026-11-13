@@ -4,10 +4,11 @@ import { apiRequest } from '../../shared/api/client';
 /** Correos de novedades: la casilla de la cuenta, la confirmación y la baja (estas dos sin sesión). */
 export const newsletterApi = {
   state: () => apiRequest('/me/newsletter', newsletterStateSchema),
-  update: (subscribed: boolean) =>
+  /** `birth`: solo para apuntarse una cuenta sin fecha de nacimiento (el servidor la valida y decide). */
+  update: (subscribed: boolean, birth?: { year: number; month: number }) =>
     apiRequest('/me/newsletter', newsletterStateSchema, {
       method: 'PUT',
-      body: { subscribed },
+      body: { subscribed, ...(birth ? { birth } : {}) },
     }),
   /** «No, gracias» a la invitación única del panel («Sí» es `update(true)`). */
   declineInvitation: () =>

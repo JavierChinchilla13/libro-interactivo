@@ -68,7 +68,10 @@ const SECTIONS: LegalSectionDef[] = [
             <strong>Tu edad y tu autorización (obligatorio):</strong> año y mes de nacimiento, si tu
             madre, padre o tutor autorizó (de {MIN_ACCOUNT_AGE} a {ADULT_AGE - 1} años), y la fecha
             y la versión de la política que aceptaste. No guardamos tu día de nacimiento ni tu edad
-            calculada.
+            calculada. Si tu cuenta es anterior a esta pregunta y no tiene fecha de nacimiento, se
+            la pedimos solo cuando quieres apuntarte a los correos de novedades: si tienes{' '}
+            {ADULT_AGE} años o más, guardamos el mes y el año y cuándo los declaraste (con la
+            versión de esta política); si eres menor, no guardamos nada.
           </li>
           <li>
             <strong>Al usar el libro:</strong> los códigos QR que desbloqueaste, tu progreso y los
@@ -186,9 +189,11 @@ const SECTIONS: LegalSectionDef[] = [
           </Link>
           . Si eres mayor de edad y aún no te apuntaste, te lo preguntamos una sola vez en tu panel,
           con los botones «Sí, apuntarme» y «No, gracias» (ninguno viene marcado de antemano); si
-          respondes que no, no vuelve a salir. Si tu correo aún no está confirmado, te enviamos un
-          enlace para confirmarlo; sin esa confirmación no te llega ningún aviso (el enlace vence a
-          los 7 días).
+          respondes que no, no vuelve a salir. Si tu cuenta no tiene fecha de nacimiento (es
+          anterior a la pregunta de edad), al apuntarte te pedimos el mes y el año de nacimiento: si
+          no llegas a {ADULT_AGE} años, no guardamos nada y no te apuntamos. Si tu correo aún no
+          está confirmado, te enviamos un enlace para confirmarlo; sin esa confirmación no te llega
+          ningún aviso (el enlace vence a los 7 días).
         </p>
         <ul className={list}>
           <li>
@@ -261,10 +266,12 @@ const SECTIONS: LegalSectionDef[] = [
           </li>
           <li>
             <strong>Correos de novedades:</strong> la fecha y la versión de tu alta y de tu baja, y
-            la fecha en que respondiste a la invitación del panel, se guardan mientras la cuenta
-            exista, para poder demostrar que diste tu consentimiento (y que lo retiraste) y no
-            volver a preguntarte. El registro de a quién se envió cada aviso se borra solo 90 días
-            después de terminar el envío. Si borras tu cuenta, se borra todo en el momento.
+            la fecha en que respondiste a la invitación del panel y, si declaraste tu fecha de
+            nacimiento al apuntarte, cuándo lo hiciste y con qué versión de esta política, se
+            guardan mientras la cuenta exista, para poder demostrar que diste tu consentimiento (y
+            que lo retiraste) y no volver a preguntarte. El registro de a quién se envió cada aviso
+            se borra solo 90 días después de terminar el envío. Si borras tu cuenta, se borra todo
+            en el momento.
           </li>
           <li>
             <strong>Mensajes de contacto guardados:</strong> 365 días; pasado ese plazo el sitio los
