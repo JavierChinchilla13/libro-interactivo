@@ -43,7 +43,7 @@ function waitNote(job: NotificationJob): string | null {
   if (!active(job)) return null;
   if (isFuture(job.notBefore)) return `Sale desde el ${when(job.notBefore)}.`;
   if (job.pausedUntil && isFuture(job.pausedUntil))
-    return `Se acabó el cupo de correos: sigue solo el ${when(job.pausedUntil)}.`;
+    return `El envío sigue solo el ${when(job.pausedUntil)}.`;
   return null;
 }
 
@@ -77,35 +77,24 @@ function Progress({ job }: { job: NotificationJob }) {
   );
 }
 
-/** Cupo de hoy y del mes, y cuántos lectores están apuntados ahora. */
-function QuotaSummary({ preview }: { preview: NotificationPreview }) {
-  const { quota } = preview;
-  const items = [
-    { label: 'Apuntados a las novedades', value: preview.recipients },
-    { label: 'Correos para avisos hoy', value: quota.todayLeft },
-    { label: 'Correos para avisos este mes', value: quota.monthLeft },
-  ];
+/**
+ * A cuántos lectores llegaría un aviso ahora. Sin cifras de cupo ni límites (cambian con el plan de correo y se
+ * desactualizarían; el servidor los aplica por su cuenta).
+ */
+function AudienceSummary({ preview }: { preview: NotificationPreview }) {
+  const n = preview.recipients;
   return (
-    <section aria-labelledby="quota-title" className="admin-card flex flex-col gap-3">
-      <h2 id="quota-title" className="text-base font-semibold">
-        Cupo de correos
+    <section aria-labelledby="audience-title" className="admin-card flex flex-col gap-1">
+      <h2 id="audience-title" className="text-base font-semibold">
+        A quién llegan los avisos
       </h2>
-      <dl className="admin-stats grid gap-3 sm:grid-cols-3">
-        {items.map((item) => (
-          <div key={item.label} className="flex flex-col gap-0.5">
-            <dt className="text-sm text-muted">{item.label}</dt>
-            <dd className="text-2xl font-semibold tabular-nums">
-              {item.value.toLocaleString('es-CR')}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <p className="text-sm text-pretty text-muted">
-        El plan gratuito permite {quota.dailyLimit} correos al día y {quota.monthlyLimit} al mes. Se
-        guardan {quota.reserve} al día para los correos de la cuenta (recuperar la contraseña,
-        confirmar el correo, contacto). Si un aviso no cabe hoy, sigue solo al día siguiente; el día
-        cambia a las 6:00 p. m. de Costa Rica.
+      <p className="text-sm text-pretty">
+        Se enviará a <strong className="tabular-nums">{plural(n, 'lector', 'lectores')}</strong>{' '}
+        {pluralWord(n, 'apuntado', 'apuntados')} a las novedades.
       </p>
+      {preview.continuesNextDays ? (
+        <p className="text-sm text-pretty text-muted">El envío continuará los próximos días.</p>
+      ) : null}
     </section>
   );
 }
@@ -124,7 +113,7 @@ export function NotificationsPage() {
     staleTime: 0,
     refetchInterval: (query) => (query.state.data?.jobs.some(active) ? REFRESH_MS : false),
   });
-  const quota = useQuery({
+  const audience = useQuery({
     queryKey: keys.notificationPreview('post'),
     queryFn: () => notificationsApi.preview({ kind: 'post' }),
     staleTime: 0,
@@ -207,7 +196,7 @@ export function NotificationsPage() {
         subtitle="Los correos a los lectores apuntados a las novedades: cómo va cada envío."
       />
 
-      {quota.data ? <QuotaSummary preview={quota.data} /> : null}
+      {audience.data ? <AudienceSummary preview={audience.data} /> : null}
 
       {list.isError ? (
         <Alert title="No pudimos cargar los avisos">

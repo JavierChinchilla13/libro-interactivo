@@ -116,7 +116,7 @@ test.describe('avisos por correo de punta a punta', () => {
     const notify = author.getByRole('checkbox', {
       name: 'Avisar por correo a los lectores apuntados a las novedades',
     });
-    await expect(author.getByText(/Lo recibiría/)).toBeVisible();
+    await expect(author.getByText(/Se enviará a 1 lector/)).toBeVisible();
     await notify.click();
     await expect(notify).toBeChecked();
     await author.getByRole('button', { name: 'Publicar' }).click();

@@ -22,12 +22,10 @@ const EDITOR = { ...ADMIN, id: '670000000000000000000003', name: 'Editor', role:
 const POST_ID = '670000000000000000000050';
 const JOB_ID = '670000000000000000000070';
 
-const quota = { todayLeft: 80, monthLeft: 2540, reserve: 20, dailyLimit: 100, monthlyLimit: 3000 };
 const preview = (over: object = {}) => ({
   available: true,
   recipients: 12,
-  quota,
-  estimatedDays: 1,
+  continuesNextDays: false,
   existing: null,
   ...over,
 });
@@ -73,7 +71,7 @@ async function fillEvent() {
 }
 
 describe('casilla «Avisar por correo» al publicar una actualización', () => {
-  it('el administrador ve a quién llega y el cupo; al publicar con la casilla se pide el aviso', async () => {
+  it('el administrador ve a quién llega, sin cifras de cupo; al publicar con la casilla se pide el aviso', async () => {
     const { called } = mockApi(
       {
         'GET /api/admin/books': () => json({ books: [] }),
@@ -89,10 +87,12 @@ describe('casilla «Avisar por correo» al publicar una actualización', () => {
     await fillEvent();
     const box = await screen.findByLabelText(/Avisar por correo a los lectores apuntados/);
     expect(await screen.findByText(/12 lectores/)).toBeInTheDocument();
-    expect(screen.getByText(/Quedan/)).toHaveTextContent(
-      /Quedan 80 correos para avisos hoy y 2\s?540 este mes/,
-    );
-    expect(screen.getByText(/Con el cupo de hoy alcanza/)).toBeInTheDocument();
+    // Solo «Se enviará a N lectores»: ni correos que quedan, ni límites del plan, ni reserva.
+    expect(screen.getByText(/^Se enviará a/)).toHaveTextContent('Se enviará a 12 lectores.');
+    expect(
+      screen.queryByText(/Quedan|Queda |plan permite|reserva|al día|este mes|cupo/i),
+    ).toBeNull();
+    expect(screen.queryByText(/El envío continuará/)).toBeNull();
     await userEvent.click(box);
     await userEvent.click(screen.getByRole('button', { name: 'Publicar' }));
     await waitFor(() => expect(called(CREATE)).toHaveLength(1));
@@ -109,10 +109,10 @@ describe('casilla «Avisar por correo» al publicar una actualización', () => {
     );
   });
 
-  it('el resumen concuerda en número: «Lo recibiría 1 lector» y «Lo recibirían 12 lectores»', async () => {
+  it('el resumen concuerda en número: «Se enviará a 1 lector» y «Se enviará a 12 lectores»', async () => {
     for (const [recipients, text] of [
-      [1, 'Lo recibiría 1 lector apuntado a las novedades.'],
-      [12, 'Lo recibirían 12 lectores apuntados a las novedades.'],
+      [1, 'Se enviará a 1 lector.'],
+      [12, 'Se enviará a 12 lectores.'],
     ] as const) {
       mockApi(
         {
@@ -123,7 +123,7 @@ describe('casilla «Avisar por correo» al publicar una actualización', () => {
       );
       const { unmount } = renderAt('/admin/actualizaciones/nueva?plantilla=event');
       await fillEvent();
-      expect(await screen.findByText(/^Lo recibir/)).toHaveTextContent(text);
+      expect(await screen.findByText(/^Se enviará a/)).toHaveTextContent(text);
       unmount();
     }
   });
@@ -203,7 +203,7 @@ describe('casilla «Avisar por correo» al publicar una actualización', () => {
     expect(screen.getByLabelText(/Avisar por correo a los lectores apuntados/)).toBeDisabled();
   });
 
-  it('un editor no ve la casilla ni consulta el cupo (solo administradores)', async () => {
+  it('un editor no ve la casilla ni consulta a quién llega (solo administradores)', async () => {
     const { calls } = mockApi(
       { 'GET /api/admin/books': () => json({ books: [] }) },
       { session: EDITOR },
@@ -219,7 +219,7 @@ describe('casilla «Avisar por correo» al publicar una actualización', () => {
       {
         'GET /api/admin/books': () => json({ books: [adminBook] }),
         [`GET /api/admin/notifications/preview?kind=extra&bookId=${BOOK_ID}`]: () =>
-          json(preview({ recipients: 3, estimatedDays: 1 })),
+          json(preview({ recipients: 3 })),
       },
       { session: ADMIN },
     );
@@ -232,7 +232,7 @@ describe('casilla «Avisar por correo» al publicar una actualización', () => {
 describe('/admin/avisos', () => {
   const LIST = 'GET /api/admin/notifications';
 
-  it('lista los avisos con su avance y el cupo, y está en el menú del administrador', async () => {
+  it('lista los avisos con su avance y a cuántos lectores llegaría, y está en el menú del administrador', async () => {
     mockApi(
       {
         [LIST]: () =>
@@ -262,8 +262,10 @@ describe('/admin/avisos', () => {
     expect(screen.getByText('Enviando')).toBeInTheDocument();
     expect(screen.getByText('Terminado')).toBeInTheDocument();
     expect(screen.getByText('5 de 5 enviados')).toBeInTheDocument();
-    expect(await screen.findByText('130')).toBeInTheDocument();
-    expect(screen.getByText(/se guardan 20 al día/i)).toBeInTheDocument();
+    expect(await screen.findByText(/^Se enviará a/)).toHaveTextContent(
+      'Se enviará a 130 lectores apuntados a las novedades.',
+    );
+    expect(screen.queryByText(/se guardan|plan permite|Quedan|Cupo de correos|al día/i)).toBeNull();
     // Solo lo que sigue en marcha se puede cancelar.
     expect(screen.getAllByRole('button', { name: /^Cancelar/ })).toHaveLength(1);
     const nav = screen.getAllByRole('navigation')[0]!;
@@ -294,7 +296,34 @@ describe('/admin/avisos', () => {
     expect(await screen.findByText('Cancelado')).toBeInTheDocument();
   });
 
-  it('un aviso sin cupo dice cuándo sigue solo', async () => {
+  it('si el envío pasaría de un día, lo dice en una línea sin cifras, en el formulario y en Avisos', async () => {
+    const long = () => json(preview({ recipients: 130, continuesNextDays: true }));
+    mockApi(
+      {
+        'GET /api/admin/books': () => json({ books: [] }),
+        [NEW_PREVIEW]: long,
+        [LIST]: () => json({ jobs: [] }),
+      },
+      { session: ADMIN },
+    );
+    const first = renderAt('/admin/actualizaciones/nueva?plantilla=event');
+    await fillEvent();
+    expect(await screen.findByText(/^Se enviará a/)).toHaveTextContent(
+      'Se enviará a 130 lectores.',
+    );
+    expect(screen.getByText('El envío continuará los próximos días.')).toBeInTheDocument();
+    expect(screen.queryByText(/cupo|plan permite|se guardan|Quedan|al día/i)).toBeNull();
+    first.unmount();
+
+    renderAt('/admin/avisos');
+    expect(await screen.findByText(/^Se enviará a/)).toHaveTextContent(
+      'Se enviará a 130 lectores apuntados a las novedades.',
+    );
+    expect(screen.getByText('El envío continuará los próximos días.')).toBeInTheDocument();
+    expect(screen.queryByText(/cupo|plan permite|reserva|Quedan/i)).toBeNull();
+  });
+
+  it('un aviso en pausa dice cuándo sigue solo', async () => {
     const tomorrow = new Date(Date.now() + 6 * 3_600_000).toISOString();
     mockApi(
       {
@@ -305,7 +334,7 @@ describe('/admin/avisos', () => {
     );
     renderAt('/admin/avisos');
     expect(await screen.findByText('En pausa')).toBeInTheDocument();
-    expect(screen.getByText(/Se acabó el cupo de correos: sigue solo/)).toBeInTheDocument();
+    expect(screen.getByText(/El envío sigue solo el/)).toBeInTheDocument();
   });
 
   it('sin avisos explica cómo pedir uno', async () => {

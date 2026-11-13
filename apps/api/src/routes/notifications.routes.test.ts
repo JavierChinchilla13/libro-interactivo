@@ -127,7 +127,7 @@ describe('permisos: solo ADMIN', () => {
 });
 
 describe('vista previa y una sola vez por elemento', () => {
-  it('cuenta solo a los apuntados activos y muestra el cupo de hoy y del mes', async () => {
+  it('cuenta solo a los apuntados activos y no entrega cifras de cupo ni límites', async () => {
     const world = await staffWorld();
     await readers(3);
     const item = await post(world);
@@ -138,11 +138,39 @@ describe('vista previa y una sola vez por elemento', () => {
     expect(preview).toMatchObject({
       available: true,
       recipients: 3,
-      estimatedDays: 1,
+      continuesNextDays: false,
       existing: null,
     });
-    expect(preview.quota).toMatchObject({ reserve: 20, dailyLimit: 100, monthlyLimit: 3000 });
-    expect(preview.quota.todayLeft).toBeGreaterThan(0);
+    // La web no debe recibir (ni mostrar) los límites ni lo que queda de ellos: cambian con el plan de Resend.
+    expect(Object.keys(res.body as object).sort()).toEqual(
+      ['available', 'continuesNextDays', 'existing', 'recipients'].sort(),
+    );
+    expect(JSON.stringify(res.body)).not.toMatch(
+      /quota|todayLeft|monthLeft|dailyLimit|monthlyLimit|reserve/,
+    );
+  });
+
+  it('continuesNextDays solo se enciende si por los límites configurados el envío pasaría de un día', async () => {
+    // Con 22 al día y 20 de reserva quedan 2 para avisos hoy: 3 apuntados no caben hoy.
+    const tight = await staffWorld({
+      env: { MAIL_DAILY_LIMIT: '22', MAIL_TRANSACTIONAL_RESERVE: '20' },
+    });
+    await readers(3);
+    const body = notificationPreviewSchema.parse(
+      (await tight.admin.get('/api/admin/notifications/preview?kind=post').expect(200)).body,
+    );
+    expect(body).toMatchObject({ recipients: 3, continuesNextDays: true });
+    expect(Object.keys(body)).not.toContain('quota');
+  });
+
+  it('sin apuntados no hay envío que continúe, aunque el cupo sea chico', async () => {
+    const world = await staffWorld({
+      env: { MAIL_DAILY_LIMIT: '22', MAIL_TRANSACTIONAL_RESERVE: '20' },
+    });
+    const body = notificationPreviewSchema.parse(
+      (await world.admin.get('/api/admin/notifications/preview?kind=post').expect(200)).body,
+    );
+    expect(body).toMatchObject({ recipients: 0, continuesNextDays: false });
   });
 
   it('un borrador no se puede avisar (409); un elemento que no existe da 404', async () => {

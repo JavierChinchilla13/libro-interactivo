@@ -1,4 +1,15 @@
-import type { MailQuota } from '@libro/shared';
+/**
+ * Cupo de correos que les queda hoy y este mes a los avisos (después de la reserva de los transaccionales). Es de uso
+ * interno del servidor: no sale en ninguna respuesta (los límites cambian con el plan de Resend).
+ */
+export interface MailQuota {
+  todayLeft: number;
+  monthLeft: number;
+  /** Reserva diaria para los correos de la cuenta (recuperar contraseña, avisos de respaldo, contacto…). */
+  reserve: number;
+  dailyLimit: number;
+  monthlyLimit: number;
+}
 import type { Clock } from '../lib/clock.js';
 import type { Logger } from '../lib/logger.js';
 import { MailUsage } from '../models/MailUsage.js';
