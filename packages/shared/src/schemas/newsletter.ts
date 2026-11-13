@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ADULT_AGE } from '../legal.js';
 import { ageFromBirth, type BirthMonth } from '../age.js';
+import { birthSchema } from './auth.js';
 
 /**
  * Avisos por correo con novedades de la autora (actualizaciones y capítulos extra). Opcionales y solo para mayores de
@@ -9,6 +10,10 @@ import { ageFromBirth, type BirthMonth } from '../age.js';
 
 /** Edad mínima para apuntarse a los avisos (con la fecha de nacimiento guardada). */
 export const NEWSLETTER_MIN_AGE = ADULT_AGE;
+
+/** Lo que se le dice a quien llega a apuntarse sin fecha de nacimiento guardada (antes de pedirle el mes y el año). */
+export const NEWSLETTER_NEEDS_BIRTH_MESSAGE =
+  'Para apuntarte necesitamos tu mes y año de nacimiento: los correos de novedades son solo para mayores de 18 años. Solo guardamos el mes y el año si cumples ese requisito.';
 
 export const NEWSLETTER_LABEL = 'Quiero recibir correos con novedades de la autora';
 export const NEWSLETTER_MINOR_MESSAGE =
@@ -30,8 +35,13 @@ export type NewsletterStatus = z.infer<typeof newsletterStatusSchema>;
 
 export const newsletterStateSchema = z.object({
   status: newsletterStatusSchema,
-  /** Si puede apuntarse (mayor de 18 con fecha de nacimiento guardada). */
+  /**
+   * Si puede apuntarse: mayor de 18 con fecha de nacimiento guardada, o una cuenta SIN fecha (anterior al paso de edad),
+   * a la que se le pide el mes y el año al apuntarse (`needsBirth`). Es `false` para quien se sabe menor de 18.
+   */
   eligible: z.boolean(),
+  /** La cuenta no tiene fecha de nacimiento guardada: al apuntarse hay que mandarla (`birth`). */
+  needsBirth: z.boolean().default(false),
   subscribedAt: z.string().optional(),
   /** Desde cuándo espera la confirmación (`pending`). */
   pendingSince: z.string().optional(),
@@ -43,7 +53,14 @@ export const newsletterStateSchema = z.object({
 });
 export type NewsletterState = z.infer<typeof newsletterStateSchema>;
 
-export const updateNewsletterRequestSchema = z.object({ subscribed: z.boolean() });
+/**
+ * Apuntarse o darse de baja. `birth` (mes y año) solo cuenta para apuntarse una cuenta sin fecha guardada: el servidor
+ * la valida igual que en el registro y, si la edad no alcanza 18, no guarda nada. Si la cuenta ya tiene fecha, se ignora.
+ */
+export const updateNewsletterRequestSchema = z.object({
+  subscribed: z.boolean(),
+  birth: birthSchema.optional(),
+});
 export type UpdateNewsletterRequest = z.infer<typeof updateNewsletterRequestSchema>;
 
 /** Respuesta «No, gracias» a la invitación del panel («Sí» usa `updateNewsletterRequestSchema`). */

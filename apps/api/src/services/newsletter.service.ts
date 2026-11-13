@@ -1,7 +1,10 @@
 import {
+  ADULT_AGE,
   LEGAL_VERSION,
   NEWSLETTER_MINOR_MESSAGE,
   canSubscribeToNewsletter,
+  checkBirth,
+  type BirthMonth,
   type NewsletterState,
 } from '@libro/shared';
 import type { Types } from 'mongoose';
@@ -38,7 +41,8 @@ export interface NewsletterDeps {
 }
 
 const NO_BIRTH_MESSAGE =
-  'Tu cuenta no tiene fecha de nacimiento guardada: no podemos comprobar que tengas 18 años o más.';
+  'Para apuntarte necesitamos tu mes y año de nacimiento: los correos de novedades son solo para mayores de 18 años.';
+const INVALID_BIRTH_MESSAGE = 'Revisa tu fecha de nacimiento.';
 const CONFIRM_INVALID = 'El enlace no es válido o ya caducó. Vuelve a apuntarte desde tu cuenta.';
 
 function birthOf(user: UserDoc) {
@@ -59,10 +63,15 @@ export function createNewsletterService(deps: NewsletterDeps) {
   function stateOf(user: UserDoc): NewsletterState {
     const n = user.newsletter;
     const status = n?.status === 'subscribed' || n?.status === 'pending' ? n.status : 'none';
-    const eligible = user.status === 'active' && canSubscribeToNewsletter(birthOf(user), clock());
+    const birth = birthOf(user);
+    // Una cuenta sin fecha (anterior al paso de edad) puede apuntarse: se le pide el mes y el año en ese momento.
+    const needsBirth = user.status === 'active' && birth === undefined;
+    const eligible =
+      needsBirth || (user.status === 'active' && canSubscribeToNewsletter(birth, clock()));
     return {
       status,
       eligible,
+      needsBirth,
       // Invitación única: nunca a quien ya se apuntó, pidió apuntarse o se dio de baja, ni a quien ya respondió.
       invitation: eligible && !n?.status && !n?.invitationAnsweredAt,
       ...(status === 'subscribed' && n?.subscribedAt
@@ -82,10 +91,46 @@ export function createNewsletterService(deps: NewsletterDeps) {
     return user;
   }
 
-  async function optIn(userId: string | Types.ObjectId, source: NewsletterSource) {
+  /**
+   * Guarda el mes y el año de una cuenta SIN fecha, solo si la persona tiene 18 o más. Si no alcanza (también si
+   * es menor de 16) no se guarda nada: misma regla de privacidad que el registro. Si la cuenta ya tiene fecha, no se toca
+   * (la que mande el cliente se ignora).
+   */
+  async function saveDeclaredBirth(
+    user: UserDoc,
+    declared: BirthMonth | undefined,
+  ): Promise<BirthMonth> {
+    if (!declared) throw new AppError('VALIDATION', NO_BIRTH_MESSAGE);
+    const now = clock();
+    const check = checkBirth(declared, now);
+    if (!check.valid) throw new AppError('VALIDATION', INVALID_BIRTH_MESSAGE);
+    if (check.age < ADULT_AGE) throw new AppError('VALIDATION', NEWSLETTER_MINOR_MESSAGE);
+    await User.updateOne(
+      { _id: user._id, birthYear: { $exists: false } },
+      {
+        $set: {
+          birthYear: declared.year,
+          birthMonth: declared.month,
+          guardianAuthorized: false,
+          birthDeclaredAt: now,
+          birthDeclaredVersion: LEGAL_VERSION,
+        },
+      },
+    );
+    // Si otra petición la guardó antes, manda la que ya estaba.
+    const stored = birthOf(await activeUser(user._id));
+    if (!stored) throw new AppError('VALIDATION', NO_BIRTH_MESSAGE);
+    return stored;
+  }
+
+  async function optIn(
+    userId: string | Types.ObjectId,
+    source: NewsletterSource,
+    declared?: BirthMonth,
+  ) {
     const user = await activeUser(userId);
-    const birth = birthOf(user);
-    if (!birth) throw new AppError('VALIDATION', NO_BIRTH_MESSAGE);
+    let birth = birthOf(user);
+    if (!birth) birth = await saveDeclaredBirth(user, declared);
     if (!canSubscribeToNewsletter(birth, clock())) {
       throw new AppError('VALIDATION', NEWSLETTER_MINOR_MESSAGE);
     }
@@ -181,8 +226,12 @@ export function createNewsletterService(deps: NewsletterDeps) {
     },
 
     /** Desde la cuenta: apuntarse (con confirmación si hace falta) o darse de baja. */
-    async setFromAccount(userId: string, subscribed: boolean): Promise<NewsletterState> {
-      if (subscribed) return optIn(userId, 'account');
+    async setFromAccount(
+      userId: string,
+      subscribed: boolean,
+      birth?: BirthMonth,
+    ): Promise<NewsletterState> {
+      if (subscribed) return optIn(userId, 'account', birth);
       await optOut(userId, 'account');
       return stateOf(await activeUser(userId));
     },

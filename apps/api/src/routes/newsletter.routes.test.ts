@@ -56,7 +56,12 @@ describe('alta desde el registro', () => {
       .post('/api/auth/register')
       .send({ ...NEW_ACCOUNT, ...ADULT_CONSENT })
       .expect(201);
-    expect(await stateOf(agent)).toEqual({ status: 'none', eligible: true, invitation: false });
+    expect(await stateOf(agent)).toEqual({
+      status: 'none',
+      eligible: true,
+      needsBirth: false,
+      invitation: false,
+    });
     const stored = await User.findOne({ email: 'lola@ejemplo.com' }).lean();
     expect(stored?.newsletter?.invitationAnsweredAt).toBeInstanceOf(Date);
     expect(stored?.newsletter?.status).toBeUndefined();
@@ -76,7 +81,12 @@ describe('alta desde el registro', () => {
     expect(await stateOf(agent)).toMatchObject({ eligible: false, invitation: false });
     // Con el tiempo cumple 18: ahora sí puede apuntarse y la invitación le sale (nunca vio la casilla).
     await User.updateOne({ _id: stored?._id }, { $set: { birthYear: 1990 } });
-    expect(await stateOf(agent)).toEqual({ status: 'none', eligible: true, invitation: true });
+    expect(await stateOf(agent)).toEqual({
+      status: 'none',
+      eligible: true,
+      needsBirth: false,
+      invitation: true,
+    });
   });
 
   it('con la casilla y el correo sin comprobar: queda pendiente y llega un enlace de un solo uso', async () => {
@@ -167,7 +177,12 @@ describe('alta desde el registro', () => {
       .post('/api/auth/google')
       .send({ credential: 'c'.repeat(40), profile: ADULT_CONSENT })
       .expect(200);
-    expect(await stateOf(agent)).toEqual({ status: 'none', eligible: true, invitation: false });
+    expect(await stateOf(agent)).toEqual({
+      status: 'none',
+      eligible: true,
+      needsBirth: false,
+      invitation: false,
+    });
     expect(
       (await User.findOne({ email: 'gil@ejemplo.com' }).lean())?.newsletter?.invitationAnsweredAt,
     ).toBeInstanceOf(Date);
@@ -228,7 +243,12 @@ describe('la casilla de la cuenta', () => {
   it('correo comprobado: apuntarse es inmediato y darse de baja también', async () => {
     const harness = createTestHarness();
     const { agent } = await adult(harness, { verified: true });
-    expect(await stateOf(agent)).toEqual({ status: 'none', eligible: true, invitation: true });
+    expect(await stateOf(agent)).toEqual({
+      status: 'none',
+      eligible: true,
+      needsBirth: false,
+      invitation: true,
+    });
     const on = await agent.put('/api/me/newsletter').send({ subscribed: true }).expect(200);
     expect(newsletterStateSchema.parse(on.body).status).toBe('subscribed');
     const off = await agent.put('/api/me/newsletter').send({ subscribed: false }).expect(200);
@@ -273,7 +293,7 @@ describe('la casilla de la cuenta', () => {
     expect((await stateOf(agent)).status).toBe('pending');
   });
 
-  it('menores y cuentas sin fecha de nacimiento no pueden apuntarse (el servidor decide)', async () => {
+  it('quien se sabe menor de 18 no puede apuntarse (el servidor decide)', async () => {
     const harness = createTestHarness();
     const minor = await adult(harness, {
       email: 'menor@ejemplo.com',
@@ -284,13 +304,6 @@ describe('la casilla de la cuenta', () => {
     const res = await minor.agent.put('/api/me/newsletter').send({ subscribed: true });
     expect(res.status).toBe(400);
     expect(res.body.error.message).toBe(NEWSLETTER_MINOR_MESSAGE);
-
-    await createUser({ email: 'sinfecha@ejemplo.com' });
-    const noBirth = await loginAgent(harness.app, 'sinfecha@ejemplo.com');
-    expect((await stateOf(noBirth)).eligible).toBe(false);
-    const res2 = await noBirth.put('/api/me/newsletter').send({ subscribed: true });
-    expect(res2.status).toBe(400);
-    expect(res2.body.error.message).toMatch(/fecha de nacimiento/);
   });
 
   it('pide sesión, valida el cuerpo y sigue protegida por el mismo origen', async () => {
@@ -457,6 +470,7 @@ describe('invitación única del panel', () => {
     expect(newsletterStateSchema.parse(res.body)).toEqual({
       status: 'none',
       eligible: true,
+      needsBirth: false,
       invitation: false,
     });
     expect(await answeredAt(user._id)).toBeInstanceOf(Date);
@@ -548,7 +562,7 @@ describe('invitación única del panel', () => {
     expect(await stateOf(b.agent)).toMatchObject({ status: 'none', invitation: false });
   });
 
-  it('menores y cuentas sin fecha de nacimiento no la ven y «No, gracias» no les guarda nada', async () => {
+  it('quien se sabe menor de 18 no la ve y «No, gracias» no le guarda nada', async () => {
     const harness = createTestHarness();
     const minor = await adult(harness, {
       email: 'menor@ejemplo.com',
@@ -557,12 +571,24 @@ describe('invitación única del panel', () => {
     expect(await stateOf(minor.agent)).toMatchObject({ eligible: false, invitation: false });
     await minor.agent.put('/api/me/newsletter/invitation').send(DECLINE).expect(200);
     expect(await answeredAt(minor.user._id)).toBeUndefined();
+  });
 
+  it('una cuenta anterior, sin fecha de nacimiento, sí la ve; «No, gracias» la da por respondida sin guardar ninguna fecha', async () => {
+    const harness = createTestHarness();
     const noBirth = await createUser({ email: 'sinfecha@ejemplo.com' });
     const agent = await loginAgent(harness.app, 'sinfecha@ejemplo.com');
-    expect(await stateOf(agent)).toMatchObject({ eligible: false, invitation: false });
+    expect(await stateOf(agent)).toEqual({
+      status: 'none',
+      eligible: true,
+      needsBirth: true,
+      invitation: true,
+    });
     await agent.put('/api/me/newsletter/invitation').send(DECLINE).expect(200);
-    expect(await answeredAt(noBirth._id)).toBeUndefined();
+    expect(await answeredAt(noBirth._id)).toBeInstanceOf(Date);
+    expect((await stateOf(agent)).invitation).toBe(false);
+    const stored = await User.findById(noBirth._id).lean();
+    expect(stored?.birthYear).toBeUndefined();
+    expect(stored?.birthDeclaredAt).toBeUndefined();
   });
 
   it('pide sesión, valida el cuerpo y sigue protegida por el mismo origen', async () => {
