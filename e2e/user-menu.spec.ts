@@ -43,7 +43,8 @@ test.describe('menú de usuario (celular y escritorio)', () => {
     expect(overflow).toBe(false);
 
     await trigger.click();
-    await expect(page.getByRole('menuitem', { name: 'Ajustes' })).toBeFocused();
+    // El foco va a la primera opción: «Ver sitio» (las zonas van primero, para todos los roles).
+    await expect(page.getByRole('menuitem', { name: 'Ver sitio' })).toBeFocused();
     const box = await page.getByRole('menu').boundingBox();
     const viewport = page.viewportSize();
     expect(box && viewport && box.x >= 0 && box.x + box.width <= viewport.width).toBe(true);
@@ -128,7 +129,7 @@ test.describe('menú de usuario (celular y escritorio)', () => {
       'Salir',
     ]);
     await expect(page.getByRole('menuitem', { name: 'Admin' })).toHaveCount(0);
-    await expect(page.getByRole('menuitem', { current: 'page' })).toHaveText('Mi panel');
+    await expect(page.locator('[role="menuitem"][aria-current="page"]')).toHaveText('Mi panel');
     // Sale al sitio sin cerrar la sesión.
     await page.getByRole('menuitem', { name: 'Ver sitio' }).click();
     await expect(page).toHaveURL(/\/$/);
