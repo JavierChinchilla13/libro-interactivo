@@ -37,6 +37,7 @@ export interface UserMenuItem {
   group?: string;
 }
 
+/** «Admin» es solo del equipo; «Ver sitio» y «Mi panel» son de todas las cuentas (un lector también sale al sitio sin cerrar sesión). */
 const STAFF: readonly Role[] = ['EDITOR', 'ADMIN'];
 
 export const USER_MENU_ITEMS: readonly UserMenuItem[] = [
@@ -45,7 +46,6 @@ export const USER_MENU_ITEMS: readonly UserMenuItem[] = [
     label: 'Ver sitio',
     to: '/',
     zone: 'site',
-    roles: STAFF,
     group: 'zonas',
   },
   {
@@ -53,7 +53,6 @@ export const USER_MENU_ITEMS: readonly UserMenuItem[] = [
     label: 'Mi panel',
     to: '/panel',
     zone: 'panel',
-    roles: STAFF,
     group: 'zonas',
   },
   {

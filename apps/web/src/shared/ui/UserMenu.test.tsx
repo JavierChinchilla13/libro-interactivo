@@ -60,9 +60,12 @@ describe('UserMenu en el panel', { timeout: 30_000 }, () => {
     await user.click(button);
     expect(button).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('menu', { name: 'Menú de usuario' })).toBeInTheDocument();
-    const [first, second] = screen.getAllByRole('menuitem');
-    expect(first).toHaveTextContent('Ajustes');
-    expect(second).toHaveTextContent('Salir');
+    // Un lector también tiene las zonas del sitio y del panel (sin «Admin»), en el mismo orden que el equipo.
+    const [first, second, third, fourth] = screen.getAllByRole('menuitem');
+    expect(first).toHaveTextContent('Ver sitio');
+    expect(second).toHaveTextContent('Mi panel');
+    expect(third).toHaveTextContent('Ajustes');
+    expect(fourth).toHaveTextContent('Salir');
     expect(first).toHaveFocus();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('menu')).toBeNull();
@@ -77,16 +80,20 @@ describe('UserMenu en el panel', { timeout: 30_000 }, () => {
     const button = await trigger('Lectora Prueba');
     button.focus();
     await user.keyboard('{ArrowDown}');
-    const [ajustes, salir] = screen.getAllByRole('menuitem');
+    const [sitio, panel, ajustes, salir] = screen.getAllByRole('menuitem');
+    expect(sitio).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
+    expect(panel).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
     expect(ajustes).toHaveFocus();
     await user.keyboard('{ArrowDown}');
     expect(salir).toHaveFocus();
     await user.keyboard('{ArrowDown}');
-    expect(ajustes).toHaveFocus();
+    expect(sitio).toHaveFocus();
     await user.keyboard('{End}');
     expect(salir).toHaveFocus();
     await user.keyboard('{Home}');
-    expect(ajustes).toHaveFocus();
+    expect(sitio).toHaveFocus();
     await user.keyboard('{ArrowUp}');
     expect(salir).toHaveFocus();
     await user.keyboard('{Tab}');
@@ -110,7 +117,7 @@ describe('UserMenu en el panel', { timeout: 30_000 }, () => {
     const user = userEvent.setup();
     (await trigger('Lectora Prueba')).focus();
     await user.keyboard('{ArrowUp}');
-    expect(screen.getAllByRole('menuitem')[1]).toHaveFocus();
+    expect(screen.getAllByRole('menuitem')[3]).toHaveFocus();
   });
 
   it('un clic fuera lo cierra', async () => {
@@ -156,7 +163,7 @@ describe('UserMenu en el panel', { timeout: 30_000 }, () => {
     expect(button.querySelector('.user-menu-avatar')).toHaveTextContent('AP');
     await user.click(button);
     expect(document.querySelector('.user-menu-who-name')).toHaveTextContent(name);
-    expect(screen.getAllByRole('menuitem')).toHaveLength(2);
+    expect(screen.getAllByRole('menuitem')).toHaveLength(4);
   });
 
   it('en celular lleva el primer nombre (decorativo) y el nombre accesible sigue siendo el completo', async () => {
