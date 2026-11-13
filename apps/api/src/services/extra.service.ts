@@ -16,6 +16,15 @@ import { sanitizeRichHtml } from '../lib/sanitize.js';
 import { Book } from '../models/Book.js';
 import { Extra } from '../models/Extra.js';
 import { ExtraAccess } from '../models/ExtraAccess.js';
+import { NotificationJob } from '../models/NotificationJob.js';
+import type { Logger } from '../lib/logger.js';
+import {
+  auditDeletion,
+  blockedError,
+  notArchivedError,
+  notDeletableError,
+  type Noun,
+} from './lifecycle.js';
 import type { StorageProvider } from '../providers/storage/StorageProvider.js';
 import type { ProgressService } from './progress.service.js';
 
@@ -69,6 +78,7 @@ export interface ExtraDeps {
   storage: StorageProvider;
   progress: ProgressService;
   clock: Clock;
+  logger?: Logger;
 }
 
 /**
@@ -307,7 +317,62 @@ export function createExtraService(deps: ExtraDeps) {
     };
   }
 
-  return { createUploadUrl, list, get, create, replace, preview, listForReader, open };
+  // --- Archivar, restaurar y eliminar (ver `lifecycle.ts`) -------------------------------------------------------
+
+  const NOUN: Noun = { name: 'capítulo extra', feminine: false };
+
+  /** Reversible: deja de verse para los lectores. */
+  async function archive(id: string): Promise<ExtraResponse> {
+    await mustFind(id);
+    await Extra.updateOne({ _id: id }, { $set: { status: 'archived' } });
+    return get(id);
+  }
+
+  /** Vuelve a borrador: nada reaparece para los lectores sin publicarse a propósito. */
+  async function restore(id: string): Promise<ExtraResponse> {
+    const extra = await mustFind(id);
+    if (extra.status !== 'archived') throw notArchivedError(NOUN);
+    await Extra.updateOne({ _id: id, status: 'archived' }, { $set: { status: 'draft' } });
+    return get(id);
+  }
+
+  /**
+   * Definitivo. Solo lo archivado o en borrador, y nunca si ya se avisó por correo ni si ya lo abrieron lectores (se
+   * conserva ese registro). El archivo del extra se borra del almacenamiento privado, como ya ocurre cuando se reemplaza.
+   */
+  async function remove(id: string, actorId: string): Promise<void> {
+    const extra = await mustFind(id);
+    if (extra.status === 'published') throw notDeletableError(NOUN);
+    if (await NotificationJob.exists({ kind: 'extra', refId: id })) {
+      throw blockedError(
+        'Este capítulo extra ya se avisó por correo: se conserva el registro de ese envío, así que no se puede eliminar. Déjalo archivado.',
+      );
+    }
+    if (await ExtraAccess.exists({ extraId: id })) {
+      throw blockedError(
+        'Este capítulo extra ya lo abrieron lectores: se conserva su registro, así que no se puede eliminar. Déjalo archivado.',
+      );
+    }
+    const result = await Extra.deleteOne({ _id: id, status: { $in: ['draft', 'archived'] } });
+    if (result.deletedCount === 0) throw notDeletableError(NOUN);
+    const key = extra.file?.storageKey;
+    if (key) await storage.remove(key).catch(() => undefined);
+    auditDeletion(deps.logger, { entity: 'extra', id, title: extra.title, actorId });
+  }
+
+  return {
+    createUploadUrl,
+    list,
+    get,
+    create,
+    replace,
+    preview,
+    listForReader,
+    open,
+    archive,
+    restore,
+    remove,
+  };
 }
 
 export type ExtraService = ReturnType<typeof createExtraService>;

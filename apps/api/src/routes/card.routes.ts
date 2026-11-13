@@ -15,6 +15,8 @@ import type { Guards } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 
+import { mountLifecycle } from './lifecycle.js';
+
 /**
  * `/admin/cards`: SOLO administradores (las cartas son secretos hasta que se abren con su QR: ni siquiera los editores
  * ven su lista). Cada imagen pide su propia firma (hasta 12 por carta): tiene su cupo.
@@ -43,6 +45,7 @@ export function createAdminCardRouter(
     validate({ params: cardParamsSchema, body: cardInputSchema }),
     controller.replace,
   );
+  mountLifecycle(router, { path: '/:cardId', params, handlers: controller, guards });
   return router;
 }
 

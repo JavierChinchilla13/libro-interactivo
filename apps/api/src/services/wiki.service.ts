@@ -13,6 +13,15 @@ import { sanitizeRichHtml } from '../lib/sanitize.js';
 import { escapeRegex, letterOf, normalizeName } from '../lib/text.js';
 import { Book } from '../models/Book.js';
 import { Quiz } from '../models/Quiz.js';
+import { QuizVersion } from '../models/QuizVersion.js';
+import type { Logger } from '../lib/logger.js';
+import {
+  auditDeletion,
+  blockedError,
+  notArchivedError,
+  notDeletableError,
+  type Noun,
+} from './lifecycle.js';
 import { WikiEntry } from '../models/WikiEntry.js';
 
 type EntryLean = NonNullable<Awaited<ReturnType<typeof loadLean>>>;
@@ -62,7 +71,7 @@ export interface WikiListFilter {
  * Wiki unificada (panel): personajes, campos y poderes, lugares y glosario con un solo CRUD.
  * Se archiva en lugar de borrar. El bloqueo por progreso se aplica al servir al lector (fase 9).
  */
-export function createWikiService() {
+export function createWikiService(deps: { logger?: Logger } = {}) {
   function conflict(error: unknown): never {
     if (isDuplicateKey(error) && duplicateKeyFields(error).includes('slug')) {
       throw new AppError('CONFLICT', 'Ya existe una entrada con ese slug en este tipo y libro');
@@ -211,7 +220,62 @@ export function createWikiService() {
     return list({ kind: request.kind, ...(request.bookId ? { bookId: request.bookId } : {}) });
   }
 
-  return { list, get, create, replace, reorder };
+  // --- Archivar, restaurar y eliminar (ver `lifecycle.ts`) -------------------------------------------------------
+
+  const NOUN: Noun = { name: 'entrada', feminine: true };
+
+  /** Reversible: deja de verse en la wiki pública. */
+  async function archive(id: string): Promise<WikiEntryResponse> {
+    await get(id);
+    await WikiEntry.updateOne({ _id: id }, { $set: { status: 'archived' } });
+    return get(id);
+  }
+
+  /** Vuelve a borrador: nada reaparece en la wiki sin publicarse a propósito. */
+  async function restore(id: string): Promise<WikiEntryResponse> {
+    const entry = await loadLean(id);
+    if (!entry) throw new AppError('NOT_FOUND', 'No encontramos esa entrada');
+    if (entry.status !== 'archived') throw notArchivedError(NOUN);
+    await WikiEntry.updateOne({ _id: id, status: 'archived' }, { $set: { status: 'draft' } });
+    return get(id);
+  }
+
+  /**
+   * Definitivo. Solo lo archivado o en borrador, y nunca si algo depende de la entrada: poderes de un campo, otras
+   * entradas que la enlazan o un quiz que usa el campo de poder en un resultado.
+   */
+  async function remove(id: string, actorId: string): Promise<void> {
+    const entry = await loadLean(id);
+    if (!entry) throw new AppError('NOT_FOUND', 'No encontramos esa entrada');
+    if (entry.status === 'published') throw notDeletableError(NOUN);
+    const powers = await WikiEntry.countDocuments({ parentId: id });
+    if (powers > 0) {
+      throw blockedError(
+        `Este campo tiene ${powers === 1 ? 'un poder' : `${powers} poderes`}: elimínalos o pásalos a otro campo primero. Mientras tanto, déjalo archivado.`,
+      );
+    }
+    const linking = await WikiEntry.countDocuments({ links: id, _id: { $ne: id } });
+    if (linking > 0) {
+      throw blockedError(
+        `${linking === 1 ? 'Otra entrada enlaza' : `Otras ${linking} entradas enlazan`} a esta: quita esos enlaces primero. Mientras tanto, déjala archivada.`,
+      );
+    }
+    if (entry.kind === 'power_field') {
+      const used =
+        (await Quiz.exists({ 'draft.results.fieldSlug': entry.slug })) ??
+        (await QuizVersion.exists({ 'results.fieldSlug': entry.slug }));
+      if (used) {
+        throw blockedError(
+          'Un quiz usa este campo de poder en uno de sus resultados: eliminarlo lo dejaría sin campo. Déjalo archivado.',
+        );
+      }
+    }
+    const result = await WikiEntry.deleteOne({ _id: id, status: { $in: ['draft', 'archived'] } });
+    if (result.deletedCount === 0) throw notDeletableError(NOUN);
+    auditDeletion(deps.logger, { entity: 'wikiEntry', id, title: entry.name, actorId });
+  }
+
+  return { list, get, create, replace, reorder, archive, restore, remove };
 }
 
 export type WikiService = ReturnType<typeof createWikiService>;

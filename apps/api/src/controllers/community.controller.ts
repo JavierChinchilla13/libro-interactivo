@@ -5,6 +5,8 @@ import { getInput } from '../middleware/validate.js';
 import type { FanArtService, ReviewService } from '../services/community.service.js';
 
 /** `/fan-arts` y `/reviews`: solo lo publicado (y, en fan arts, con el permiso del artista confirmado). */
+import { createLifecycleHandlers } from './lifecycle.js';
+
 export function createPublicCommunityController(fanArts: FanArtService, reviews: ReviewService) {
   const listFanArts: RequestHandler = async (_req, res) => {
     const { query } = getInput<unknown, { bookId?: string }>(res);
@@ -49,7 +51,7 @@ export function createAdminFanArtController(fanArts: FanArtService) {
     const { body, params } = getInput<FanArtInput, unknown, FanArtParams>(res);
     res.json(await fanArts.replace(params.fanArtId, body));
   };
-  return { list, get, create, replace };
+  return { list, get, create, replace, ...createLifecycleHandlers(fanArts, 'fanArtId') };
 }
 
 export function createAdminReviewController(reviews: ReviewService) {
@@ -69,5 +71,5 @@ export function createAdminReviewController(reviews: ReviewService) {
     const { body, params } = getInput<ReviewInput, unknown, ReviewParams>(res);
     res.json(await reviews.replace(params.reviewId, body));
   };
-  return { list, get, create, replace };
+  return { list, get, create, replace, ...createLifecycleHandlers(reviews, 'reviewId') };
 }

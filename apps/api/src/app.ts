@@ -208,7 +208,7 @@ export function createApp(
   const requireUnlocked = createRequireUnlocked(progress);
   const quizAdmin = createQuizAdminService({ clock });
   const books = createBookService();
-  const wiki = createWikiService();
+  const wiki = createWikiService({ logger: deps.logger });
   const images = deps.images ?? createImageProvider(deps.env);
   // Las URLs de contenido solo valen si son de nuestra cuenta de Cloudinary (y `demo` fuera de producción).
   configureCloudinaryAccount({
@@ -225,17 +225,17 @@ export function createApp(
     clock,
     progress,
   });
-  const extras = createExtraService({ storage, progress, clock });
-  const cards = createCardService({ images, clock });
+  const extras = createExtraService({ storage, progress, clock, logger: deps.logger });
+  const cards = createCardService({ images, clock, logger: deps.logger });
   const welcome = createWelcomeService({ clock });
   const publicBooks = createPublicBookService();
   const publicWiki = createPublicWikiService();
   const sitemap = createSitemapService({ publicWiki, clock, siteUrl: deps.env.APP_URL });
-  const posts = createPostService({ clock });
+  const posts = createPostService({ clock, logger: deps.logger });
   const adminUsers = createAdminUsersService({ auth, passwordReset: recovery });
   const adminMetrics = createAdminMetricsService({ clock });
-  const fanArts = createFanArtService();
-  const reviews = createReviewService();
+  const fanArts = createFanArtService({ logger: deps.logger });
+  const reviews = createReviewService({ logger: deps.logger });
   const siteSettings = createSiteSettingsService();
   const newsletter = createNewsletterService({
     clock,

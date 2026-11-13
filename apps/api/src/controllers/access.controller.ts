@@ -9,6 +9,8 @@ import type { ExtraService } from '../services/extra.service.js';
 /** Mensaje único para cualquier código que no sirva (inexistente, alterado, revocado, sin publicar). */
 const INVALID_CODE = 'Este código no es válido';
 
+import { createLifecycleHandlers } from './lifecycle.js';
+
 export function createAccessController(access: AccessService) {
   const resolve: RequestHandler = async (_req, res) => {
     const { params } = getInput<unknown, unknown, { token: string }>(res);
@@ -103,7 +105,15 @@ export function createAdminExtraController(extras: ExtraService) {
     const { params } = getInput<unknown, unknown, ExtraParams>(res);
     res.set('Cache-Control', 'no-store').json(await extras.preview(params.extraId));
   };
-  return { list, get, create, replace, uploadUrl, preview };
+  return {
+    list,
+    get,
+    create,
+    replace,
+    uploadUrl,
+    preview,
+    ...createLifecycleHandlers(extras, 'extraId'),
+  };
 }
 
 export function createReaderExtraController(extras: ExtraService) {

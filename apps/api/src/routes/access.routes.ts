@@ -23,6 +23,8 @@ import type { Guards } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 
+import { mountLifecycle } from './lifecycle.js';
+
 /** `/access`: resolver (público, mínimo) y canjear (con sesión) un código QR. Ambos con límite por IP. */
 export function createAccessRouter(
   controller: ReturnType<typeof createAccessController>,
@@ -86,6 +88,7 @@ export function createAdminExtraRouter(
     controller.replace,
   );
   router.get('/:extraId/preview', params, controller.preview);
+  mountLifecycle(router, { path: '/:extraId', params, handlers: controller, guards });
   return router;
 }
 

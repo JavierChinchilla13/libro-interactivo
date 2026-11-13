@@ -19,7 +19,16 @@ import { cardImageUrl } from '../lib/images.js';
 import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { Book } from '../models/Book.js';
 import { Card } from '../models/Card.js';
+import { AccessToken } from '../models/AccessToken.js';
 import { UserProgress } from '../models/UserProgress.js';
+import type { Logger } from '../lib/logger.js';
+import {
+  auditDeletion,
+  blockedError,
+  notArchivedError,
+  notDeletableError,
+  type Noun,
+} from './lifecycle.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
 
 type CardLean = NonNullable<Awaited<ReturnType<typeof findLean>>>;
@@ -75,6 +84,7 @@ function altOf(image: StoredImage, title: string, position: number, total: numbe
 export interface CardDeps {
   images: ImageProvider;
   clock: Clock;
+  logger?: Logger;
   /** Solo para pruebas: por defecto `CARDS_SHOW_LOCKED`. */
   showLocked?: boolean;
 }
@@ -348,7 +358,63 @@ export function createCardService(deps: CardDeps) {
     return toDetail(card, book.title);
   }
 
-  return { signUpload, list, get, create, replace, reorder, listForReader, openForReader };
+  // --- Archivar, restaurar y eliminar (ver `lifecycle.ts`) -------------------------------------------------------
+
+  const NOUN: Noun = { name: 'carta', feminine: true };
+
+  /** Reversible: deja de verse y su QR deja de abrirla. */
+  async function archive(id: string): Promise<AdminCard> {
+    await mustFind(id);
+    await Card.updateOne({ _id: id }, { $set: { status: 'archived' } });
+    return get(id);
+  }
+
+  /** Una carta no tiene borrador: restaurar la vuelve a publicar (se abre otra vez con su QR). */
+  async function restore(id: string): Promise<AdminCard> {
+    const card = await mustFind(id);
+    if (card.status !== 'archived') throw notArchivedError(NOUN);
+    await Card.updateOne({ _id: id, status: 'archived' }, { $set: { status: 'published' } });
+    return get(id);
+  }
+
+  /**
+   * Definitivo. Solo una carta archivada, y nunca si ya la abrieron lectores (se les quitaría lo que tienen en su cuenta)
+   * ni mientras su QR siga activo. No toca Cloudinary: las imágenes quedan para `cleanup:orphans` (que no limpia
+   * `libro/cartas`). Los QR ya revocados de la carta se borran con ella.
+   */
+  async function remove(id: string, actorId: string): Promise<void> {
+    const card = await mustFind(id);
+    if (card.status !== 'archived') throw notDeletableError(NOUN, false);
+    if (await UserProgress.exists({ unlocked: { $elemMatch: { kind: 'card', refId: id } } })) {
+      throw blockedError(
+        'Esta carta ya la abrieron lectores: eliminarla les quitaría lo que ya tienen en su cuenta. Déjala archivada (deja de verse y su QR deja de abrirla).',
+      );
+    }
+    const target = { 'target.kind': 'card' as const, 'target.refId': id };
+    if (await AccessToken.exists({ ...target, status: 'active' })) {
+      throw blockedError(
+        'Esta carta todavía tiene un código QR activo. Revócalo primero en «Códigos QR» y luego podrás eliminarla.',
+      );
+    }
+    const result = await Card.deleteOne({ _id: id, status: 'archived' });
+    if (result.deletedCount === 0) throw notDeletableError(NOUN, false);
+    await AccessToken.deleteMany({ ...target, status: 'revoked' });
+    auditDeletion(deps.logger, { entity: 'card', id, title: card.title, actorId });
+  }
+
+  return {
+    signUpload,
+    list,
+    get,
+    create,
+    replace,
+    reorder,
+    listForReader,
+    openForReader,
+    archive,
+    restore,
+    remove,
+  };
 }
 
 export type CardService = ReturnType<typeof createCardService>;

@@ -18,7 +18,16 @@ import { assertCloudinaryUrls } from '../lib/images.js';
 import { duplicateKeyFields, isDuplicateKey } from '../lib/mongoErrors.js';
 import { firstParagraphText, sanitizeRichHtml } from '../lib/sanitize.js';
 import { Book } from '../models/Book.js';
+import { NotificationJob } from '../models/NotificationJob.js';
 import { Post } from '../models/Post.js';
+import type { Logger } from '../lib/logger.js';
+import {
+  auditDeletion,
+  blockedError,
+  notArchivedError,
+  notDeletableError,
+  type Noun,
+} from './lifecycle.js';
 import { escapeRegex } from '../lib/text.js';
 
 type PostLean = NonNullable<Awaited<ReturnType<typeof loadLean>>>;
@@ -66,7 +75,7 @@ function toAdmin(post: PostLean): AdminPost {
  * (una fecha futura = programada, aún invisible). Los datos de cada plantilla se validan con su esquema en `shared`
  * (completos para publicar, flexibles para un borrador) y todo el HTML se sanea al guardar.
  */
-export function createPostService(deps: { clock: Clock }) {
+export function createPostService(deps: { clock: Clock; logger?: Logger }) {
   function conflict(error: unknown): never {
     if (isDuplicateKey(error) && duplicateKeyFields(error).includes('slug')) {
       throw new AppError('CONFLICT', 'Ya existe una actualización con ese slug');
@@ -207,7 +216,42 @@ export function createPostService(deps: { clock: Clock }) {
     return toDetail(post);
   }
 
-  return { adminList, adminGet, create, replace, publicList, publicGet };
+  // --- Archivar, restaurar y eliminar (ver `lifecycle.ts`) -------------------------------------------------------
+
+  const NOUN: Noun = { name: 'actualización', feminine: true };
+
+  /** Reversible: deja de verse en público. */
+  async function archive(id: string): Promise<AdminPost> {
+    await adminGet(id);
+    await Post.updateOne({ _id: id }, { $set: { status: 'archived' } });
+    return adminGet(id);
+  }
+
+  /** Vuelve a borrador: nada reaparece en público sin publicarse a propósito. */
+  async function restore(id: string): Promise<AdminPost> {
+    const post = await loadLean(id);
+    if (!post) throw new AppError('NOT_FOUND', 'No encontramos esa publicación');
+    if (post.status !== 'archived') throw notArchivedError(NOUN);
+    await Post.updateOne({ _id: id, status: 'archived' }, { $set: { status: 'draft' } });
+    return adminGet(id);
+  }
+
+  /** Definitivo. Solo lo archivado o en borrador, y nunca si ya se avisó por correo (se conserva ese registro). */
+  async function remove(id: string, actorId: string): Promise<void> {
+    const post = await loadLean(id);
+    if (!post) throw new AppError('NOT_FOUND', 'No encontramos esa publicación');
+    if (post.status === 'published') throw notDeletableError(NOUN);
+    if (await NotificationJob.exists({ kind: 'post', refId: id })) {
+      throw blockedError(
+        'Esta actualización ya se avisó por correo: se conserva el registro de ese envío, así que no se puede eliminar. Déjala archivada.',
+      );
+    }
+    const result = await Post.deleteOne({ _id: id, status: { $in: ['draft', 'archived'] } });
+    if (result.deletedCount === 0) throw notDeletableError(NOUN);
+    auditDeletion(deps.logger, { entity: 'post', id, title: post.title, actorId });
+  }
+
+  return { adminList, adminGet, create, replace, publicList, publicGet, archive, restore, remove };
 }
 
 export type PostService = ReturnType<typeof createPostService>;
