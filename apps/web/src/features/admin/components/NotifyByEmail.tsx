@@ -15,34 +15,21 @@ const count = (n: number, one: string, many: string) => `${num(n)} ${pluralWord(
 const when = (iso: string) =>
   new Date(iso).toLocaleString('es-CR', { dateStyle: 'long', timeStyle: 'short' });
 
-/** «Saldría hoy» / «tardaría unos 3 días» según el cupo que queda. */
-function timing(preview: NotificationPreview): string {
-  if (preview.estimatedDays <= 1) return 'Con el cupo de hoy alcanza para enviarlo todo hoy.';
-  return `Con el cupo que queda tardaría unos ${plural(preview.estimatedDays, 'día', 'días')} en salir todo (sigue solo cada día).`;
-}
-
-/** El resumen de a quién llega y cuánto cupo queda, en frases cortas. */
+/**
+ * A quién llega el aviso, en una frase corta. No lleva cifras de cupo ni límites (cambian con el plan de correo y se
+ * desactualizarían): solo cuántos lectores y, si por los límites del servidor tardaría más de un día, una línea sin cifras.
+ */
 function Summary({ kind, preview }: { kind: NotificationKind; preview: NotificationPreview }) {
-  const { quota } = preview;
   const n = preview.recipients;
-  const who = `${pluralWord(n, 'apuntado', 'apuntados')} a las novedades${
-    kind === 'extra' ? ` que ya ${pluralWord(n, 'terminó', 'terminaron')} este libro` : ''
-  }`;
+  const extra =
+    kind === 'extra' ? ` que ya ${pluralWord(n, 'terminó', 'terminaron')} este libro` : '';
   return (
     <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-pretty text-muted">
       <li>
-        Lo {pluralWord(preview.recipients, 'recibiría', 'recibirían')}{' '}
-        <strong className="tabular-nums">{count(preview.recipients, 'lector', 'lectores')}</strong>{' '}
-        {who}.
+        Se enviará a <strong className="tabular-nums">{count(n, 'lector', 'lectores')}</strong>
+        {extra}.
       </li>
-      <li>
-        {pluralWord(quota.todayLeft, 'Queda', 'Quedan')}{' '}
-        <span className="tabular-nums">{count(quota.todayLeft, 'correo', 'correos')}</span> para
-        avisos hoy y <span className="tabular-nums">{num(quota.monthLeft)}</span> este mes (el plan
-        permite {num(quota.dailyLimit)} al día y {num(quota.monthlyLimit)} al mes; se guardan{' '}
-        {quota.reserve} al día para los correos de la cuenta, como recuperar la contraseña).
-      </li>
-      {preview.recipients > 0 ? <li>{timing(preview)}</li> : null}
+      {preview.continuesNextDays ? <li>El envío continuará los próximos días.</li> : null}
     </ul>
   );
 }
@@ -112,7 +99,7 @@ export function NotifyByEmail({
     : nobody
       ? 'Ahora no hay lectores apuntados que lo puedan recibir: no se enviaría nada.'
       : published
-        ? 'Se pide al guardar. Sale de a poco, según el cupo de correos del día.'
+        ? 'Se pide al guardar. Sale de a poco.'
         : 'Se envía al publicar. Si solo guardas el borrador, todavía no se avisa.';
   const future = scheduledFor && scheduledFor.getTime() > now ? scheduledFor : null;
 
@@ -132,7 +119,7 @@ export function NotifyByEmail({
       ) : null}
       {preview.isError ? (
         <p className="text-sm text-danger" role="alert">
-          No pudimos calcular el cupo: {errorMessage(preview.error)}
+          No pudimos calcular a cuántos lectores llegaría: {errorMessage(preview.error)}
         </p>
       ) : preview.data ? (
         <Summary kind={kind} preview={preview.data} />

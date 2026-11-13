@@ -495,7 +495,7 @@ export function createNotificationService(deps: NotificationDeps) {
 
     async preview(query: NotificationPreviewQuery): Promise<NotificationPreview> {
       if (!query.refId) {
-        // Aún no guardado: a cuántos lectores llegaría al publicarlo y el cupo.
+        // Aún no guardado: a cuántos lectores llegaría al publicarlo y si tardaría más de un día.
         const quota = await deps.quota.quota();
         const recipients = (
           await recipientIds(
@@ -506,8 +506,7 @@ export function createNotificationService(deps: NotificationDeps) {
         return {
           available: true,
           recipients,
-          quota,
-          estimatedDays: estimateDays(quota, recipients),
+          continuesNextDays: recipients > 0 && estimateDays(quota, recipients) > 1,
           existing: null,
         };
       }
@@ -526,8 +525,7 @@ export function createNotificationService(deps: NotificationDeps) {
             ? { reason: 'Este elemento ya se avisó por correo.' }
             : {}),
         recipients,
-        quota,
-        estimatedDays: estimateDays(quota, recipients),
+        continuesNextDays: recipients > 0 && estimateDays(quota, recipients) > 1,
         ...(built.notBefore > clock() ? { notBefore: built.notBefore.toISOString() } : {}),
         existing: existing ? await view(existing) : null,
       };

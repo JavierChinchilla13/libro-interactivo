@@ -54,20 +54,9 @@ export const notificationListResponseSchema = z.object({
 });
 export type NotificationListResponse = z.infer<typeof notificationListResponseSchema>;
 
-/** Cupo de correos que les queda hoy y este mes a los avisos (después de la reserva de los transaccionales). */
-export const mailQuotaSchema = z.object({
-  todayLeft: z.number().int().nonnegative(),
-  monthLeft: z.number().int().nonnegative(),
-  /** Reserva diaria para los correos de la cuenta (recuperar contraseña, avisos de respaldo, contacto…). */
-  reserve: z.number().int().nonnegative(),
-  dailyLimit: z.number().int().positive(),
-  monthlyLimit: z.number().int().positive(),
-});
-export type MailQuota = z.infer<typeof mailQuotaSchema>;
-
 /**
  * Vista previa: con `refId`, la de un elemento ya guardado; sin él (una actualización o un extra que aún no se
- * guardó), cuántos lectores lo recibirían al publicarlo y el cupo. De un extra hace falta `bookId` (solo lo reciben
+ * guardó), a cuántos lectores llegaría al publicarlo. De un extra hace falta `bookId` (solo lo reciben
  * quienes terminaron ese libro).
  */
 export const notificationPreviewQuerySchema = z.object({
@@ -83,9 +72,11 @@ export const notificationPreviewSchema = z.object({
   reason: z.string().optional(),
   /** A cuántos lectores se enviaría ahora. */
   recipients: z.number().int().nonnegative(),
-  quota: mailQuotaSchema,
-  /** Días que tardaría en salir todo con el cupo de hoy (1 = hoy). */
-  estimatedDays: z.number().int().nonnegative(),
+  /**
+   * ¿El envío tardaría más de un día por los límites del servidor? Es lo único que se sabe del cupo: los límites y lo que
+   * queda de ellos cambian con el plan de correo y no se entregan a la web (que no debe mostrarlos).
+   */
+  continuesNextDays: z.boolean(),
   /** No sale antes (actualización programada). */
   notBefore: z.string().optional(),
   /** El aviso ya pedido para este elemento (cada elemento se avisa una sola vez). */
