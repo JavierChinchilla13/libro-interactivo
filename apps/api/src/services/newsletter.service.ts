@@ -203,16 +203,32 @@ export function createNewsletterService(deps: NewsletterDeps) {
     },
 
     /**
-     * Después de crear la cuenta o de entrar (registro, Google, volver a declarar): la casilla ya se validó con los
-     * consentimientos. Nunca hace fallar el alta: un problema aquí se anota y la persona puede apuntarse desde la cuenta.
+     * Después de declarar la edad y los consentimientos (registro, segundo paso de Google, volver a declarar). Quien
+     * marcó la casilla se apunta; quien la vio (mayor de edad) y no la marcó ya respondió que no: se guarda como
+     * respondida la invitación del panel para no volver a preguntarle. Las menores no ven la casilla ni la invitación.
+     * Nunca hace fallar el alta: un problema aquí se anota y la persona puede apuntarse desde la cuenta.
      */
-    async optInAfterSignup(userId: string, source: NewsletterSource): Promise<void> {
+    async afterSignup(
+      userId: string,
+      source: NewsletterSource,
+      checked: boolean | undefined,
+    ): Promise<void> {
       try {
-        await optIn(userId, source);
+        if (checked) {
+          await optIn(userId, source);
+          return;
+        }
+        const user = await activeUser(userId);
+        if (stateOf(user).eligible) {
+          await User.updateOne(
+            { _id: user._id },
+            { $min: { 'newsletter.invitationAnsweredAt': clock() } },
+          );
+        }
       } catch (error) {
         deps.logger.warn(
           { userId, reason: error instanceof Error ? error.message : String(error) },
-          'No se pudo apuntar a los correos de novedades después del alta',
+          'No se pudo guardar la respuesta a la casilla de novedades después del alta',
         );
       }
     },

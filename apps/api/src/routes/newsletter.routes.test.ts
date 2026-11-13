@@ -49,16 +49,34 @@ const stateOf = async (agent: request.Agent) =>
   newsletterStateSchema.parse((await agent.get('/api/me/newsletter').expect(200)).body);
 
 describe('alta desde el registro', () => {
-  it('sin la casilla no apunta a nadie', async () => {
+  it('sin la casilla no apunta a nadie y da por respondida la invitación (ya dijo que no)', async () => {
     const harness = createTestHarness();
     const agent = request.agent(harness.app);
     await agent
       .post('/api/auth/register')
       .send({ ...NEW_ACCOUNT, ...ADULT_CONSENT })
       .expect(201);
-    expect(await stateOf(agent)).toEqual({ status: 'none', eligible: true, invitation: true });
+    expect(await stateOf(agent)).toEqual({ status: 'none', eligible: true, invitation: false });
+    const stored = await User.findOne({ email: 'lola@ejemplo.com' }).lean();
+    expect(stored?.newsletter?.invitationAnsweredAt).toBeInstanceOf(Date);
+    expect(stored?.newsletter?.status).toBeUndefined();
     await harness.flush();
     expect(harness.mail.sent).toHaveLength(0);
+  });
+
+  it('de 16 a 17 años no ve la casilla: no queda respondida y la invitación sale al cumplir 18', async () => {
+    const harness = createTestHarness();
+    const agent = request.agent(harness.app);
+    await agent
+      .post('/api/auth/register')
+      .send({ ...NEW_ACCOUNT, ...MINOR })
+      .expect(201);
+    const stored = await User.findOne({ email: 'lola@ejemplo.com' }).lean();
+    expect(stored?.newsletter?.invitationAnsweredAt).toBeUndefined();
+    expect(await stateOf(agent)).toMatchObject({ eligible: false, invitation: false });
+    // Con el tiempo cumple 18: ahora sí puede apuntarse y la invitación le sale (nunca vio la casilla).
+    await User.updateOne({ _id: stored?._id }, { $set: { birthYear: 1990 } });
+    expect(await stateOf(agent)).toEqual({ status: 'none', eligible: true, invitation: true });
   });
 
   it('con la casilla y el correo sin comprobar: queda pendiente y llega un enlace de un solo uso', async () => {
@@ -131,6 +149,29 @@ describe('alta desde el registro', () => {
       'google',
     );
   });
+
+  it('con Google y la casilla sin marcar: no se apunta y la invitación queda respondida', async () => {
+    const profile: GoogleProfile = { email: 'gil@ejemplo.com', emailVerified: true, name: 'Gil' };
+    const google: GoogleVerifier = { verify: async () => profile };
+    const harness = createTestHarness({ google });
+    const agent = request.agent(harness.app);
+    // Primer paso: sin perfil todavía no hay cuenta ni respuesta.
+    const first = await agent
+      .post('/api/auth/google')
+      .send({ credential: 'c'.repeat(40) })
+      .expect(200);
+    expect(first.body.status).toBe('needs_profile');
+    expect(await User.countDocuments()).toBe(0);
+    // Segundo paso: vio la casilla (adulto) y no la marcó.
+    await agent
+      .post('/api/auth/google')
+      .send({ credential: 'c'.repeat(40), profile: ADULT_CONSENT })
+      .expect(200);
+    expect(await stateOf(agent)).toEqual({ status: 'none', eligible: true, invitation: false });
+    expect(
+      (await User.findOne({ email: 'gil@ejemplo.com' }).lean())?.newsletter?.invitationAnsweredAt,
+    ).toBeInstanceOf(Date);
+  });
 });
 
 describe('alta al volver a declarar los consentimientos en el ingreso', () => {
@@ -157,6 +198,29 @@ describe('alta al volver a declarar los consentimientos en el ingreso', () => {
       .expect(200);
     expect((await stateOf(agent)).status).toBe('subscribed');
     expect((await User.findById(user._id).lean())?.newsletter?.source).toBe('login');
+  });
+
+  it('al volver a declarar sin marcar la casilla queda respondida; un ingreso normal no la responde', async () => {
+    const harness = createTestHarness();
+    const user = await createUser({ email: 'vuelve@ejemplo.com' });
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { consentRequiredAt: new Date(), emailVerifiedAt: new Date() } },
+    );
+    const agent = request.agent(harness.app);
+    await agent
+      .post('/api/auth/login')
+      .send({ email: 'vuelve@ejemplo.com', password: PASSWORD, profile: ADULT_CONSENT })
+      .expect(200);
+    expect(await stateOf(agent)).toMatchObject({ status: 'none', invitation: false });
+    expect((await User.findById(user._id).lean())?.newsletter?.invitationAnsweredAt).toBeInstanceOf(
+      Date,
+    );
+
+    // Una cuenta que entra sin declarar nada (nunca vio la casilla) sigue recibiendo la invitación.
+    await adult(harness, { email: 'antigua@ejemplo.com' });
+    const old = await loginAgent(harness.app, 'antigua@ejemplo.com');
+    expect((await stateOf(old)).invitation).toBe(true);
   });
 });
 
