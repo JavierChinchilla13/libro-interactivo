@@ -87,6 +87,13 @@ userSchema.index(
   { unique: true, partialFilterExpression: { 'newsletter.confirmTokenHash': { $type: 'string' } } },
 );
 
+/**
+ * Filtro de «cuenta activa» para consultas directas y lecturas `lean`: todo menos «desactivada». Mongoose le pone
+ * `status: 'active'` a un documento que no trae el campo al leerlo, así que el ingreso y la cuenta lo ven activo; una
+ * consulta con `status: 'active'` no lo encontraría. Con este filtro coinciden.
+ */
+export const ACTIVE_ACCOUNT = { status: { $ne: 'disabled' } } as const;
+
 export type UserAttrs = InferSchemaType<typeof userSchema>;
 export type UserDoc = HydratedDocument<UserAttrs>;
 export const User = model('User', userSchema, 'users');
