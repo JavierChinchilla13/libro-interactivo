@@ -19,6 +19,13 @@ import { KIND_LABEL, LIST_TABS } from './wikiForm';
 
 type TabId = (typeof LIST_TABS)[number]['id'];
 
+/** El sujeto de la lista es «la entrada de la wiki» (femenino): «Publicada», «Archivada». */
+const ENTRY_STATUS_LABEL = {
+  draft: 'Borrador',
+  published: 'Publicada',
+  archived: 'Archivada',
+} as const;
+
 const LETTERS = [
   'A',
   'B',
@@ -173,7 +180,9 @@ export function WikiListPage() {
       id: 'status',
       header: 'Estado',
       role: 'status',
-      cell: (entry) => <StatusBadge status={entry.status} />,
+      cell: (entry) => (
+        <StatusBadge status={entry.status} label={ENTRY_STATUS_LABEL[entry.status]} />
+      ),
     },
   ];
 

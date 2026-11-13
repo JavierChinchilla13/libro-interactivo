@@ -57,7 +57,7 @@ test.describe('administración: usuarios, mensajes y borrado de cuenta (escritor
       .getByRole('dialog', { name: '¿Desactivar la cuenta?' })
       .getByRole('button', { name: 'Desactivar cuenta' })
       .click();
-    await expect(page.getByText('Desactivada').first()).toBeVisible();
+    await expect(page.getByText('Desactivado').first()).toBeVisible();
 
     // Una persona desactivada ya no puede ingresar.
     const other = await browser.newContext();
@@ -123,7 +123,7 @@ test.describe('administración: usuarios, mensajes y borrado de cuenta (escritor
     await page.getByLabel('Buscar por nombre o correo').fill(`Editor E2E ${stamp}`);
     await page.getByRole('button', { name: 'Buscar' }).click();
     await expect(
-      page.getByRole('row', { name: new RegExp(`Editor E2E ${stamp}.*Editor.*Activa`) }),
+      page.getByRole('row', { name: new RegExp(`Editor E2E ${stamp}.*Editor.*Activo`) }),
     ).toBeVisible();
     await page.getByRole('link', { name: `Editor E2E ${stamp}` }).click();
     // Es una cuenta de administración: se desactiva, no se elimina.

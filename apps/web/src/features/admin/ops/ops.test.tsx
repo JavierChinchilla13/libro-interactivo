@@ -123,10 +123,10 @@ describe('usuarios', () => {
     );
     renderAt('/admin/usuarios');
     expect(
-      await screen.findByRole('row', { name: /Lector Uno.*Lector.*Activa.*1 de 3/ }),
+      await screen.findByRole('row', { name: /Lector Uno.*Lector.*Activo.*1 de 3/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('row', { name: /Editor Dos.*Editor.*Desactivada.*0 de 3/ }),
+      screen.getByRole('row', { name: /Editor Dos.*Editor.*Desactivado.*0 de 3/ }),
     ).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText('Buscar por nombre o correo'), 'dos');
     await userEvent.click(screen.getByRole('button', { name: 'Buscar' }));
