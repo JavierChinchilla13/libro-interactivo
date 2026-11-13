@@ -90,7 +90,7 @@ async function openDownload(body: Buffer, password = ARCHIVE) {
 }
 
 describe('permisos', () => {
-  it('sin sesión 401; lectora y editora 403, para ver el estado y para descargar', async () => {
+  it('sin sesión 401; lector y editor 403, para ver el estado y para descargar', async () => {
     const { app, reader, editor } = await world();
     expect((await request(app).get('/api/admin/backups')).status).toBe(401);
     expect((await request(app).post('/api/admin/backups').send(BODY)).status).toBe(401);
@@ -186,7 +186,7 @@ describe('contraseña de la cuenta y límites', () => {
     expect(third.body.error.message).toMatch(/varios respaldos/);
   });
 
-  it('los límites de producción son 3 por hora y 10 por día, por usuaria', async () => {
+  it('los límites de producción son 3 por hora y 10 por día, por usuario', async () => {
     const { DEFAULT_LIMITS } = await import('../config/limits.js');
     expect(DEFAULT_LIMITS.backupHour).toEqual({ windowMs: 3_600_000, limit: 3, by: 'user' });
     expect(DEFAULT_LIMITS.backupDay).toEqual({ windowMs: DAY, limit: 10, by: 'user' });
@@ -241,7 +241,7 @@ describe('la descarga', () => {
     expect(String(record.by)).toBe(String(adminUser._id));
     expect(record.collections).toBe(manifest.collections.length);
 
-    // Aviso por correo a la administradora.
+    // Aviso por correo al administrador.
     await flush();
     expect(mail.sent).toHaveLength(1);
     expect(mail.sent[0]).toMatchObject({

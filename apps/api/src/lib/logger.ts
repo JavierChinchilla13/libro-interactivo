@@ -4,7 +4,7 @@ import type { Env } from '../config/env.js';
 export type { Logger };
 
 /**
- * Lo que nunca llega a los registros: contraseñas, tokens, cookies y la dirección IP de la lectora (ni en las cabeceras
+ * Lo que nunca llega a los registros: contraseñas, tokens, cookies y la dirección IP del lector (ni en las cabeceras
  * que la traen ni en la conexión). La política de privacidad dice que los registros del servidor no guardan la IP.
  */
 export const LOG_REDACTION = {

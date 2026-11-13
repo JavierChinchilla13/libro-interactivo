@@ -67,7 +67,7 @@ const completeGame = (
   });
 
 describe('progreso: acceso al juego', () => {
-  it('con el libro en borrador la lectora recibe 404 aunque la historia esté publicada; el personal sí entra', async () => {
+  it('con el libro en borrador el lector recibe 404 aunque la historia esté publicada; el personal sí entra', async () => {
     const service = createProgressService({ requireQrUnlock: false });
     const { admin, userId, book, bookId } = await world({ game: true });
     await Book.updateOne({ _id: book._id }, { $set: { status: 'draft' } });

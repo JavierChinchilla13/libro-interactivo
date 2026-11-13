@@ -58,7 +58,7 @@ describe('ficha pública del libro: sin títulos de los quizzes', () => {
     expectNoTitles(res.body, [quiz.id, story.id]);
   });
 
-  it('una lectora sin QR recibe exactamente lo mismo que el visitante', async () => {
+  it('un lector sin QR recibe exactamente lo mismo que el visitante', async () => {
     const { app, quiz, story } = await world();
     const anonymous = await request(app).get('/api/books/libro-1').expect(200);
     const agent = await loginAgent(app);
@@ -67,7 +67,7 @@ describe('ficha pública del libro: sin títulos de los quizzes', () => {
     expectNoTitles(res.body, [quiz.id, story.id]);
   });
 
-  it('una lectora con el QR del libro tampoco los recibe de la ficha pública; sus títulos salen de su avance', async () => {
+  it('un lector con el QR del libro tampoco los recibe de la ficha pública; sus títulos salen de su avance', async () => {
     const { app, user, book, quiz, story } = await world();
     await UserProgress.create({
       userId: user._id,

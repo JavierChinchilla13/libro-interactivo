@@ -1,7 +1,7 @@
 import { Schema, model, type InferSchemaType } from 'mongoose';
 
 /**
- * Una fila por destinataria de un aviso. **Sin correos**: se leen de `users` al enviar. El índice único `{jobId, userId}`
+ * Una fila por destinatario de un aviso. **Sin correos**: se leen de `users` al enviar. El índice único `{jobId, userId}`
  * impide dos correos del mismo aviso a la misma persona. `sending` + `batchKey` marcan un lote en curso: si el proceso se
  * cae a mitad, se reintenta con la misma clave de idempotencia (el proveedor no lo repite). Se borran 90 días después
  * de terminar el aviso.

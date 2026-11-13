@@ -5,6 +5,7 @@
  *   npm run repair:progress -w apps/api -- --user <id>        # solo una persona
  * Conviene hacer un respaldo de la base antes de usar `--apply` en producción.
  */
+import { plural, pluralWord } from '@libro/shared';
 import { parseEnv } from '../src/config/env.js';
 import { connectDb, disconnectDb } from '../src/db/connect.js';
 import { repairProgress } from '../src/maintenance/repairProgress.js';
@@ -23,13 +24,15 @@ try {
   );
   for (const entry of report.entries) {
     const parts = [
-      entry.missingQuizIds.length > 0 ? `faltan ${entry.missingQuizIds.length} quiz(zes)` : '',
+      entry.missingQuizIds.length > 0
+        ? `${pluralWord(entry.missingQuizIds.length, 'falta', 'faltan')} ${plural(entry.missingQuizIds.length, 'quiz', 'quizzes')}`
+        : '',
       entry.staleQuizIds.length > 0
-        ? `${entry.staleQuizIds.length} resultado(s) vigente(s) desactualizado(s)`
+        ? `${plural(entry.staleQuizIds.length, 'resultado vigente desactualizado', 'resultados vigentes desactualizados')}`
         : '',
       entry.bookCompletedAt ? `libro completado el ${entry.bookCompletedAt}` : '',
       entry.orphanQuizIds.length > 0
-        ? `${entry.orphanQuizIds.length} entrada(s) sin intento (no se borran)`
+        ? `${plural(entry.orphanQuizIds.length, 'entrada sin intento', 'entradas sin intento')} (no se borran)`
         : '',
     ].filter(Boolean);
     console.log(`- persona ${entry.userId} · libro ${entry.bookId}: ${parts.join('; ')}`);

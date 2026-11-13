@@ -38,7 +38,7 @@ const NEWS_FROM = 'Universo Memorias <novedades@ejemplo.com>';
 
 type World = Awaited<ReturnType<typeof staffWorld>>;
 
-/** Lectoras apuntadas (activas), más una pendiente de confirmar, una dada de baja y una desactivada que no cuentan. */
+/** Lectores apuntados (activos), más uno pendiente de confirmar, uno dado de baja y uno desactivado que no cuentan. */
 async function readers(count: number) {
   const ids: Types.ObjectId[] = [];
   for (let n = 0; n < count; n += 1) {
@@ -103,7 +103,7 @@ async function jobOf(world: World, id: string) {
 }
 
 describe('permisos: solo ADMIN', () => {
-  it('sin sesión 401; lectora y editora 403', async () => {
+  it('sin sesión 401; lector y editor 403', async () => {
     const world = await staffWorld();
     const id = new Types.ObjectId().toString();
     const calls: Array<[string, string]> = [
@@ -127,7 +127,7 @@ describe('permisos: solo ADMIN', () => {
 });
 
 describe('vista previa y una sola vez por elemento', () => {
-  it('cuenta solo a las apuntadas activas y muestra el cupo de hoy y del mes', async () => {
+  it('cuenta solo a los apuntados activos y muestra el cupo de hoy y del mes', async () => {
     const world = await staffWorld();
     await readers(3);
     const item = await post(world);
@@ -162,7 +162,7 @@ describe('vista previa y una sola vez por elemento', () => {
     expect(await NotificationJob.countDocuments()).toBe(0);
   });
 
-  it('doble clic o dos personas a la vez: un solo aviso, una sola fila por destinataria', async () => {
+  it('doble clic o dos personas a la vez: un solo aviso, una sola fila por destinatario', async () => {
     const world = await staffWorld();
     await readers(3);
     const item = await post(world);
@@ -192,7 +192,7 @@ describe('vista previa y una sola vez por elemento', () => {
 });
 
 describe('vista previa antes de guardar', () => {
-  it('sin refId: a cuántas apuntadas llegaría al publicar; de un extra, solo las que terminaron ese libro', async () => {
+  it('sin refId: a cuántos apuntados llegaría al publicar; de un extra, solo quienes terminaron ese libro', async () => {
     const world = await staffWorld();
     const [done] = await readers(2);
     const book = await createBook();
@@ -217,7 +217,7 @@ describe('vista previa antes de guardar', () => {
 });
 
 describe('el envío', () => {
-  it('un correo por apuntada, con remitente de novedades, cabeceras de baja en un clic y enlace de baja firmado', async () => {
+  it('un correo por apuntado, con remitente de novedades, cabeceras de baja en un clic y enlace de baja firmado', async () => {
     const world = await staffWorld({ env: { MAIL_FROM_NEWS: NEWS_FROM } });
     await readers(3);
     const item = await post(world);
@@ -239,7 +239,7 @@ describe('el envío', () => {
     expect(first.html).toContain('w_600,c_limit,q_auto,f_jpg');
     expect(first.text).toContain(`/actualizaciones/${item.slug}`);
     expect(first.text).toContain('[PLACEHOLDER] Un resumen corto de la novedad.');
-    // Cada correo lleva solo su destinataria; nada de las demás.
+    // Cada correo lleva solo su destinatario; nada de las demás.
     expect(first.html).not.toContain(sent[1]!.to);
     // Baja en un clic (RFC 8058): la dirección del encabezado lleva el token firmado de esa persona.
     expect(first.headers?.['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
@@ -267,7 +267,7 @@ describe('el envío', () => {
     expect((await MailUsage.findOne().lean())?.notifications).toBe(3);
   });
 
-  it('sin apuntadas el aviso termina enseguida sin enviar nada', async () => {
+  it('sin apuntados el aviso termina enseguida sin enviar nada', async () => {
     const world = await staffWorld();
     const item = await post(world);
     const job = createNotificationResponseSchema.parse((await notify(world, item._id)).body).job;
@@ -525,7 +525,7 @@ describe('cancelar', () => {
 });
 
 describe('capítulos extra (P8)', () => {
-  it('solo a las apuntadas que terminaron ese libro y sin el título ni nada del extra', async () => {
+  it('solo a los apuntados que terminaron ese libro y sin el título ni nada del extra', async () => {
     const world = await staffWorld();
     const [done1, done2, notDone] = await readers(3);
     const book = await createBook();

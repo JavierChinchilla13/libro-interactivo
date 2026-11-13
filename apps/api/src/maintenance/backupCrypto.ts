@@ -13,7 +13,7 @@ import { pipeline } from 'node:stream/promises';
 
 /**
  * Cifrado del archivo de respaldo que se descarga desde el panel: AES-256-GCM con una clave derivada por scrypt de la
- * contraseña que la administradora elige en el momento. Solo el módulo `crypto` de Node.
+ * contraseña que el administrador elige en el momento. Solo el módulo `crypto` de Node.
  *
  * Formato (`.tar.cifrado`):
  *   cabecera de 40 bytes  = «UMRESP» · versión (1) · 0 · log2(N) · r · p · 0 · sal (16) · iv (12)

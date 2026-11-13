@@ -74,7 +74,7 @@ export function mountQuizEditorRoutes(
   );
   router.get('/:quizId/versions', params, controller.versions);
   router.post('/:quizId/archive', params, controller.archive);
-  // Apariencia en vivo (regla 5, excepción acotada): no crea versión. Cualquier editora o administradora.
+  // Apariencia en vivo (regla 5, excepción acotada): no crea versión. Cualquier editor o administrador.
   router.get('/:quizId/appearance', params, controller.getAppearance);
   router.get('/:quizId/appearance/history', params, controller.appearanceHistory);
   router.put(
@@ -117,7 +117,7 @@ export function createAdminUploadRouter(
   limits: Limits,
 ): Router {
   const router = staffRouter(guards);
-  // Cada propósito tiene su cupo por usuaria; los fondos de quiz (videos) tienen un tope más bajo.
+  // Cada propósito tiene su cupo por usuario; los fondos de quiz (videos) tienen un tope más bajo.
   const purpose = (req: Request) =>
     String((req.body as { purpose?: unknown } | undefined)?.purpose);
   const general = createRateLimiter({ ...limits.uploadSign, keyPart: purpose });

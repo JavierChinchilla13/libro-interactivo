@@ -336,7 +336,7 @@ try {
         texts.map((text, i) => ({
           bookId: book._id,
           text,
-          authorName: `${MARK} Lectora ${i + 1}`,
+          authorName: `${MARK} Lector ${i + 1}`,
           rating: 5 - (i % 2),
           order: 500 + i,
           status: 'published',

@@ -60,7 +60,7 @@ const body = (over: Partial<PostInputPayload> = {}): PostInputPayload => ({
 });
 
 describe('permisos del panel', () => {
-  it('exige sesión y rol de editora o administradora en todas las rutas', async () => {
+  it('exige sesión y rol de editor o administrador en todas las rutas', async () => {
     const { app, reader, editor, admin } = await staffWorld();
     await request(app).get('/api/admin/posts').expect(401);
     await request(app).post('/api/admin/posts').send(body()).expect(401);

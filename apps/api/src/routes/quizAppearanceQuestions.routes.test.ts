@@ -45,7 +45,7 @@ const clip = (name: string) => ({
   alt: `Clip ${name}`,
 });
 
-/** Mundo con QR obligatorio (como producción), un quiz publicado y la lectora lista para desbloquearlo. */
+/** Mundo con QR obligatorio (como producción), un quiz publicado y el lector lista para desbloquearlo. */
 async function world(content = simpleContent({ title: 'Quiz de prueba' }), cloud = fakeImages()) {
   const w = await staffWorld({
     env: { ...CLOUD, REQUIRE_QR_UNLOCK: 'true' },
@@ -81,7 +81,7 @@ const customized = (stage: StagePayload) =>
   stage.questions.filter((q) => q.appearance).map((q) => q.id);
 
 describe('permisos y validación de los ajustes por pregunta', () => {
-  it('sin sesión 401, lectora 403, editora y administradora 200', async () => {
+  it('sin sesión 401, lector 403, editor y administrador 200', async () => {
     const { app, reader, editor, admin, url } = await world();
     const body = {
       appearance: { questions: { 'etapa-1-p1': { accent: '#ff8fb1' } } },
@@ -222,7 +222,7 @@ describe('auditoría y reversión', () => {
 });
 
 describe('entrega con la etapa (sesión y desbloqueo en cada petición)', () => {
-  it('la lectora desbloqueada recibe los ajustes de SUS preguntas junto a la etapa, con cabecera private no-store', async () => {
+  it('el lector desbloqueado recibe los ajustes de SUS preguntas junto a la etapa, con cabecera private no-store', async () => {
     const w = await world();
     await w.unlock();
     await w
@@ -302,7 +302,7 @@ describe('entrega con la etapa (sesión y desbloqueo en cada petición)', () => 
     // La introducción trae solo el general (nada de `questions`).
     const intro = await w.reader.get(`/api/quizzes/${w.id}`).expect(200);
     expect(JSON.stringify(intro.body)).not.toMatch(/de-pregunta|questions/);
-    // Y ningún otro endpoint de la lectora (ni público) la contiene.
+    // Y ningún otro endpoint del lector (ni público) la contiene.
     const others = [
       (await w.reader.get('/api/me/progress').query({ bookId: w.book.id }).expect(200)).body,
       (await w.reader.get('/api/me/library').expect(200)).body,

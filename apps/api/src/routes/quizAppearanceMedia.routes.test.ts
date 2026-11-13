@@ -158,7 +158,7 @@ describe('cambiar solo el texto alternativo de un video ya guardado', () => {
 
 describe('firma de subida para fondos de quiz', () => {
   const signature = '/api/admin/uploads/image-signature';
-  it('quiz-bg admite imagen y video, con su carpeta; las lectoras no pueden pedirla', async () => {
+  it('quiz-bg admite imagen y video, con su carpeta; los lectores no pueden pedirla', async () => {
     const { editor, reader, app } = await world({ env: CLOUD });
     const image = imageSignatureResponseSchema.parse(
       (await editor.post(signature).send({ purpose: 'quiz-bg' }).expect(200)).body,

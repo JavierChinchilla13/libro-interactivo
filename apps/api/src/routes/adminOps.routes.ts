@@ -24,14 +24,14 @@ import type { Guards } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 
-/** Todo esto es solo de administradoras (lista explícita: las editoras no entran). */
+/** Todo esto es solo de administradores (lista explícita: los editores no entran). */
 function adminOnly(guards: Guards): Router {
   const router = Router();
   router.use(guards.requireAuth, guards.requireRole('ADMIN'));
   return router;
 }
 
-/** `/admin/users`: lista, detalle, crear editoras/administradoras, cambiar rol o estado y eliminar lectores. */
+/** `/admin/users`: lista, detalle, crear editores/administradores, cambiar rol o estado y eliminar lectores. */
 export function createAdminUsersRouter(
   controller: ReturnType<typeof createAdminUsersController>,
   guards: Guards,
@@ -79,7 +79,7 @@ export function createAdminStatsRouter(
   return router;
 }
 
-/** `/admin/network-check`: diagnóstico de la cadena de proxies (para elegir `TRUST_PROXY_HOPS`). Solo administradoras. */
+/** `/admin/network-check`: diagnóstico de la cadena de proxies (para elegir `TRUST_PROXY_HOPS`). Solo administradores. */
 export function createAdminNetworkRouter(
   controller: ReturnType<typeof createAdminNetworkController>,
   guards: Guards,
@@ -92,7 +92,7 @@ export function createAdminNetworkRouter(
 /**
  * `/admin/backups`: estado y descarga del respaldo. La descarga es `POST` (la contraseña va en el cuerpo, nunca en la
  * URL). Primero se valida el cuerpo (un formulario mal llenado no gasta cupo) y después cuentan los límites por hora y
- * por día de la usuaria: una contraseña incorrecta sí gasta cupo.
+ * por día del usuario: una contraseña incorrecta sí gasta cupo.
  */
 export function createAdminBackupRouter(
   controller: ReturnType<typeof createAdminBackupController>,
@@ -113,8 +113,8 @@ export function createAdminBackupRouter(
 }
 
 /**
- * `/admin/notifications`: avisos por correo a las apuntadas (decisión P5: solo administradoras los envían y ven su
- * progreso). Pedir un aviso tiene su propio límite por usuaria.
+ * `/admin/notifications`: avisos por correo a los apuntados (decisión P5: solo administradores los envían y ven su
+ * progreso). Pedir un aviso tiene su propio límite por usuario.
  */
 export function createAdminNotificationsRouter(
   controller: ReturnType<typeof createNotificationController>,

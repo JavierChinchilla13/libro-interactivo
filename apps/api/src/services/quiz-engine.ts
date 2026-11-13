@@ -473,7 +473,7 @@ export function validateQuizContent(content: QuizContent): QuizValidation {
         error(
           'BRANCH_WITHOUT_STAGE',
           at.result(result.key),
-          'si la lectora obtiene este resultado, el quiz no sabe cómo seguir: crea una etapa que venga después con este resultado o marca su etapa como final',
+          'si el lector obtiene este resultado, el quiz no sabe cómo seguir: crea una etapa que venga después con este resultado o marca su etapa como final',
           `results.${result.key}`,
         );
       }

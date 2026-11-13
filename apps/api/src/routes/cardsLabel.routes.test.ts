@@ -27,7 +27,7 @@ describe('nombre de la sección de cartas (cardsLabel)', () => {
     expect(await publicLabel(app)).toBe('Hallazgos');
   });
 
-  it('una administradora lo cambia; sale en el sitio público, guardar otra sección no lo toca y vacío vuelve al de siempre', async () => {
+  it('un administrador lo cambia; sale en el sitio público, guardar otra sección no lo toca y vacío vuelve al de siempre', async () => {
     const { admin, app } = await staffWorld();
     const saved = siteSettingsResponseSchema.parse(
       (
@@ -77,7 +77,7 @@ describe('nombre de la sección de cartas (cardsLabel)', () => {
     expect(stored ?? '').not.toMatch(/<script|<img|onerror|<style/i);
   });
 
-  it('una editora no lo puede cambiar (403) y una lectora no entra al panel', async () => {
+  it('un editor no lo puede cambiar (403) y un lector no entra al panel', async () => {
     const { editor, reader } = await staffWorld();
     expect(
       (await editor.patch('/api/admin/site-settings').send({ cardsLabel: 'Reliquias' })).status,

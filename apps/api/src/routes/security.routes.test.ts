@@ -13,10 +13,10 @@ describe('piso de seguridad de /api/admin', () => {
     const { app, reader, editor, admin } = await staffWorld();
     for (const path of ['/api/admin/no-existe', '/api/admin/posts/x/y/z', '/api/admin']) {
       expect((await request(app).get(path)).status, `anónimo ${path}`).toBe(401);
-      expect((await reader.get(path)).status, `lectora ${path}`).toBe(403);
+      expect((await reader.get(path)).status, `lector ${path}`).toBe(403);
       // Con rol suficiente, lo que no existe es un 404 normal.
-      expect((await editor.get(path)).status, `editora ${path}`).toBe(404);
-      expect((await admin.get(path)).status, `administradora ${path}`).toBe(404);
+      expect((await editor.get(path)).status, `editor ${path}`).toBe(404);
+      expect((await admin.get(path)).status, `administrador ${path}`).toBe(404);
     }
   });
 
@@ -25,7 +25,7 @@ describe('piso de seguridad de /api/admin', () => {
     for (const method of ['post', 'put', 'patch', 'delete'] as const) {
       const path = '/api/admin/no-existe';
       expect((await request(app)[method](path).send({})).status, `${method} anónimo`).toBe(401);
-      expect((await reader[method](path).send({})).status, `${method} lectora`).toBe(403);
+      expect((await reader[method](path).send({})).status, `${method} lector`).toBe(403);
     }
   });
 });
@@ -130,7 +130,7 @@ describe('fuzzing: cuerpos hostiles nunca producen un 500', () => {
     }
   });
 
-  it('endpoints de lectora', async () => {
+  it('endpoints de lector', async () => {
     const { reader } = await staffWorld();
     for (const path of READER_WRITES) {
       for (const [name, body] of Object.entries(HOSTILE_BODIES)) {
@@ -143,7 +143,7 @@ describe('fuzzing: cuerpos hostiles nunca producen un 500', () => {
     }
   });
 
-  it('endpoints de administración (con sesión de administradora)', async () => {
+  it('endpoints de administración (con sesión de administrador)', async () => {
     const { admin } = await staffWorld();
     for (const path of ADMIN_WRITES) {
       for (const [name, body] of Object.entries(HOSTILE_BODIES)) {
@@ -252,7 +252,7 @@ describe('fuzzing: parámetros de ruta y de consulta', () => {
         const anon = await request(app).get(`${base}${q}`);
         expect(anon.status, `anónimo ${base}${q}`).toBeLessThan(500);
         const own = await reader.get(`${base}${q}`);
-        expect(own.status, `lectora ${base}${q}`).toBeLessThan(500);
+        expect(own.status, `lector ${base}${q}`).toBeLessThan(500);
       }
     }
   });

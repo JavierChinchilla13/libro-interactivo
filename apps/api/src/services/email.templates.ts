@@ -103,7 +103,7 @@ Puedes responder directamente a este correo: la respuesta le llegará a ${name}.
   return { subject: `Nuevo mensaje de contacto de ${name}`, html, text };
 }
 
-/** Aviso a la administradora cada vez que se descarga un respaldo con su cuenta (D9). */
+/** Aviso al administrador cada vez que se descarga un respaldo con su cuenta (D9). */
 export function backupDownloadedEmail(input: { name: string; at: Date }): RenderedEmail {
   const name = singleLine(input.name);
   const when = input.at.toLocaleString('es-CR', {

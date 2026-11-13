@@ -32,7 +32,7 @@ const FULL: QuizAppearanceInput = {
   introHtml: '<p>Una niebla espesa cubre el laboratorio.</p>',
 };
 
-/** Mundo con el desbloqueo por QR encendido (como en producción): la lectora solo ve lo que canjeó. */
+/** Mundo con el desbloqueo por QR encendido (como en producción): el lector solo ve lo que canjeó. */
 async function world(unlocked: boolean, snapshot?: QuizContent) {
   const w = await staffWorld({ env: { REQUIRE_QR_UNLOCK: 'true' } });
   const book = await createBook();
@@ -115,14 +115,14 @@ describe('la introducción del quiz entrega la apariencia', () => {
     expect(body.instructionsHtml).toBe('');
   });
 
-  it('es de esa lectora y no se guarda en cachés compartidas', async () => {
+  it('es de ese lector y no se guarda en cachés compartidas', async () => {
     const { reader, intro, save } = await world(true);
     await save(FULL);
     const res = await reader.get(intro).expect(200);
     expect(res.headers['cache-control']).toBe('private, no-store');
   });
 
-  it('las editoras y administradoras (que siempre pasan) la ven igual', async () => {
+  it('los editores y administradores (que siempre pasan) la ven igual', async () => {
     const { admin, editor, intro, save } = await world(false);
     await save(FULL);
     for (const agent of [admin, editor]) {
@@ -154,7 +154,7 @@ describe('un quiz bloqueado no entrega nada de su apariencia (regla 2)', () => {
     expect(JSON.stringify(start.body)).not.toMatch(/appearance|secreto-visual/i);
   });
 
-  it('un quiz que aún no se publicó (o archivado) sigue sin existir para la lectora', async () => {
+  it('un quiz que aún no se publicó (o archivado) sigue sin existir para el lector', async () => {
     const { reader, quiz, save, editor } = await world(true);
     await save(FULL);
     await editor.post(`/api/admin/quizzes/${quiz.id}/archive`).expect(200);
@@ -248,7 +248,7 @@ describe('sin fugas: la apariencia no sale por ningún otro payload y nada revel
     expect(JSON.stringify(finished)).not.toMatch(/appearance|secreto-visual/);
   });
 
-  it('otra lectora sin el QR sigue sin ver nada aunque otra sí lo canjeó', async () => {
+  it('otro lector sin el QR sigue sin ver nada aunque otra sí lo canjeó', async () => {
     const { intro, save, app } = await world(true);
     await save(FULL);
     await createUser({ email: 'otra@ejemplo.com' });

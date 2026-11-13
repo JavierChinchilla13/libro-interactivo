@@ -42,8 +42,8 @@ const toAdminUser = (user: UserLean, completedQuizzes: number): AdminUser => ({
 });
 
 /**
- * Administración de usuarios (solo administradoras). Reglas: nadie cambia su propio rol ni se desactiva, **siempre
- * queda al menos una administradora activa**, solo se elimina a lectores (las cuentas de administración se
+ * Administración de usuarios (solo administradores). Reglas: nadie cambia su propio rol ni se desactiva, **siempre
+ * queda al menos un administrador activo**, solo se elimina a lectores (las cuentas de administración se
  * desactivan) y desactivar o cambiar el rol cierra las sesiones abiertas.
  */
 export function createAdminUsersService(deps: {
@@ -156,12 +156,12 @@ export function createAdminUsersService(deps: {
     return { user: toAdminUser(user, completedQuizzes), books: detail };
   }
 
-  /** Cuántas administradoras activas hay, sin contar a `exceptId`. */
+  /** Cuántos administradores activos hay, sin contar a `exceptId`. */
   async function otherActiveAdmins(exceptId: string): Promise<number> {
     return User.countDocuments({ role: 'ADMIN', status: 'active', _id: { $ne: exceptId } });
   }
 
-  /** Crea una cuenta de editora o administradora; la persona elige su contraseña con el enlace que recibe. */
+  /** Crea una cuenta de editor o administrador; la persona elige su contraseña con el enlace que recibe. */
   async function createStaff(actorId: string, input: CreateStaffUserRequest): Promise<AdminUser> {
     try {
       const user = await User.create({
@@ -201,7 +201,7 @@ export function createAdminUsersService(deps: {
       user.status === 'active' &&
       (role !== 'ADMIN' || status !== 'active');
     if (losesAdmin && (await otherActiveAdmins(id)) === 0) {
-      throw new AppError('VALIDATION', 'Debe quedar al menos una administradora activa');
+      throw new AppError('VALIDATION', 'Debe quedar al menos un administrador activo');
     }
     await User.updateOne({ _id: id }, { $set: { role: role as Role, status } });
     // Cierra las sesiones abiertas: el cambio aplica de inmediato.
@@ -212,7 +212,7 @@ export function createAdminUsersService(deps: {
     return toAdminUser(fresh, completed.get(id) ?? 0);
   }
 
-  /** Elimina la cuenta de una lectora (solo lectores: las cuentas de administración se desactivan). */
+  /** Elimina la cuenta de un lector (solo lectores: las cuentas de administración se desactivan). */
   async function remove(actorId: string, id: string): Promise<void> {
     const user = await loadUser(id);
     if (!user) throw new AppError('NOT_FOUND', 'No encontramos a esa persona');

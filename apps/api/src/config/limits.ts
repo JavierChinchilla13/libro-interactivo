@@ -13,25 +13,25 @@ export interface Limits {
   accessRedeem: RateLimitOptions;
   /** Informes de la política de contenido que mandan los navegadores (sin sesión; pueden venir varios por visita). */
   cspReport: RateLimitOptions;
-  /** Guardar o revertir la apariencia de un quiz (por usuaria). */
+  /** Guardar o revertir la apariencia de un quiz (por usuario). */
   appearanceWrite: RateLimitOptions;
-  /** Firmar subidas a Cloudinary (por usuaria y propósito). */
+  /** Firmar subidas a Cloudinary (por usuario y propósito). */
   uploadSign: RateLimitOptions;
-  /** Firmar subidas de imágenes de cartas (por usuaria): una firma por imagen, hasta 12 por carta. */
+  /** Firmar subidas de imágenes de cartas (por usuario): una firma por imagen, hasta 12 por carta. */
   cardUploadSign: RateLimitOptions;
   /** Firmar subidas de fondos de quiz (`quiz-bg`, videos de hasta 5 MB): tope más bajo. */
   uploadSignQuizBg: RateLimitOptions;
-  /** Descargar un respaldo desde el panel (por usuaria): por hora… */
+  /** Descargar un respaldo desde el panel (por usuario): por hora… */
   backupHour: RateLimitOptions;
   /** …y por día. */
   backupDay: RateLimitOptions;
-  /** Apuntarse o darse de baja desde la cuenta (por usuaria; cada alta sin correo comprobado manda un correo). */
+  /** Apuntarse o darse de baja desde la cuenta (por usuario; cada alta sin correo comprobado manda un correo). */
   newsletterAccount: RateLimitOptions;
   /** Confirmar el alta y darse de baja con el enlace del correo (sin sesión, por IP). */
   newsletterPublic: RateLimitOptions;
   /** Webhook de Resend (sin sesión, por IP). */
   webhook: RateLimitOptions;
-  /** Pedir un aviso por correo (por usuaria). */
+  /** Pedir un aviso por correo (por usuario). */
   notificationCreate: RateLimitOptions;
 }
 

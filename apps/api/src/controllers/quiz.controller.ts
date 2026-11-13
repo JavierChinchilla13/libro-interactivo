@@ -30,7 +30,7 @@ export function createQuizController(
   const startAttempt: RequestHandler = async (_req, res) => {
     const { params } = getInput<unknown, unknown, QuizParams>(res);
     const attempt = await quizzes.startAttempt(getAuth(res), params.quizId);
-    // La etapa lleva ajustes de apariencia propios de la lectora y su desbloqueo: ninguna caché compartida debe guardarla.
+    // La etapa lleva ajustes de apariencia propios del lector y su desbloqueo: ninguna caché compartida debe guardarla.
     res.set('Cache-Control', 'private, no-store');
     res.json(attempt);
   };

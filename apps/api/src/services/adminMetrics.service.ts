@@ -32,7 +32,7 @@ const toMessage = (message: MessageLean): AdminMessage => ({
 
 const DAY = 86_400_000;
 
-/** Bandeja de mensajes de contacto y estadísticas básicas (solo administradoras). Las pruebas (`isTest`) nunca cuentan. */
+/** Bandeja de mensajes de contacto y estadísticas básicas (solo administradores). Las pruebas (`isTest`) nunca cuentan. */
 export function createAdminMetricsService(deps: { clock: Clock }) {
   async function listMessages(query: AdminMessageListQuery): Promise<AdminMessageListResponse> {
     const filter =

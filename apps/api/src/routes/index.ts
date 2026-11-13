@@ -227,8 +227,8 @@ export function createApiRouter(deps: RouteDeps): Router {
       .set('Cache-Control', 'public, max-age=3600')
       .send(await deps.sitemap.build());
   });
-  // Piso de seguridad de TODO `/admin`: sin sesión no se entra, y una lectora recibe 403, aunque a un router nuevo se le
-  // olvide su propio guard. Los routers de solo administradoras exigen además `ADMIN` por su cuenta.
+  // Piso de seguridad de TODO `/admin`: sin sesión no se entra, y un lector recibe 403, aunque a un router nuevo se le
+  // olvide su propio guard. Los routers de solo administradores exigen además `ADMIN` por su cuenta.
   router.use('/admin', deps.guards.requireAuth, deps.guards.requireRole('EDITOR', 'ADMIN'));
   router.use(
     '/admin/posts',

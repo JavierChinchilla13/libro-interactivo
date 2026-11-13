@@ -77,7 +77,7 @@ const quizAttemptSchema = new Schema(
       ],
       default: undefined,
     },
-    /** Intento de prueba de una editora/administradora: no cuenta en progreso ni estadísticas. */
+    /** Intento de prueba de un editor/administrador: no cuenta en progreso ni estadísticas. */
     isTest: { type: Boolean, required: true, default: false },
     startedAt: { type: Date, required: true },
     completedAt: { type: Date },

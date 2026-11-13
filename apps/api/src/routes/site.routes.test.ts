@@ -108,7 +108,7 @@ describe('GET /api/books (público)', () => {
 });
 
 describe('mensaje de bienvenida', () => {
-  it('los ajustes del panel exigen sesión y rol de editora o administradora', async () => {
+  it('los ajustes del panel exigen sesión y rol de editor o administrador', async () => {
     const { app, reader, editor, admin } = await staffWorld();
     await request(app).get('/api/admin/site-settings').expect(401);
     expect((await reader.get('/api/admin/site-settings')).status).toBe(403);

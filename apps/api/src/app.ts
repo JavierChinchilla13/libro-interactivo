@@ -268,7 +268,7 @@ export function createApp(
   app.disable('x-powered-by');
   // Cuántos proxies de confianza hay delante (ver `TRUST_PROXY_HOPS`); de esto sale `req.ip`, la clave de los límites.
   app.set('trust proxy', deps.env.TRUST_PROXY_HOPS);
-  // Con Cloudflare delante, la IP de la lectora sale de `CF-Connecting-IP` (respaldo: los saltos de arriba).
+  // Con Cloudflare delante, la IP del lector sale de `CF-Connecting-IP` (respaldo: los saltos de arriba).
   app.use(createClientIpMiddleware(deps.env.TRUST_CLOUDFLARE_HEADER));
 
   app.use(

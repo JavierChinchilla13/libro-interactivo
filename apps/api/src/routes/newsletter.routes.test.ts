@@ -25,7 +25,7 @@ function confirmTokenFrom(text: string): string {
   return match[1];
 }
 
-/** Una lectora adulta con fecha de nacimiento guardada, con o sin el correo comprobado, ya con sesión. */
+/** Un lector adulto con fecha de nacimiento guardada, con o sin el correo comprobado, ya con sesión. */
 async function adult(
   harness: ReturnType<typeof createTestHarness>,
   options: { verified?: boolean; email?: string; birthYear?: number } = {},
@@ -115,7 +115,7 @@ describe('alta desde el registro', () => {
     expect(stored?.newsletter?.version).toMatch(/^\d{4}-\d{2}-\d+$/);
     expect(stored?.newsletter?.confirmTokenHash).toBeUndefined();
     expect(JSON.stringify(stored)).not.toContain(token);
-    // Confirmar los avisos NO comprueba el correo de la cuenta (no le quita a la dueña real la vía de recuperarla).
+    // Confirmar los avisos NO comprueba el correo de la cuenta (no le quita al dueño real la vía de recuperarla).
     expect(stored?.emailVerifiedAt).toBeUndefined();
   });
 
@@ -129,7 +129,7 @@ describe('alta desde el registro', () => {
     expect(await User.countDocuments()).toBe(0);
   });
 
-  it('con Google (correo comprobado) queda apuntada al instante, sin correo de confirmación', async () => {
+  it('con Google (correo comprobado) queda apuntado al instante, sin correo de confirmación', async () => {
     const profile: GoogleProfile = {
       email: 'gina@ejemplo.com',
       emailVerified: true,
@@ -460,7 +460,7 @@ describe('invitación única del panel', () => {
       invitation: false,
     });
     expect(await answeredAt(user._id)).toBeInstanceOf(Date);
-    // Sigue sin estar apuntada y sin recibir nada.
+    // Sigue sin estar apuntado y sin recibir nada.
     expect((await User.findById(user._id).lean())?.newsletter?.status).toBeUndefined();
     await harness.flush();
     expect(harness.mail.sent).toHaveLength(0);
@@ -494,7 +494,7 @@ describe('invitación única del panel', () => {
     });
   });
 
-  it('«Sí» con el correo comprobado: queda apuntada al instante y la invitación se da por respondida', async () => {
+  it('«Sí» con el correo comprobado: queda apuntado al instante y la invitación se da por respondida', async () => {
     const harness = createTestHarness();
     const { agent, user } = await adult(harness, { verified: true });
     const res = await agent.put('/api/me/newsletter').send({ subscribed: true }).expect(200);
@@ -531,7 +531,7 @@ describe('invitación única del panel', () => {
     expect(await stateOf(agent)).toMatchObject({ status: 'pending', invitation: false });
   });
 
-  it('quien ya está apuntada o ya se dio de baja (cuentas anteriores a la invitación) no la ve', async () => {
+  it('quien ya está apuntado o ya se dio de baja (cuentas anteriores a la invitación) no la ve', async () => {
     const harness = createTestHarness();
     const a = await adult(harness, { verified: true, email: 'apuntada@ejemplo.com' });
     await User.updateOne(

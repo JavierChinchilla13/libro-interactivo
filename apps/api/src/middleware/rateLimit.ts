@@ -7,7 +7,7 @@ export interface RateLimitOptions {
   limit: number;
   message?: string;
   /**
-   * Por quién se cuenta: por IP (por defecto) o por usuaria con sesión (rutas del panel: una editora que guarda sin
+   * Por quién se cuenta: por IP (por defecto) o por usuario con sesión (rutas del panel: un editor que guarda sin
    * parar no gasta el cupo de otra persona de la misma red). Sin sesión cae a la IP.
    */
   by?: 'ip' | 'user';

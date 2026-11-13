@@ -345,7 +345,7 @@ describe('flujo completo: crear → editar → validar → publicar → jugar', 
       hasUnpublishedChanges: false,
     });
 
-    // Una lectora juega la versión 1.
+    // Un lector juega la versión 1.
     const readerAgent = await loginAgent(app);
     const started = attemptResponseSchema.parse(
       (await readerAgent.post(`/api/quizzes/${quiz.id}/attempts`).expect(200)).body,
@@ -414,7 +414,7 @@ describe('flujo completo: crear → editar → validar → publicar → jugar', 
     expect(version?.instructionsHtml).toBe('<p>Hola</p>');
   });
 
-  it('un quiz sin publicar nunca es visible para las lectoras y «probar» exige publicar', async () => {
+  it('un quiz sin publicar nunca es visible para los lectores y «probar» exige publicar', async () => {
     const { reader, editor, create } = await setup();
     const quiz = await create();
     await editor.put(`/api/admin/quizzes/${quiz.id}/draft`).send(fullDraft()).expect(200);

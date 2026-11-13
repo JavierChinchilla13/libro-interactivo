@@ -427,9 +427,9 @@ describe('guards requireAuth / requireRole', () => {
     await createUser({ email: 'editora@ejemplo.com', role: 'EDITOR' });
     await createUser({ email: 'admin@ejemplo.com', role: 'ADMIN' });
 
-    const editora = await sessionFor(app, { email: 'editora@ejemplo.com' });
-    await editora.get('/api/prueba/contenido').expect(200);
-    await editora.get('/api/prueba/admin').expect(403);
+    const editor = await sessionFor(app, { email: 'editora@ejemplo.com' });
+    await editor.get('/api/prueba/contenido').expect(200);
+    await editor.get('/api/prueba/admin').expect(403);
 
     const admin = await sessionFor(app, { email: 'admin@ejemplo.com' });
     await admin.get('/api/prueba/admin').expect(200);

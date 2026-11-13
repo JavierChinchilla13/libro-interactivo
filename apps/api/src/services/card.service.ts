@@ -87,7 +87,7 @@ export interface CardViewer {
 
 /**
  * Cartas con QR. El panel (solo ADMIN) las crea con una imagen subida de forma firmada a Cloudinary; el servidor
- * genera el `public_id` (aleatorio, no adivinable) y verifica la imagen con Cloudinary antes de guardarla. La lectora
+ * genera el `public_id` (aleatorio, no adivinable) y verifica la imagen con Cloudinary antes de guardarla. El lector
  * solo recibe las cartas que ya abrió con su QR, y la URL de la imagen sale únicamente de estas respuestas (siempre
  * con `Cache-Control: private, no-store`): nunca de listas públicas, `GET /books*`, el mapa del sitio ni otras pantallas.
  */
@@ -245,7 +245,7 @@ export function createCardService(deps: CardDeps) {
     return list(request.bookId);
   }
 
-  // ----- Lectora -----
+  // ----- Lector -----
 
   /** Ids de las cartas que la persona abrió con su QR (siguen en la cuenta aunque el QR se revoque después). */
   async function openedIds(userId: string): Promise<Set<string>> {
@@ -293,8 +293,8 @@ export function createCardService(deps: CardDeps) {
   }
 
   /**
-   * Las cartas de la lectora: SOLO las abiertas (de las demás no sale ni el título, ni la imagen, ni cuántas hay, salvo
-   * que `CARDS_SHOW_LOCKED` se encienda). Una administradora ve todas las publicadas (modo prueba). Se archiva =
+   * Las cartas del lector: SOLO las abiertas (de las demás no sale ni el título, ni la imagen, ni cuántas hay, salvo
+   * que `CARDS_SHOW_LOCKED` se encienda). Un administrador ve todas las publicadas (modo prueba). Se archiva =
    * deja de verse; el libro debe estar publicado.
    */
   async function listForReader(viewer: CardViewer): Promise<ReaderCardsResponse> {
@@ -334,7 +334,7 @@ export function createCardService(deps: CardDeps) {
 
   /**
    * Una carta abierta, en grande. Se comprueba CADA vez: carta publicada, libro publicado y abierta por esta cuenta (o
-   * administradora). Cualquier otro caso es el mismo 404, para no revelar qué cartas existen.
+   * administrador). Cualquier otro caso es el mismo 404, para no revelar qué cartas existen.
    */
   async function openForReader(viewer: CardViewer, cardId: string): Promise<ReaderCardDetail> {
     const card = await findLean(cardId);

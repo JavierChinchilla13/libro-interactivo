@@ -122,7 +122,7 @@ describe('el limitador de ingreso con la cabecera de Cloudflare', () => {
     const blocked = await loginFrom(app, '203.0.113.7');
     expect(blocked.status).toBe(429);
     expect(apiErrorSchema.parse(blocked.body).error.code).toBe('RATE_LIMITED');
-    // Otra lectora, misma cadena interna de Render: su propio contador.
+    // Otro lector, misma cadena interna de Render: su propio contador.
     expect((await loginFrom(app, '198.51.100.9')).status).toBe(401);
     expect((await loginFrom(app, '198.51.100.9')).status).toBe(401);
     expect((await loginFrom(app, '198.51.100.9')).status).toBe(429);
@@ -152,7 +152,7 @@ describe('el limitador de ingreso con la cabecera de Cloudflare', () => {
     expect((await loginFrom(app, '192.0.2.44')).status).toBe(429);
   });
 
-  it('en IPv6 cuenta por la misma red /56 de la lectora', async () => {
+  it('en IPv6 cuenta por la misma red /56 del lector', async () => {
     const app = appWith();
     await loginFrom(app, '2800:4f0:1a2:ff00::1').expect(401);
     await loginFrom(app, '2800:4f0:1a2:ff00::2').expect(401);

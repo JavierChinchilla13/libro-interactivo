@@ -65,9 +65,9 @@ export interface PreparedBackup {
 }
 
 /**
- * Respaldo descargable desde el panel (solo administradoras). Reutiliza la exportación de `backup:db` (mismo formato:
+ * Respaldo descargable desde el panel (solo administradores). Reutiliza la exportación de `backup:db` (mismo formato:
  * un `.ndjson.gz` por colección y `manifiesto.json`, sin sesiones ni enlaces de recuperación), lo empaqueta en un
- * `.tar` y lo cifra con la contraseña que elige la administradora. Nada queda guardado en el servidor.
+ * `.tar` y lo cifra con la contraseña que elige el administrador. Nada queda guardado en el servidor.
  * Uno a la vez en todo el servidor.
  */
 export function createBackupDownloadService(deps: BackupDownloadDeps) {
@@ -131,7 +131,7 @@ export function createBackupDownloadService(deps: BackupDownloadDeps) {
       try {
         const user = await User.findById(userId);
         if (!user || user.status !== 'active' || user.role !== 'ADMIN') {
-          throw new AppError('FORBIDDEN', 'Solo una administradora puede descargar un respaldo.');
+          throw new AppError('FORBIDDEN', 'Solo un administrador puede descargar un respaldo.');
         }
         if (!(await verifyPassword(user.passwordHash, input.password))) {
           throw new AppError('VALIDATION', 'La contraseña no es correcta.');

@@ -9,7 +9,7 @@ import { ensureAdmin } from '../src/seed/ensureAdmin.js';
 
 const env = parseEnv();
 const email = process.env['SEED_ADMIN_EMAIL'];
-const name = process.env['SEED_ADMIN_NAME'] ?? 'Administradora';
+const name = process.env['SEED_ADMIN_NAME'] ?? 'Administrador';
 const password = process.env['SEED_ADMIN_PASSWORD'];
 
 if (!email || !password) {

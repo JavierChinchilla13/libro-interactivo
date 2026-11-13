@@ -19,7 +19,7 @@ async function logOf(headers: Record<string, string>) {
   return lines.join('\n');
 }
 
-describe('los registros no guardan la IP de la lectora', () => {
+describe('los registros no guardan la IP del lector', () => {
   it('redacta las cabeceras de IP y la dirección de la conexión', async () => {
     const log = await logOf({
       'CF-Connecting-IP': '203.0.113.7',
