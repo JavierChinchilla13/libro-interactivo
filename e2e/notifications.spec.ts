@@ -116,7 +116,7 @@ test.describe('avisos por correo de punta a punta', () => {
     const notify = author.getByRole('checkbox', {
       name: 'Avisar por correo a los lectores apuntados a las novedades',
     });
-    await expect(author.getByText(/Lo recibirían/)).toBeVisible();
+    await expect(author.getByText(/Lo recibiría/)).toBeVisible();
     await notify.click();
     await expect(notify).toBeChecked();
     await author.getByRole('button', { name: 'Publicar' }).click();
@@ -132,7 +132,7 @@ test.describe('avisos por correo de punta a punta', () => {
     const row = author.getByRole('row', { name: new RegExp(title) });
     await expect(row).toBeVisible();
     await expect(row.getByText('Terminado')).toBeVisible();
-    await expect(row.getByText(/\d+ de \d+ enviados/)).toBeVisible();
+    await expect(row.getByText(/\d+ de \d+ enviados?/)).toBeVisible();
 
     // 4. Se da de baja con el enlace del correo, sin sesión.
     const anon = await browser.newContext({ baseURL });

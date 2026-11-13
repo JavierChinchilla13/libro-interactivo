@@ -168,7 +168,7 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await dialog.getByRole('button', { name: '¡A la aventura!' }).click();
     await expect(dialog).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Hola, Lector E2E' })).toBeVisible();
-    await expect(page.getByText('0 de 1 experiencias abiertas en tu libro')).toBeVisible();
+    await expect(page.getByText('0 de 1 experiencia abierta en tu libro')).toBeVisible();
     // Los extras siguen cerrados y no revelan nada.
     await expect(page.getByText('Se abren al terminar un libro')).toBeVisible();
     await expect(page.getByText(seeded.extraTitle)).toHaveCount(0);
@@ -199,7 +199,7 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await page.getByRole('link', { name: 'Volver a mi panel' }).click();
 
     // 5) El panel refleja el avance y se abren los extras (libro completo).
-    await expect(page.getByText('1 de 1 experiencias abiertas en tu libro')).toBeVisible();
+    await expect(page.getByText('1 de 1 experiencia abierta en tu libro')).toBeVisible();
     // La tarjeta entera es el enlace: se abre pulsando en cualquier parte de ella (aquí, una esquina).
     const card = page.getByRole('article', { name: seeded.bookTitle });
     await expect(card.getByRole('link')).toHaveCount(1);
