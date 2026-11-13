@@ -85,6 +85,11 @@ describe('páginas legales', () => {
     // Qué se guarda de la respuesta, en «qué datos guardamos» y en «cuánto tiempo».
     const whole = document.body.textContent ?? '';
     expect(whole).toMatch(/guardamos solo la fecha de tu respuesta/);
+    // Cuentas anteriores sin fecha de nacimiento: se pide al apuntarse, y a quien es menor no se le guarda nada.
+    expect(whole).toMatch(/se la pedimos solo cuando quieres apuntarte a los correos de novedades/);
+    expect(whole).toMatch(/si eres menor, no guardamos nada/);
+    expect(text).toMatch(/al apuntarte te pedimos el mes y el año de nacimiento/);
+    expect(text).toMatch(/no guardamos nada y no te apuntamos/);
     expect(whole).toMatch(/la fecha en que respondiste a la invitación del panel/);
   });
 
