@@ -1,3 +1,4 @@
+import { plural } from '@libro/shared';
 import {
   createContext,
   memo,
@@ -46,8 +47,6 @@ import { anchorId, type QuizTarget } from './quizTarget';
  * (una pregunta quitada y agregada sin guardar tampoco reutiliza su número).
  */
 const ReservedIdsContext = createContext<readonly string[]>([]);
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 function stageLabel(draft: Draft, stage: DraftStage): string {
   const parent = draft.stages.find((candidate) => candidate.id === stage.conditionStageId);
@@ -137,7 +136,7 @@ function StagesTabBody({
               >
                 <span>{stageLabel(draft, item)}</span>
                 <span className="text-xs font-normal text-muted">
-                  {item.questions.length} preguntas
+                  {plural(item.questions.length, 'pregunta', 'preguntas')}
                 </span>
               </button>
             </li>

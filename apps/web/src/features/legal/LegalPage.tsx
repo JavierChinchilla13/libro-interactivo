@@ -21,12 +21,12 @@ export function Placeholder({ children }: { children: ReactNode }) {
   return <mark className={placeholderTag}>[PLACEHOLDER: {children}]</mark>;
 }
 
-/** Lo que se muestra mientras la administradora no escribe el nombre legal de la titular en el panel. */
+/** Lo que se muestra mientras el administrador no escribe el nombre legal de la titular en el panel. */
 export const OWNER_PENDING = 'nombre legal de la titular';
 
 /**
  * El nombre legal de la titular. **Siempre sale de los ajustes del sitio** (`legalOwnerName`, lo escribe una
- * administradora en el panel): nunca se escribe en el código, porque el repositorio es público. Sin él, un dato
+ * administrador en el panel): nunca se escribe en el código, porque el repositorio es público. Sin él, un dato
  * pendiente bien visible.
  */
 export function OwnerName() {

@@ -1,3 +1,4 @@
+import { pluralWord } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { AdminIcon } from '../../../shared/ui/adminIcons';
@@ -17,7 +18,7 @@ function Figure({ label, value, hint }: { label: string; value: ReactNode; hint?
   );
 }
 
-/** Estadísticas básicas (solo administradoras): cuántas lectoras hay, cómo avanzan y qué resultados salen. */
+/** Estadísticas básicas (solo administradores): cuántos lectores hay, cómo avanzan y qué resultados salen. */
 export function StatsPage() {
   const stats = useQuery({ queryKey: keys.stats, queryFn: statsApi.get, staleTime: 0 });
   if (stats.isError) return <Alert>{errorMessage(stats.error)}</Alert>;
@@ -28,7 +29,7 @@ export function StatsPage() {
     <>
       <PageHeader
         title="Estadísticas"
-        subtitle="Sin contar los intentos de prueba de las administradoras."
+        subtitle="Sin contar los intentos de prueba de los administradores."
       />
       <div className="mb-4">
         <HelpTip>Solo cuentan intentos reales, no las pruebas del equipo.</HelpTip>
@@ -36,9 +37,9 @@ export function StatsPage() {
       <div className="flex flex-col gap-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Figure
-            label="Lectoras"
+            label="Lectores"
             value={data.readers.total}
-            hint={`${data.readers.last7Days} esta semana · ${data.readers.last30Days} este mes · ${data.readers.disabled} desactivadas`}
+            hint={`${data.readers.last7Days} esta semana · ${data.readers.last30Days} este mes · ${data.readers.disabled} ${pluralWord(data.readers.disabled, 'desactivado', 'desactivados')}`}
           />
           <Figure
             label="Quizzes completados"

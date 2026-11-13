@@ -56,7 +56,7 @@ async function world() {
 }
 
 describe('permisos de /api/admin/quizzes/:id/appearance', () => {
-  it('sin sesión 401; lectora 403 en todas las operaciones; EDITOR y ADMIN 200', async () => {
+  it('sin sesión 401; lector 403 en todas las operaciones; EDITOR y ADMIN 200', async () => {
     const { app, reader, editor, admin, url, quiz } = await world();
     const body = { appearance: appearance(), expectedRev: 0 };
     for (const res of [
@@ -77,7 +77,7 @@ describe('permisos de /api/admin/quizzes/:id/appearance', () => {
       expect(res.status).toBe(403);
       expect(code(res)).toBe('FORBIDDEN');
     }
-    // La lectora no cambió nada.
+    // El lector no cambió nada.
     expect((await Quiz.findById(quiz.id).lean())?.appearance).toBeUndefined();
 
     await editor.get(url).expect(200);

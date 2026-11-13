@@ -13,7 +13,7 @@ const PASSWORD = 'Nube-Azul-Cuatro-87';
 const LONG_NAME = 'Alejandra Montserrat-Wiśniewska de la Vega y Fernández 🌙';
 
 test.describe('menú de usuario (celular y escritorio)', () => {
-  test('la lectora ve su nombre, abre el menú, va a Ajustes y cierra sesión desde el menú', async ({
+  test('el lector ve su nombre, abre el menú, va a Ajustes y cierra sesión desde el menú', async ({
     page,
   }) => {
     const stamp = `${Date.now()}-${test.info().project.name}`;
@@ -65,7 +65,7 @@ test.describe('menú de usuario (celular y escritorio)', () => {
     await expect(page).toHaveURL(/\/ingresar/);
   });
 
-  test('la administradora tiene el mismo menú en la administración: Ver sitio, Mi panel, Admin, Ajustes y Salir a 1920 px', async ({
+  test('el administrador tiene el mismo menú en la administración: Ver sitio, Mi panel, Admin, Ajustes y Salir a 1920 px', async ({
     page,
   }) => {
     const login = await page.request.post('/api/auth/login', {
@@ -82,7 +82,7 @@ test.describe('menú de usuario (celular y escritorio)', () => {
       await dismissWelcome(page);
       await expect(page.getByRole('navigation', { name: 'Cambiar de zona' })).toHaveCount(0);
       await page.getByRole('button', { name: E2E_ADMIN.name }).click();
-      await expect(page.getByText('Administradora')).toBeVisible();
+      await expect(page.getByText('Administrador')).toBeVisible();
       await expect(page.getByRole('menuitem')).toHaveText([
         'Ver sitio',
         'Mi panel',
@@ -103,12 +103,12 @@ test.describe('menú de usuario (celular y escritorio)', () => {
     await expect(page).toHaveURL(/\/ingresar$/);
   });
 
-  test('una lectora (USER) no ve las tres zonas a 1920 px', async ({ page }) => {
+  test('un lector (USER) no ve las tres zonas a 1920 px', async ({ page }) => {
     const stamp = `${Date.now()}-${test.info().project.name}`;
     const register = await page.request.post('/api/auth/register', {
       data: {
         ...ADULT_CONSENT,
-        name: 'Lectora Zonas',
+        name: 'Lector Zonas',
         email: `zonas-${stamp}@ejemplo.com`,
         password: PASSWORD,
       },
@@ -118,7 +118,7 @@ test.describe('menú de usuario (celular y escritorio)', () => {
     await page.setViewportSize({ width: 1920, height: 900 });
     await page.goto('/panel');
     await dismissWelcome(page);
-    await page.getByRole('button', { name: 'Lectora Zonas' }).click();
+    await page.getByRole('button', { name: 'Lector Zonas' }).click();
     await expect(page.getByRole('menuitem')).toHaveText(['Ajustes', 'Salir']);
     await expect(page.getByRole('menuitem', { name: 'Admin' })).toHaveCount(0);
   });

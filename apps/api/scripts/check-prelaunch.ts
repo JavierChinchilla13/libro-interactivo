@@ -6,6 +6,7 @@
  *   npm run check:prelaunch -w apps/api                       # contra la base de apps/api/.env
  *   MONGODB_URI=… npm run check:prelaunch -w apps/api         # contra otra (por ejemplo, una copia restaurada)
  */
+import { plural } from '@libro/shared';
 import mongoose from 'mongoose';
 import { connectDb, disconnectDb } from '../src/db/connect.js';
 import { redactUri } from '../src/maintenance/backup.js';
@@ -26,7 +27,7 @@ try {
   console.log(
     fails === 0
       ? '\n✓ Nada de muestra a la vista del público.'
-      : `\n✗ ${fails} cosa(s) por resolver antes de abrir el sitio.`,
+      : `\n✗ ${plural(fails, 'cosa', 'cosas')} por resolver antes de abrir el sitio.`,
   );
   if (fails > 0) process.exitCode = 1;
 } catch (error) {

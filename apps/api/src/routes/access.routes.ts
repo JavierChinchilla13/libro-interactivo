@@ -46,7 +46,7 @@ export function createAccessRouter(
   return router;
 }
 
-/** `/admin/access-tokens`: SOLO administradoras (las editoras gestionan contenido, no los códigos de acceso). */
+/** `/admin/access-tokens`: SOLO administradores (los editores gestionan contenido, no los códigos de acceso). */
 export function createAdminAccessRouter(
   controller: ReturnType<typeof createAdminAccessController>,
   guards: Guards,

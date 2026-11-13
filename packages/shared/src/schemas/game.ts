@@ -87,7 +87,7 @@ export const gameSessionResponseSchema = z.object({
   title: z.string(),
   status: gameSessionStatusSchema,
   attemptNumber: z.number().int().min(1),
-  /** Partida de prueba de una editora o administradora: no cuenta en el avance ni en las estadísticas. */
+  /** Partida de prueba de un editor o administrador: no cuenta en el avance ni en las estadísticas. */
   isTest: z.boolean(),
   scene: publicSceneSchema,
 });

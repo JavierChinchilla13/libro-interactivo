@@ -82,13 +82,13 @@ describe('IP resuelta según los saltos de confianza', () => {
 });
 
 describe('el limitador de ingreso cuenta por la IP resuelta', () => {
-  it('con los saltos bien puestos, cada lectora tiene su propio contador', async () => {
+  it('con los saltos bien puestos, cada lector tiene su propio contador', async () => {
     const app = appWithHops(1);
     for (let i = 0; i < 2; i += 1) expect((await loginFrom(app, '10.0.0.1')).status).toBe(401);
     const blocked = await loginFrom(app, '10.0.0.1');
     expect(blocked.status).toBe(429);
     expect(apiErrorSchema.parse(blocked.body).error.code).toBe('RATE_LIMITED');
-    // Otra lectora (otra última entrada) no se ve afectada.
+    // Otro lector (otra última entrada) no se ve afectada.
     expect((await loginFrom(app, '10.0.0.2')).status).toBe(401);
   });
 
@@ -101,7 +101,7 @@ describe('el limitador de ingreso cuenta por la IP resuelta', () => {
     expect((await loginFrom(app, '4.4.4.4, 5.5.5.5, 10.0.0.9')).status).toBe(429);
   });
 
-  it('con 0 saltos (de menos) todas las lectoras comparten un solo contador', async () => {
+  it('con 0 saltos (de menos) todos los lectores comparten un solo contador', async () => {
     const app = appWithHops(0);
     await loginFrom(app, '10.0.0.1').expect(401);
     await loginFrom(app, '10.0.0.2').expect(401);

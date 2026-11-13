@@ -578,7 +578,7 @@ describe('modo prueba (EDITOR y ADMIN)', () => {
     await playSimple(adminAgent, quiz._id.toString());
   });
 
-  it('los intentos de prueba no cuentan para los de una sola vez de las lectoras', async () => {
+  it('los intentos de prueba no cuentan para los de una sola vez de los lectores', async () => {
     const { app, agent, make } = await world();
     const quiz = await make(1, simpleContent({ settings: { allowRetake: false } }));
     const adminAgent = await loginAgent(app, 'admin@ejemplo.com');

@@ -60,7 +60,7 @@ export const lockSettingsSchema = z.object({ message: z.string().trim().max(200)
 export type LockSettings = z.infer<typeof lockSettingsSchema>;
 
 /**
- * Contacto (solo administradoras): correo privado donde llegan los mensajes, si se guardan en el panel y cuántos días.
+ * Contacto (solo administradores): correo privado donde llegan los mensajes, si se guardan en el panel y cuántos días.
  * `recipientEmail` vacío = se usa el configurado por el desarrollador (`CONTACT_RECIPIENT_EMAIL`).
  */
 export const contactSettingsSchema = z.object({
@@ -71,7 +71,7 @@ export const contactSettingsSchema = z.object({
 export type ContactSettings = z.infer<typeof contactSettingsSchema>;
 
 /**
- * Nombre legal de la titular del sitio (persona física o empresa). Lo escribe una administradora en el panel y lo leen
+ * Nombre legal de la titular del sitio (persona física o empresa). Lo escribe un administrador en el panel y lo leen
  * la política de privacidad y los términos. Nunca se escribe en el código: el repositorio es público. Vacío = las
  * páginas legales muestran un dato pendiente.
  */
@@ -81,8 +81,8 @@ export const legalOwnerNameSchema = z
   .max(160, 'El nombre legal no puede superar los 160 caracteres');
 
 /**
- * Cómo se llama la sección de cartas (menú del panel de la lectora, títulos de sus pantallas y panel de administración).
- * Lo escribe una administradora; se guarda como texto plano (sin marcado). Vacío = el nombre por defecto. Los
+ * Cómo se llama la sección de cartas (menú del panel del lector, títulos de sus pantallas y panel de administración).
+ * Lo escribe un administrador; se guarda como texto plano (sin marcado). Vacío = el nombre por defecto. Los
  * identificadores internos (`cards`, `card`) no cambian.
  */
 export const CARDS_LABEL_DEFAULT = 'Hallazgos';
@@ -98,7 +98,7 @@ export const siteSettingsResponseSchema = z.object({
   author: authorSettingsSchema,
   social: socialLinksSchema,
   lock: lockSettingsSchema,
-  /** Solo la ven las administradoras. */
+  /** Solo la ven los administradores. */
   contact: contactSettingsSchema.optional(),
   legalOwnerName: z.string().optional(),
   /** Nombre de la sección de cartas (siempre viene: el de la autora o «Hallazgos»). */
@@ -114,11 +114,11 @@ export const updateSiteSettingsRequestSchema = z
     author: authorSettingsSchema.optional(),
     social: socialLinksSchema.optional(),
     lock: lockSettingsSchema.optional(),
-    /** Solo administradoras (si la manda una editora, `403`). */
+    /** Solo administradores (si la manda un editor, `403`). */
     contact: contactSettingsSchema.optional(),
-    /** Solo administradoras (`403` para una editora). Vacío lo quita. */
+    /** Solo administradores (`403` para un editor). Vacío lo quita. */
     legalOwnerName: legalOwnerNameSchema.optional(),
-    /** Solo administradoras (`403` para una editora). Vacío vuelve al nombre por defecto. */
+    /** Solo administradores (`403` para un editor). Vacío vuelve al nombre por defecto. */
     cardsLabel: cardsLabelSchema.optional(),
   })
   .refine((body) => Object.values(body).some((section) => section !== undefined), {
@@ -134,7 +134,7 @@ export const publicSiteResponseSchema = z.object({
   lockMessage: z.string(),
   /** Para la política de privacidad y los términos (ausente si aún no se escribió). */
   legalOwnerName: z.string().optional(),
-  /** Nombre de la sección de cartas: lo usan el menú y los títulos del panel de la lectora. */
+  /** Nombre de la sección de cartas: lo usan el menú y los títulos del panel del lector. */
   cardsLabel: z.string().default(CARDS_LABEL_DEFAULT),
 });
 export type PublicSiteResponse = z.infer<typeof publicSiteResponseSchema>;

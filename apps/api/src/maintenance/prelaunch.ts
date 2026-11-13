@@ -1,3 +1,4 @@
+import { plural } from '@libro/shared';
 import type mongoose from 'mongoose';
 
 type Db = mongoose.mongo.Db;
@@ -197,8 +198,8 @@ export function describePrelaunch(report: PrelaunchReport): PrelaunchLine[] {
   lines.push({ status: 'ok', text: `Cuentas: ${report.users}` });
   lines.push(
     report.activeAdmins > 0
-      ? { status: 'ok', text: `Administradoras activas: ${report.activeAdmins}` }
-      : { status: 'fail', text: 'No hay ninguna administradora activa (npm run seed:admin).' },
+      ? { status: 'ok', text: `Administradores activos: ${report.activeAdmins}` }
+      : { status: 'fail', text: 'No hay ningún administrador activo (npm run seed:admin).' },
   );
   const books = report.summaries.find((s) => s.collection === 'books');
   if (books && books.visible === 0) {
@@ -213,7 +214,7 @@ export function describePrelaunch(report: PrelaunchReport): PrelaunchLine[] {
   for (const [collection, count] of countBy(report.exampleEmails)) {
     lines.push({
       status: 'fail',
-      text: `${count} correo(s) de ejemplo en ${collection === 'users' ? 'cuentas' : 'mensajes de contacto'}: ${report.exampleEmails
+      text: `${plural(count, 'correo', 'correos')} de ejemplo en ${collection === 'users' ? 'cuentas' : 'mensajes de contacto'}: ${report.exampleEmails
         .filter((e) => e.collection === collection)
         .slice(0, 5)
         .map((e) => e.masked)

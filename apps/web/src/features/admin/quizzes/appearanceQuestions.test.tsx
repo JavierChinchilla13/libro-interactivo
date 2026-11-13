@@ -172,7 +172,7 @@ describe('Apariencia · Por pregunta', () => {
       within(row).getByRole('checkbox', { name: 'Fondo: igual que el general' }),
     ).toBeChecked();
     await user.click(screen.getByRole('button', { name: 'Guardar apariencia' }));
-    await screen.findByText(/Ya lo ven las lectoras/);
+    await screen.findByText(/Ya lo ven los lectores/);
     const put = called(`PUT /api/admin/quizzes/${QUIZ_ID}/appearance`)[0];
     expect(put?.body).toMatchObject({ appearance: { questions: { p2: { accent: '#ff8fb1' } } } });
     const sent = (put?.body as { appearance: { questions: Record<string, object> } }).appearance
@@ -272,7 +272,7 @@ describe('Apariencia · Por pregunta', () => {
     await user.click(within(alert).getByRole('button', { name: 'Quitar' }));
     expect(screen.queryByText('Personalizaciones sin pregunta')).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Guardar apariencia' }));
-    await screen.findByText(/Ya lo ven las lectoras/);
+    await screen.findByText(/Ya lo ven los lectores/);
     const sent = (
       called(`PUT /api/admin/quizzes/${QUIZ_ID}/appearance`)[0]?.body as {
         appearance: { questions: Record<string, object> };

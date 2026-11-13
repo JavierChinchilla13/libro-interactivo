@@ -42,7 +42,7 @@ describe('POST /api/auth/google · persona nueva en dos pasos', () => {
     expect(await RefreshToken.countDocuments({})).toBe(0);
   });
 
-  it('segundo paso: con edad y consentimientos crea la lectora y abre sesión', async () => {
+  it('segundo paso: con edad y consentimientos crea el lector y abre sesión', async () => {
     const app = createTestApp({ google: verifier(GOOD), clock: createTestClock(NOW) });
     const res = await post(app, { credential: CREDENTIAL, profile: ADULT_CONSENT });
 
@@ -158,7 +158,7 @@ describe('POST /api/auth/google · cuentas que ya existen', () => {
     expect(await User.countDocuments({})).toBe(1);
   });
 
-  it('una lectora anterior, sin fecha de nacimiento guardada, entra sin bloqueo y no se le agrega nada', async () => {
+  it('un lector anterior, sin fecha de nacimiento guardada, entra sin bloqueo y no se le agrega nada', async () => {
     await User.create({
       email: 'lola@ejemplo.com',
       emailNormalized: 'lola@ejemplo.com',
@@ -236,7 +236,7 @@ describe('POST /api/auth/google · vincular con una cuenta creada con contraseñ
 
   it('si la cuenta se creó con contraseña y el correo no estaba comprobado, se rota la contraseña y se cierran las sesiones', async () => {
     const app = createTestApp({ google: verifier(GOOD), clock: createTestClock(NOW) });
-    // Quien creó la cuenta (sin ser dueña del correo) tiene una sesión abierta y conoce la contraseña.
+    // Quien creó la cuenta (sin ser dueño del correo) tiene una sesión abierta y conoce la contraseña.
     const created = await register(app).expect(201);
     const attackerCookies = [
       cookieOf(created, ACCESS_COOKIE),
@@ -246,7 +246,7 @@ describe('POST /api/auth/google · vincular con una cuenta creada con contraseñ
     const before = await User.findOne({}).lean();
     expect(before?.emailVerifiedAt).toBeUndefined();
 
-    // La dueña real entra con Google: como la cuenta traía edad y consentimientos de quien la creó, los declara ella.
+    // El dueño real entra con Google: como la cuenta traía edad y consentimientos de quien la creó, los declara ella.
     const res = await post(app, { credential: CREDENTIAL, profile: ADULT_CONSENT });
     expect(res.status).toBe(200);
     expect(googleLoginResponseSchema.parse(res.body).status).toBe('ok');
@@ -269,7 +269,7 @@ describe('POST /api/auth/google · vincular con una cuenta creada con contraseñ
       .expect(401);
     expect(await RefreshToken.countDocuments({ userId: after?._id, revokedAt: null })).toBe(1);
 
-    // La sesión nueva de la dueña sí funciona.
+    // La sesión nueva del dueño sí funciona.
     const owner = [cookieOf(res, ACCESS_COOKIE), cookieOf(res, REFRESH_COOKIE)].join('; ');
     await request(app).get('/api/me').set('Cookie', owner).expect(200);
   });
@@ -308,11 +308,11 @@ describe('POST /api/auth/google · vincular con una cuenta creada con contraseñ
     expect(user?.tokenVersion).toBe(0);
   });
 
-  it('las cuentas de equipo (las crea una administradora) conservan su contraseña', async () => {
+  it('las cuentas de equipo (las crea un administrador) conservan su contraseña', async () => {
     await User.create({
       email: 'lola@ejemplo.com',
       emailNormalized: 'lola@ejemplo.com',
-      name: 'Lola Editora',
+      name: 'Lola Editor',
       passwordHash: 'hash-del-equipo',
       role: 'EDITOR',
     });

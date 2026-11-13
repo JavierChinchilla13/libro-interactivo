@@ -266,7 +266,7 @@ export const quizAppearanceSchema = z
 export type QuizAppearance = z.infer<typeof quizAppearanceSchema>;
 export type QuizAppearanceInput = z.input<typeof quizAppearanceSchema>;
 
-/** Lo que recibe la lectora en la introducción: el fondo, el velo y el acento (portada e introducción ya viajan aparte). */
+/** Lo que recibe el lector en la introducción: el fondo, el velo y el acento (portada e introducción ya viajan aparte). */
 export const readerAppearanceSchema = z
   .object({
     background: quizBackgroundSchema.optional(),
@@ -276,7 +276,7 @@ export const readerAppearanceSchema = z
   .strict();
 export type ReaderAppearance = z.infer<typeof readerAppearanceSchema>;
 
-/** Lo que recibe la lectora junto a cada pregunta de la etapa (solo fondo, velo y acento; nunca el resultado). */
+/** Lo que recibe el lector junto a cada pregunta de la etapa (solo fondo, velo y acento; nunca el resultado). */
 export const readerQuestionAppearanceSchema = questionAppearanceSchema;
 export type ReaderQuestionAppearance = z.infer<typeof readerQuestionAppearanceSchema>;
 

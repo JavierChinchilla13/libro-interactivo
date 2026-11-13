@@ -9,7 +9,7 @@ const tokenFor = (id: string) =>
   `${id}.${createHmac('sha256', DEV_ACCESS_SECRET).update(id).digest('base64url')}`;
 const PASSWORD = 'Nube-Azul-Cuatro-87';
 
-/** Prepara por API, como administradora: un libro con un quiz con secuencia de revelado, su QR y un extra de texto. */
+/** Prepara por API, como administrador: un libro con un quiz con secuencia de revelado, su QR y un extra de texto. */
 async function seedBook(api: APIRequestContext, stamp: string) {
   const cover = {
     provider: 'cloudinary',
@@ -151,7 +151,7 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await page.getByRole('main').getByRole('link', { name: 'Crear cuenta' }).click();
 
     // 2) Se registra (con medidor y reglas de contraseña) y VUELVE al QR, que se canjea solo.
-    await page.getByLabel(/^Nombre/).fill('Lectora E2E');
+    await page.getByLabel(/^Nombre/).fill('Lector E2E');
     await page.getByLabel(/^Correo/).fill(`lectora-${stamp}@ejemplo.com`);
     await page.getByLabel(/^Contraseña/).fill('password123');
     await expect(page.getByTestId('password-meter')).toContainText('demasiado común');
@@ -167,8 +167,8 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await expect(dialog).toContainText('Este es el pacto con quien lee.');
     await dialog.getByRole('button', { name: '¡A la aventura!' }).click();
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'Hola, Lectora E2E' })).toBeVisible();
-    await expect(page.getByText('0 de 1 experiencias abiertas en tu libro')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Hola, Lector E2E' })).toBeVisible();
+    await expect(page.getByText('0 de 1 experiencia abierta en tu libro')).toBeVisible();
     // Los extras siguen cerrados y no revelan nada.
     await expect(page.getByText('Se abren al terminar un libro')).toBeVisible();
     await expect(page.getByText(seeded.extraTitle)).toHaveCount(0);
@@ -190,7 +190,7 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await page.getByRole('radio', { name: 'Me quedo' }).check();
     await page.getByRole('button', { name: 'Terminar' }).click();
 
-    // El revelado no avanza solo: la lectora abre su resultado con «Ver mi resultado» (aparece tras la última línea).
+    // El revelado no avanza solo: el lector abre su resultado con «Ver mi resultado» (aparece tras la última línea).
     await expect(page.getByText('Decodificando tus respuestas…')).toBeVisible();
     await page.getByRole('button', { name: 'Ver mi resultado' }).click();
     await expect(page.getByRole('heading', { name: 'Eres de los que se quedan' })).toBeVisible();
@@ -199,7 +199,7 @@ test.describe('experiencia del lector (celular y escritorio)', () => {
     await page.getByRole('link', { name: 'Volver a mi panel' }).click();
 
     // 5) El panel refleja el avance y se abren los extras (libro completo).
-    await expect(page.getByText('1 de 1 experiencias abiertas en tu libro')).toBeVisible();
+    await expect(page.getByText('1 de 1 experiencia abierta en tu libro')).toBeVisible();
     // La tarjeta entera es el enlace: se abre pulsando en cualquier parte de ella (aquí, una esquina).
     const card = page.getByRole('article', { name: seeded.bookTitle });
     await expect(card.getByRole('link')).toHaveCount(1);

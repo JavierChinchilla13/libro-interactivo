@@ -106,7 +106,7 @@ function AppearanceEditor({
   onReload: () => Promise<void>;
 }) {
   const client = useQueryClient();
-  // «Quiz N de M»: el lugar de este quiz entre los quizzes vigentes de su libro (como lo ve la lectora).
+  // «Quiz N de M»: el lugar de este quiz entre los quizzes vigentes de su libro (como lo ve el lector).
   const siblings = useQuery({
     queryKey: keys.quizzes(quiz.bookId),
     queryFn: () => quizzesApi.list(quiz.bookId),
@@ -215,7 +215,7 @@ function AppearanceEditor({
       setWarnings(result.warnings);
       // Lo que se marca como guardado es lo que se envió, no lo que se haya tecleado mientras tanto.
       setSavedKey(sent.key);
-      setNotice('Guardado. Ya lo ven las lectoras, sin publicar una versión nueva.');
+      setNotice('Guardado. Ya lo ven los lectores, sin publicar una versión nueva.');
       client.setQueryData(keys.appearance(quiz.id), result);
       // El editor viejo oculta la introducción y la portada cuando existe apariencia.
       await client.invalidateQueries({ queryKey: keys.quiz(quiz.id) });
@@ -232,7 +232,7 @@ function AppearanceEditor({
       setHistory(result.history);
       setWarnings(result.warnings);
       setSavedKey(formKey(next));
-      setNotice('Se volvió al estado anterior a ese cambio. Ya lo ven las lectoras.');
+      setNotice('Se volvió al estado anterior a ese cambio. Ya lo ven los lectores.');
       client.setQueryData(keys.appearance(quiz.id), result);
       await client.invalidateQueries({ queryKey: keys.quiz(quiz.id) });
     },
@@ -259,7 +259,7 @@ function AppearanceEditor({
         </p>
 
         <HelpTip>
-          Se aplica sin publicar: las lectoras lo ven en seguida. No cambia las preguntas ni los
+          Se aplica sin publicar: los lectores lo ven en seguida. No cambia las preguntas ni los
           resultados.
         </HelpTip>
 
@@ -463,7 +463,7 @@ function AppearanceEditor({
           onRevert={async (entryRev) => {
             const ok = await confirm({
               title: '¿Volver a la apariencia anterior?',
-              message: 'Las lectoras la verán en seguida.',
+              message: 'Los lectores la verán en seguida.',
               confirmLabel: 'Volver a esta apariencia',
             });
             if (!ok) return;

@@ -1,7 +1,7 @@
 import { ROLES } from '@libro/shared';
 import { Schema, model, type HydratedDocument, type InferSchemaType } from 'mongoose';
 
-/** Usuarios (lectores, editoras, administradoras). */
+/** Usuarios (lectores, editores, administradores). */
 const userSchema = new Schema(
   {
     /** Correo como lo escribió la persona (para mostrar). */
@@ -28,7 +28,7 @@ const userSchema = new Schema(
     welcomeSeenAt: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
     /**
-     * Edad y consentimientos declarados al crear la cuenta (solo lectoras que se registran; las cuentas de equipo y las
+     * Edad y consentimientos declarados al crear la cuenta (solo lectores que se registran; las cuentas de equipo y las
      * anteriores no los tienen). Se guarda lo mínimo: año y mes de nacimiento (nunca el día ni la edad calculada).
      */
     birthYear: { type: Number, min: 1900, max: 2200 },
@@ -42,7 +42,7 @@ const userSchema = new Schema(
     termsVersion: { type: String, maxlength: 40 },
     /**
      * Se pone cuando se borran la edad y los consentimientos declarados por quien creó la cuenta sin probar que
-     * controlaba el correo (la dueña restableció la contraseña desde el correo): el siguiente ingreso los vuelve a
+     * controlaba el correo (el dueño restableció la contraseña desde el correo): el siguiente ingreso los vuelve a
      * pedir y esta marca se quita. Las cuentas anteriores y las de equipo nunca la tienen.
      */
     consentRequiredAt: { type: Date },

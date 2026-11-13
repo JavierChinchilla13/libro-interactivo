@@ -37,7 +37,7 @@ const TABS: readonly { id: Tab; label: string; help: string }[] = [
     label: 'Preguntas',
     help: 'Etapas, preguntas y a qué resultado suma cada respuesta.',
   },
-  { id: 'resultados', label: 'Resultados', help: 'Qué descubre la lectora al terminar.' },
+  { id: 'resultados', label: 'Resultados', help: 'Qué descubre el lector al terminar.' },
   {
     id: 'apariencia',
     label: 'Apariencia',
@@ -46,7 +46,7 @@ const TABS: readonly { id: Tab; label: string; help: string }[] = [
   {
     id: 'versiones',
     label: 'Versiones',
-    help: 'Historial de lo publicado y cuántas lectoras lo usaron.',
+    help: 'Historial de lo publicado y cuántos lectores lo usaron.',
   },
 ];
 
@@ -163,7 +163,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   const publish = useMutation({
     mutationFn: () => quizzesApi.publish(quizId),
     onSuccess: async (result) => {
-      toast.success(`Publicado: ya es la versión ${result.version} y las lectoras la ven.`);
+      toast.success(`Publicado: ya es la versión ${result.version} y los lectores la ven.`);
       setReviewed({
         report: { valid: true, errors: [], warnings: result.warnings },
         at: savedRef.current,
@@ -242,24 +242,24 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
     <>
       <PageHeader
         title={draft.title || 'Quiz'}
-        subtitle="Lo que editas aquí es un borrador: las lectoras no lo ven hasta que lo publiques."
+        subtitle="Lo que editas aquí es un borrador: los lectores no lo ven hasta que lo publiques."
       />
       <div className="admin-status-line">
         <QuizState quiz={quiz} />
         <HelpTip title="¿Qué hace cada botón?">
           <ul className="list-disc pl-5">
             <li>
-              <strong>Guardar borrador</strong>: guarda lo que escribiste; las lectoras no ven nada
+              <strong>Guardar borrador</strong>: guarda lo que escribiste; los lectores no ven nada
               todavía.
             </li>
             <li>
               <strong>Revisar</strong>: comprueba que no falte nada antes de publicar.
             </li>
             <li>
-              <strong>Vista previa</strong>: pruébalo como lectora; no cuenta en estadísticas.
+              <strong>Vista previa</strong>: pruébalo como lector; no cuenta en estadísticas.
             </li>
             <li>
-              <strong>Publicar</strong>: crea una versión nueva y las lectoras la ven.
+              <strong>Publicar</strong>: crea una versión nueva y los lectores la ven.
             </li>
           </ul>
         </HelpTip>
@@ -285,7 +285,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           ref={previewArea}
           tabIndex={-1}
           role="region"
-          aria-label="Vista previa como lectora"
+          aria-label="Vista previa como lector"
           className="scroll-mt-24 focus:outline-none"
         >
           {notice ? (
@@ -369,7 +369,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
             {
               label: 'Vista previa',
               disabled: busy || archived,
-              title: 'Pruébalo como lectora; no cuenta en estadísticas',
+              title: 'Pruébalo como lector; no cuenta en estadísticas',
               onClick: () => void onPreview(),
             },
             {
@@ -405,7 +405,7 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           <Button
             variant="secondary"
             disabled={busy || archived}
-            title="Pruébalo como lectora; no cuenta en estadísticas"
+            title="Pruébalo como lector; no cuenta en estadísticas"
             onClick={() => void onPreview()}
           >
             Vista previa

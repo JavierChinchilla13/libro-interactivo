@@ -5,7 +5,7 @@ const labels = (role: 'EDITOR' | 'ADMIN') =>
   navForRole(role).flatMap((group) => group.items.map((item) => item.label));
 
 describe('menú de administración por rol', () => {
-  it('la editora no ve nada de lo que solo puede usar una administradora (y no queda un grupo vacío)', () => {
+  it('el editor no ve nada de lo que solo puede usar un administrador (y no queda un grupo vacío)', () => {
     const names = labels('EDITOR');
     expect(names).toEqual(
       expect.arrayContaining([
@@ -31,7 +31,7 @@ describe('menú de administración por rol', () => {
     expect(navForRole('EDITOR').map((group) => group.id)).not.toContain('administracion');
   });
 
-  it('la administradora ve todo, en los cinco grupos más Inicio', () => {
+  it('el administrador ve todo, en los cinco grupos más Inicio', () => {
     expect(labels('ADMIN')).toHaveLength(ADMIN_NAV.flatMap((group) => group.items).length);
     expect(navForRole('ADMIN').map((group) => group.label)).toEqual([
       undefined,
@@ -96,7 +96,7 @@ describe('migas y título', () => {
 });
 
 describe('nombre editable de la sección de cartas', () => {
-  it('«Hallazgos» por defecto, solo para administradoras, y el nombre de la autora cambia el menú, las migas y el título', () => {
+  it('«Hallazgos» por defecto, solo para administradores, y el nombre de la autora cambia el menú, las migas y el título', () => {
     expect(labels('ADMIN')).toContain('Hallazgos');
     expect(labels('EDITOR')).not.toContain('Hallazgos');
     const custom = { cartas: 'Reliquias' };

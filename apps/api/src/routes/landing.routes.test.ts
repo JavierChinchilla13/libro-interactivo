@@ -200,7 +200,7 @@ describe('PATCH /api/admin/site-settings (secciones)', () => {
     expect((await bad({ author: { bioHtml: '', publicEmail: 'no-es-correo' } })).status).toBe(400);
   });
 
-  it('las lectoras no pueden editar y las editoras sí', async () => {
+  it('los lectores no pueden editar y los editores sí', async () => {
     const { reader, editor } = await staffWorld();
     expect((await reader.patch('/api/admin/site-settings').send(full())).status).toBe(403);
     await editor.patch('/api/admin/site-settings').send(full()).expect(200);

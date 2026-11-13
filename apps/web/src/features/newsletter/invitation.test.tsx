@@ -58,7 +58,7 @@ describe('invitación única a los correos de novedades en /panel', { timeout: 3
     expect(screen.queryByRole('button', { name: 'No, gracias' })).toBeNull();
   });
 
-  it('«Sí» con el correo comprobado: queda apuntada al instante', async () => {
+  it('«Sí» con el correo comprobado: queda apuntado al instante', async () => {
     withOffer({
       'PUT /api/me/newsletter': () =>
         json({ status: 'subscribed', eligible: true, invitation: false, subscribedAt: NOW }),
@@ -129,7 +129,7 @@ describe('invitación única a los correos de novedades en /panel', { timeout: 3
 
   it.each([
     ['menor de 18 o sin fecha', { status: 'none', eligible: false, invitation: false }],
-    ['ya apuntada', { status: 'subscribed', eligible: true, invitation: false, subscribedAt: NOW }],
+    ['ya apuntado', { status: 'subscribed', eligible: true, invitation: false, subscribedAt: NOW }],
     ['alta pendiente', { status: 'pending', eligible: true, invitation: false, pendingSince: NOW }],
     ['ya respondió o se dio de baja', { status: 'none', eligible: true, invitation: false }],
   ])('no se muestra: %s', async (_name, state) => {

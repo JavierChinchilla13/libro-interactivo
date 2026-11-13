@@ -4,7 +4,7 @@ import { getAuth } from '../middleware/auth.js';
 import { getInput } from '../middleware/validate.js';
 import type { BackupDownloadService } from '../services/backupDownload.service.js';
 
-/** `/admin/backups`: solo administradoras. Nada de esto se cachea. */
+/** `/admin/backups`: solo administradores. Nada de esto se cachea. */
 export function createAdminBackupController(backups: BackupDownloadService) {
   const status: RequestHandler = async (_req, res) => {
     res.set('Cache-Control', 'no-store').json(await backups.status());

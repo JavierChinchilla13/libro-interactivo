@@ -46,7 +46,7 @@ export const STALE_BATCH_MS = 5 * 60_000;
 export const IDEMPOTENCY_WINDOW_MS = 23 * 60 * 60_000;
 /** Pausa ante un error temporal del proveedor (red o error del servidor). */
 export const TEMPORARY_PAUSE_MS = 5 * 60_000;
-/** Las filas por destinataria se borran estos días después de terminar el aviso. */
+/** Las filas por destinatario se borran estos días después de terminar el aviso. */
 export const DELIVERY_RETENTION_DAYS = 90;
 const DAY_MS = 86_400_000;
 
@@ -85,7 +85,7 @@ function scrub(message: string): string {
 }
 
 /**
- * Avisos por correo a las apuntadas a las novedades. Un aviso por elemento publicado; la lista de destinatarias se
+ * Avisos por correo a los apuntados a las novedades. Un aviso por elemento publicado; la lista de destinatarios se
  * fija al pedirlo y se envía por lotes respetando el cupo del día y del mes (los transaccionales siempre tienen
  * prioridad). La cola vive en la base: el trabajador la retoma al arrancar, cada pocos minutos y al pedir o mirar un
  * aviso.
@@ -134,7 +134,7 @@ export function createNotificationService(deps: NotificationDeps) {
       content: {
         subject,
         title: subject,
-        summary: 'Ya puedes leerlo en tu panel de lectora, en la sección de extras del libro.',
+        summary: 'Ya puedes leerlo en tu panel de lector, en la sección de extras del libro.',
         imageUrl: cover?.url ? emailImageUrl(cover.url) : undefined,
         imageAlt: cover?.alt,
         path: `/panel/libros/${book.slug}/extras`,
@@ -142,7 +142,7 @@ export function createNotificationService(deps: NotificationDeps) {
     };
   }
 
-  /** Apuntadas activas; de un extra, solo las que ya terminaron ese libro (decisión P8). */
+  /** Apuntados activos; de un extra, solo quienes ya terminaron ese libro (decisión P8). */
   async function recipientIds(
     kind: NotificationKind,
     bookId?: Types.ObjectId,
@@ -209,7 +209,7 @@ export function createNotificationService(deps: NotificationDeps) {
     );
   }
 
-  /** Arma los correos de un lote. Las que ya no están apuntadas o activas se saltan. */
+  /** Arma los correos de un lote. Quienes ya no están apuntados o activos se saltan. */
   async function messagesFor(
     job: NotificationJobDoc,
     rows: Array<Pick<NotificationDeliveryAttrs, 'userId'> & { _id: Types.ObjectId }>,
@@ -488,7 +488,7 @@ export function createNotificationService(deps: NotificationDeps) {
 
     async preview(query: NotificationPreviewQuery): Promise<NotificationPreview> {
       if (!query.refId) {
-        // Aún no guardado: a cuántas lectoras llegaría al publicarlo y el cupo.
+        // Aún no guardado: a cuántos lectores llegaría al publicarlo y el cupo.
         const quota = await deps.quota.quota();
         const recipients = (
           await recipientIds(
@@ -528,7 +528,7 @@ export function createNotificationService(deps: NotificationDeps) {
 
     /**
      * Pide el aviso de un elemento publicado. Una sola vez por elemento: si ya existe (doble clic, otra persona a la
-     * vez), devuelve el que hay (`created: false`). La lista de destinatarias se fija ahora; mientras se arma, el aviso
+     * vez), devuelve el que hay (`created: false`). La lista de destinatarios se fija ahora; mientras se arma, el aviso
      * queda reservado para que el trabajador no lo tome a medias.
      */
     async create(

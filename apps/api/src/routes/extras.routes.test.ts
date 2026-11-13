@@ -63,7 +63,7 @@ async function world() {
 }
 
 describe('permisos de /api/admin/extras', () => {
-  it('sin sesión 401; lectora 403; editora y administradora permitidas', async () => {
+  it('sin sesión 401; lector 403; editor y administrador permitidos', async () => {
     const { app, reader, editor, admin, bookId, text } = await world();
     await request(app).get('/api/admin/extras').query({ bookId }).expect(401);
     expect((await reader.get('/api/admin/extras').query({ bookId })).status).toBe(403);
@@ -357,7 +357,7 @@ describe('bookCompletedAt: se fija una sola vez al completar todos los quizzes p
     ]);
   });
 
-  it('los quizzes sin publicar no cuentan y el modo prueba (editoras) no completa el libro', async () => {
+  it('los quizzes sin publicar no cuentan y el modo prueba (editores) no completa el libro', async () => {
     const { reader, quiz1, quiz2, book, editor, editorUser } = await world();
     await createQuiz({ bookId: book._id, order: 3, content: simpleContent() }); // borrador: no se exige
     await playQuizToEnd(reader, quiz1._id.toString());
@@ -615,7 +615,7 @@ describe('extras para el lector', () => {
     ).toBe(404);
   });
 
-  it('las editoras NO ven los extras por la ruta del lector sin completar el libro (para eso está la vista previa)', async () => {
+  it('los editores NO ven los extras por la ruta del lector sin completar el libro (para eso está la vista previa)', async () => {
     const { editor, text, bookId } = await world();
     const extra = extraResponseSchema.parse(
       (await editor.post('/api/admin/extras').send(text()).expect(201)).body,

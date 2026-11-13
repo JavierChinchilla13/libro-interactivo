@@ -1,8 +1,9 @@
 import {
-  CARDS_LABEL_DEFAULT,
-  CARDS_LABEL_MAX,
   type AdminCard,
   type CardInputPayload,
+  CARDS_LABEL_DEFAULT,
+  CARDS_LABEL_MAX,
+  plural,
 } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
@@ -20,7 +21,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { useToast } from '../components/Toast';
 import { errorMessage } from '../errors';
 
-/** El nombre de la sección: lo que ven las lectoras en su menú y en sus pantallas. Solo administradoras. */
+/** El nombre de la sección: lo que ven los lectores en su menú y en sus pantallas. Solo administradores. */
 function LabelForm() {
   const client = useQueryClient();
   const toast = useToast();
@@ -51,7 +52,7 @@ function LabelForm() {
   return (
     <FormSection
       title="Nombre de esta sección"
-      help="Así la ven las lectoras en su menú y en sus pantallas, y tú en este panel. Se guarda como texto sin formato."
+      help="Así la ven los lectores en su menú y en sus pantallas, y tú en este panel. Se guarda como texto sin formato."
     >
       <form onSubmit={submit} className="flex flex-wrap items-end gap-3" noValidate>
         <TextField
@@ -84,8 +85,8 @@ const toPayload = (card: AdminCard, over: Partial<CardInputPayload> = {}): CardI
 });
 
 /**
- * Cartas con QR (solo administradoras): lista por libro con su portada, cuántas imágenes tiene, su estado y su orden.
- * Se ordenan con las flechas; archivar quita la carta de la vista de las lectoras y deja su QR sin efecto.
+ * Cartas con QR (solo administradores): lista por libro con su portada, cuántas imágenes tiene, su estado y su orden.
+ * Se ordenan con las flechas; archivar quita la carta de la vista de los lectores y deja su QR sin efecto.
  */
 export function CardListPage() {
   const client = useQueryClient();
@@ -137,7 +138,7 @@ export function CardListPage() {
     <>
       <PageHeader
         title={label}
-        subtitle="Cartas con QR: imágenes que la lectora abre al escanear su código y guarda en su cuenta."
+        subtitle="Cartas con QR: imágenes que el lector abre al escanear su código y guarda en su cuenta."
         actions={
           books.data && books.data.books.length > 0 ? (
             <Link to={`/admin/cartas/nueva?libro=${bookId}`} className="btn btn-primary">
@@ -149,7 +150,7 @@ export function CardListPage() {
       <div className="mb-4">
         <HelpTip>
           Cada carta tiene su propio código QR (se crea y se descarga en «Códigos QR»). Una carta
-          queda oculta para las lectoras hasta que la abren con su código; nadie ve cuántas hay. Tú
+          queda oculta para los lectores hasta que la abren con su código; nadie ve cuántas hay. Tú
           las ves todas desde tu panel, en modo prueba.
         </HelpTip>
       </div>
@@ -228,9 +229,7 @@ export function CardListPage() {
                                 label={card.status === 'published' ? 'Publicada' : 'Archivada'}
                               />
                               <span className="tabular-nums">
-                                {card.images.length === 1
-                                  ? '1 imagen'
-                                  : `${card.images.length} imágenes`}
+                                {plural(card.images.length, 'imagen', 'imágenes')}
                               </span>
                               <span className="tabular-nums">· Posición {index + 1}</span>
                             </p>

@@ -1,3 +1,4 @@
+import { pluralWord } from '@libro/shared';
 import type { ExtraKind } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -115,7 +116,8 @@ export function ExtrasPage() {
               </p>
               {experiences.length > 0 ? (
                 <p className="text-sm font-medium tabular-nums">
-                  {experiences.length - missing} de {experiences.length} completadas
+                  {experiences.length - missing} de {experiences.length}{' '}
+                  {pluralWord(experiences.length, 'completada', 'completadas')}
                 </p>
               ) : null}
               <Link to={summary} className="text-sm underline">

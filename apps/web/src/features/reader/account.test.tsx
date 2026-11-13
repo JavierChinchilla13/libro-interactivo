@@ -16,7 +16,7 @@ beforeEach(() => localStorage.clear());
 afterEach(() => vi.unstubAllGlobals());
 
 const NO_SESSION = { session: null } as const;
-// El marco del libro (migas y subnavegador) pide la biblioteca de la lectora.
+// El marco del libro (migas y subnavegador) pide la biblioteca del lector.
 const LIBRARY = {
   'GET /api/me/library': () =>
     json({

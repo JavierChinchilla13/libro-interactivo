@@ -343,7 +343,7 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
 
         <FormSection
           title="Visibilidad"
-          help="Cuándo se muestra y qué ve la lectora mientras tanto."
+          help="Cuándo se muestra y qué ve el lector mientras tanto."
         >
           <p className="text-sm text-muted">
             La pestaña completa se bloquea desde el libro. Aquí puedes ocultar solo esta entrada
@@ -362,7 +362,7 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
           />
           {form.unlockQuizId ? (
             <SelectField
-              label="Qué ve la lectora mientras tanto"
+              label="Qué ve el lector mientras tanto"
               value={form.lockedDisplay}
               options={[
                 { value: 'show', label: 'Mostrarla como «bloqueada» (sin contenido)' },

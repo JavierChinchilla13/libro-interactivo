@@ -134,7 +134,7 @@ describe('el servidor no deja estrenar un id ya usado (refuerzo)', () => {
     expect(res.status, JSON.stringify(res.body)).toBe(200);
   });
 
-  it('el permiso no cambia: una lectora sigue sin poder guardar el borrador', async () => {
+  it('el permiso no cambia: un lector sigue sin poder guardar el borrador', async () => {
     const { reader, base, detail } = await world();
     const current = await detail();
     expect((await reader.put(`${base}/draft`).send(current.draft)).status).toBe(403);

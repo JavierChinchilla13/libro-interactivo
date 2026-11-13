@@ -3,7 +3,7 @@ import { Schema, model, type HydratedDocument, type InferSchemaType } from 'mong
 
 /**
  * Un aviso por correo de un elemento publicado (actualización o capítulo extra). Es también el registro de envíos:
- * quién lo pidió, cuándo, de qué elemento y cuántas destinatarias (sin correos). El índice único `{kind, refId}`
+ * quién lo pidió, cuándo, de qué elemento y cuántos destinatarios (sin correos). El índice único `{kind, refId}`
  * garantiza que cada elemento se avisa una sola vez, también ante doble clic o dos personas a la vez.
  */
 const notificationJobSchema = new Schema(

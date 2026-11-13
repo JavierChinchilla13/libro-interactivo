@@ -154,7 +154,7 @@ describe('GET /api/wiki/sections', () => {
     expect(body.sections.find((s) => s.kind === 'power_field')?.locked).toBe(true);
   });
 
-  it('las editoras y administradoras lo ven todo abierto (vista previa)', async () => {
+  it('los editores y administradores lo ven todo abierto (vista previa)', async () => {
     const { editor, admin, bookId } = await world();
     for (const staff of [editor, admin]) {
       const { sections } = publicWikiSectionsResponseSchema.parse(
@@ -485,7 +485,7 @@ describe('GET /api/wiki/entries/:entryId', () => {
     expect(publicWikiEntryResponseSchema.parse(res.body).related).toEqual([]);
   });
 
-  it('las editoras ven también lo bloqueado y lo oculto (vista previa), pero no un borrador', async () => {
+  it('los editores ven también lo bloqueado y lo oculto (vista previa), pero no un borrador', async () => {
     const { editor, q1, add } = await world();
     const hidden = await add({
       kind: 'character',

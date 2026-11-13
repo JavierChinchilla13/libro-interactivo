@@ -25,7 +25,7 @@ export function VersionsTab({ quizId, archived }: { quizId: string; archived: bo
   return (
     <div className="flex flex-col gap-5">
       <HelpTip>
-        Cada vez que publicas se guarda una versión. Las lectoras que ya empezaron terminan con la
+        Cada vez que publicas se guarda una versión. Los lectores que ya empezaron terminan con la
         que empezaron.
       </HelpTip>
       {versions.isPending ? <SkeletonRows rows={4} /> : null}
@@ -80,7 +80,7 @@ export function VersionsTab({ quizId, archived }: { quizId: string; archived: bo
             const ok = await confirm({
               title: '¿Archivar este quiz?',
               message:
-                'Las lectoras dejarán de verlo y de poder jugarlo. Se conservan sus intentos, resultados y versiones publicadas, y se libera su posición en la secuencia.',
+                'Los lectores dejarán de verlo y de poder jugarlo. Se conservan sus intentos, resultados y versiones publicadas, y se libera su posición en la secuencia.',
               confirmLabel: 'Archivar',
               tone: 'danger',
             });

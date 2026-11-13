@@ -51,9 +51,9 @@ const siteSettingsSchema = new Schema(
     },
     /** Texto de «Bloqueado: avanza en tu lectura» editable por la autora. */
     lock: { message: { type: String, trim: true, maxlength: 200 } },
-    /** Nombre legal de la titular del sitio: lo citan la privacidad y los términos. Solo lo cambia una administradora. */
+    /** Nombre legal de la titular del sitio: lo citan la privacidad y los términos. Solo lo cambia un administrador. */
     legalOwnerName: { type: String, trim: true, maxlength: 160 },
-    /** Cómo se llama la sección de cartas (texto plano). Vacío = «Hallazgos». Solo lo cambia una administradora. */
+    /** Cómo se llama la sección de cartas (texto plano). Vacío = «Hallazgos». Solo lo cambia un administrador. */
     cardsLabel: { type: String, trim: true, maxlength: 40 },
     updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },

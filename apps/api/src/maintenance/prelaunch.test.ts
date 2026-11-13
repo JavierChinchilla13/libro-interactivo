@@ -42,7 +42,7 @@ async function seed() {
     .collection('posts')
     .insertOne({ title: 'Evento de ejemplo', slug: 'evento', status: 'published' });
   await db().collection('reviews').insertOne({
-    author: 'Lectora',
+    author: 'Lector',
     text: 'Me gustó, por ejemplo, el final. Más texto de reseña.',
     status: 'published',
   });
@@ -153,7 +153,7 @@ describe('checkPrelaunch', () => {
     const lines = describePrelaunch(await checkPrelaunch(db()));
     const failing = lines.filter((l) => l.status === 'fail').map((l) => l.text);
     expect(failing.join('\n')).toMatch(/VISIBLE · Libros: «Libro 1»/);
-    expect(failing.join('\n')).toMatch(/correo\(s\) de ejemplo en cuentas/);
+    expect(failing.join('\n')).toMatch(/\d+ correos? de ejemplo en cuentas/);
     expect(
       lines
         .filter((l) => l.status === 'warn')
@@ -162,7 +162,7 @@ describe('checkPrelaunch', () => {
     ).toMatch(/borrador · Libros/);
   });
 
-  it('una base limpia pasa: sin avisos y con una administradora', async () => {
+  it('una base limpia pasa: sin avisos y con un administrador', async () => {
     await db()
       .collection('books')
       .insertOne({ slug: 'real', title: 'Memorias Postergadas', status: 'published' });
@@ -177,8 +177,8 @@ describe('checkPrelaunch', () => {
     expect(lines.at(-1)?.text).toMatch(/No se encontró contenido de muestra/);
   });
 
-  it('sin ninguna administradora activa falla', async () => {
+  it('sin ningún administrador activo falla', async () => {
     const lines = describePrelaunch(await checkPrelaunch(db()));
-    expect(lines.some((l) => l.status === 'fail' && /administradora/.test(l.text))).toBe(true);
+    expect(lines.some((l) => l.status === 'fail' && /administrador/.test(l.text))).toBe(true);
   });
 });

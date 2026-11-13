@@ -101,7 +101,7 @@ function toSocial(settings: Loaded): SocialLink[] {
  * «bloqueado». Todo el HTML se sanea al guardar. Lo público sale por `getPublic` (sin bienvenida ni correo privado).
  */
 export function createSiteSettingsService() {
-  /** El bloque de contacto (correo privado) solo se entrega a administradoras. */
+  /** El bloque de contacto (correo privado) solo se entrega a administradores. */
   async function getSettings(role?: Role): Promise<SiteSettingsResponse> {
     const settings = await loadSettings();
     const contact: ContactSettingsResponse = {
@@ -138,19 +138,19 @@ export function createSiteSettingsService() {
     const { welcome, universe, author, social, lock, contact, legalOwnerName, cardsLabel } =
       request;
     if (contact && actor.role !== 'ADMIN') {
-      throw new AppError('FORBIDDEN', 'Solo una administradora puede cambiar el contacto');
+      throw new AppError('FORBIDDEN', 'Solo un administrador puede cambiar el contacto');
     }
     if (legalOwnerName !== undefined && actor.role !== 'ADMIN') {
       throw new AppError(
         'FORBIDDEN',
-        'Solo una administradora puede cambiar el nombre legal de la titular',
+        'Solo un administrador puede cambiar el nombre legal de la titular',
       );
     }
 
     if (cardsLabel !== undefined && actor.role !== 'ADMIN') {
       throw new AppError(
         'FORBIDDEN',
-        'Solo una administradora puede cambiar el nombre de la sección',
+        'Solo un administrador puede cambiar el nombre de la sección',
       );
     }
 

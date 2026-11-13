@@ -6,13 +6,13 @@ import { errorMessage } from '../../shared/api/messages';
 import { Alert } from '../../shared/ui/layout';
 import { NEWSLETTER_KEY, newsletterApi } from './api';
 
-/** Lo que se le dice a la lectora después de contestar; se queda en pantalla hasta que se vaya del panel. */
+/** Lo que se le dice al lector después de contestar; se queda en pantalla hasta que se vaya del panel. */
 type Outcome = 'pending' | 'subscribed' | 'declined';
 
 const link = 'underline underline-offset-2 hover:text-primary';
 
 /**
- * Invitación única a los correos de novedades en el panel de la lectora. El servidor decide si se muestra
+ * Invitación única a los correos de novedades en el panel del lector. El servidor decide si se muestra
  * (`invitation`: mayor de 18 con fecha guardada, sin alta ni baja y sin respuesta previa); aquí solo se pinta.
  *
  * - Dos botones con el mismo peso (los dos secundarios) y ninguna casilla marcada de antemano.

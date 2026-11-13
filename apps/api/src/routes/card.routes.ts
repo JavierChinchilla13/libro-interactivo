@@ -16,7 +16,7 @@ import { createRateLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 
 /**
- * `/admin/cards`: SOLO administradoras (las cartas son secretos hasta que se abren con su QR: ni siquiera las editoras
+ * `/admin/cards`: SOLO administradores (las cartas son secretos hasta que se abren con su QR: ni siquiera los editores
  * ven su lista). Cada imagen pide su propia firma (hasta 12 por carta): tiene su cupo.
  */
 export function createAdminCardRouter(
@@ -46,7 +46,7 @@ export function createAdminCardRouter(
   return router;
 }
 
-/** `/cards`: las cartas abiertas de la lectora. Sesión obligatoria; el servidor decide cada vez. */
+/** `/cards`: las cartas abiertas del lector. Sesión obligatoria; el servidor decide cada vez. */
 export function createReaderCardRouter(
   controller: ReturnType<typeof createReaderCardController>,
   guards: Guards,

@@ -18,7 +18,7 @@ import { usePageMeta } from '../../shared/seo/usePageMeta';
 export function FanArtsPage() {
   usePageMeta({
     title: 'Fan arts',
-    description: 'Dibujos que las lectoras y lectores hicieron del universo Memorias.',
+    description: 'Dibujos que los lectores hicieron del universo Memorias.',
   });
   const [bookId, setBookId] = useState<string | undefined>(undefined);
   const [open, setOpen] = useState<number | null>(null);

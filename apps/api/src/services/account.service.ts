@@ -38,14 +38,14 @@ export function createAccountService({ auth, mail, tasks, clock }: AccountServic
   return {
     /**
      * Elimina la propia cuenta (solo lectores): pide la contraseña y borra los datos personales; los intentos
-     * completados quedan anonimizados. Una cuenta de administración la desactiva otra administradora.
+     * completados quedan anonimizados. Una cuenta de administración la desactiva otro administrador.
      */
     async deleteAccount(userId: string, password: string): Promise<void> {
       const user = await activeUser(userId);
       if (user.role !== 'USER') {
         throw new AppError(
           'FORBIDDEN',
-          'Una cuenta de administración no se elimina por aquí: pídele a otra administradora que la desactive.',
+          'Una cuenta de administración no se elimina por aquí: pídele a otro administrador que la desactive.',
         );
       }
       if (!(await verifyPassword(user.passwordHash, password))) {

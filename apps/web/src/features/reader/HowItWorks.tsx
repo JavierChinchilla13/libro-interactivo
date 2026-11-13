@@ -1,6 +1,6 @@
 import './howItWorks.css';
 
-/** Las mecánicas reales del panel, en el orden en que la lectora las vive. Nada del contenido del libro. */
+/** Las mecánicas reales del panel, en el orden en que el lector las vive. Nada del contenido del libro. */
 const STEPS = [
   {
     title: 'Escanea el QR de tu libro',

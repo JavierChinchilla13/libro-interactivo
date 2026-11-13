@@ -11,12 +11,12 @@ const ADMIN = {
   email: 'a@ejemplo.com',
   role: 'ADMIN',
 };
-const EDITOR = { ...ADMIN, id: '670000000000000000000002', name: 'Editora', role: 'EDITOR' };
+const EDITOR = { ...ADMIN, id: '670000000000000000000002', name: 'Editor', role: 'EDITOR' };
 const USER_ID = '670000000000000000000001';
 const stamp = '2026-10-01T10:00:00.000Z';
 const person = (over: object = {}) => ({
   id: USER_ID,
-  name: 'Lectora Uno',
+  name: 'Lector Uno',
   email: 'uno@ejemplo.com',
   role: 'USER',
   status: 'active',
@@ -70,7 +70,7 @@ const message = (over: object = {}) => ({
 });
 
 describe('menú y permisos del panel', () => {
-  it('la administradora ve los enlaces nuevos (sin «pronto») y la editora no entra', async () => {
+  it('el administrador ve los enlaces nuevos (sin «pronto») y el editor no entra', async () => {
     mockApi({ 'GET /api/admin/users': () => json(list([person()])) }, { session: ADMIN });
     renderAt('/admin/usuarios');
     const menu = await screen.findByRole('navigation', { name: 'Administración' });
@@ -85,7 +85,7 @@ describe('menú y permisos del panel', () => {
     expect(within(menu).queryByText('pronto')).not.toBeInTheDocument();
   });
 
-  it('una editora que abre /admin/usuarios no ve la pantalla ni llama al API de usuarios', async () => {
+  it('un editor que abre /admin/usuarios no ve la pantalla ni llama al API de usuarios', async () => {
     const { called } = mockApi(
       { 'GET /api/admin/books': () => json({ books: [] }) },
       { session: EDITOR },
@@ -109,7 +109,7 @@ describe('usuarios', () => {
               person(),
               person({
                 id: '2'.padStart(24, '0'),
-                name: 'Editora Dos',
+                name: 'Editor Dos',
                 email: 'dos@ejemplo.com',
                 role: 'EDITOR',
                 status: 'disabled',
@@ -117,16 +117,16 @@ describe('usuarios', () => {
               }),
             ]),
           ),
-        'GET /api/admin/users?q=dos&page=1': () => json(list([person({ name: 'Editora Dos' })])),
+        'GET /api/admin/users?q=dos&page=1': () => json(list([person({ name: 'Editor Dos' })])),
       },
       { session: ADMIN },
     );
     renderAt('/admin/usuarios');
     expect(
-      await screen.findByRole('row', { name: /Lectora Uno.*Lectora.*Activa.*1 de 3/ }),
+      await screen.findByRole('row', { name: /Lector Uno.*Lector.*Activa.*1 de 3/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('row', { name: /Editora Dos.*Editora.*Desactivada.*0 de 3/ }),
+      screen.getByRole('row', { name: /Editor Dos.*Editor.*Desactivada.*0 de 3/ }),
     ).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText('Buscar por nombre o correo'), 'dos');
     await userEvent.click(screen.getByRole('button', { name: 'Buscar' }));
@@ -147,12 +147,12 @@ describe('usuarios', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Crear y enviar invitación' }));
     expect((await screen.findAllByText(/Escribe el nombre/)).length).toBeGreaterThan(0);
     expect(called('POST /api/admin/users')).toHaveLength(0);
-    await userEvent.type(screen.getByLabelText('Nombre'), 'Nueva Editora');
+    await userEvent.type(screen.getByLabelText('Nombre'), 'Nueva Editor');
     await userEvent.type(screen.getByLabelText('Correo electrónico'), 'nueva@ejemplo.com');
     await userEvent.click(screen.getByRole('button', { name: 'Crear y enviar invitación' }));
     await waitFor(() => expect(called('POST /api/admin/users')).toHaveLength(1));
     expect(called('POST /api/admin/users')[0]?.body).toEqual({
-      name: 'Nueva Editora',
+      name: 'Nueva Editor',
       email: 'nueva@ejemplo.com',
       role: 'EDITOR',
     });
@@ -161,7 +161,7 @@ describe('usuarios', () => {
   it('el detalle muestra el progreso por quiz, con resultado e intentos', async () => {
     mockApi({ [`GET /api/admin/users/${USER_ID}`]: () => json(detail()) }, { session: ADMIN });
     renderAt(`/admin/usuarios/${USER_ID}`);
-    expect(await screen.findByRole('heading', { name: 'Lectora Uno' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Lector Uno' })).toBeInTheDocument();
     expect(screen.getByText(/Quiz 1 · Quiz Uno/)).toBeInTheDocument();
     expect(screen.getByText(/Resultado: El Faro.*2 intentos/)).toBeInTheDocument();
     expect(screen.getByText('Desbloqueado')).toBeInTheDocument();
@@ -205,7 +205,7 @@ describe('usuarios', () => {
     expect(called(`PATCH /api/admin/users/${USER_ID}`)[0]?.body).toEqual({ role: 'EDITOR' });
   });
 
-  it('elimina a una lectora tras confirmar y vuelve a la lista; muestra el error del servidor', async () => {
+  it('elimina a un lector tras confirmar y vuelve a la lista; muestra el error del servidor', async () => {
     const { called } = mockApi(
       {
         [`GET /api/admin/users/${USER_ID}`]: () => json(detail()),
@@ -243,7 +243,7 @@ describe('usuarios', () => {
     mockApi(
       {
         [`GET /api/admin/users/${EDITOR.id}`]: () =>
-          json(detail(person({ id: EDITOR.id, name: 'Editora', role: 'EDITOR' }))),
+          json(detail(person({ id: EDITOR.id, name: 'Editor', role: 'EDITOR' }))),
       },
       { session: ADMIN },
     );
@@ -253,19 +253,19 @@ describe('usuarios', () => {
     expect(screen.getByText(/se desactivan/)).toBeInTheDocument();
   });
 
-  it('muestra el error cuando es la última administradora', async () => {
+  it('muestra el error cuando es el último administrador', async () => {
     mockApi(
       {
         [`GET /api/admin/users/${EDITOR.id}`]: () =>
           json(detail(person({ id: EDITOR.id, name: 'Otra Admin', role: 'ADMIN' }))),
         [`PATCH /api/admin/users/${EDITOR.id}`]: () =>
-          apiError('VALIDATION', 'Debe quedar al menos una administradora activa', 400),
+          apiError('VALIDATION', 'Debe quedar al menos un administrador activo', 400),
       },
       { session: ADMIN },
     );
     renderAt(`/admin/usuarios/${EDITOR.id}`);
     await userEvent.selectOptions(await screen.findByLabelText('Rol'), 'EDITOR');
-    expect(await screen.findByText(/al menos una administradora activa/)).toBeInTheDocument();
+    expect(await screen.findByText(/al menos un administrador activo/)).toBeInTheDocument();
   });
 });
 
@@ -364,7 +364,7 @@ describe('estadísticas', () => {
     );
     renderAt('/admin/estadisticas');
     expect(await screen.findByText('12')).toBeInTheDocument();
-    expect(screen.getByText(/3 esta semana · 8 este mes · 1 desactivadas/)).toBeInTheDocument();
+    expect(screen.getByText(/3 esta semana · 8 este mes · 1 desactivado/)).toBeInTheDocument();
     expect(screen.getByText('30')).toBeInTheDocument();
     expect(screen.getByText(/Libro Uno · Quiz 1 · Quiz Uno/)).toBeInTheDocument();
     expect(screen.getByText(/10 personas · 12 intentos completados/)).toBeInTheDocument();
@@ -494,7 +494,7 @@ describe('ajustes del sitio (contacto)', () => {
   });
 });
 
-describe('eliminar mi cuenta (lectora)', () => {
+describe('eliminar mi cuenta (lector)', () => {
   it('pide la contraseña, la envía y recarga en el inicio', async () => {
     const { called } = mockApi({ 'DELETE /api/me': () => empty() }, { session: READER });
     const replace = vi.fn();

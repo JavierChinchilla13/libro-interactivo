@@ -83,7 +83,7 @@ export function createAdminQuizEditorController(
     const { params } = getInput<unknown, unknown, QuizParams>(res);
     res.json(await quizzes.versions(params.quizId));
   };
-  // Apariencia en vivo (fuera de las versiones): cualquier editora o administradora.
+  // Apariencia en vivo (fuera de las versiones): cualquier editor o administrador.
   const getAppearance: RequestHandler = async (_req, res) => {
     const { params } = getInput<unknown, unknown, QuizParams>(res);
     res.json(await appearance.get(params.quizId));

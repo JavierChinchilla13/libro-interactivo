@@ -153,7 +153,7 @@ const CASES: Case[] = [
           reviews: Array.from({ length: n }, (_, i) => ({
             id: hex(i + 1),
             text: label(i + 1),
-            authorName: `Lectora ${i + 1}`,
+            authorName: `Lector ${i + 1}`,
             rating: 5,
             order: i + 1,
             status: 'published',

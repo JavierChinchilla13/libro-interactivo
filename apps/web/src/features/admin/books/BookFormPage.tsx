@@ -213,8 +213,8 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
             />
             {form.status === 'upcoming' ? (
               <CheckField
-                label="Mostrarlo a las lectoras como «próximamente»"
-                hint="Apagado por defecto. Si lo enciendes, las lectoras con sesión lo ven en «Tus libros» (con cuenta atrás si hay fecha, o con «Próximamente»), solo con portada y título."
+                label="Mostrarlo a los lectores como «próximamente»"
+                hint="Apagado por defecto. Si lo enciendes, los lectores con sesión lo ven en «Tus libros» (con cuenta atrás si hay fecha, o con «Próximamente»), solo con portada y título."
                 checked={form.showInReaderPanel}
                 onChange={(value) => set('showInReaderPanel', value)}
               />
@@ -265,7 +265,7 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
             />
           </FormSection>
 
-          <FormSection title="Cómo comprar" help="Enlaces para que las lectoras consigan el libro.">
+          <FormSection title="Cómo comprar" help="Enlaces para que los lectores consigan el libro.">
             {form.purchaseLinks.map((link, index) => (
               <fieldset
                 key={index}

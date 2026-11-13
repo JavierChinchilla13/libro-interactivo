@@ -233,7 +233,7 @@ describe('menor de 16 años', () => {
     for (let i = 0; i < 8; i += 1) {
       const res = await register(app, {
         ...BASE,
-        email: `lectora${i}@ejemplo.com`,
+        email: `lector${i}@ejemplo.com`,
         ...ADULT_CONSENT,
       });
       expect(res.status).toBe(201);

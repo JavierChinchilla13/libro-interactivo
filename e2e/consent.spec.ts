@@ -7,7 +7,7 @@ const thisYear = new Date().getUTCFullYear();
 
 async function fillAccount(page: Page, email: string) {
   await page.goto('/registro');
-  await page.getByLabel(/^Nombre/).fill('Lectora Edad');
+  await page.getByLabel(/^Nombre/).fill('Lector Edad');
   await page.getByLabel(/^Correo/).fill(email);
   await page.getByLabel(/^Contraseña/).fill(PASSWORD);
 }

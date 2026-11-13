@@ -69,7 +69,7 @@ async function unlockedReader(
   const register = await context.request.post('/api/auth/register', {
     data: {
       ...ADULT_CONSENT,
-      name: `Lectora ${label}`,
+      name: `Lector ${label}`,
       email: `lectora-${label}-${stamp}@ejemplo.com`,
       password: PASSWORD,
     },
@@ -88,7 +88,7 @@ const nextQuestion = async (page: Page) => {
 };
 
 test.describe('apariencia por pregunta', () => {
-  test('la autora personaliza la pregunta 2 en el panel y la lectora la ve ahí y en ninguna otra', async ({
+  test('la autora personaliza la pregunta 2 en el panel y el lector la ve ahí y en ninguna otra', async ({
     page,
     browser,
     isMobile,
@@ -141,7 +141,7 @@ test.describe('apariencia por pregunta', () => {
     expect(stored.appearance.questions.p2.accent).toBe('#ff8fb1');
     expect(stored.appearance.questions.p2.background.image.alt).toBe('Fondo de la pregunta dos');
 
-    // Lectora: la 1 usa el general; la 2, su fondo y acento; la 3 vuelve al general.
+    // Lector: la 1 usa el general; la 2, su fondo y acento; la 3 vuelve al general.
     const reader = await unlockedReader(browser, stamp, token, 'preguntas');
     await fakeCloudinary(reader);
     const view = await reader.newPage();

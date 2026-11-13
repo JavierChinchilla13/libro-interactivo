@@ -337,7 +337,7 @@ export const publishQuizResponseSchema = z.object({
 });
 export type PublishQuizResponse = z.infer<typeof publishQuizResponseSchema>;
 
-// --- «Tus libros» del panel de la lectora ---
+// --- «Tus libros» del panel del lector ---
 
 /**
  * Cómo se muestra un libro en «Tus libros»:

@@ -33,12 +33,12 @@ async function world() {
   const admin = await createUser({
     email: 'admin@ejemplo.com',
     role: 'ADMIN',
-    name: 'Administradora',
+    name: 'Administrador',
   });
   const editor = await createUser({
     email: 'editora@ejemplo.com',
     role: 'EDITOR',
-    name: 'Editora',
+    name: 'Editor',
   });
   const book = await createBook();
   const quiz = await createQuiz({
@@ -98,7 +98,7 @@ describe('apariencia del quiz: lectura y primera edición', () => {
     expect(res.history[0]).toMatchObject({
       rev: 1,
       action: 'seed',
-      by: { id: editor.userId, name: 'Editora' },
+      by: { id: editor.userId, name: 'Editor' },
       at: clockRef.now.toISOString(),
     });
     expect(res.history[0]?.changed).toEqual(['background', 'overlay', 'accent']);

@@ -23,7 +23,7 @@ describe('nombre legal de la titular (legalOwnerName)', () => {
     expect(site.legalOwnerName).toBeUndefined();
   });
 
-  it('una administradora lo escribe; sale en el sitio público y se puede quitar dejándolo vacío', async () => {
+  it('un administrador lo escribe; sale en el sitio público y se puede quitar dejándolo vacío', async () => {
     const { admin, app } = await staffWorld();
     const saved = siteSettingsResponseSchema.parse(
       (
@@ -56,7 +56,7 @@ describe('nombre legal de la titular (legalOwnerName)', () => {
     expect(after.legalOwnerName).toBeUndefined();
   });
 
-  it('una editora no lo puede cambiar (403) y una lectora no entra al panel', async () => {
+  it('un editor no lo puede cambiar (403) y un lector no entra al panel', async () => {
     const { editor, reader } = await staffWorld();
     expect(
       (await editor.patch('/api/admin/site-settings').send({ legalOwnerName: FAKE_OWNER })).status,

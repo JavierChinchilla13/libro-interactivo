@@ -40,7 +40,7 @@ export function createWelcomeRouter(
   return router;
 }
 
-/** `/admin/site-settings`: editoras y administradoras editan la bienvenida, la presentación, la autora, las redes y el texto de «bloqueado». */
+/** `/admin/site-settings`: editores y administradores editan la bienvenida, la presentación, la autora, las redes y el texto de «bloqueado». */
 export function createAdminSiteRouter(
   controller: ReturnType<typeof createAdminSiteController>,
   guards: Guards,

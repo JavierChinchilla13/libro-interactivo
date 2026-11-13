@@ -162,7 +162,7 @@ export function createQuizService(deps: QuizServiceDeps) {
 
   /**
    * Inicia un intento (o reanuda el que está abierto). Fija la versión publicada vigente y baraja la etapa
-   * inicial. Si el quiz es de una sola vez y ya se completó ⇒ 409. Las editoras/administradoras juegan en
+   * inicial. Si el quiz es de una sola vez y ya se completó ⇒ 409. Los editores/administradores juegan en
    * modo prueba (`isTest`).
    */
   async function startAttempt(actor: Actor, quizId: string): Promise<AttemptResponse> {

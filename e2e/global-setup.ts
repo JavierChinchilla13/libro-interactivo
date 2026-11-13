@@ -26,7 +26,7 @@ async function emptyDatabase(): Promise<void> {
   }
 }
 
-/** Limpia la base de pruebas y crea la administradora de las E2E con el script oficial `seed:admin`. */
+/** Limpia la base de pruebas y crea el administrador de las E2E con el script oficial `seed:admin`. */
 export default async function globalSetup(): Promise<void> {
   await emptyDatabase();
   const result = spawnSync('npm', ['run', 'seed:admin', '-w', 'apps/api'], {
@@ -41,6 +41,6 @@ export default async function globalSetup(): Promise<void> {
     },
   });
   if (result.status !== 0) {
-    throw new Error(`No se pudo crear la administradora E2E:\n${result.stdout}\n${result.stderr}`);
+    throw new Error(`No se pudo crear el administrador E2E:\n${result.stdout}\n${result.stderr}`);
   }
 }

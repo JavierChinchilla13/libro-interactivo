@@ -235,7 +235,7 @@ export function createAuthService(options: AuthServiceOptions) {
      * - Si **no existe** y no llegó el perfil (edad y consentimientos), **no se crea nada**: se responde
      *   `needs_profile` con el nombre y el correo para mostrarlos. Entre los dos pasos el servidor no guarda nada.
      * - Si llegó el perfil, se evalúa igual que en el registro (menor de 16: rechazo, nada guardado) y se crea una
-     *   lectora con una contraseña al azar que nadie conoce (puede definir una con «Olvidé mi contraseña»).
+     *   lector con una contraseña al azar que nadie conoce (puede definir una con «Olvidé mi contraseña»).
      */
     async loginWithGoogle(
       profile: GoogleProfile,
@@ -251,8 +251,8 @@ export function createAuthService(options: AuthServiceOptions) {
       if (user && (user.status !== 'active' || (user.lockedUntil && user.lockedUntil > clock()))) {
         throw new AppError('AUTH_INVALID', GOOGLE_INVALID);
       }
-      // Una lectora cuyos datos de edad y consentimiento pudo poner otra persona (cuenta con contraseña y correo sin
-      // comprobar que ya declaró edad, o marcada para volver a declararlos) debe declararlos ella antes de entrar. Sin
+      // Un lector cuyos datos de edad y consentimiento pudo poner otra persona (cuenta con contraseña y correo sin
+      // comprobar que ya declaró edad, o marcada para volver a declararlos) debe declararlos la propia persona antes de entrar. Sin
       // ellos no se cambia nada. Las cuentas anteriores a la edad y las de equipo no entran aquí.
       let consent: StoredConsent | undefined;
       if (user && user.role === 'USER' && needsFreshConsent(user)) {
@@ -262,7 +262,7 @@ export function createAuthService(options: AuthServiceOptions) {
         consent = evaluateConsent(consentInput, { now: clock(), gate: ageGate, ip: meta.ip });
       }
       if (user && user.role === 'USER' && !user.emailVerifiedAt) {
-        // Cuenta creada con contraseña, con un correo que nadie comprobó: quien la creó pudo no ser la dueña del
+        // Cuenta creada con contraseña, con un correo que nadie comprobó: quien la creó pudo no ser el dueño del
         // correo. Entrar con Google prueba que esta persona sí lo es.
         user = await claimUnverifiedAccount(user._id, consent);
       } else if (user && consent) {

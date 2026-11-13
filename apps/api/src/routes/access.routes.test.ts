@@ -58,8 +58,8 @@ async function world(options: Parameters<typeof staffWorld>[0] = {}) {
   return { ...w, book, quiz1, quiz2, create };
 }
 
-describe('permisos de /api/admin/access-tokens (solo administradoras)', () => {
-  it('sin sesión 401; lectora 403; EDITORA 403; ADMIN permitida', async () => {
+describe('permisos de /api/admin/access-tokens (solo administradores)', () => {
+  it('sin sesión 401; lector 403; EDITOR 403; ADMIN permitida', async () => {
     const { app, reader, editor, admin, quiz1 } = await world();
     const body = { kind: 'quiz', refId: quiz1._id.toString() };
     await request(app).get('/api/admin/access-tokens').expect(401);
@@ -484,7 +484,7 @@ describe('POST /api/access/redeem', () => {
     expect((await reader.post('/api/access/redeem').send({ token: 'basura' })).status).toBe(429);
   });
 
-  it('las editoras y administradoras prueban sin QR (siguen jugando en modo prueba)', async () => {
+  it('los editores y administradores prueban sin QR (siguen jugando en modo prueba)', async () => {
     const { editor, quiz2 } = await world();
     await editor.get(`/api/quizzes/${quiz2._id.toString()}`).expect(200);
   });

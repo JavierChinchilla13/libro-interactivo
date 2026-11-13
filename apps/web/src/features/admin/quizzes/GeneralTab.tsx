@@ -65,7 +65,7 @@ export function GeneralTab({
         ) : (
           <>
             <RichTextEditor
-              label="Instrucciones para la lectora"
+              label="Instrucciones para el lector"
               value={draft.instructionsHtml ?? ''}
               onChange={(html) => onChange({ ...draft, instructionsHtml: html })}
             />
@@ -89,7 +89,7 @@ export function GeneralTab({
         >
           <CheckField
             label="Se puede repetir"
-            hint="Si lo apagas, cada lectora lo juega una sola vez."
+            hint="Si lo apagas, cada lector lo juega una sola vez."
             checked={draft.settings.allowRetake ?? true}
             onChange={(value) =>
               onChange({ ...draft, settings: { ...draft.settings, allowRetake: value } })
@@ -97,7 +97,7 @@ export function GeneralTab({
           />
           <CheckField
             label="Mostrar el porcentaje de cada resultado"
-            hint="Al terminar, la lectora ve cuánto de cada resultado sacó."
+            hint="Al terminar, el lector ve cuánto de cada resultado sacó."
             checked={draft.settings.showBreakdown ?? false}
             onChange={(value) =>
               onChange({ ...draft, settings: { ...draft.settings, showBreakdown: value } })
@@ -111,7 +111,7 @@ export function GeneralTab({
         <Card className="flex flex-col gap-4">
           <h2 className="font-semibold">Líneas que aparecen antes del resultado</h2>
           <p className="text-sm text-muted">
-            Se muestran una por una mientras se calcula el resultado. Las ven todas las lectoras,
+            Se muestran una por una mientras se calcula el resultado. Las ven todos los lectores,
             antes de las líneas propias de cada resultado (pestaña Resultados). Si quieres líneas
             distintas para cada resultado, deja esta lista vacía y escríbelas en Resultados.
           </p>

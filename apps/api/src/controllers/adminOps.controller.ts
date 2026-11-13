@@ -18,7 +18,7 @@ interface MessageParams {
   messageId: string;
 }
 
-/** `/admin/users`: solo administradoras. Lo sensible (correos, progreso) nunca se cachea. */
+/** `/admin/users`: solo administradores. Lo sensible (correos, progreso) nunca se cachea. */
 export function createAdminUsersController(users: AdminUsersService) {
   const list: RequestHandler = async (_req, res) => {
     const { query } = getInput<unknown, AdminUserListQuery>(res);
@@ -44,7 +44,7 @@ export function createAdminUsersController(users: AdminUsersService) {
   return { list, get, create, update, remove };
 }
 
-/** `/admin/contact-messages` y `/admin/stats`: solo administradoras. */
+/** `/admin/contact-messages` y `/admin/stats`: solo administradores. */
 export function createAdminMetricsController(metrics: AdminMetricsService) {
   const listMessages: RequestHandler = async (_req, res) => {
     const { query } = getInput<unknown, AdminMessageListQuery>(res);
@@ -66,7 +66,7 @@ export function createAdminMetricsController(metrics: AdminMetricsService) {
 }
 
 /**
- * `/admin/network-check`: describe la cadena de proxies de la propia petición de la administradora, con las
+ * `/admin/network-check`: describe la cadena de proxies de la propia petición del administrador, con las
  * direcciones enmascaradas. No se guarda ni se registra nada, y nunca se cachea.
  */
 export function createAdminNetworkController(

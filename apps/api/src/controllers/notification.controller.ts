@@ -8,7 +8,7 @@ import { getAuth } from '../middleware/auth.js';
 import { getInput } from '../middleware/validate.js';
 import type { NotificationService } from '../services/notification.service.js';
 
-/** `/admin/notifications`: avisos por correo (solo administradoras). Nada se cachea. */
+/** `/admin/notifications`: avisos por correo (solo administradores). Nada se cachea. */
 export function createNotificationController(notifications: NotificationService) {
   const list: RequestHandler = async (_req, res) => {
     res.set('Cache-Control', 'no-store').json({ jobs: await notifications.list() });

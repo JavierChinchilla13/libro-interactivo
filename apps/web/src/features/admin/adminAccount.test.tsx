@@ -5,7 +5,7 @@ import { READER, json, mockApi, renderAt } from '../../test/mockApi';
 import { crumbsFor, documentTitle, locate } from './adminNav';
 
 const ADMIN = { ...READER, id: '670000000000000000000002', name: 'Admin', role: 'ADMIN' };
-const EDITOR = { ...READER, id: '670000000000000000000003', name: 'Editora', role: 'EDITOR' };
+const EDITOR = { ...READER, id: '670000000000000000000003', name: 'Editor', role: 'EDITOR' };
 const site = { universe: { introHtml: '' }, author: { bioHtml: '' }, social: [], lockMessage: 'x' };
 const handlers = {
   'GET /api/site': () => json(site),
@@ -49,7 +49,7 @@ describe('/admin/cuenta (la cuenta propia del equipo, sin salir de administraci�
     },
   );
 
-  it('una lectora recibe «sin permiso» y sin sesión se pide ingresar', async () => {
+  it('un lector recibe «sin permiso» y sin sesión se pide ingresar', async () => {
     mockApi(handlers, { session: READER });
     const view = renderAt('/admin/cuenta');
     expect(await screen.findByText('No tienes permiso para ver esta página')).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe('/admin/cuenta (la cuenta propia del equipo, sin salir de administraci�
     expect(await screen.findByRole('heading', { name: 'Ingresar' })).toBeInTheDocument();
   });
 
-  it('a las lectoras en /panel/cuenta se les sigue ofreciendo eliminar su cuenta', async () => {
+  it('a los lectores en /panel/cuenta se les sigue ofreciendo eliminar su cuenta', async () => {
     mockApi(handlers, { session: READER });
     renderAt('/panel/cuenta');
     expect(await screen.findByRole('button', { name: 'Eliminar mi cuenta…' })).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe('«Ajustes» del menú de usuario se queda en la zona', () => {
     expect(item).toHaveAttribute('href', expected);
   });
 
-  it('una lectora (que no ve administración) siempre va a /panel/cuenta', async () => {
+  it('un lector (que no ve administración) siempre va a /panel/cuenta', async () => {
     mockApi(handlers, { session: READER });
     renderAt('/panel');
     await userEvent.click(await screen.findByRole('button', { name: READER.name }));

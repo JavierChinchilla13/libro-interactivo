@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { objectIdSchema } from './common.js';
 
 /**
- * Avisos por correo a las lectoras apuntadas a las novedades: uno por elemento publicado (una actualización o un
+ * Avisos por correo a los lectores apuntados a las novedades: uno por elemento publicado (una actualización o un
  * capítulo extra), en cola, con cupo diario y mensual. Solo ADMIN los envía y ve su progreso.
  */
 export const NOTIFICATION_KINDS = ['post', 'extra'] as const;
@@ -67,8 +67,8 @@ export type MailQuota = z.infer<typeof mailQuotaSchema>;
 
 /**
  * Vista previa: con `refId`, la de un elemento ya guardado; sin él (una actualización o un extra que aún no se
- * guardó), cuántas lectoras lo recibirían al publicarlo y el cupo. De un extra hace falta `bookId` (solo lo reciben
- * las que terminaron ese libro).
+ * guardó), cuántos lectores lo recibirían al publicarlo y el cupo. De un extra hace falta `bookId` (solo lo reciben
+ * quienes terminaron ese libro).
  */
 export const notificationPreviewQuerySchema = z.object({
   kind: notificationKindSchema,
@@ -81,7 +81,7 @@ export const notificationPreviewSchema = z.object({
   /** ¿Se puede avisar? (`reason` dice por qué no). */
   available: z.boolean(),
   reason: z.string().optional(),
-  /** A cuántas lectoras se enviaría ahora. */
+  /** A cuántos lectores se enviaría ahora. */
   recipients: z.number().int().nonnegative(),
   quota: mailQuotaSchema,
   /** Días que tardaría en salir todo con el cupo de hoy (1 = hoy). */

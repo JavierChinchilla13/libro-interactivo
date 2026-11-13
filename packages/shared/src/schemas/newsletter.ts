@@ -20,9 +20,9 @@ export function canSubscribeToNewsletter(birth: BirthMonth | undefined, now: Dat
 }
 
 /**
- * - `none`: no está apuntada (nunca, o se dio de baja).
+ * - `none`: no está apuntado (nunca, o se dio de baja).
  * - `pending`: pidió los avisos pero falta que confirme su correo (enlace enviado); hasta entonces no recibe nada.
- * - `subscribed`: apuntada.
+ * - `subscribed`: apuntado.
  */
 export const NEWSLETTER_STATUSES = ['none', 'pending', 'subscribed'] as const;
 export const newsletterStatusSchema = z.enum(NEWSLETTER_STATUSES);
@@ -36,7 +36,7 @@ export const newsletterStateSchema = z.object({
   /** Desde cuándo espera la confirmación (`pending`). */
   pendingSince: z.string().optional(),
   /**
-   * ¿Se le muestra la invitación única del panel? Solo si puede apuntarse, no está apuntada (ni a medias ni dada de
+   * ¿Se le muestra la invitación única del panel? Solo si puede apuntarse, no está apuntado (ni a medias ni dado de
    * baja) y no ha respondido antes. El servidor lo decide; el cliente solo lo pinta.
    */
   invitation: z.boolean().default(false),

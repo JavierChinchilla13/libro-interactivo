@@ -2,6 +2,7 @@ export * from './age.js';
 export * from './errors.js';
 export * from './legal.js';
 export * from './passwordPolicy.js';
+export * from './plural.js';
 export * from './schemas/account.js';
 export * from './schemas/auth.js';
 export * from './schemas/common.js';

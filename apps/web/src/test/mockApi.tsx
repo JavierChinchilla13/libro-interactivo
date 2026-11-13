@@ -33,7 +33,7 @@ export type Handler = (request: {
 }) => Response | Promise<Response>;
 
 /**
- * `handlers` se busca por `"MÉTODO /ruta"` exacta (con la query). Por defecto hay sesión de lectora, un libro
+ * `handlers` se busca por `"MÉTODO /ruta"` exacta (con la query). Por defecto hay sesión de lector, un libro
  * publicado y sin mensaje de bienvenida; cada prueba pisa lo que necesite. Devuelve el `fetch` simulado.
  */
 export function mockApi(

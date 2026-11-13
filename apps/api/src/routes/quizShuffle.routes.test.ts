@@ -189,7 +189,7 @@ describe('barajado de respuestas (intentos)', () => {
       (await QuizAttempt.findOne({ quizId: id }).lean())?.stages[0]?.answerOrder,
     ).toBeUndefined();
 
-    // Al terminar la primera etapa, la siguiente (que la lectora nunca vio) sí se entrega barajada y guardada.
+    // Al terminar la primera etapa, la siguiente (que el lector nunca vio) sí se entrega barajada y guardada.
     const attemptId = (await QuizAttempt.findOne({ quizId: id }).lean())?._id.toString();
     const next = await agent
       .post(`/api/attempts/${attemptId}/stages/${firstStage.id}/answers`)

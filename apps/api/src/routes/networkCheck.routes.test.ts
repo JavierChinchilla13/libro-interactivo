@@ -9,7 +9,7 @@ useTestDb();
 const url = '/api/admin/network-check';
 
 describe('GET /api/admin/network-check', () => {
-  it('solo ADMIN: sin sesión 401, lectora y editora 403', async () => {
+  it('solo ADMIN: sin sesión 401, lector y editor 403', async () => {
     const { app, reader, editor, admin } = await staffWorld();
     expect((await request(app).get(url)).status).toBe(401);
     for (const agent of [reader, editor]) {

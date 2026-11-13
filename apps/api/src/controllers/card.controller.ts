@@ -8,7 +8,7 @@ interface CardParams {
   cardId: string;
 }
 
-/** `/admin/cards`: cartas con QR, solo administradoras. La firma de subida no se guarda en cachés. */
+/** `/admin/cards`: cartas con QR, solo administradores. La firma de subida no se guarda en cachés. */
 export function createAdminCardController(cards: CardService) {
   const list: RequestHandler = async (_req, res) => {
     const { query } = getInput<unknown, { bookId: string }>(res);
@@ -37,7 +37,7 @@ export function createAdminCardController(cards: CardService) {
   return { list, get, create, replace, reorder, uploadSignature };
 }
 
-/** `/cards`: lo que ve la lectora. Siempre `private, no-store`: la URL de la imagen no se cachea en ningún lado. */
+/** `/cards`: lo que ve el lector. Siempre `private, no-store`: la URL de la imagen no se cachea en ningún lado. */
 export function createReaderCardController(cards: CardService) {
   const list: RequestHandler = async (_req, res) => {
     const { userId, role } = getAuth(res);

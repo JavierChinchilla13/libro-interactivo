@@ -9,7 +9,7 @@ useTestDb();
 
 const ADMIN = {
   email: 'Admin@Ejemplo.com',
-  name: 'Administradora',
+  name: 'Administrador',
   password: 'Cielo-Verde-Nueve-52',
 };
 

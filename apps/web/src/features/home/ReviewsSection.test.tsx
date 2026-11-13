@@ -6,7 +6,7 @@ import { ReviewsSection } from './LandingSections';
 
 const review = (over: Partial<PublicReview> & { id: string }): PublicReview => ({
   text: '[PLACEHOLDER] Una historia que no pude soltar.',
-  authorName: '[PLACEHOLDER] Lectora',
+  authorName: '[PLACEHOLDER] Lector',
   order: 1,
   ...over,
 });

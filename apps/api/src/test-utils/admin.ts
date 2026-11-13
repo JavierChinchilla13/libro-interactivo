@@ -37,7 +37,7 @@ export function validEntry(over: Partial<WikiEntryInputPayload> = {}): WikiEntry
   };
 }
 
-/** Mundo de pruebas del panel: una administradora, una editora y una lectora, ya con sesión iniciada. */
+/** Mundo de pruebas del panel: un administrador, un editor y un lector, ya con sesión iniciada. */
 export async function staffWorld(options: Parameters<typeof createTestHarness>[0] = {}) {
   const harness = createTestHarness(options);
   const adminUser = await createUser({ email: 'admin@ejemplo.com', role: 'ADMIN' });

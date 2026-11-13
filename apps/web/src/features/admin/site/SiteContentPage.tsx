@@ -306,7 +306,7 @@ function SiteContentForm({ initial }: { initial: FormState }) {
 
         <FormSection
           title="Texto de «bloqueado»"
-          help="Lo que ve una lectora ante algo que aún no puede abrir."
+          help="Lo que ve un lector ante algo que aún no puede abrir."
         >
           <TextField
             label="Mensaje de lo que aún está bloqueado"

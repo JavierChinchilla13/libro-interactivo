@@ -85,7 +85,7 @@ export class ResendMailProvider implements MailProvider {
     await this.post(RESEND_ENDPOINT, this.payload(message));
   }
 
-  /** `POST /emails/batch`: hasta 100 correos por petición, cada uno con su destinataria y sus cabeceras. */
+  /** `POST /emails/batch`: hasta 100 correos por petición, cada uno con su destinatario y sus cabeceras. */
   async sendBatch(messages: MailMessage[], options: BatchOptions = {}): Promise<void> {
     if (messages.length === 0) return;
     await this.post(

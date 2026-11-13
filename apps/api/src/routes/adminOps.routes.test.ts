@@ -31,7 +31,7 @@ useTestDb();
 const READER_EMAIL = 'usuario@ejemplo.com';
 const DAY = 86_400_000;
 
-/** Un libro publicado con dos quizzes y la lectora de `staffWorld` con progreso real (intentos y avance). */
+/** Un libro publicado con dos quizzes y el lector de `staffWorld` con progreso real (intentos y avance). */
 async function world() {
   const base = await staffWorld();
   const book = await createBook();
@@ -67,7 +67,7 @@ async function world() {
   return { ...base, book, q1, q2, readerDoc, version, attempt };
 }
 
-describe('permisos: solo administradoras', () => {
+describe('permisos: solo administradores', () => {
   it('usuarios, mensajes, estadísticas y ajustes de contacto no se abren sin ser ADMIN', async () => {
     const { app, reader, editor, admin } = await world();
     const calls: [string, string][] = [
@@ -182,11 +182,11 @@ describe('usuarios: lista y detalle', () => {
 });
 
 describe('usuarios: crear cuentas de administración', () => {
-  it('crea una editora que elige su contraseña con el enlace del correo', async () => {
+  it('crea un editor que elige su contraseña con el enlace del correo', async () => {
     const { admin, app, flush, mail } = await world();
     const res = await admin
       .post('/api/admin/users')
-      .send({ name: 'Nueva Editora', email: 'Nueva@Ejemplo.com', role: 'EDITOR' })
+      .send({ name: 'Nueva Editor', email: 'Nueva@Ejemplo.com', role: 'EDITOR' })
       .expect(201);
     expect(adminUserSchema.parse(res.body)).toMatchObject({ role: 'EDITOR', status: 'active' });
     await flush();
@@ -271,13 +271,13 @@ describe('usuarios: rol y estado', () => {
     expect((await User.findById(adminUser._id).orFail()).role).toBe('ADMIN');
   });
 
-  it('siempre queda una administradora activa (también si otra persona intenta quitarle el rol a la última)', async () => {
+  it('siempre queda un administrador activo (también si otra persona intenta quitarle el rol a la última)', async () => {
     const { adminUser, editorUser } = await world();
     const service = createAdminUsersService({
       auth: { revokeAllSessions: async () => undefined } as never,
       passwordReset: { requestReset: async () => undefined } as never,
     });
-    // `editorUser` no es administradora: simula una acción (p. ej. simultánea) sobre la única administradora.
+    // `editorUser` no es administrador: simula una acción (p. ej. simultánea) sobre el único administrador.
     await expect(
       service.update(String(editorUser._id), String(adminUser._id), { role: 'USER' }),
     ).rejects.toMatchObject({ code: 'VALIDATION' });
@@ -287,7 +287,7 @@ describe('usuarios: rol y estado', () => {
     expect((await User.findById(adminUser._id).orFail()).role).toBe('ADMIN');
   });
 
-  it('con otra administradora activa sí se puede quitar el rol', async () => {
+  it('con otro administrador activo sí se puede quitar el rol', async () => {
     const { admin } = await world();
     const second = await createUser({ email: 'segunda@ejemplo.com', role: 'ADMIN' });
     await admin.patch(`/api/admin/users/${second._id}`).send({ role: 'EDITOR' }).expect(200);
@@ -371,7 +371,7 @@ describe('eliminar cuentas y datos personales', () => {
     expect(games[0]?.status).toBe('completed');
   }
 
-  it('la administradora elimina a una lectora: se borran sus datos y sus intentos quedan anonimizados', async () => {
+  it('el administrador elimina a un lector: se borran sus datos y sus intentos quedan anonimizados', async () => {
     const { admin, readerDoc } = await withData();
     await admin.delete(`/api/admin/users/${readerDoc._id}`).expect(204);
     await expectErased(readerDoc._id);
@@ -387,7 +387,7 @@ describe('eliminar cuentas y datos personales', () => {
     expect(await User.countDocuments({ role: { $ne: 'USER' } })).toBe(2);
   });
 
-  it('una lectora elimina su propia cuenta con su contraseña y se cierra su sesión', async () => {
+  it('un lector elimina su propia cuenta con su contraseña y se cierra su sesión', async () => {
     const { reader, readerDoc, app } = await withData();
     const wrong = await reader.delete('/api/me').send({ password: 'otra-contraseña' });
     expect(wrong.status).toBe(400);
@@ -534,8 +534,8 @@ describe('estadísticas', () => {
   });
 });
 
-describe('ajustes de contacto (solo administradoras)', () => {
-  it('la administradora ve y cambia el correo de recepción, guardar y retención; la editora no lo ve ni lo cambia', async () => {
+describe('ajustes de contacto (solo administradores)', () => {
+  it('el administrador ve y cambia el correo de recepción, guardar y retención; el editor no lo ve ni lo cambia', async () => {
     const { admin, editor } = await world();
     const initial = siteSettingsResponseSchema.parse(
       (await admin.get('/api/admin/site-settings').expect(200)).body,

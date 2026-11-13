@@ -20,7 +20,7 @@ const google: GoogleVerifier = {
   verify: async (credential) => (credential === CREDENTIAL ? GOOGLE : null),
 };
 
-/** Lo que dejó escrito quien creó la cuenta (otra persona, con el correo de la dueña). */
+/** Lo que dejó escrito quien creó la cuenta (otra persona, con el correo del dueño). */
 const DECLARED_BY_OTHER = {
   birthYear: 1980,
   birthMonth: 2,
@@ -248,7 +248,7 @@ describe('ingreso con Google · cuenta creada con contraseña por otra persona',
     expect(after?.tokenVersion).toBe(before?.tokenVersion);
     expect(after?.emailVerifiedAt).toBeUndefined();
     expect(after?.birthYear).toBe(1990);
-    // La sesión de quien la creó sigue valiendo hasta que la dueña declare lo suyo.
+    // La sesión de quien la creó sigue valiendo hasta que el dueño declare lo suyo.
     await request(h.app).get('/api/me').set('Cookie', attackerCookies).expect(200);
   });
 
@@ -273,7 +273,7 @@ describe('ingreso con Google · cuenta creada con contraseña por otra persona',
     await request(h.app).get('/api/me').set('Cookie', attackerCookies).expect(401);
   });
 
-  it('si la dueña no alcanza la edad, la cuenta de quien la creó no se toca', async () => {
+  it('si el dueño no alcanza la edad, la cuenta de quien la creó no se toca', async () => {
     const h = harness();
     await registerAsOther(h.app);
     const before = await User.findOne({}).lean();
@@ -306,7 +306,7 @@ describe('ingreso con Google · cuenta creada con contraseña por otra persona',
 });
 
 describe('ingreso con Google · carrera con un registro con contraseña', () => {
-  it('si el registro gana la carrera, la dueña reclama la cuenta: contraseña rota, sesiones cerradas, su edad', async () => {
+  it('si el registro gana la carrera, el dueño reclama la cuenta: contraseña rota, sesiones cerradas, su edad', async () => {
     const h = harness();
     const created = await request(h.app)
       .post('/api/auth/register')

@@ -55,7 +55,7 @@ async function world() {
     adminCardSchema.parse(
       (await w.admin.post('/api/admin/cards').send(input(over)).expect(201)).body,
     );
-  /** QR de la carta (como lo haría la administradora) y su token para escanearlo. */
+  /** QR de la carta (como lo haría el administrador) y su token para escanearlo. */
   const qr = async (cardId: string) => {
     const created = accessTokenResponseSchema.parse(
       (
@@ -70,8 +70,8 @@ async function world() {
   return { ...w, cloud, book, upload, input, create, qr };
 }
 
-describe('permisos de /api/admin/cards (solo administradoras)', () => {
-  it('sin sesión 401; lectora 403; EDITORA 403 (ni siquiera ve la lista); ADMIN permitida', async () => {
+describe('permisos de /api/admin/cards (solo administradores)', () => {
+  it('sin sesión 401; lector 403; EDITOR 403 (ni siquiera ve la lista); ADMIN permitida', async () => {
     const { app, reader, editor, admin, book, input } = await world();
     const bookId = book._id.toString();
     await request(app).get(`/api/admin/cards?bookId=${bookId}`).expect(401);
@@ -415,7 +415,7 @@ describe('QR de una carta (reutiliza el sistema de QR)', () => {
   });
 });
 
-describe('la lectora: solo ve lo que abrió', () => {
+describe('el lector: solo ve lo que abrió', () => {
   it('sin sesión 401; sin abrir, ninguna carta: ni lista, ni título, ni imagen, ni cuántas hay', async () => {
     const { app, reader, create } = await world();
     const card = await create({ title: '[PLACEHOLDER] No abierta' });
@@ -530,7 +530,7 @@ describe('la lectora: solo ve lo que abrió', () => {
     ).toBe('[PLACEHOLDER] Solo título');
   });
 
-  it('se abre en cualquier momento, sin prerrequisitos; una carta de otra lectora no se ve', async () => {
+  it('se abre en cualquier momento, sin prerrequisitos; una carta de otro lector no se ve', async () => {
     const { app, create, qr, reader } = await world();
     const card = await create();
     const other = await createUser({ email: 'otra@ejemplo.com' });
@@ -542,7 +542,7 @@ describe('la lectora: solo ve lo que abrió', () => {
     expect(
       readerCardsResponseSchema.parse((await otherAgent.get('/api/cards')).body).cards,
     ).toHaveLength(1);
-    // La lectora que no la abrió sigue sin ver nada.
+    // El lector que no la abrió sigue sin ver nada.
     expect(
       readerCardsResponseSchema.parse((await reader.get('/api/cards')).body).cards,
     ).toHaveLength(0);
@@ -680,8 +680,8 @@ describe('la lectora: solo ve lo que abrió', () => {
   });
 });
 
-describe('administradora en modo prueba', () => {
-  it('ve todas las publicadas y puede abrirlas sin QR; la editora no recibe nada', async () => {
+describe('administrador en modo prueba', () => {
+  it('ve todas las publicadas y puede abrirlas sin QR; el editor no recibe nada', async () => {
     const { admin, editor, create, input } = await world();
     const open = await create({ title: 'Publicada' });
     const hidden = await create({ title: 'Archivada', status: 'archived' });
@@ -691,7 +691,7 @@ describe('administradora en modo prueba', () => {
     expect((await admin.get(`/api/cards/${open.id}`)).status).toBe(200);
     expect((await admin.get(`/api/cards/${hidden.id}`)).status).toBe(404);
 
-    // La editora es una lectora más para las cartas.
+    // El editor es un lector más para las cartas.
     expect(readerCardsResponseSchema.parse((await editor.get('/api/cards')).body)).toEqual({
       cards: [],
       testMode: false,

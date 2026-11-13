@@ -1,3 +1,4 @@
+import { plural, pluralWord } from '@libro/shared';
 import type { NotificationKind, NotificationPreview } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -9,7 +10,7 @@ import { errorMessage } from '../errors';
 import { FormSection } from './FormSection';
 
 const num = (n: number) => n.toLocaleString('es-CR');
-const count = (n: number, one: string, many: string) => `${num(n)} ${n === 1 ? one : many}`;
+const count = (n: number, one: string, many: string) => `${num(n)} ${pluralWord(n, one, many)}`;
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString('es-CR', { dateStyle: 'long', timeStyle: 'short' });
@@ -17,27 +18,28 @@ const when = (iso: string) =>
 /** «Saldría hoy» / «tardaría unos 3 días» según el cupo que queda. */
 function timing(preview: NotificationPreview): string {
   if (preview.estimatedDays <= 1) return 'Con el cupo de hoy alcanza para enviarlo todo hoy.';
-  return `Con el cupo que queda tardaría unos ${preview.estimatedDays} días en salir todo (sigue solo cada día).`;
+  return `Con el cupo que queda tardaría unos ${plural(preview.estimatedDays, 'día', 'días')} en salir todo (sigue solo cada día).`;
 }
 
 /** El resumen de a quién llega y cuánto cupo queda, en frases cortas. */
 function Summary({ kind, preview }: { kind: NotificationKind; preview: NotificationPreview }) {
   const { quota } = preview;
-  const who =
-    kind === 'extra'
-      ? 'apuntadas a las novedades que ya terminaron este libro'
-      : 'apuntadas a las novedades';
+  const n = preview.recipients;
+  const who = `${pluralWord(n, 'apuntado', 'apuntados')} a las novedades${
+    kind === 'extra' ? ` que ya ${pluralWord(n, 'terminó', 'terminaron')} este libro` : ''
+  }`;
   return (
     <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-pretty text-muted">
       <li>
-        Lo recibirían{' '}
-        <strong className="tabular-nums">{count(preview.recipients, 'lectora', 'lectoras')}</strong>{' '}
+        Lo {pluralWord(preview.recipients, 'recibiría', 'recibirían')}{' '}
+        <strong className="tabular-nums">{count(preview.recipients, 'lector', 'lectores')}</strong>{' '}
         {who}.
       </li>
       <li>
-        Quedan <span className="tabular-nums">{num(quota.todayLeft)}</span> correos para avisos hoy
-        y <span className="tabular-nums">{num(quota.monthLeft)}</span> este mes (el plan permite{' '}
-        {num(quota.dailyLimit)} al día y {num(quota.monthlyLimit)} al mes; se guardan{' '}
+        {pluralWord(quota.todayLeft, 'Queda', 'Quedan')}{' '}
+        <span className="tabular-nums">{count(quota.todayLeft, 'correo', 'correos')}</span> para
+        avisos hoy y <span className="tabular-nums">{num(quota.monthLeft)}</span> este mes (el plan
+        permite {num(quota.dailyLimit)} al día y {num(quota.monthlyLimit)} al mes; se guardan{' '}
         {quota.reserve} al día para los correos de la cuenta, como recuperar la contraseña).
       </li>
       {preview.recipients > 0 ? <li>{timing(preview)}</li> : null}
@@ -46,7 +48,7 @@ function Summary({ kind, preview }: { kind: NotificationKind; preview: Notificat
 }
 
 /**
- * Casilla «Avisar por correo» de una actualización o un capítulo extra (solo administradoras; el servidor también lo
+ * Casilla «Avisar por correo» de una actualización o un capítulo extra (solo administradores; el servidor también lo
  * exige). No guarda nada por sí sola: el formulario pide el aviso después de guardar con estado «Publicado». Cada
  * elemento se avisa una sola vez; si ya se avisó, muestra cómo va.
  */
@@ -62,7 +64,7 @@ export function NotifyByEmail({
   kind: NotificationKind;
   /** Sin `refId`, aún no se guardó. */
   refId?: string;
-  /** De un extra: el libro (solo lo reciben las que lo terminaron). */
+  /** De un extra: el libro (solo lo reciben quienes lo terminaron). */
   bookId?: string;
   /** ¿El formulario está en «Publicado»? (si no, se avisa al publicar). */
   published: boolean;
@@ -92,8 +94,10 @@ export function NotifyByEmail({
       <FormSection title={title}>
         <p className="text-sm text-pretty">
           Ya se avisó por correo ({when(existing.createdAt)}): {done} de{' '}
-          {count(existing.totals.recipients, 'lectora', 'lectoras')} procesadas,{' '}
-          {existing.totals.sent} enviados. Cada publicación se avisa una sola vez.{' '}
+          {count(existing.totals.recipients, 'lector', 'lectores')}{' '}
+          {pluralWord(existing.totals.recipients, 'procesado', 'procesados')},{' '}
+          {plural(existing.totals.sent, 'enviado', 'enviados')}. Cada publicación se avisa una sola
+          vez.{' '}
           <Link to="/admin/avisos" className="underline underline-offset-2">
             Ver avisos por correo
           </Link>
@@ -106,7 +110,7 @@ export function NotifyByEmail({
   const hint = needsBook
     ? 'Elige el libro para saber a quién le llegaría.'
     : nobody
-      ? 'Ahora no hay lectoras apuntadas que lo puedan recibir: no se enviaría nada.'
+      ? 'Ahora no hay lectores apuntados que lo puedan recibir: no se enviaría nada.'
       : published
         ? 'Se pide al guardar. Sale de a poco, según el cupo de correos del día.'
         : 'Se envía al publicar. Si solo guardas el borrador, todavía no se avisa.';
@@ -115,7 +119,7 @@ export function NotifyByEmail({
   return (
     <FormSection title={title}>
       <CheckField
-        label="Avisar por correo a las lectoras apuntadas a las novedades"
+        label="Avisar por correo a los lectores apuntados a las novedades"
         hint={hint}
         checked={checked && !nobody && !needsBook}
         disabled={nobody || needsBook || preview.isError}

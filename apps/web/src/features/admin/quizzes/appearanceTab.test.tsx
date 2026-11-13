@@ -110,7 +110,7 @@ describe('pestaña Apariencia', () => {
     mockApi(base(), { session: ADMIN });
     renderAt(`/admin/quizzes/${QUIZ_ID}`);
     expect(
-      await screen.findByRole('textbox', { name: 'Instrucciones para la lectora' }),
+      await screen.findByRole('textbox', { name: 'Instrucciones para el lector' }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/se editan en la pestaña/)).toBeNull();
   });
@@ -180,11 +180,11 @@ describe('pestaña Apariencia', () => {
     await user.click(await screen.findByRole('radio', { name: /Verde/ }));
     expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Guardar apariencia' }));
-    await screen.findByText(/Ya lo ven las lectoras, sin publicar una versión nueva/);
+    await screen.findByText(/Ya lo ven los lectores, sin publicar una versión nueva/);
     // El aviso sigue ahí tras refrescarse los datos del quiz (no se remonta la pestaña).
     await new Promise((resolve) => setTimeout(resolve, 150));
     expect(
-      screen.getByText(/Ya lo ven las lectoras, sin publicar una versión nueva/),
+      screen.getByText(/Ya lo ven los lectores, sin publicar una versión nueva/),
     ).toBeInTheDocument();
     const put = called(`PUT /api/admin/quizzes/${QUIZ_ID}/appearance`)[0];
     expect(put?.body).toMatchObject({ expectedRev: 2, appearance: { accent: '#5fe3ae' } });
@@ -247,7 +247,7 @@ describe('pestaña Apariencia', () => {
     expect(entries).toEqual(['#2 · Edición', '#1 · Primera edición']);
     expect(screen.getByText(/Cambió: fondo, introducción/)).toBeInTheDocument();
     expect(screen.getByText(/cuenta eliminada/)).toBeInTheDocument();
-    // Pide confirmación: las lectoras lo ven en seguida.
+    // Pide confirmación: los lectores lo ven en seguida.
     await user.click(screen.getAllByRole('button', { name: 'Volver a antes' })[0] as HTMLElement);
     const dialog = await screen.findByRole('dialog', { name: '¿Volver a la apariencia anterior?' });
     await user.click(within(dialog).getByRole('button', { name: 'Volver a esta apariencia' }));
@@ -351,7 +351,7 @@ describe('pestaña Apariencia', () => {
       expect(hex).toHaveValue('#FF8FB1');
       expect(screen.getByText('Tienes cambios sin guardar')).toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: 'Guardar apariencia' }));
-      await screen.findByText(/Ya lo ven las lectoras/);
+      await screen.findByText(/Ya lo ven los lectores/);
       expect(called(`PUT /api/admin/quizzes/${QUIZ_ID}/appearance`)[0]?.body).toMatchObject({
         appearance: { accent: '#ff8fb1' },
       });

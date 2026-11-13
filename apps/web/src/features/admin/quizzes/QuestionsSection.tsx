@@ -118,7 +118,7 @@ export function QuestionsSection({
         <Alert tone="warning" title="Personalizaciones sin pregunta">
           <p className="mb-2">
             Estos ajustes son de preguntas que ya no están en el borrador. Si la versión publicada
-            todavía las tiene, las lectoras los siguen viendo; quitarlos los saca de la apariencia
+            todavía las tiene, los lectores los siguen viendo; quitarlos los saca de la apariencia
             en vivo.
           </p>
           <ul className="flex flex-col gap-2">

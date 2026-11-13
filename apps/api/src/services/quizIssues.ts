@@ -1,3 +1,4 @@
+import { plural } from '@libro/shared';
 import type { QuizIssue, QuizIssueWhere } from '@libro/shared';
 
 /**
@@ -185,20 +186,17 @@ export interface SchemaIssueLike {
   origin?: string;
 }
 
-const count = (n: number | bigint | undefined, one: string, many: string) =>
-  `${String(n ?? 0)} ${Number(n) === 1 ? one : many}`;
-
 /** Frase genérica (en español) cuando el campo no tiene una propia. */
 function generic(raw: SchemaIssueLike): string {
   const isList = raw.origin === 'array';
   if (raw.code === 'too_small') {
     return isList
-      ? `necesita al menos ${count(raw.minimum, 'elemento', 'elementos')}`
+      ? `necesita al menos ${plural(raw.minimum, 'elemento', 'elementos')}`
       : 'no puede quedar vacío';
   }
   if (raw.code === 'too_big') {
     return isList
-      ? `admite como máximo ${count(raw.maximum, 'elemento', 'elementos')}`
+      ? `admite como máximo ${plural(raw.maximum, 'elemento', 'elementos')}`
       : `es demasiado largo (máximo ${String(raw.maximum ?? '')} caracteres)`;
   }
   if (raw.code === 'invalid_type') return 'falta este dato';
@@ -281,8 +279,8 @@ export function translateSchemaIssues(
               'QUESTION_ANSWERS',
               where,
               small
-                ? `necesita al menos ${count(raw.minimum, 'respuesta', 'respuestas')}`
-                : `admite como máximo ${count(raw.maximum, 'respuesta', 'respuestas')}`,
+                ? `necesita al menos ${plural(raw.minimum, 'respuesta', 'respuestas')}`
+                : `admite como máximo ${plural(raw.maximum, 'respuesta', 'respuestas')}`,
               dotted,
             ),
           );
@@ -312,7 +310,7 @@ export function translateSchemaIssues(
             where,
             small
               ? 'esta etapa todavía no tiene preguntas: agrega al menos una'
-              : `admite como máximo ${count(raw.maximum, 'pregunta', 'preguntas')}`,
+              : `admite como máximo ${plural(raw.maximum, 'pregunta', 'preguntas')}`,
             dotted,
           ),
         );
@@ -340,7 +338,7 @@ export function translateSchemaIssues(
           { tab: 'etapas', label: 'Preguntas' },
           small
             ? 'el quiz todavía no tiene etapas: agrega la primera'
-            : `el quiz admite como máximo ${count(raw.maximum, 'etapa', 'etapas')}`,
+            : `el quiz admite como máximo ${plural(raw.maximum, 'etapa', 'etapas')}`,
           dotted,
         ),
       );
@@ -378,7 +376,7 @@ export function translateSchemaIssues(
             where,
             typeof c === 'number'
               ? `al dato ${c + 1} le falta ${d === 'label' ? 'el nombre' : 'el valor'}${big ? ` o ${tooLong(raw)}` : ''}`
-              : `admite como máximo ${count(raw.maximum, 'dato', 'datos')}`,
+              : `admite como máximo ${plural(raw.maximum, 'dato', 'datos')}`,
             dotted,
           ),
         );
@@ -407,8 +405,8 @@ export function translateSchemaIssues(
           'QUIZ_RESULTS',
           { tab: 'resultados', label: 'Resultados' },
           small
-            ? `este quiz necesita al menos ${count(raw.minimum, 'resultado', 'resultados')}`
-            : `el quiz admite como máximo ${count(raw.maximum, 'resultado', 'resultados')}`,
+            ? `este quiz necesita al menos ${plural(raw.minimum, 'resultado', 'resultados')}`
+            : `el quiz admite como máximo ${plural(raw.maximum, 'resultado', 'resultados')}`,
           dotted,
         ),
       );

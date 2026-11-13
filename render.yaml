@@ -27,7 +27,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Medido en producción el 28-oct-2026 (docs/MEDICION-IP.md): la IP de cada lectora sale de CF-Connecting-IP.
+      # Medido en producción el 28-oct-2026 (docs/MEDICION-IP.md): la IP de cada lector sale de CF-Connecting-IP.
       - key: TRUST_CLOUDFLARE_HEADER
         value: 'true'
       - key: TRUST_PROXY_HOPS

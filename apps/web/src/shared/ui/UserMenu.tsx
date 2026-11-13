@@ -77,8 +77,8 @@ export const USER_MENU_ITEMS: readonly UserMenuItem[] = [
 
 const ROLE_LABEL: Record<Role, string | null> = {
   USER: null,
-  EDITOR: 'Editora',
-  ADMIN: 'Administradora',
+  EDITOR: 'Editor',
+  ADMIN: 'Administrador',
 };
 
 /** Iniciales para el avatar: la primera letra (o emoji) de las dos primeras palabras; `?` si no hay nombre. */

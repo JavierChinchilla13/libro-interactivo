@@ -91,7 +91,7 @@ export function createPasswordResetService(options: PasswordResetServiceOptions)
       if (!consumed) throw new AppError('TOKEN_INVALID', TOKEN_INVALID_MESSAGE); // otro canje ganó la carrera
 
       // Una cuenta con contraseña y correo sin comprobar que ya declaró edad y consentimientos: lo declaró quien la creó,
-      // que pudo no ser la dueña del correo. Se borra lo declarado y se marca para volver a pedirlo en el siguiente
+      // que pudo no ser el dueño del correo. Se borra lo declarado y se marca para volver a pedirlo en el siguiente
       // ingreso. Las cuentas anteriores a la edad (sin lo declarado), las ya verificadas y las de equipo no se tocan.
       const clearDeclared =
         user.role === 'USER' && !user.emailVerifiedAt && user.termsAcceptedAt !== undefined;

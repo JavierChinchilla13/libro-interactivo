@@ -94,7 +94,7 @@ const columns: Column<BackupDownload>[] = [
 ];
 
 /**
- * Respaldo (solo administradoras): descarga una copia cifrada de toda la base de datos. El archivo se cifra con una
+ * Respaldo (solo administradores): descarga una copia cifrada de toda la base de datos. El archivo se cifra con una
  * contraseña que se elige aquí y que el servidor no guarda: sin ella, el respaldo no sirve.
  */
 export function BackupPage() {
@@ -188,7 +188,7 @@ export function BackupPage() {
         </h2>
         <ul className="flex list-disc flex-col gap-1.5 pl-5 text-pretty">
           <li>
-            Trae <strong>toda la base de datos</strong>: cuentas, progreso de las lectoras, quizzes,
+            Trae <strong>toda la base de datos</strong>: cuentas, progreso de los lectores, quizzes,
             textos y mensajes. Las imágenes y los videos no van (están en Cloudinary).
           </li>
           <li>

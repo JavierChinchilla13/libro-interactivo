@@ -5,7 +5,7 @@ import { READER, json, mockApi, renderAt } from '../../test/mockApi';
 import { zoneOf } from '../lib/zones';
 
 const ADMIN = { ...READER, id: '670000000000000000000002', name: 'Admin', role: 'ADMIN' };
-const EDITOR = { ...READER, id: '670000000000000000000003', name: 'Editora', role: 'EDITOR' };
+const EDITOR = { ...READER, id: '670000000000000000000003', name: 'Editor', role: 'EDITOR' };
 const site = { universe: { introHtml: '' }, author: { bioHtml: '' }, social: [], lockMessage: 'x' };
 const handlers = {
   'GET /api/site': () => json(site),
@@ -80,7 +80,7 @@ describe('zonas dentro del menú de usuario', { timeout: 30_000 }, () => {
     ]);
   });
 
-  it('una lectora normal no ve las tres zonas en ninguna parte', async () => {
+  it('un lector normal no ve las tres zonas en ninguna parte', async () => {
     for (const path of ['/', '/panel']) {
       mockApi(handlers, { session: READER });
       const view = renderAt(path);

@@ -1,3 +1,4 @@
+import { plural, pluralWord } from '@libro/shared';
 import type { NotificationJob, NotificationPreview } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router';
@@ -53,7 +54,7 @@ function Progress({ job }: { job: NotificationJob }) {
   return (
     <div className="flex min-w-[10rem] flex-col gap-1.5">
       <p className="text-sm tabular-nums">
-        {sent} de {recipients} enviados
+        {sent} de {recipients} {pluralWord(recipients, 'enviado', 'enviados')}
       </p>
       <div
         role="progressbar"
@@ -76,11 +77,11 @@ function Progress({ job }: { job: NotificationJob }) {
   );
 }
 
-/** Cupo de hoy y del mes, y cuántas lectoras están apuntadas ahora. */
+/** Cupo de hoy y del mes, y cuántos lectores están apuntados ahora. */
 function QuotaSummary({ preview }: { preview: NotificationPreview }) {
   const { quota } = preview;
   const items = [
-    { label: 'Apuntadas a las novedades', value: preview.recipients },
+    { label: 'Apuntados a las novedades', value: preview.recipients },
     { label: 'Correos para avisos hoy', value: quota.todayLeft },
     { label: 'Correos para avisos este mes', value: quota.monthLeft },
   ];
@@ -110,7 +111,7 @@ function QuotaSummary({ preview }: { preview: NotificationPreview }) {
 }
 
 /**
- * Avisos por correo (solo administradoras): cada actualización o capítulo extra que se avisó, cómo va el envío y
+ * Avisos por correo (solo administradores): cada actualización o capítulo extra que se avisó, cómo va el envío y
  * la opción de cancelar lo que falta. Los avisos se piden desde el formulario de cada publicación.
  */
 export function NotificationsPage() {
@@ -142,7 +143,7 @@ export function NotificationsPage() {
     const pending = job.totals.pending;
     const ok = await confirm({
       title: `¿Cancelar el aviso «${job.subject}»?`,
-      message: `Faltan ${pending} ${pending === 1 ? 'correo' : 'correos'} por enviar y ya no saldrán. Lo enviado no se puede deshacer, y esta publicación no se podrá volver a avisar.`,
+      message: `${pluralWord(pending, 'Falta', 'Faltan')} ${plural(pending, 'correo', 'correos')} por enviar y ya no saldrán. Lo enviado no se puede deshacer, y esta publicación no se podrá volver a avisar.`,
       confirmLabel: 'Cancelar el aviso',
       cancelLabel: 'Seguir enviando',
       tone: 'danger',
@@ -203,7 +204,7 @@ export function NotificationsPage() {
     <div className="flex max-w-5xl flex-col gap-6">
       <PageHeader
         title="Avisos por correo"
-        subtitle="Los correos a las lectoras apuntadas a las novedades: cómo va cada envío."
+        subtitle="Los correos a los lectores apuntados a las novedades: cómo va cada envío."
       />
 
       {quota.data ? <QuotaSummary preview={quota.data} /> : null}

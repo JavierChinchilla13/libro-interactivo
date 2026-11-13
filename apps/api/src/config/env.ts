@@ -54,7 +54,7 @@ const envSchema = z.object({
   RATE_LIMIT_MULTIPLIER: z.coerce.number().int().min(1).max(100).default(1),
   /**
    * Cuántos proxies de confianza hay entre la persona y el API (Render, y lo que haya delante). De esto depende la «IP
-   * de la lectora» que cuenta el limitador: de menos, todas parecen una sola; de más, se puede falsificar. Por defecto
+   * del lector» que cuenta el limitador: de menos, todas parecen una sola; de más, se puede falsificar. Por defecto
    * 1 en producción y 0 fuera. El valor correcto se mide con `GET /api/admin/network-check`.
    */
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).optional(),

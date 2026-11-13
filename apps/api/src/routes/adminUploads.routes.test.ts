@@ -15,7 +15,7 @@ const CLOUD = {
 const url = '/api/admin/uploads/image-signature';
 
 describe('POST /api/admin/uploads/image-signature', () => {
-  it('exige sesión y rol de editora o administradora', async () => {
+  it('exige sesión y rol de editor o administrador', async () => {
     const { app, reader, editor, admin } = await staffWorld({ env: CLOUD });
     await request(app).post(url).send({ purpose: 'cover' }).expect(401);
     expect((await reader.post(url).send({ purpose: 'cover' })).status).toBe(403);

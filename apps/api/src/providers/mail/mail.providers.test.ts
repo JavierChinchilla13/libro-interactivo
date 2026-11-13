@@ -72,7 +72,7 @@ describe('ResendMailProvider', () => {
     );
   });
 
-  it('un lote va a /emails/batch, un correo por destinataria, con su remitente, sus cabeceras y la clave de idempotencia', async () => {
+  it('un lote va a /emails/batch, un correo por destinatario, con su remitente, sus cabeceras y la clave de idempotencia', async () => {
     const fetchImpl = vi.fn(async () => new Response('{"data":[]}', { status: 200 }));
     const headers = {
       'List-Unsubscribe': '<https://sitio/api/newsletter/unsubscribe?t=x>',
@@ -95,7 +95,7 @@ describe('ResendMailProvider', () => {
       to: ['lectora@ejemplo.com'],
       headers,
     });
-    // Sin remitente propio se usa el del proveedor; nunca dos destinatarias en el mismo correo.
+    // Sin remitente propio se usa el del proveedor; nunca dos destinatarios en el mismo correo.
     expect(body[1]).toMatchObject({ from: 'Libro <avisos@ejemplo.com>', to: ['otra@ejemplo.com'] });
   });
 

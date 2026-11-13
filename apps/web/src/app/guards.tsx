@@ -37,7 +37,7 @@ export function RequireRole({ roles }: { roles: readonly Role[] }) {
     return (
       <div className="mx-auto max-w-lg p-6">
         <Alert title="No tienes permiso para ver esta página">
-          Si crees que es un error, avisa a la administradora.
+          Si crees que es un error, avisa al administrador.
         </Alert>
       </div>
     );

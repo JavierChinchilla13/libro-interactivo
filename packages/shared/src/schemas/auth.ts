@@ -116,7 +116,7 @@ export type GoogleLoginResponse = z.infer<typeof googleLoginResponseSchema>;
 
 /**
  * Respuesta del ingreso con contraseña. Una cuenta a la que se le borraron la edad y los consentimientos declarados
- * (porque otra persona los había puesto antes de que su dueña probara controlar el correo) recibe `needs_profile`
+ * (porque otra persona los había puesto antes de que su dueño probara controlar el correo) recibe `needs_profile`
  * y **no se abre sesión** hasta que reenvía el ingreso con su edad y sus consentimientos.
  */
 export const loginResponseSchema = z.discriminatedUnion('status', [

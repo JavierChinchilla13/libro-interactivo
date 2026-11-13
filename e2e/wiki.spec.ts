@@ -107,11 +107,11 @@ test.describe('wiki pública (celular y escritorio)', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Alfa E2E' })).toBeVisible();
     await expect(page.getByText('Ficha de Alfa E2E')).toBeVisible();
 
-    // 3) Una lectora se registra, canjea el QR y completa el quiz: SOLO entonces se abren los personajes.
+    // 3) Un lector se registra, canjea el QR y completa el quiz: SOLO entonces se abren los personajes.
     const email = `lectora-wiki-${stamp}@ejemplo.com`;
     await created(
       await page.request.post('/api/auth/register', {
-        data: { ...ADULT_CONSENT, name: 'Lectora Wiki', email, password: PASSWORD },
+        data: { ...ADULT_CONSENT, name: 'Lector Wiki', email, password: PASSWORD },
       }),
     );
     expect((await page.request.get(`/api/wiki/entries/${ana.id}`)).status()).toBe(403);

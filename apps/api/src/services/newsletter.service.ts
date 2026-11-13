@@ -49,9 +49,9 @@ function birthOf(user: UserDoc) {
 
 /**
  * Altas, bajas y confirmación de los correos de novedades. El servidor decide quién puede apuntarse (mayor de 18 con
- * fecha de nacimiento guardada); quien no tiene el correo comprobado recibe primero un enlace y no queda apuntada hasta
+ * fecha de nacimiento guardada); quien no tiene el correo comprobado recibe primero un enlace y no queda apuntado hasta
  * abrirlo. Confirmar los avisos **no** marca el correo de la cuenta como comprobado: si otra persona creó la cuenta con
- * ese correo, la dueña del correo debe poder recuperarla igual (ver `claimUnverifiedAccount`).
+ * ese correo, el dueño del correo debe poder recuperarla igual (ver `claimUnverifiedAccount`).
  */
 export function createNewsletterService(deps: NewsletterDeps) {
   const { clock } = deps;
@@ -94,7 +94,7 @@ export function createNewsletterService(deps: NewsletterDeps) {
     const now = clock();
 
     if (user.emailVerifiedAt) {
-      // Correo comprobado (Google o recuperación de contraseña): queda apuntada al instante.
+      // Correo comprobado (Google o recuperación de contraseña): queda apuntado al instante.
       await User.updateOne(
         { _id: user._id },
         {

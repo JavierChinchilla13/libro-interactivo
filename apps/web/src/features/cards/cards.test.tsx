@@ -58,7 +58,7 @@ const list = (cards: unknown[], extra: Record<string, unknown> = {}) => ({
   'GET /api/cards': () => json({ cards, testMode: false, ...extra }),
 });
 
-describe('«Cartas» de la lectora', () => {
+describe('«Cartas» del lector', () => {
   it('con nada abierto no muestra ninguna carta ni cuántas hay, y dice cómo abrir la primera', async () => {
     mockApi({ ...list([]) });
     renderAt('/panel/cartas');
@@ -97,7 +97,7 @@ describe('«Cartas» de la lectora', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('modo prueba para una administradora: lo avisa', async () => {
+  it('modo prueba para un administrador: lo avisa', async () => {
     mockApi({ ...list([summary()], { testMode: true }) });
     renderAt('/panel/cartas');
     expect(await screen.findByText('Modo prueba')).toBeInTheDocument();

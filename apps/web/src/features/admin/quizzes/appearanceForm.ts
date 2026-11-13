@@ -82,7 +82,7 @@ export function formFromAppearance(
     mode: appearance.overlay.mode,
     strength: appearance.overlay.strength,
     accent: appearance.accent,
-    // Lo que la apariencia no define, la lectora lo ve del quiz: el formulario lo muestra tal cual.
+    // Lo que la apariencia no define, el lector lo ve del quiz: el formulario lo muestra tal cual.
     cover: appearance.cover ?? defaults.cover,
     introHtml: appearance.introHtml ?? defaults.introHtml,
     questions: Object.fromEntries(
@@ -254,7 +254,7 @@ export interface ContrastReport {
   ok: boolean;
 }
 
-/** Contraste real de lo que verá la lectora con la intensidad elegida. */
+/** Contraste real de lo que verá el lector con la intensidad elegida. */
 export function contrastReport(
   measured: string | undefined,
   strength: number,

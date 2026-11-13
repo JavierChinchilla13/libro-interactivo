@@ -31,7 +31,7 @@ const review = (over: Partial<ReviewInputPayload> = {}): ReviewInputPayload => (
 });
 
 describe('permisos del panel', () => {
-  it('fan arts y reseñas exigen sesión y rol de editora o administradora', async () => {
+  it('fan arts y reseñas exigen sesión y rol de editor o administrador', async () => {
     const { app, reader, editor, admin } = await staffWorld();
     for (const path of ['/api/admin/fan-arts', '/api/admin/reviews']) {
       await request(app).get(path).expect(401);

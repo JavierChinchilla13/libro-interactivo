@@ -2299,7 +2299,7 @@
 }
 
 /*
- * Mensaje de bienvenida (modal de la lectora y vista previa del editor). Fuera de toda capa: dentro de `@layer`
+ * Mensaje de bienvenida (modal del lector y vista previa del editor). Fuera de toda capa: dentro de `@layer`
  * perdería frente a las utilidades de `SafeHtml` (`[&_p]:my-2`, tamaño e interlineado). Letra de lectura, ancho
  * cómodo (~60 caracteres), interlineado amplio y aire entre párrafos; en el celular, menos relleno y letra un poco menor.
  */

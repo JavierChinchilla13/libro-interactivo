@@ -16,7 +16,7 @@ export function splitPages(html: string): string[] {
 /**
  * Cuerpo del mensaje de bienvenida: título y texto con la letra de lectura, interlineado amplio y aire entre
  * párrafos. Si la autora lo separó en páginas, muestra una a la vez con «‹ Anterior», «Siguiente ›», puntitos de
- * posición y «Comenzar» en la última (también con las flechas del teclado). Lo usan el modal de la lectora y la vista
+ * posición y «Comenzar» en la última (también con las flechas del teclado). Lo usan el modal del lector y la vista
  * previa del editor, para que la autora vea lo mismo.
  */
 export function WelcomeContent({

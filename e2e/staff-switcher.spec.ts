@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { E2E_ADMIN } from './global-setup';
 
-test.describe('selector de zona para administradoras y editoras (celular y escritorio)', () => {
+test.describe('selector de zona para administradores y editores (celular y escritorio)', () => {
   test('las tres zonas están en el menú de usuario de las tres cabeceras, marcan la zona y llevan a cada una', async ({
     page,
     isMobile,
@@ -60,7 +60,7 @@ test.describe('selector de zona para administradoras y editoras (celular y escri
     await expect(page).toHaveURL(/\/admin$/);
   });
 
-  test('una lectora no lo ve', async ({ page }) => {
+  test('un lector no lo ve', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('nav[aria-label="Cambiar de zona"]')).toHaveCount(0);
   });

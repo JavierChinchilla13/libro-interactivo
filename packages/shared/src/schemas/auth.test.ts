@@ -26,7 +26,7 @@ describe('checkPassword', () => {
 
   it('rechaza contraseñas que contienen el nombre o el correo', () => {
     expect(checkPassword('Marianela-2026-x', { name: 'Marianela Soto' })).toContain('PERSONAL');
-    expect(checkPassword('lectora.fiel-99!', { email: 'lectora.fiel@ejemplo.com' })).toContain(
+    expect(checkPassword('lector.fiel-99!', { email: 'lector.fiel@ejemplo.com' })).toContain(
       'PERSONAL',
     );
     expect(checkPassword('Nube-Azul-Cuatro-87', { name: 'Ana', email: 'ana@ejemplo.com' })).toEqual(
