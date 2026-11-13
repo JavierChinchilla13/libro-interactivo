@@ -13,7 +13,7 @@ import { AppError } from '../lib/errors.js';
 import type { Logger } from '../lib/logger.js';
 import { verifySvix, type SvixHeaders } from '../lib/svix.js';
 import { verifyUnsubscribeToken } from '../lib/unsubscribeToken.js';
-import { User, type UserDoc } from '../models/User.js';
+import { ACTIVE_ACCOUNT, User, type UserDoc } from '../models/User.js';
 import type { MailProvider } from '../providers/mail/MailProvider.js';
 import { newsletterConfirmEmail } from './email.templates.js';
 
@@ -238,7 +238,7 @@ export function createNewsletterService(deps: NewsletterDeps) {
       const now = clock();
       const user = await User.findOneAndUpdate(
         {
-          status: 'active',
+          ...ACTIVE_ACCOUNT,
           'newsletter.status': 'pending',
           'newsletter.confirmTokenHash': sha256Hex(token),
           'newsletter.confirmTokenExpiresAt': { $gt: now },

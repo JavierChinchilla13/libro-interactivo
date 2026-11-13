@@ -22,7 +22,7 @@ import {
 } from '../models/NotificationDelivery.js';
 import { NotificationJob, type NotificationJobDoc } from '../models/NotificationJob.js';
 import { Post } from '../models/Post.js';
-import { User } from '../models/User.js';
+import { ACTIVE_ACCOUNT, User } from '../models/User.js';
 import { UserProgress } from '../models/UserProgress.js';
 import {
   MailDeliveryError,
@@ -142,12 +142,19 @@ export function createNotificationService(deps: NotificationDeps) {
     };
   }
 
-  /** Apuntados activos; de un extra, solo quienes ya terminaron ese libro (decisión P8). */
+  /**
+   * Apuntados activos; de un extra, solo quienes ya terminaron ese libro (decisión P8). Activo = no desactivado: una
+   * cuenta sin el campo `status` cuenta como activa (Mongoose se lo pone al leerla, y así la ve su cuenta y el
+   * ingreso), y esta consulta directa tiene que coincidir con eso.
+   */
   async function recipientIds(
     kind: NotificationKind,
     bookId?: Types.ObjectId,
   ): Promise<Types.ObjectId[]> {
-    const filter: Record<string, unknown> = { status: 'active', 'newsletter.status': 'subscribed' };
+    const filter: Record<string, unknown> = {
+      ...ACTIVE_ACCOUNT,
+      'newsletter.status': 'subscribed',
+    };
     if (kind === 'extra') {
       // Sin libro no hay a quién avisar (nunca «cualquier libro»).
       if (!bookId) return [];
@@ -223,7 +230,7 @@ export function createNotificationService(deps: NotificationDeps) {
     const host = new URL(deps.appUrl).host;
     for (const row of rows) {
       const user = byId.get(String(row.userId));
-      if (!user || user.status !== 'active') {
+      if (!user || user.status === 'disabled') {
         skip.push({ rowId: row._id, reason: 'inactive' });
         continue;
       }
