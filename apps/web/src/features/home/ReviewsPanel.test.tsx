@@ -17,7 +17,7 @@ afterEach(() => vi.unstubAllGlobals());
 const review = (n: number) => ({
   id: `6700000000000000000000${40 + n}`,
   text: `[PLACEHOLDER] Reseña número ${n}`,
-  authorName: `[PRUEBA] Lectora ${n}`,
+  authorName: `[PRUEBA] Lector ${n}`,
   order: n,
   rating: 5,
 });

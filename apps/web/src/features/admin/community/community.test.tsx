@@ -9,7 +9,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 const EDITOR = {
   id: '670000000000000000000002',
-  name: 'Editora',
+  name: 'Editor',
   email: 'e@ejemplo.com',
   role: 'EDITOR',
 };

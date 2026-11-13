@@ -704,7 +704,7 @@ describe('landing: orden de las secciones', () => {
               {
                 id: '670000000000000000000051',
                 text: '[PLACEHOLDER] Reseña',
-                authorName: 'Lectora',
+                authorName: 'Lector',
                 order: 1,
               },
             ],

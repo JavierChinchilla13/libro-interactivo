@@ -1,3 +1,4 @@
+import { plural } from '@libro/shared';
 import type { PublicWikiLeaf, PublicWikiSection } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState, type ReactNode } from 'react';
@@ -165,8 +166,6 @@ export function PowersView({ bookId, section }: { bookId: string; section: Publi
     </div>
   );
 }
-
-const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 /**
  * Carpetas por tipo: una por cada `group`, una «Otros lugares» para lo abierto sin tipo y «Por descubrir» para lo

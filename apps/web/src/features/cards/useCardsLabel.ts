@@ -17,7 +17,7 @@ function cachedLabel(): string | undefined {
 
 /**
  * Cómo se llama la sección de cartas (la autora lo elige en la administración; por defecto «Hallazgos»). Lo usan el menú
- * del panel de la lectora, los títulos de sus pantallas y el panel de administración. Los identificadores internos
+ * del panel del lector, los títulos de sus pantallas y el panel de administración. Los identificadores internos
  * (`cards`, `card`, las rutas) no cambian. Siempre devuelve un texto: nunca deja el menú vacío.
  */
 export function useCardsLabel(enabled = true): string {

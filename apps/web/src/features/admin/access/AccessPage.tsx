@@ -15,7 +15,7 @@ import { useToast } from '../components/Toast';
 import { errorMessage } from '../errors';
 
 /**
- * Códigos QR (solo administradoras): un QR por quiz, igual en todos los ejemplares. Se descargan
+ * Códigos QR (solo administradores): un QR por quiz, igual en todos los ejemplares. Se descargan
  * en PDF (imprenta) o SVG y se pueden regenerar idénticos cuando se quiera; revocar o rotar deja sin efecto el impreso.
  */
 export function AccessPage() {

@@ -19,7 +19,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 afterEach(() => vi.unstubAllGlobals());
 
 describe('a dónde se va al terminar de ingresar', () => {
-  it('sin dirección previa: el equipo a /admin y las lectoras a /panel', () => {
+  it('sin dirección previa: el equipo a /admin y los lectores a /panel', () => {
     expect(homeFor(account('ADMIN'))).toBe('/admin');
     expect(homeFor(account('EDITOR'))).toBe('/admin');
     expect(homeFor(account('USER'))).toBe('/panel');
@@ -98,14 +98,14 @@ describe('quien llega a /admin sin sesión y luego ingresa', () => {
     expect(router.state.location.state).toEqual({ from: '/admin/libros' });
   });
 
-  it('una lectora termina en /panel, no en «sin permiso» de /admin', async () => {
+  it('un lector termina en /panel, no en «sin permiso» de /admin', async () => {
     mockLogin('USER');
     const router = await signInFrom('/admin/libros');
     await waitFor(() => expect(router.state.location.pathname).toBe('/panel'));
     expect(screen.queryByText('No tienes permiso para ver esta página')).toBeNull();
   });
 
-  it('una administradora vuelve a la sección que pedía', async () => {
+  it('un administrador vuelve a la sección que pedía', async () => {
     mockLogin('ADMIN');
     const router = await signInFrom('/admin/libros');
     await waitFor(() => expect(router.state.location.pathname).toBe('/admin/libros'));

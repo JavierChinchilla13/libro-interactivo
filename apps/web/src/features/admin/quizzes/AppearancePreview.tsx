@@ -85,7 +85,7 @@ function variantsOf(stages: StageQuestions[]): Variant[] {
 }
 
 /**
- * Cómo verá la lectora el quiz con lo que se está editando, a 375 px y a 1280 px: la introducción con el general o una
+ * Cómo verá el lector el quiz con lo que se está editando, a 375 px y a 1280 px: la introducción con el general o una
  * pregunta concreta con sus ajustes propios. Usa las mismas clases que la pantalla real y calcula velo, acento y
  * contraste como el lector (con la medida del fondo de ESA pantalla); el video se ve como su póster.
  */
@@ -285,7 +285,7 @@ function IntroScreen({
   );
 }
 
-/** La pantalla de una pregunta tal como la ve la lectora: avance, texto real y respuestas de muestra. */
+/** La pantalla de una pregunta tal como la ve el lector: avance, texto real y respuestas de muestra. */
 function QuestionScreen({ variant }: { variant: Variant }) {
   return (
     <>

@@ -138,7 +138,7 @@ function CardDialog({ cardId }: { cardId: string }) {
 }
 
 /**
- * Cartas de la lectora (el nombre lo elige la autora; por defecto «Hallazgos»): SOLO lo que abrió con su QR, en una
+ * Cartas del lector (el nombre lo elige la autora; por defecto «Hallazgos»): SOLO lo que abrió con su QR, en una
  * cuadrícula de portadas con su título. De lo que no abrió no se muestra nada (ni cuántas hay, salvo que se encienda
  * `CARDS_SHOW_LOCKED`). Al tocar una se abre en grande.
  */
@@ -157,7 +157,7 @@ export function CardsPage() {
       {list.data?.testMode ? (
         <div className="mb-4">
           <Alert tone="primary" title="Modo prueba">
-            Como administradora ves todo lo publicado, aunque no lo hayas abierto con su código.
+            Como administrador ves todo lo publicado, aunque no lo hayas abierto con su código.
           </Alert>
         </div>
       ) : null}

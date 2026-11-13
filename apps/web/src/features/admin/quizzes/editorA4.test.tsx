@@ -89,8 +89,8 @@ describe('editor de quizzes · cabecera y estado', { timeout: 30_000 }, () => {
     for (const [tab, help] of [
       ['Datos', 'Nombre, reglas y posición del quiz.'],
       ['Preguntas', 'Etapas, preguntas y a qué resultado suma cada respuesta.'],
-      ['Resultados', 'Qué descubre la lectora al terminar.'],
-      ['Versiones', 'Historial de lo publicado y cuántas lectoras lo usaron.'],
+      ['Resultados', 'Qué descubre el lector al terminar.'],
+      ['Versiones', 'Historial de lo publicado y cuántos lectores lo usaron.'],
     ] as const) {
       await userEvent.click(screen.getByRole('tab', { name: tab }));
       expect(screen.getByText(help)).toBeInTheDocument();

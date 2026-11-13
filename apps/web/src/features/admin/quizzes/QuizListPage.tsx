@@ -141,7 +141,7 @@ export function QuizListPage() {
           : {
               icon: 'quiz',
               title: 'Este libro todavía no tiene quizzes',
-              text: 'Un quiz son las preguntas y los resultados que descubre la lectora.',
+              text: 'Un quiz son las preguntas y los resultados que descubre el lector.',
               action: (
                 <Link to={newQuiz} className="btn btn-primary">
                   Crear el primer quiz

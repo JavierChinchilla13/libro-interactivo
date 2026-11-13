@@ -27,7 +27,7 @@ describe('pedidos tempranos de index.html', () => {
     expect(Object.keys(early).sort()).toEqual(['/books', '/site']);
   });
 
-  describe('panel de la lectora', () => {
+  describe('panel del lector', () => {
     const cover = {
       url: 'https://res.cloudinary.com/x/image/upload/v1/c.jpg',
       width: 1280,

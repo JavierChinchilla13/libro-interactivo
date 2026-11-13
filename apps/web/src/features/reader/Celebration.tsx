@@ -25,7 +25,7 @@ function reducedMotion(): boolean {
 /**
  * Celebración al abrir el resultado de un quiz: un solo momento (~1 s), sin bucles y sin sonido. Un sello «Quiz
  * completado» entra con una escala corta, un anillo se expande una vez y 14 chispas salen del emblema. Solo se monta
- * cuando el servidor ya entregó el resultado y la lectora lo abrió; es la misma para todos los resultados (no usa la
+ * cuando el servidor ya entregó el resultado y el lector lo abrió; es la misma para todos los resultados (no usa la
  * clave del resultado), salvo el degradado del campo, que ella ya recibe. Con «reducir movimiento» no hay chispas ni
  * anillo: el sello y el emblema se ven completos y quietos. Las chispas se quitan del DOM al terminar.
  */

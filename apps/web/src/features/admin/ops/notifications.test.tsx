@@ -18,7 +18,7 @@ const adminBook = {
 afterEach(() => vi.unstubAllGlobals());
 
 const ADMIN = { ...READER, id: '670000000000000000000002', name: 'Marisol Quesada', role: 'ADMIN' };
-const EDITOR = { ...ADMIN, id: '670000000000000000000003', name: 'Editora', role: 'EDITOR' };
+const EDITOR = { ...ADMIN, id: '670000000000000000000003', name: 'Editor', role: 'EDITOR' };
 const POST_ID = '670000000000000000000050';
 const JOB_ID = '670000000000000000000070';
 
@@ -73,7 +73,7 @@ async function fillEvent() {
 }
 
 describe('casilla «Avisar por correo» al publicar una actualización', () => {
-  it('la administradora ve a quién llega y el cupo; al publicar con la casilla se pide el aviso', async () => {
+  it('el administrador ve a quién llega y el cupo; al publicar con la casilla se pide el aviso', async () => {
     const { called } = mockApi(
       {
         'GET /api/admin/books': () => json({ books: [] }),
@@ -87,8 +87,8 @@ describe('casilla «Avisar por correo» al publicar una actualización', () => {
     );
     renderAt('/admin/actualizaciones/nueva?plantilla=event');
     await fillEvent();
-    const box = await screen.findByLabelText(/Avisar por correo a las lectoras apuntadas/);
-    expect(await screen.findByText(/12 lectoras/)).toBeInTheDocument();
+    const box = await screen.findByLabelText(/Avisar por correo a los lectores apuntados/);
+    expect(await screen.findByText(/12 lectores/)).toBeInTheDocument();
     expect(screen.getByText(/Quedan/)).toHaveTextContent(
       /Quedan 80 correos para avisos hoy y 2\s?540 este mes/,
     );
@@ -98,15 +98,55 @@ describe('casilla «Avisar por correo» al publicar una actualización', () => {
     await waitFor(() => expect(called(CREATE)).toHaveLength(1));
     expect(called(CREATE)[0]?.body).toEqual({ kind: 'post', refId: POST_ID });
     expect(
-      await screen.findByText(/Aviso por correo en cola para 120 lectoras/),
+      await screen.findByText(/Aviso por correo en cola para 120 lectores/),
     ).toBeInTheDocument();
     // Ya guardada y avisada: en lugar de la casilla, cómo va el envío.
     expect(await screen.findByText(/Ya se avisó por correo/)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/Avisar por correo a las lectoras/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Avisar por correo a los lectores/)).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ver avisos por correo' })).toHaveAttribute(
       'href',
       '/admin/avisos',
     );
+  });
+
+  it('el resumen concuerda en número: «Lo recibiría 1 lector» y «Lo recibirían 12 lectores»', async () => {
+    for (const [recipients, text] of [
+      [1, 'Lo recibiría 1 lector apuntado a las novedades.'],
+      [12, 'Lo recibirían 12 lectores apuntados a las novedades.'],
+    ] as const) {
+      mockApi(
+        {
+          'GET /api/admin/books': () => json({ books: [] }),
+          [NEW_PREVIEW]: () => json(preview({ recipients })),
+        },
+        { session: ADMIN },
+      );
+      const { unmount } = renderAt('/admin/actualizaciones/nueva?plantilla=event');
+      await fillEvent();
+      expect(await screen.findByText(/^Lo recibir/)).toHaveTextContent(text);
+      unmount();
+    }
+  });
+
+  it('un aviso ya enviado a un solo lector dice «1 lector procesado»', async () => {
+    mockApi(
+      {
+        'GET /api/admin/books': () => json({ books: [] }),
+        [`GET /api/admin/posts/${POST_ID}`]: () => json(post()),
+        [SAVED_PREVIEW]: () =>
+          json(
+            preview({
+              available: false,
+              existing: job({
+                totals: { recipients: 1, sent: 1, skipped: 0, failed: 0, pending: 0 },
+              }),
+            }),
+          ),
+      },
+      { session: ADMIN },
+    );
+    renderAt(`/admin/actualizaciones/${POST_ID}`);
+    expect(await screen.findByText(/1 de 1 lector procesado, 1 enviado/)).toBeInTheDocument();
   });
 
   it('sin marcar la casilla, publicar no pide ningún aviso', async () => {
@@ -122,7 +162,7 @@ describe('casilla «Avisar por correo» al publicar una actualización', () => {
     );
     renderAt('/admin/actualizaciones/nueva?plantilla=event');
     await fillEvent();
-    await screen.findByText(/12 lectoras/);
+    await screen.findByText(/12 lectores/);
     await userEvent.click(screen.getByRole('button', { name: 'Publicar' }));
     await waitFor(() => expect(called('POST /api/admin/posts')).toHaveLength(1));
     expect(called(CREATE)).toHaveLength(0);
@@ -144,13 +184,13 @@ describe('casilla «Avisar por correo» al publicar una actualización', () => {
     expect(
       await screen.findByText(/Si solo guardas el borrador, todavía no se avisa/),
     ).toBeInTheDocument();
-    await userEvent.click(screen.getByLabelText(/Avisar por correo a las lectoras apuntadas/));
+    await userEvent.click(screen.getByLabelText(/Avisar por correo a los lectores apuntados/));
     await userEvent.click(screen.getByRole('button', { name: 'Guardar borrador' }));
     await waitFor(() => expect(called('POST /api/admin/posts')).toHaveLength(1));
     expect(called(CREATE)).toHaveLength(0);
   });
 
-  it('sin lectoras apuntadas la casilla queda desactivada y lo dice', async () => {
+  it('sin lectores apuntados la casilla queda desactivada y lo dice', async () => {
     mockApi(
       {
         'GET /api/admin/books': () => json({ books: [] }),
@@ -159,11 +199,11 @@ describe('casilla «Avisar por correo» al publicar una actualización', () => {
       { session: ADMIN },
     );
     renderAt('/admin/actualizaciones/nueva?plantilla=event');
-    expect(await screen.findByText(/no hay lectoras apuntadas/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Avisar por correo a las lectoras apuntadas/)).toBeDisabled();
+    expect(await screen.findByText(/no hay lectores apuntados/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Avisar por correo a los lectores apuntados/)).toBeDisabled();
   });
 
-  it('una editora no ve la casilla ni consulta el cupo (solo administradoras)', async () => {
+  it('un editor no ve la casilla ni consulta el cupo (solo administradores)', async () => {
     const { calls } = mockApi(
       { 'GET /api/admin/books': () => json({ books: [] }) },
       { session: EDITOR },
@@ -185,14 +225,14 @@ describe('casilla «Avisar por correo» al publicar una actualización', () => {
     );
     renderAt(`/admin/extras/nuevo?libro=${BOOK_ID}`);
     expect(await screen.findByText(/que ya terminaron este libro/)).toBeInTheDocument();
-    expect(screen.getByText(/3 lectoras/)).toBeInTheDocument();
+    expect(screen.getByText(/3 lectores/)).toBeInTheDocument();
   });
 });
 
 describe('/admin/avisos', () => {
   const LIST = 'GET /api/admin/notifications';
 
-  it('lista los avisos con su avance y el cupo, y está en el menú de la administradora', async () => {
+  it('lista los avisos con su avance y el cupo, y está en el menú del administrador', async () => {
     mockApi(
       {
         [LIST]: () =>

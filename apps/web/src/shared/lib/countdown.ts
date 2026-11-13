@@ -1,3 +1,5 @@
+import { plural } from '@libro/shared';
+
 /** Las fechas de salida se piensan en hora de Costa Rica (UTC−6, sin horario de verano), igual que los eventos. */
 const SITE_UTC_OFFSET = '-06:00';
 
@@ -29,8 +31,6 @@ export function remainingParts(now: number, target: Date): RemainingParts {
     seconds: total % 60,
   };
 }
-
-const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 /** Frase para lectores de pantalla (se actualiza cada minuto, no cada segundo). */
 export function describeRemaining(parts: RemainingParts): string {

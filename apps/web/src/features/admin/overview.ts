@@ -27,7 +27,7 @@ const overviewKeys = {
 const MINUTE = 60_000;
 
 /**
- * Números del menú lateral: mensajes sin leer (solo administradoras) y fan arts en borrador. Son dos llamadas
+ * Números del menú lateral: mensajes sin leer (solo administradores) y fan arts en borrador. Son dos llamadas
  * pequeñas que ya existen; si fallan, el menú simplemente no muestra insignia.
  */
 export function useNavCounts(role: Role | undefined) {
@@ -61,8 +61,8 @@ export interface Upcoming {
 }
 
 /**
- * Todo lo que necesita el inicio, con los endpoints que ya existen. Lo que solo ve una administradora (mensajes,
- * lectoras, códigos QR) no se pide a una editora.
+ * Todo lo que necesita el inicio, con los endpoints que ya existen. Lo que solo ve un administrador (mensajes,
+ * lectores, códigos QR) no se pide a un editor.
  */
 export function useAdminOverview(role: Role | undefined, now: Date = new Date()) {
   const isAdmin = role === 'ADMIN';
@@ -154,7 +154,7 @@ export function useAdminOverview(role: Role | undefined, now: Date = new Date())
         : (stats.data?.unhandledMessages ?? 0)
       : undefined,
     stats: stats.data,
-    /** Solo administradoras: estado del respaldo (`undefined` mientras carga o para una editora). */
+    /** Solo administradores: estado del respaldo (`undefined` mientras carga o para un editor). */
     backup: isAdmin ? (backups.isPending ? undefined : (backups.data ?? null)) : undefined,
     tokenCount: isAdmin
       ? tokens.data?.tokens.filter((token) => token.status === 'active').length

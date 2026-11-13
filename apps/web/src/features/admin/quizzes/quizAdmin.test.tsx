@@ -248,7 +248,7 @@ describe('editor de quizzes', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Revisar' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Publicar' }));
     expect(
-      await screen.findByText('Publicado: ya es la versión 2 y las lectoras la ven.'),
+      await screen.findByText('Publicado: ya es la versión 2 y los lectores la ven.'),
     ).toBeInTheDocument();
     expect(screen.getByText('Falta una imagen')).toBeInTheDocument();
     expect(called(`POST ${url}/publish`)).toHaveLength(1);
@@ -273,7 +273,7 @@ describe('editor de quizzes', () => {
       ),
     ).toBeInTheDocument();
     // El botón está abajo y el aviso arriba: la vista va al aviso y el foco queda en él.
-    const area = screen.getByRole('region', { name: 'Vista previa como lectora' });
+    const area = screen.getByRole('region', { name: 'Vista previa como lector' });
     await waitFor(() => expect(area).toHaveFocus());
     expect(scroll).toHaveBeenCalledWith({ behavior: 'auto', block: 'start' });
     // @ts-expect-error: se quita el simulado (jsdom no lo trae).

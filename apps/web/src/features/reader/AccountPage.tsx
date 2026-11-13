@@ -147,15 +147,15 @@ function DeleteAccount() {
   });
   const wrong = remove.error instanceof ApiClientError && remove.error.status === 400;
 
-  // Una cuenta del equipo no se elimina desde aquí: el servidor lo rechaza (siempre debe quedar una administradora
-  // activa) y la desactiva otra administradora desde «Usuarios». Se explica en vez de ofrecer un botón que no puede.
+  // Una cuenta del equipo no se elimina desde aquí: el servidor lo rechaza (siempre debe quedar un administrador
+  // activa) y la desactiva otro administrador desde «Usuarios». Se explica en vez de ofrecer un botón que no puede.
   if (isStaff(session.data)) {
     return (
       <section className="border-t border-line pt-6">
         <h2 className="font-semibold">Tu cuenta es de administración</h2>
         <p className="mt-1 text-sm text-muted">
-          Las cuentas del equipo no se eliminan desde aquí: otra administradora la desactiva desde
-          Usuarios. Así siempre queda al menos una administradora activa.
+          Las cuentas del equipo no se eliminan desde aquí: otro administrador la desactiva desde
+          Usuarios. Así siempre queda al menos un administrador activo.
         </p>
       </section>
     );

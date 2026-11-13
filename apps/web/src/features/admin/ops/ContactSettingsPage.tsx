@@ -22,7 +22,7 @@ interface ContactForm {
 }
 
 /**
- * Contacto del sitio (solo administradoras): adónde llegan los mensajes, cuánto se guardan y el nombre legal de la
+ * Contacto del sitio (solo administradores): adónde llegan los mensajes, cuánto se guardan y el nombre legal de la
  * titular que citan la privacidad y los términos (nunca se escribe en el código: el repositorio es público).
  */
 export function ContactSettingsPage() {

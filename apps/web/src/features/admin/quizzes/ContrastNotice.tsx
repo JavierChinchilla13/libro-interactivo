@@ -3,7 +3,7 @@ import type { contrastReport } from './appearanceForm';
 
 const ratio = (value: number) => formatDecimal(value);
 
-/** Contraste real de lo que verá la lectora con el velo y el acento elegidos (texto atenuado, principal y acento). */
+/** Contraste real de lo que verá el lector con el velo y el acento elegidos (texto atenuado, principal y acento). */
 export function ContrastNotice({
   report,
   title,

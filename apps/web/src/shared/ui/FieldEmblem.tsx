@@ -2,7 +2,7 @@ import type { FieldVisualKey } from '@libro/shared';
 import './panelVisuals.css';
 
 /**
- * «Tu campo»: emblema estático (solo CSS, sin lienzo) del campo de poder del resultado de la lectora. Es el mismo dato
+ * «Tu campo»: emblema estático (solo CSS, sin lienzo) del campo de poder del resultado del lector. Es el mismo dato
  * que ella ya ve en su resultado (clave visual y nombre); nunca el `fieldSlug` ni nada del cuerpo de la ficha. El
  * significado va en texto, no solo en color.
  */

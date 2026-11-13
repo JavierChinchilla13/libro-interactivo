@@ -10,7 +10,7 @@ const ADMIN = {
   email: 'marisol@ejemplo.com',
   role: 'ADMIN',
 };
-const EDITOR = { ...ADMIN, id: '670000000000000000000003', name: 'Editora', role: 'EDITOR' };
+const EDITOR = { ...ADMIN, id: '670000000000000000000003', name: 'Editor', role: 'EDITOR' };
 const ACCOUNT = 'Nube-Azul-Cuatro-87';
 const ARCHIVE = 'Faro-Lejano-Ocho-2026';
 const FILE = 'universo-memorias-respaldo-2026-11-05-1830.tar.cifrado';
@@ -114,7 +114,7 @@ describe('/admin/respaldo: estado e historial', () => {
     expect(screen.getByText(/conviene descargar uno nuevo/)).toBeInTheDocument();
   });
 
-  it('una editora no la ve (ni en el menú) y una lectora tampoco', async () => {
+  it('un editor no la ve (ni en el menú) y un lector tampoco', async () => {
     mockApi({ 'GET /api/admin/books': () => json({ books: [] }) }, { session: EDITOR });
     const view = renderAt('/admin/respaldo');
     expect(await screen.findByText('No tienes permiso para ver esta página')).toBeInTheDocument();

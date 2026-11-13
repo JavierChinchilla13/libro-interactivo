@@ -104,13 +104,13 @@ export function QuizNewPage() {
           <legend className="text-sm font-medium">Reglas del quiz</legend>
           <CheckField
             label="Se puede repetir"
-            hint="Si lo apagas, cada lectora lo juega una sola vez."
+            hint="Si lo apagas, cada lector lo juega una sola vez."
             checked={allowRetake}
             onChange={setAllowRetake}
           />
           <CheckField
             label="Mostrar el porcentaje de cada resultado"
-            hint="Al terminar, la lectora ve cuánto de cada resultado sacó."
+            hint="Al terminar, el lector ve cuánto de cada resultado sacó."
             checked={showBreakdown}
             onChange={setShowBreakdown}
           />

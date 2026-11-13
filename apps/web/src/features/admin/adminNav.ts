@@ -15,7 +15,7 @@ export interface AdminNavItem {
   icon: AdminIconName;
   /** Una línea en lenguaje simple: qué se hace en esta pantalla. */
   description: string;
-  /** Sin `roles`, las editoras y las administradoras. */
+  /** Sin `roles`, los editores y los administradores. */
   roles?: readonly Role[];
 }
 
@@ -90,7 +90,7 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
         label: 'Actualizaciones',
         to: '/admin/actualizaciones',
         icon: 'news',
-        description: 'Noticias y avisos para las lectoras.',
+        description: 'Noticias y avisos para los lectores.',
       },
     ],
   },
@@ -110,7 +110,7 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
         label: 'Reseñas',
         to: '/admin/resenas',
         icon: 'review',
-        description: 'Opiniones de las lectoras: revisar y publicar.',
+        description: 'Opiniones de los lectores: revisar y publicar.',
       },
       {
         id: 'mensajes',
@@ -125,7 +125,7 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
         label: 'Avisos por correo',
         to: '/admin/avisos',
         icon: 'send',
-        description: 'Los correos de novedades a las lectoras apuntadas: cómo va cada envío.',
+        description: 'Los correos de novedades a los lectores apuntados: cómo va cada envío.',
         roles: ADMIN,
       },
     ],
@@ -146,7 +146,7 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
         label: 'Mensaje de bienvenida',
         to: '/admin/bienvenida',
         icon: 'hand',
-        description: 'Lo primero que lee una lectora al iniciar sesión.',
+        description: 'Lo primero que lee un lector al iniciar sesión.',
       },
       {
         id: 'ajustes',
@@ -168,7 +168,7 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
         label: 'Usuarios',
         to: '/admin/usuarios',
         icon: 'users',
-        description: 'Cuentas de lectoras y del equipo.',
+        description: 'Cuentas de lectores y del equipo.',
         roles: ADMIN,
       },
       {
@@ -184,7 +184,7 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
         label: 'Estadísticas',
         to: '/admin/estadisticas',
         icon: 'chart',
-        description: 'Lectoras, intentos y resultados.',
+        description: 'Lectores, intentos y resultados.',
         roles: ADMIN,
       },
       {

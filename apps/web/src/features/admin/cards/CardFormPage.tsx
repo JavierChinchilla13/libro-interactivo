@@ -96,7 +96,7 @@ export function CardFormPage() {
 }
 
 /**
- * Formulario de una carta (solo administradoras): título, estado y de 1 a 12 imágenes. Se pueden subir varias a la vez
+ * Formulario de una carta (solo administradores): título, estado y de 1 a 12 imágenes. Se pueden subir varias a la vez
  * (cada una con su propia firma del servidor), reordenar, quitar y describir. La primera es la portada de la lista.
  */
 function CardFormView({ cardId, initial }: { cardId?: string; initial: CardForm }) {
@@ -263,7 +263,7 @@ function CardFormView({ cardId, initial }: { cardId?: string; initial: CardForm 
             maxLength={120}
             value={form.title}
             error={errors['title']}
-            hint="Es lo que ve la lectora junto a la portada, una vez que abrió la carta."
+            hint="Es lo que ve el lector junto a la portada, una vez que abrió la carta."
             onChange={(event) => set('title', event.target.value)}
           />
           <SelectField

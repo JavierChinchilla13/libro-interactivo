@@ -84,7 +84,7 @@ describe('«Correos de novedades» en la cuenta', () => {
     return heading.closest('section') as HTMLElement;
   };
 
-  it('no apuntada: la casilla desmarcada; al marcarla con el correo sin comprobar queda pendiente', async () => {
+  it('no apuntado: la casilla desmarcada; al marcarla con el correo sin comprobar queda pendiente', async () => {
     const api = mockApi(
       {
         'GET /api/me/newsletter': () => json({ status: 'none', eligible: true }),
@@ -101,7 +101,7 @@ describe('«Correos de novedades» en la cuenta', () => {
     expect(api.called('PUT /api/me/newsletter')[0]?.body).toEqual({ subscribed: true });
   });
 
-  it('apuntada: dice desde cuándo y al desmarcar se da de baja', async () => {
+  it('apuntado: dice desde cuándo y al desmarcar se da de baja', async () => {
     const api = mockApi(
       {
         'GET /api/me/newsletter': () =>

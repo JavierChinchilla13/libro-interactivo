@@ -57,7 +57,7 @@ describe('guards de /admin (solo mejoran la experiencia; la seguridad es del API
     expect(screen.queryByRole('navigation', { name: 'Administración' })).not.toBeInTheDocument();
   });
 
-  it('una editora entra al panel y NO ve el grupo «Administración» ni nada bloqueado', async () => {
+  it('un editor entra al panel y NO ve el grupo «Administración» ni nada bloqueado', async () => {
     mockApi('EDITOR');
     renderAt('/admin');
     expect(
@@ -70,10 +70,10 @@ describe('guards de /admin (solo mejoran la experiencia; la seguridad es del API
     expect(screen.queryByRole('link', { name: 'Contacto del sitio' })).not.toBeInTheDocument();
     // El rol vive ahora dentro del menú de usuario.
     await userEvent.click(screen.getByRole('button', { name: 'Persona' }));
-    expect(screen.getByText('Editora')).toBeInTheDocument();
+    expect(screen.getByText('Editor')).toBeInTheDocument();
   });
 
-  it('una administradora ve además Códigos QR, Usuarios, Mensajes, Estadísticas y Ajustes', async () => {
+  it('un administrador ve además Códigos QR, Usuarios, Mensajes, Estadísticas y Ajustes', async () => {
     mockApi('ADMIN');
     renderAt('/admin');
     expect(await screen.findByRole('group', { name: 'Administración' })).toBeInTheDocument();
@@ -97,15 +97,15 @@ describe('guards de /admin (solo mejoran la experiencia; la seguridad es del API
   });
 });
 
-describe('sección de códigos QR (solo administradoras)', () => {
-  it('una editora no ve el enlace y, si entra por la dirección, recibe «sin permiso»', async () => {
+describe('sección de códigos QR (solo administradores)', () => {
+  it('un editor no ve el enlace y, si entra por la dirección, recibe «sin permiso»', async () => {
     mockApi('EDITOR');
     renderAt('/admin/qr');
     expect(await screen.findByText('No tienes permiso para ver esta página')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Códigos QR' })).not.toBeInTheDocument();
   });
 
-  it('una administradora entra a /admin/qr', async () => {
+  it('un administrador entra a /admin/qr', async () => {
     mockApi('ADMIN');
     renderAt('/admin/qr');
     expect(await screen.findByRole('heading', { name: 'Códigos QR' })).toBeInTheDocument();
@@ -135,7 +135,7 @@ describe('ingreso', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Correo o contraseña incorrectos.');
   });
 
-  it('una editora que ingresa llega al panel', async () => {
+  it('un editor que ingresa llega al panel', async () => {
     let logged = false;
     mockApi(null, (url, init) => {
       if (url === '/api/auth/login' && init?.method === 'POST') {

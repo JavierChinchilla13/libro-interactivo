@@ -13,7 +13,7 @@ import { useGoogleAccess } from './useGoogleAccess';
 
 /**
  * Ingreso. Mensajes genéricos: nunca dice si el correo existe.
- * Las editoras y administradoras van al panel; el registro y la recuperación llegan con las pantallas del lector.
+ * Los editores y administradores van al panel; el registro y la recuperación llegan con las pantallas del lector.
  */
 export function LoginPage() {
   const session = useSession();

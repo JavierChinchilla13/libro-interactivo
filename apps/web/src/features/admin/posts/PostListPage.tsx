@@ -139,7 +139,7 @@ export function PostListPage() {
       empty={{
         icon: 'news',
         title: 'Todavía no hay actualizaciones',
-        text: 'Ferias, eventos y novedades para las lectoras. Cada una elige una plantilla.',
+        text: 'Ferias, eventos y novedades para los lectores. Cada una elige una plantilla.',
         action: (
           <Link to="/admin/actualizaciones/nueva" className="btn btn-primary">
             Crear la primera actualización

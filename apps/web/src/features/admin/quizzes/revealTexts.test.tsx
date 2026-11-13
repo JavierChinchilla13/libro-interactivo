@@ -71,7 +71,7 @@ describe('líneas antes del resultado (pestañas Datos y Resultados)', () => {
     await screen.findByRole('heading', { name: 'Quiz uno' });
     expect(
       screen.getByText(
-        /Las ven todas las lectoras, antes de las líneas propias de cada resultado \(pestaña Resultados\)\. Si quieres líneas distintas para cada resultado, deja esta lista vacía y escríbelas en Resultados\./,
+        /Las ven todos los lectores, antes de las líneas propias de cada resultado \(pestaña Resultados\)\. Si quieres líneas distintas para cada resultado, deja esta lista vacía y escríbelas en Resultados\./,
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/iguales para todos los resultados/)).toBeNull();

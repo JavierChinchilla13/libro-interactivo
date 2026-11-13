@@ -35,7 +35,7 @@ describe('marco de la administración', () => {
     );
   });
 
-  it('la editora no ve Mensajes, Usuarios, Códigos QR ni Estadísticas, y tampoco queda nada «bloqueado»', async () => {
+  it('el editor no ve Mensajes, Usuarios, Códigos QR ni Estadísticas, y tampoco queda nada «bloqueado»', async () => {
     mockApi({ 'GET /api/admin/books': () => json({ books: [] }) }, { session: person('EDITOR') });
     renderAt('/admin/libros');
     const menu = await screen.findByRole('navigation', { name: 'Administración' });

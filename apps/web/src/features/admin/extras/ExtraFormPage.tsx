@@ -1,4 +1,4 @@
-import { extraInputSchema, type ExtraPreviewResponse } from '@libro/shared';
+import { extraInputSchema, type ExtraPreviewResponse, plural } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
@@ -92,7 +92,7 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
       const { job, created } = await notificationsApi.create({ kind: 'extra', refId });
       setNotify(false);
       return created
-        ? `Guardado. Aviso por correo en cola para ${job.totals.recipients} ${job.totals.recipients === 1 ? 'lectora' : 'lectoras'}.`
+        ? `Guardado. Aviso por correo en cola para ${plural(job.totals.recipients, 'lector', 'lectores')}.`
         : 'Guardado. Este extra ya se había avisado por correo.';
     } catch (error) {
       toast.error(`Se guardó, pero no se pudo pedir el aviso por correo: ${errorMessage(error)}`);
@@ -289,7 +289,7 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
           </div>
         </FormSection>
 
-        <FormSection title="Contenido" help="El texto o el archivo que verá la lectora al abrirlo.">
+        <FormSection title="Contenido" help="El texto o el archivo que verá el lector al abrirlo.">
           {isFile ? (
             <fieldset className="flex flex-col gap-3">
               <legend className="font-semibold">

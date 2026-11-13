@@ -16,7 +16,7 @@ const EMPTY_TITLE: Record<string, string> = {
   all: 'Todavía no hay mensajes',
 };
 
-/** Mensajes de contacto (solo administradoras): bandeja con «atendido». */
+/** Mensajes de contacto (solo administradores): bandeja con «atendido». */
 export function MessagesPage() {
   const client = useQueryClient();
   const toast = useToast();

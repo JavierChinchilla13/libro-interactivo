@@ -1,4 +1,4 @@
-/* Solo el panel de la lectora (se descarga con su código, no con la portada). */
+/* Solo el panel del lector (se descarga con su código, no con la portada). */
 @layer components {
   /* «Tu campo»: el mismo degradado de cada campo, pero estático y pequeño (sin lienzo, sin brillo). */
   .field-emblem {

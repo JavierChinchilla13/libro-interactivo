@@ -196,13 +196,34 @@ describe('inicio de la administración · cuenta con datos', () => {
     expect(screen.queryByText('Todo al día')).toBeNull();
   });
 
+  it('el contador de lectores nuevos concuerda en número: «1 nuevo» y «0 nuevos»', async () => {
+    for (const [last7Days, text] of [
+      [1, '1 nuevo en 7 días'],
+      [0, '0 nuevos en 7 días'],
+    ] as const) {
+      const { unmount } = (() => {
+        mockApi(
+          {
+            ...withData,
+            'GET /api/admin/stats': () =>
+              json(stats({ readers: { total: 12, last7Days, last30Days: 8, disabled: 0 } })),
+          },
+          { session: ADMIN },
+        );
+        return renderAt('/admin');
+      })();
+      expect(await screen.findByText(text)).toBeInTheDocument();
+      unmount();
+    }
+  });
+
   it('resume en números y marca solos los pasos hechos', async () => {
     mockApi(withData, { session: ADMIN });
     renderAt('/admin');
     await waitFor(() => expect(screen.getByTestId('stat-published-books')).toHaveTextContent('1'));
     expect(screen.getByText('de 2 en total')).toBeInTheDocument();
     expect(await screen.findByText('de 3 sin contar los archivados')).toBeInTheDocument();
-    expect(await screen.findByText('3 nuevas en 7 días')).toBeInTheDocument();
+    expect(await screen.findByText('3 nuevos en 7 días')).toBeInTheDocument();
     const steps = await screen.findByRole('region', { name: 'Primeros pasos' });
     expect(within(steps).getByText(/3 de 5 listos/)).toBeInTheDocument();
     expect(within(steps).queryByRole('link', { name: 'Crea tu primer libro' })).toBeNull();
@@ -221,13 +242,13 @@ describe('inicio de la administración · cuenta con datos', () => {
   });
 });
 
-describe('inicio de la administración · editora', () => {
-  it('no pide ni muestra mensajes, lectoras ni códigos QR, y sus pasos son cuatro', async () => {
+describe('inicio de la administración · editor', () => {
+  it('no pide ni muestra mensajes, lectores ni códigos QR, y sus pasos son cuatro', async () => {
     const { called } = mockApi(withData, { session: EDITOR });
     renderAt('/admin');
     await screen.findByRole('link', { name: '1 quiz con cambios sin publicar' });
     expect(screen.queryByRole('link', { name: /mensajes? sin atender/ })).toBeNull();
-    expect(screen.queryByText('Lectoras')).toBeNull();
+    expect(screen.queryByText('Lectores')).toBeNull();
     expect(screen.queryByRole('link', { name: /Ver códigos QR/ })).toBeNull();
     const steps = await screen.findByRole('region', { name: 'Primeros pasos' });
     expect(within(steps).getByText(/de 4 listos/)).toBeInTheDocument();

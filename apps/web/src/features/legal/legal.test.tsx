@@ -222,7 +222,7 @@ describe('aviso de cookies', () => {
 });
 
 const SITE = { universe: { introHtml: '' }, author: { bioHtml: '' }, social: [], lockMessage: 'x' };
-/** Un nombre evidentemente inventado: el real lo escribe la administradora en el panel y nunca va al código. */
+/** Un nombre evidentemente inventado: el real lo escribe el administrador en el panel y nunca va al código. */
 const FAKE_OWNER = 'Titular Inventada de Prueba';
 const withOwner = (legalOwnerName?: string) =>
   mockApi(

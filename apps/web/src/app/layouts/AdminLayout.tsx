@@ -65,7 +65,7 @@ export function AdminLayout() {
   const drawer = useRef<HTMLElement>(null);
   const navScroll = useRef<HTMLElement>(null);
   const moreBelow = useMoreBelow(navScroll);
-  // El nombre de la sección de cartas lo elige la autora: solo se pide si la cuenta es administradora (la ve).
+  // El nombre de la sección de cartas lo elige la autora: solo se pide si la cuenta es administrador (la ve).
   const cardsLabel = useCardsLabel(session.data?.role === 'ADMIN');
   const navLabels: Record<string, string> = { cartas: cardsLabel };
   const groups = navForRole(session.data?.role, navLabels);

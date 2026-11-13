@@ -13,7 +13,7 @@ beforeEach(() => {
 });
 
 const ADMIN = { ...READER, id: '670000000000000000000002', name: 'Marisol Quesada', role: 'ADMIN' };
-const EDITOR = { ...ADMIN, id: '670000000000000000000003', name: 'Editora', role: 'EDITOR' };
+const EDITOR = { ...ADMIN, id: '670000000000000000000003', name: 'Editor', role: 'EDITOR' };
 const STAMP = '2026-10-01T15:00:00.000Z';
 const adminBook = {
   ...BOOK,
@@ -421,7 +421,7 @@ describe('/admin/cartas/nueva (formulario con varias imágenes)', () => {
 });
 
 describe('quién entra', () => {
-  it('una editora no ve «Hallazgos» en el menú de administración', async () => {
+  it('un editor no ve «Hallazgos» en el menú de administración', async () => {
     mockApi({ ...books }, { session: EDITOR });
     renderAt('/admin');
     const menu = (await screen.findAllByRole('navigation'))[0]!;

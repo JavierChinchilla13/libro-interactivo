@@ -1,7 +1,8 @@
 import {
-  createStaffUserRequestSchema,
   type AdminUser,
   type CreateStaffUserRequest,
+  createStaffUserRequestSchema,
+  plural,
 } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
@@ -22,9 +23,9 @@ import { StatusBadge } from '../components/StatusBadge';
 import { errorMessage, fieldErrors } from '../errors';
 
 const ROLE_LABEL: Record<AdminUser['role'], string> = {
-  USER: 'Lectora',
-  EDITOR: 'Editora',
-  ADMIN: 'Administradora',
+  USER: 'Lector',
+  EDITOR: 'Editor',
+  ADMIN: 'Administrador',
 };
 
 function RoleBadge({ role }: { role: AdminUser['role'] }) {
@@ -84,8 +85,8 @@ function CreateStaffForm({ onDone }: { onDone: () => void }) {
             label="Rol"
             value={form.role}
             options={[
-              { value: 'EDITOR', label: 'Editora (contenido)' },
-              { value: 'ADMIN', label: 'Administradora (todo)' },
+              { value: 'EDITOR', label: 'Editor (contenido)' },
+              { value: 'ADMIN', label: 'Administrador (todo)' },
             ]}
             onChange={(event) =>
               setForm({ ...form, role: event.target.value as CreateStaffUserRequest['role'] })
@@ -106,7 +107,7 @@ function CreateStaffForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-/** Usuarios (solo administradoras): búsqueda, filtros y alta de cuentas del equipo. */
+/** Usuarios (solo administradores): búsqueda, filtros y alta de cuentas del equipo. */
 export function UserListPage() {
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
@@ -166,7 +167,7 @@ export function UserListPage() {
   return (
     <ListPage
       title="Usuarios"
-      subtitle="Lectoras, editoras y administradoras. Los intentos de prueba no cuentan."
+      subtitle="Lectores, editores y administradores. Los intentos de prueba no cuentan."
       primaryAction={<Button onClick={() => setCreating(true)}>Nueva cuenta del equipo</Button>}
       tabs={creating ? <CreateStaffForm onDone={() => setCreating(false)} /> : null}
       toolbar={
@@ -190,9 +191,9 @@ export function UserListPage() {
             value={role}
             placeholder="Todos"
             options={[
-              { value: 'USER', label: 'Lectoras' },
-              { value: 'EDITOR', label: 'Editoras' },
-              { value: 'ADMIN', label: 'Administradoras' },
+              { value: 'USER', label: 'Lectores' },
+              { value: 'EDITOR', label: 'Editores' },
+              { value: 'ADMIN', label: 'Administradores' },
             ]}
             onChange={(event) => {
               setPage(1);
@@ -231,7 +232,7 @@ export function UserListPage() {
       empty={{
         icon: 'users',
         title: 'Todavía no hay personas',
-        text: 'Las lectoras aparecen aquí cuando se registran.',
+        text: 'Los lectores aparecen aquí cuando se registran.',
       }}
       footer={
         data && pages > 1 ? (
@@ -240,7 +241,7 @@ export function UserListPage() {
               Anterior
             </Button>
             <p className="text-sm text-muted">
-              Página {page} de {pages} · {data.total} personas
+              Página {page} de {pages} · {plural(data.total, 'persona', 'personas')}
             </p>
             <Button variant="secondary" disabled={page >= pages} onClick={() => setPage(page + 1)}>
               Siguiente
@@ -332,9 +333,9 @@ export function UserDetailPage() {
                 label="Rol"
                 value={user.role}
                 options={[
-                  { value: 'USER', label: 'Lectora' },
-                  { value: 'EDITOR', label: 'Editora' },
-                  { value: 'ADMIN', label: 'Administradora' },
+                  { value: 'USER', label: 'Lector' },
+                  { value: 'EDITOR', label: 'Editor' },
+                  { value: 'ADMIN', label: 'Administrador' },
                 ]}
                 onChange={(event) =>
                   update.mutate({ role: event.target.value as AdminUser['role'] })
@@ -415,7 +416,7 @@ export function UserDetailPage() {
                     <span className="text-sm text-muted">
                       {quiz.resultTitle ? `Resultado: ${quiz.resultTitle} · ` : ''}
                       {quiz.completedAt ? `${formatShortDate(quiz.completedAt)} · ` : ''}
-                      {quiz.attempts} {quiz.attempts === 1 ? 'intento' : 'intentos'}
+                      {plural(quiz.attempts, 'intento', 'intentos')}
                     </span>
                   </li>
                 ))}

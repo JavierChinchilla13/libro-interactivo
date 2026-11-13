@@ -185,12 +185,12 @@ describe('UserMenu en el panel', { timeout: 30_000 }, () => {
     expect(screen.getByRole('menuitem', { name: 'Salir' })).toBeInTheDocument();
   });
 
-  it('muestra el rol de editoras y administradoras dentro del menú, con las tres zonas y sin selector suelto', async () => {
+  it('muestra el rol de editores y administradores dentro del menú, con las tres zonas y sin selector suelto', async () => {
     mockApi({}, { session: withName('Admin Prueba', 'ADMIN') });
     renderAt('/admin');
     const user = userEvent.setup();
     await user.click(await trigger('Admin Prueba'));
-    expect(screen.getByText('Administradora')).toBeInTheDocument();
+    expect(screen.getByText('Administrador')).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Cambiar de zona' })).toBeNull();
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Ver sitio',
@@ -203,7 +203,7 @@ describe('UserMenu en el panel', { timeout: 30_000 }, () => {
 });
 
 describe('UserMenu en el sitio público', { timeout: 30_000 }, () => {
-  it('con sesión de lectora muestra «Mi panel» y el menú; sin sesión no hay menú', async () => {
+  it('con sesión de lector muestra «Mi panel» y el menú; sin sesión no hay menú', async () => {
     const view = (() => {
       mockApi({ 'GET /api/site': () => json({}) }, { session: withName('Lectora Prueba') });
       return renderAt('/');
@@ -219,14 +219,14 @@ describe('UserMenu en el sitio público', { timeout: 30_000 }, () => {
     );
     renderAt('/');
     await screen.findByRole('link', { name: 'Ingresar' });
-    expect(screen.queryByRole('button', { name: /menú de usuario|Lectora/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /menú de usuario|Lector/i })).toBeNull();
   });
 });
 
 describe('UserMenu: lista de opciones', { timeout: 30_000 }, () => {
   const ITEMS: UserMenuItem[] = [
     { id: 'a', label: 'Para todas', to: '/panel/cuenta' },
-    { id: 'b', label: 'Solo administradoras', to: '/admin', roles: ['ADMIN'] },
+    { id: 'b', label: 'Solo administradores', to: '/admin', roles: ['ADMIN'] },
   ];
   const harness = () =>
     render(
@@ -243,10 +243,10 @@ describe('UserMenu: lista de opciones', { timeout: 30_000 }, () => {
     const user = userEvent.setup();
     await user.click(await trigger('Lectora Prueba'));
     expect(screen.getByRole('menuitem', { name: 'Para todas' })).toBeInTheDocument();
-    expect(screen.queryByRole('menuitem', { name: 'Solo administradoras' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Solo administradores' })).toBeNull();
   });
 
-  it('una administradora ve todas', async () => {
+  it('un administrador ve todas', async () => {
     mockApi({}, { session: withName('Admin Prueba', 'ADMIN') });
     harness();
     const user = userEvent.setup();

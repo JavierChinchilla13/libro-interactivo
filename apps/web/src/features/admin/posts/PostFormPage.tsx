@@ -1,13 +1,14 @@
 import {
+  plural,
   POST_CATEGORY_LABELS,
   POST_TEMPLATES,
-  postInputSchema,
-  postTemplateSchema,
-  postTemplates,
   type PostDetail,
   type PostInputPayload,
+  postInputSchema,
   type PostStatus,
   type PostTemplate,
+  postTemplates,
+  postTemplateSchema,
 } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
@@ -144,7 +145,7 @@ function PostFormView({ postId, initial }: { postId?: string; initial: PostForm 
       const { job, created } = await notificationsApi.create({ kind: 'post', refId });
       setNotify(false);
       return created
-        ? `Guardado. Aviso por correo en cola para ${job.totals.recipients} ${job.totals.recipients === 1 ? 'lectora' : 'lectoras'}.`
+        ? `Guardado. Aviso por correo en cola para ${plural(job.totals.recipients, 'lector', 'lectores')}.`
         : 'Guardado. Esta actualización ya se había avisado por correo.';
     } catch (error) {
       toast.error(`Se guardó, pero no se pudo pedir el aviso por correo: ${errorMessage(error)}`);

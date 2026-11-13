@@ -11,7 +11,7 @@ function Harness({
   pages?: boolean;
   onChange: (html: string) => void;
 }) {
-  const [value, setValue] = useState('<p>Hola, lectora</p>');
+  const [value, setValue] = useState('<p>Hola, lector</p>');
   return (
     <RichTextEditor
       label="Mensaje"

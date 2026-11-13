@@ -183,7 +183,7 @@ describe('marco del libro: migas, subnavegador y barra', { timeout: 30_000 }, ()
       '/panel/libros/libro-1',
     );
     expect(within(crumbs).getByText('Resultados')).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByText('0 de 1 experiencias abiertas')).toBeInTheDocument();
+    expect(screen.getByText('0 de 1 experiencia abierta')).toBeInTheDocument();
     const bottom = screen.getByRole('navigation', { name: 'Panel (móvil)' });
     expect(within(bottom).getByRole('link', { name: 'Resultados' })).toHaveAttribute(
       'aria-current',

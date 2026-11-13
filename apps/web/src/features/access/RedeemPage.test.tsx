@@ -7,7 +7,7 @@ import { PENDING_TOKEN_KEY } from './RedeemPage';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 const user = {
-  user: { id: '670000000000000000000001', name: 'Lectora', email: 'l@ejemplo.com', role: 'USER' },
+  user: { id: '670000000000000000000001', name: 'Lector', email: 'l@ejemplo.com', role: 'USER' },
 };
 const unauthenticated = () =>
   json({ error: { code: 'UNAUTHENTICATED', message: 'Debes iniciar sesión' } }, 401);

@@ -11,6 +11,7 @@ import { NewsletterInvitation } from '../newsletter/NewsletterInvitation';
 import { HowItWorks } from './HowItWorks';
 import { LibraryBookCard, type LibraryEntry } from './LibraryBookCard';
 import { nextHref } from './nextStep';
+import { experiencesCount } from './progressText';
 import { useLibrary } from './useLibrary';
 
 /** Orden de «Tus libros»: primero lo que tiene un paso por hacer, luego lo abierto, lo bloqueado y lo que viene. */
@@ -49,7 +50,7 @@ const shortcut =
   'flex items-center justify-between gap-4 border-t border-line py-4 transition-colors first:border-t-0 hover:text-primary active:bg-surface-alt/40';
 
 /**
- * Entrada del panel de la lectora: saludo con su avance, «Tus libros» (cada libro con el estado que decide el
+ * Entrada del panel del lector: saludo con su avance, «Tus libros» (cada libro con el estado que decide el
  * servidor), qué es Universo Memorias y atajos. El hilo de experiencias de cada libro vive en `/panel/libros/:slug`.
  */
 export function DashboardPage() {
@@ -67,7 +68,7 @@ export function DashboardPage() {
 
   const subtitle = library.data
     ? open.length > 0
-      ? `${done} de ${total} experiencias abiertas en ${open.length === 1 ? 'tu libro' : `${open.length} libros`}`
+      ? `${experiencesCount(done, total)} en ${open.length === 1 ? 'tu libro' : `${open.length} libros`}`
       : entries.length > 0
         ? 'Escanea el QR de tu libro para abrir el primer quiz.'
         : undefined

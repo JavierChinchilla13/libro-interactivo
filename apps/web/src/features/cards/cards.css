@@ -1,5 +1,5 @@
 /*
- * Cartas con QR (lectora): cuadrícula de portadas y vista grande en un diálogo nativo. Fuera de las capas de Tailwind
+ * Cartas con QR (lector): cuadrícula de portadas y vista grande en un diálogo nativo. Fuera de las capas de Tailwind
  * (como las demás hojas de pantalla). Solo se anima `transform` y `opacity`; con «reducir movimiento», nada se mueve.
  * Radios concéntricos: el cuadro del diálogo (1.25 rem) = el de la imagen (0.5 rem) + el relleno entre ambos (0.75 rem).
  */

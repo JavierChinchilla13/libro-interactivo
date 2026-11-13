@@ -7,6 +7,7 @@ import { FieldEmblem } from '../../shared/ui/FieldEmblem';
 import { LockIcon } from '../../shared/ui/icons';
 import { Plate } from '../../shared/ui/Plate';
 import { Countdown } from '../home/Countdown';
+import { experiencesCount } from './progressText';
 
 export type LibraryEntry = ReaderLibraryResponse['books'][number];
 
@@ -17,9 +18,7 @@ function Progress({ done, total, title }: { done: number; total: number; title: 
   if (total === 0) return <p className="text-sm text-muted">Aún sin experiencias</p>;
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm font-medium tabular-nums">
-        {done} de {total} experiencias abiertas
-      </p>
+      <p className="text-sm font-medium tabular-nums">{experiencesCount(done, total)}</p>
       <div
         role="progressbar"
         aria-valuemin={0}

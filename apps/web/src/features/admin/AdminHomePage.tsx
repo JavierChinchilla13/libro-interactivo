@@ -1,4 +1,4 @@
-import { isBackupStale } from '@libro/shared';
+import { isBackupStale, plural } from '@libro/shared';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { AdminIcon, type AdminIconName } from '../../shared/ui/adminIcons';
@@ -8,8 +8,6 @@ import { Skeleton } from './components/Skeleton';
 import { useAdminOverview } from './overview';
 
 const HIDE_KEY = 'admin-primeros-pasos-ocultos';
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 function greeting(now: Date, name: string | undefined) {
   const hour = now.getHours();
@@ -93,7 +91,7 @@ export function AdminHomePage() {
       icon: 'news',
       text: `${plural(overview.postDrafts, 'actualización', 'actualizaciones')} en borrador`,
     });
-  // Respaldo (solo administradoras): si nunca hubo uno o pasaron 7 días o más.
+  // Respaldo (solo administradores): si nunca hubo uno o pasaron 7 días o más.
   const backup = overview.backup;
   if (isAdmin && backup && isBackupStale(backup))
     attention.push({
@@ -103,7 +101,7 @@ export function AdminHomePage() {
       text:
         backup.daysAgo === null
           ? 'Todavía no hay ningún respaldo de la base de datos'
-          : `Último respaldo hace ${backup.daysAgo} días: descarga uno nuevo`,
+          : `Último respaldo hace ${plural(backup.daysAgo, 'día', 'días')}: descarga uno nuevo`,
     });
   if (upcoming)
     attention.push({
@@ -131,14 +129,14 @@ export function AdminHomePage() {
     {
       id: 'quiz',
       label: 'Crea un quiz',
-      hint: 'Las preguntas y los resultados que descubre la lectora.',
+      hint: 'Las preguntas y los resultados que descubre el lector.',
       to: '/admin/quizzes/nuevo',
       done: quizzes.total > 0,
     },
     {
       id: 'publicar',
       label: 'Publica el quiz',
-      hint: 'Hasta entonces las lectoras no lo ven.',
+      hint: 'Hasta entonces los lectores no lo ven.',
       to: '/admin/quizzes',
       done: quizzes.published > 0,
     },
@@ -246,7 +244,7 @@ export function AdminHomePage() {
       to: '/admin/actualizaciones/nueva',
       icon: 'news',
       title: 'Nueva actualización',
-      text: 'Una noticia o aviso para las lectoras.',
+      text: 'Una noticia o aviso para los lectores.',
     },
     {
       to: '/admin/qr',
@@ -368,9 +366,13 @@ export function AdminHomePage() {
             {isAdmin ? (
               <>
                 <div className="admin-stat">
-                  <dt>Lectoras</dt>
+                  <dt>Lectores</dt>
                   <dd>{stats ? stats.readers.total : '—'}</dd>
-                  <p>{stats ? `${stats.readers.last7Days} nuevas en 7 días` : ' '}</p>
+                  <p>
+                    {stats
+                      ? `${plural(stats.readers.last7Days, 'nuevo', 'nuevos')} en 7 días`
+                      : ' '}
+                  </p>
                 </div>
                 <div className="admin-stat">
                   <dt>Quizzes completados</dt>
