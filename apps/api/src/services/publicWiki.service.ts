@@ -24,7 +24,7 @@ export interface Viewer {
 }
 
 type SectionKind = 'character' | 'power_field' | 'place' | 'term';
-type BookLean = Awaited<ReturnType<typeof loadPublishedBooks>>[number];
+type BookLean = Awaited<ReturnType<typeof loadBooks>>[number];
 type EntryLean = Awaited<ReturnType<typeof loadEntries>>[number];
 type State = 'open' | 'locked' | 'hidden';
 
@@ -32,14 +32,22 @@ interface Ctx {
   staff: boolean;
   /** `quiz:<id>` / `game:<id>` completados por esta persona (en cualquier libro). */
   completed: Set<string>;
-  /** Solo libros publicados: la wiki de un libro sin publicar no existe para el público. */
+  /** Los libros servidos (publicados y «próximamente»): la wiki de un borrador o un archivado no existe. */
   books: Map<string, BookLean>;
 }
 
 const NOT_UNLOCKED = 'Aún no puedes acceder a este contenido';
 
-async function loadPublishedBooks() {
-  return Book.find({ status: 'published' }).select('wikiSections status').lean();
+/**
+ * Libros cuya wiki se sirve: los publicados y los «próximamente» (los mismos que la lista pública de libros), para todos.
+ * Un libro en borrador o archivado no existe para nadie. Un «próximamente» no abre nada por serlo: no deja completar
+ * quizzes, así que lo que dependa de uno queda bloqueado con su mensaje, y una entrada en borrador sigue oculta.
+ */
+const WIKI_BOOK_STATUSES: ('published' | 'upcoming')[] = ['published', 'upcoming'];
+async function loadBooks() {
+  return Book.find({ status: { $in: WIKI_BOOK_STATUSES } })
+    .select('wikiSections status')
+    .lean();
 }
 async function loadEntries(filter: Record<string, unknown>) {
   return WikiEntry.find(filter).sort({ order: 1, nameNormalized: 1 }).lean();
@@ -92,7 +100,7 @@ export function createPublicWikiService() {
           completed.add(`${item.kind}:${item.refId.toString()}`);
       }
     }
-    const books = new Map((await loadPublishedBooks()).map((book) => [book._id.toString(), book]));
+    const books = new Map((await loadBooks()).map((book) => [book._id.toString(), book]));
     return { staff, completed, books };
   }
 
