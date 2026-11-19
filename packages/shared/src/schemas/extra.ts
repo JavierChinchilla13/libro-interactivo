@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { slugSchema } from './book.js';
-import { objectIdSchema } from './common.js';
+import { imageRefSchema, objectIdSchema } from './common.js';
 
 /**
  * Capítulos y documentos extra. No tienen QR: se abren cuando la persona completó todos los
@@ -19,6 +19,33 @@ export const EXTRA_FILE_RULES = {
   image: { mimes: ['image/png', 'image/jpeg', 'image/webp'], maxBytes: 10 * 1024 * 1024 },
 } as const;
 
+/**
+ * Imagen DECORATIVA al inicio del capítulo (opcional, una sola, en los tres tipos). Va en Cloudinary (carpeta
+ * `libro/extra`), no en el almacenamiento privado: es un encabezado, aparte del contenido protegido. Sin tope de peso
+ * propio (lo pone el plan de Cloudinary). El texto alternativo es obligatorio.
+ */
+export const EXTRA_HEADER_FOLDER = 'libro/extra';
+/** Identificador que firma el panel: `libro/extra/<id aleatorio de Cloudinary>`. */
+export const EXTRA_HEADER_PUBLIC_ID_PATTERN = /^libro\/extra\/[A-Za-z0-9_-]{6,100}$/;
+/** Formatos del encabezado: sin GIF (no debe animarse). */
+export const EXTRA_HEADER_FORMATS = ['jpg', 'png', 'webp'] as const;
+/** Ancho máximo al que se entrega la imagen al lector (`c_limit`). */
+export const EXTRA_HEADER_MAX_WIDTH = 1600;
+
+export const extraHeaderImageSchema = imageRefSchema.extend({
+  alt: z.string().trim().min(1, 'Describe la imagen para quien no la ve').max(300),
+});
+export type ExtraHeaderImage = z.infer<typeof extraHeaderImageSchema>;
+
+/** Lo que recibe la lectora y la vista previa: solo lo necesario para pintarla (sin `publicId` ni cuenta de origen aparte de la URL). */
+export const extraHeaderForReaderSchema = z.object({
+  url: z.string().url(),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  alt: z.string(),
+});
+export type ExtraHeaderForReader = z.infer<typeof extraHeaderForReaderSchema>;
+
 export const extraFileSchema = z.object({
   storageKey: z.string().min(1).max(300),
   mime: z.string().min(1).max(100),
@@ -35,6 +62,8 @@ export const extraInputSchema = z
     description: z.string().max(500).optional(),
     kind: extraKindSchema,
     file: extraFileSchema.optional(),
+    /** Imagen al inicio del capítulo (opcional; el servidor la verifica con Cloudinary). */
+    headerImage: extraHeaderImageSchema.optional(),
     /** HTML: se sanea en el servidor al guardar. */
     bodyHtml: z.string().max(200_000).optional(),
     order: z.number().int().min(1).default(1),
@@ -64,6 +93,7 @@ export const extraResponseSchema = z.object({
   description: z.string().optional(),
   kind: extraKindSchema,
   file: extraFileSchema.optional(),
+  headerImage: imageRefSchema.optional(),
   bodyHtml: z.string().optional(),
   order: z.number().int(),
   status: extraStatusSchema,
@@ -107,6 +137,7 @@ export const extraPreviewResponseSchema = z.object({
   url: z.string().optional(),
   mime: z.string().optional(),
   expiresIn: z.number().int().optional(),
+  headerImage: extraHeaderForReaderSchema.optional(),
 });
 
 // --- Lector ---
@@ -142,6 +173,7 @@ export const readerExtraResponseSchema = z.discriminatedUnion('kind', [
     bookId: objectIdSchema,
     title: z.string(),
     bodyHtml: z.string(),
+    headerImage: extraHeaderForReaderSchema.optional(),
   }),
   z.object({
     kind: z.literal('pdf'),
@@ -150,6 +182,7 @@ export const readerExtraResponseSchema = z.discriminatedUnion('kind', [
     url: z.string(),
     mime: z.string(),
     expiresIn: z.number().int(),
+    headerImage: extraHeaderForReaderSchema.optional(),
   }),
   z.object({
     kind: z.literal('image'),
@@ -158,6 +191,7 @@ export const readerExtraResponseSchema = z.discriminatedUnion('kind', [
     url: z.string(),
     mime: z.string(),
     expiresIn: z.number().int(),
+    headerImage: extraHeaderForReaderSchema.optional(),
   }),
 ]);
 export type ReaderExtraResponse = z.infer<typeof readerExtraResponseSchema>;
