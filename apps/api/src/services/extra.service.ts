@@ -32,7 +32,7 @@ import {
 } from './lifecycle.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
 import type { StorageProvider } from '../providers/storage/StorageProvider.js';
-import type { ProgressService } from './progress.service.js';
+import { isStaff, testBookVisible, type Actor, type ProgressService } from './progress.service.js';
 
 type ExtraLean = NonNullable<Awaited<ReturnType<typeof findLean>>>;
 
@@ -338,10 +338,16 @@ export function createExtraService(deps: ExtraDeps) {
    * Bloqueado → solo `{ locked: true, hasExtras }` (un booleano: ni títulos ni cantidad). Completo → la lista de
    * publicados.
    */
-  async function listForReader(userId: string, bookId: string): Promise<ReaderExtrasResponse> {
+  async function listForReader(actor: Actor, bookId: string): Promise<ReaderExtrasResponse> {
+    const { userId } = actor;
+    // El equipo (modo prueba) ve los extras publicados de un libro sin publicar y sin haber completado nada; nunca de un
+    // libro archivado. Los lectores, como siempre: libro publicado y completo.
+    const staff = isStaff(actor.role);
     const book = await Book.findById(bookId).select('status').lean();
-    if (book?.status !== 'published') throw new AppError('NOT_FOUND', 'No encontramos ese libro');
-    if (!(await progress.isBookCompleted(userId, bookId))) {
+    if (staff ? !testBookVisible(book?.status) : book?.status !== 'published') {
+      throw new AppError('NOT_FOUND', 'No encontramos ese libro');
+    }
+    if (!staff && !(await progress.isBookCompleted(userId, bookId))) {
       return {
         locked: true,
         hasExtras: (await Extra.exists({ bookId, status: 'published' })) !== null,
@@ -349,7 +355,8 @@ export function createExtraService(deps: ExtraDeps) {
     }
     const [extras, seen] = await Promise.all([
       Extra.find({ bookId, status: 'published' }).sort({ order: 1 }).lean(),
-      ExtraAccess.find({ userId, bookId }).select('extraId').lean(),
+      // El equipo no deja registro de «visto».
+      staff ? Promise.resolve([]) : ExtraAccess.find({ userId, bookId }).select('extraId').lean(),
     ]);
     const opened = new Set(seen.map((access) => access.extraId.toString()));
     return {
@@ -369,30 +376,41 @@ export function createExtraService(deps: ExtraDeps) {
    * Entrega el extra. Se comprueba CADA vez que la persona completó el libro (403 sin contenido si no); recién entonces
    * se registra «visto» y se devuelve el texto o una URL firmada de vida corta.
    */
-  async function open(userId: string, extraId: string): Promise<ReaderExtraResponse> {
+  async function open(actor: Actor, extraId: string): Promise<ReaderExtraResponse> {
+    const { userId } = actor;
+    const staff = isStaff(actor.role);
     const extra = await findLean(extraId);
-    if (!extra || extra.status !== 'published')
+    // El equipo también puede abrir por id un extra en BORRADOR para probarlo antes de publicarlo (nunca uno archivado).
+    if (!extra || !(extra.status === 'published' || (staff && extra.status === 'draft')))
       throw new AppError('NOT_FOUND', 'No encontramos ese extra');
-    await progress.assertBookCompleted(userId, extra.bookId.toString());
+    if (staff) {
+      const book = await Book.findById(extra.bookId).select('status').lean();
+      if (!testBookVisible(book?.status))
+        throw new AppError('NOT_FOUND', 'No encontramos ese extra');
+    } else {
+      await progress.assertBookCompleted(userId, extra.bookId.toString());
+    }
 
     const now = clock();
-    try {
-      await ExtraAccess.updateOne(
-        { userId, extraId: extra._id },
-        {
-          $set: { lastSeenAt: now, bookId: extra.bookId },
-          $inc: { viewCount: 1 },
-          $setOnInsert: { firstSeenAt: now },
-        },
-        { upsert: true },
-      );
-    } catch (error) {
-      if (!isDuplicateKey(error)) throw error;
-      await ExtraAccess.updateOne(
-        { userId, extraId: extra._id },
-        { $set: { lastSeenAt: now }, $inc: { viewCount: 1 } },
-      );
-    }
+    // Modo prueba: no se escribe «visto» (contaminaría lo que ven los lectores y bloquearía eliminar el extra).
+    if (!staff)
+      try {
+        await ExtraAccess.updateOne(
+          { userId, extraId: extra._id },
+          {
+            $set: { lastSeenAt: now, bookId: extra.bookId },
+            $inc: { viewCount: 1 },
+            $setOnInsert: { firstSeenAt: now },
+          },
+          { upsert: true },
+        );
+      } catch (error) {
+        if (!isDuplicateKey(error)) throw error;
+        await ExtraAccess.updateOne(
+          { userId, extraId: extra._id },
+          { $set: { lastSeenAt: now }, $inc: { viewCount: 1 } },
+        );
+      }
 
     // La imagen de encabezado sale SOLO aquí (ya se comprobó sesión y libro completo), nunca en la lista.
     const bookIdText = extra.bookId.toString();

@@ -354,6 +354,11 @@ export const readerLibraryResponseSchema = z.object({
       /** Solo datos públicos del libro (portada, título, lema, fecha, tema). */
       book: publicBookSummarySchema,
       access: libraryAccessSchema,
+      /**
+       * Solo para el EQUIPO (modo prueba): el libro aún no está publicado y por eso un lector no lo ve. `upcoming` =
+       * «próximamente», `draft` = borrador. Ausente para los lectores y para los libros publicados.
+       */
+      unpublished: z.enum(['upcoming', 'draft']).optional(),
       /** Solo si `access === 'open'`: avance y siguiente paso (id, tipo y título; nada de contenido). */
       progress: z
         .object({

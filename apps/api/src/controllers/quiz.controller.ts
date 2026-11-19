@@ -58,7 +58,7 @@ export function createQuizController(
 
   const getProgress: RequestHandler = async (_req, res) => {
     const { query } = getInput<unknown, BookQuery>(res);
-    res.json(await progress.getProgress(getAuth(res).userId, query.bookId));
+    res.json(await progress.getProgress(getAuth(res), query.bookId));
   };
 
   const getLibrary: RequestHandler = async (_req, res) => {
