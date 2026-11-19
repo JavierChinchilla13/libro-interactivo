@@ -18,6 +18,14 @@ const extraSchema = new Schema(
       size: { type: Number },
       originalName: { type: String },
     },
+    /** Imagen decorativa al inicio del capítulo (Cloudinary, `libro/extra/`). Opcional: sin ella no hay nada que migrar. */
+    headerImage: {
+      publicId: { type: String },
+      url: { type: String },
+      width: { type: Number },
+      height: { type: Number },
+      alt: { type: String },
+    },
     bodyHtml: { type: String },
     order: { type: Number, required: true, min: 1, default: 1 },
     status: { type: String, enum: [...EXTRA_STATUSES], required: true, default: 'draft' },

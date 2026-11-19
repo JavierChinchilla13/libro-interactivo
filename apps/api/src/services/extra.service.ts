@@ -1,5 +1,9 @@
 import {
   EXTRA_FILE_RULES,
+  EXTRA_HEADER_FORMATS,
+  EXTRA_HEADER_MAX_WIDTH,
+  EXTRA_HEADER_PUBLIC_ID_PATTERN,
+  type ExtraHeaderForReader,
   type ExtraInput,
   type ExtraPreviewResponse,
   type ExtraResponse,
@@ -11,6 +15,7 @@ import {
 import type { Clock } from '../lib/clock.js';
 import { randomToken } from '../lib/crypto.js';
 import { AppError } from '../lib/errors.js';
+import { assertCloudinaryUrls, cloudNameOf, optimizedImageUrl } from '../lib/images.js';
 import { duplicateKeyFields, isDuplicateKey } from '../lib/mongoErrors.js';
 import { sanitizeRichHtml } from '../lib/sanitize.js';
 import { Book } from '../models/Book.js';
@@ -25,6 +30,7 @@ import {
   notDeletableError,
   type Noun,
 } from './lifecycle.js';
+import type { ImageProvider } from '../providers/images/ImageProvider.js';
 import type { StorageProvider } from '../providers/storage/StorageProvider.js';
 import type { ProgressService } from './progress.service.js';
 
@@ -46,6 +52,37 @@ const EXTENSIONS: Record<string, string> = {
   'image/webp': 'webp',
 };
 
+/** La imagen de encabezado guardada, solo si está completa (un extra sin imagen no tiene nada de esto). */
+function storedHeader(extra: ExtraLean) {
+  const header = extra.headerImage;
+  if (!header?.publicId || !header.url || !header.width || !header.height || !header.alt)
+    return undefined;
+  return {
+    publicId: header.publicId,
+    url: header.url,
+    width: header.width,
+    height: header.height,
+    alt: header.alt,
+  };
+}
+
+/**
+ * Lo que recibe la lectora (o la autora en la vista previa): la URL se ARMA al servir desde el identificador (con
+ * `f_auto,q_auto` y el ancho acotado) y las medidas se ajustan a ese ancho para que la página no salte al cargar.
+ * Solo se llama desde las respuestas que ya validaron sesión y libro completo, o desde la vista previa del panel.
+ */
+function headerForReader(extra: ExtraLean): ExtraHeaderForReader | undefined {
+  const header = storedHeader(extra);
+  if (!header) return undefined;
+  const width = Math.min(header.width, EXTRA_HEADER_MAX_WIDTH);
+  return {
+    url: optimizedImageUrl(header.publicId, EXTRA_HEADER_MAX_WIDTH),
+    width,
+    height: Math.max(1, Math.round((header.height * width) / header.width)),
+    alt: header.alt,
+  };
+}
+
 function toResponse(extra: ExtraLean): ExtraResponse {
   const file = extra.file;
   return {
@@ -65,6 +102,15 @@ function toResponse(extra: ExtraLean): ExtraResponse {
           },
         }
       : {}),
+    ...(storedHeader(extra)
+      ? {
+          headerImage: {
+            provider: 'cloudinary' as const,
+            deliveryType: 'upload' as const,
+            ...storedHeader(extra)!,
+          },
+        }
+      : {}),
     ...(extra.bodyHtml ? { bodyHtml: extra.bodyHtml } : {}),
     order: extra.order,
     status: extra.status,
@@ -76,6 +122,7 @@ function toResponse(extra: ExtraLean): ExtraResponse {
 
 export interface ExtraDeps {
   storage: StorageProvider;
+  images: ImageProvider;
   progress: ProgressService;
   clock: Clock;
   logger?: Logger;
@@ -86,7 +133,7 @@ export interface ExtraDeps {
  * cada petición); los archivos viven en almacenamiento privado y salen con URL firmada de pocos minutos.
  */
 export function createExtraService(deps: ExtraDeps) {
-  const { storage, progress, clock } = deps;
+  const { storage, images, progress, clock } = deps;
 
   async function mustFind(id: string): Promise<ExtraLean> {
     const extra = await findLean(id);
@@ -140,6 +187,38 @@ export function createExtraService(deps: ExtraDeps) {
     }
   }
 
+  /**
+   * La imagen de encabezado debe ser de NUESTRA cuenta de Cloudinary, estar en `libro/extra/`, existir de verdad (lo dice
+   * Cloudinary) y ser JPG, PNG o WebP. Las medidas guardadas son las reales, no las del navegador; la URL se rearma desde el
+   * identificador para que no apunte a otra cosa. Sin tope de peso (lo pone el plan de Cloudinary).
+   */
+  async function verifyHeader(
+    header: NonNullable<ExtraInput['headerImage']>,
+  ): Promise<{ publicId: string; url: string; width: number; height: number; alt: string }> {
+    assertCloudinaryUrls([header.url]);
+    if (!EXTRA_HEADER_PUBLIC_ID_PATTERN.test(header.publicId)) {
+      throw new AppError(
+        'VALIDATION',
+        'La imagen del encabezado debe subirse con el panel (carpeta de capítulos extra)',
+      );
+    }
+    const info = await images.inspect({ publicId: header.publicId, resource: 'image' });
+    if (!info)
+      throw new AppError('VALIDATION', 'No encontramos esa imagen en Cloudinary: súbela de nuevo');
+    const format = info.format === 'jpeg' ? 'jpg' : info.format;
+    if (!(EXTRA_HEADER_FORMATS as readonly string[]).includes(format)) {
+      throw new AppError('VALIDATION', 'La imagen del encabezado debe ser JPG, PNG o WebP');
+    }
+    const cloud = cloudNameOf(header.url);
+    return {
+      publicId: header.publicId,
+      url: `https://res.cloudinary.com/${cloud}/image/upload/${header.publicId}.${format}`,
+      width: info.width,
+      height: info.height,
+      alt: header.alt.trim(),
+    };
+  }
+
   function conflict(error: unknown): never {
     if (isDuplicateKey(error) && duplicateKeyFields(error).includes('slug')) {
       throw new AppError('CONFLICT', 'Ya existe un extra con ese slug en este libro');
@@ -160,6 +239,7 @@ export function createExtraService(deps: ExtraDeps) {
     if (!(await Book.exists({ _id: input.bookId })))
       throw new AppError('NOT_FOUND', 'No encontramos ese libro');
     await assertFile(input);
+    const headerImage = input.headerImage ? await verifyHeader(input.headerImage) : undefined;
     try {
       const extra = await Extra.create({
         bookId: input.bookId,
@@ -168,6 +248,7 @@ export function createExtraService(deps: ExtraDeps) {
         description: input.description,
         kind: input.kind,
         file: input.kind === 'text' ? undefined : input.file,
+        headerImage,
         bodyHtml: input.kind === 'text' ? sanitizeRichHtml(input.bodyHtml ?? '') : undefined,
         order: input.order,
         status: input.status,
@@ -189,6 +270,13 @@ export function createExtraService(deps: ExtraDeps) {
       throw new AppError('VALIDATION', 'No se puede cambiar el tipo de un extra');
     const newKey = input.file?.storageKey;
     if (newKey !== current.file?.storageKey) await assertFile(input);
+    // Misma imagen que ya estaba: no se vuelve a consultar a Cloudinary (solo puede cambiar el texto alternativo).
+    const kept = storedHeader(current);
+    const headerImage = !input.headerImage
+      ? undefined
+      : kept && kept.publicId === input.headerImage.publicId
+        ? { ...kept, alt: input.headerImage.alt.trim() }
+        : await verifyHeader(input.headerImage);
 
     const body = input.kind === 'text' ? sanitizeRichHtml(input.bodyHtml ?? '') : undefined;
     const publishedAt =
@@ -204,10 +292,12 @@ export function createExtraService(deps: ExtraDeps) {
             status: input.status,
             ...(input.description ? { description: input.description } : {}),
             ...(input.kind === 'text' ? { bodyHtml: body } : { file: input.file }),
+            ...(headerImage ? { headerImage } : {}),
             ...(publishedAt ? { publishedAt } : {}),
           },
           $unset: {
             ...(input.description ? {} : { description: 1 }),
+            ...(headerImage ? {} : { headerImage: 1 }),
             ...(input.kind === 'text' ? { file: 1 } : { bodyHtml: 1 }),
           },
         },
@@ -223,12 +313,19 @@ export function createExtraService(deps: ExtraDeps) {
   /** Vista previa de la autora: no exige haber completado el libro ni registra «visto». */
   async function preview(id: string): Promise<ExtraPreviewResponse> {
     const extra = await mustFind(id);
+    const headerImage = headerForReader(extra);
     if (extra.kind === 'text')
-      return { kind: 'text', title: extra.title, bodyHtml: extra.bodyHtml ?? '' };
+      return {
+        kind: 'text',
+        title: extra.title,
+        bodyHtml: extra.bodyHtml ?? '',
+        ...(headerImage ? { headerImage } : {}),
+      };
     if (!extra.file?.storageKey) throw new AppError('CONFLICT', 'Este extra no tiene archivo');
     return {
       kind: extra.kind,
       title: extra.title,
+      ...(headerImage ? { headerImage } : {}),
       url: await storage.createDownloadUrl(extra.file.storageKey, PREVIEW_URL_TTL_SECONDS),
       ...(extra.file.mime ? { mime: extra.file.mime } : {}),
       expiresIn: PREVIEW_URL_TTL_SECONDS,
@@ -297,13 +394,16 @@ export function createExtraService(deps: ExtraDeps) {
       );
     }
 
+    // La imagen de encabezado sale SOLO aquí (ya se comprobó sesión y libro completo), nunca en la lista.
     const bookIdText = extra.bookId.toString();
+    const headerImage = headerForReader(extra);
     if (extra.kind === 'text')
       return {
         kind: 'text',
         bookId: bookIdText,
         title: extra.title,
         bodyHtml: extra.bodyHtml ?? '',
+        ...(headerImage ? { headerImage } : {}),
       };
     const key = extra.file?.storageKey;
     if (!key) throw new AppError('INTERNAL', 'Este extra no tiene archivo');
@@ -314,6 +414,7 @@ export function createExtraService(deps: ExtraDeps) {
       url: await storage.createDownloadUrl(key, READER_URL_TTL_SECONDS),
       mime: extra.file?.mime ?? 'application/octet-stream',
       expiresIn: READER_URL_TTL_SECONDS,
+      ...(headerImage ? { headerImage } : {}),
     };
   }
 

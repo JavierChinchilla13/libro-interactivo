@@ -226,7 +226,7 @@ export function createApp(
     clock,
     progress,
   });
-  const extras = createExtraService({ storage, progress, clock, logger: deps.logger });
+  const extras = createExtraService({ storage, images, progress, clock, logger: deps.logger });
   const cards = createCardService({ images, clock, logger: deps.logger });
   const cloudinaryUsage = createCloudinaryUsageService({ images, clock, logger: deps.logger });
   const welcome = createWelcomeService({ clock });

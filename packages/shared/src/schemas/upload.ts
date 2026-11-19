@@ -8,6 +8,7 @@ export const UPLOAD_PURPOSES = [
   'wiki',
   'theme',
   'post',
+  'extra',
   'misc',
 ] as const;
 export const uploadPurposeSchema = z.enum(UPLOAD_PURPOSES);

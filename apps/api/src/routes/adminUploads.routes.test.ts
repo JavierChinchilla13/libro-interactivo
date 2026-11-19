@@ -57,6 +57,12 @@ describe('POST /api/admin/uploads/image-signature', () => {
       (await editor.post(url).send({ purpose: 'wiki' }).expect(200)).body,
     );
     expect(wiki.params['folder']).toBe('libro/wiki');
+    // Imagen al inicio de un capítulo extra: carpeta propia, solo imagen (el video no se admite).
+    const extra = imageSignatureResponseSchema.parse(
+      (await editor.post(url).send({ purpose: 'extra' }).expect(200)).body,
+    );
+    expect(extra.params['folder']).toBe('libro/extra');
+    expect((await editor.post(url).send({ purpose: 'extra', resource: 'video' })).status).toBe(400);
 
     const video = imageSignatureResponseSchema.parse(
       (await editor.post(url).send({ purpose: 'quiz', resource: 'video' }).expect(200)).body,

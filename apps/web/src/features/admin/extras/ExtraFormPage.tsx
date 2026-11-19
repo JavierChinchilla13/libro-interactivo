@@ -8,7 +8,9 @@ import { ApiClientError } from '../../../shared/api/client';
 import { SafeHtml } from '../../../shared/ui/SafeHtml';
 import { Button, SelectField, TextAreaField, TextField } from '../../../shared/ui/controls';
 import { Alert, Card, PageHeader } from '../../../shared/ui/layout';
+import { CloudinaryUsagePanel } from '../components/CloudinaryUsage';
 import { FormSection } from '../components/FormSection';
+import { ImageField } from '../components/MediaFields';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
 import { useFormGuard } from '../components/useFormGuard';
@@ -209,6 +211,15 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
           <p className="mb-2 text-xs font-semibold uppercase text-muted">
             Vista previa (no cuenta como «visto»)
           </p>
+          {preview.headerImage ? (
+            <img
+              src={preview.headerImage.url}
+              alt={preview.headerImage.alt}
+              width={preview.headerImage.width}
+              height={preview.headerImage.height}
+              className="mb-3 h-auto max-h-72 w-auto max-w-full rounded-token border border-border"
+            />
+          ) : null}
           {preview.kind === 'text' ? <SafeHtml html={preview.bodyHtml ?? ''} /> : null}
           {preview.kind !== 'text' && preview.url && /^https?:\/\//.test(preview.url) ? (
             <a href={preview.url} target="_blank" rel="noopener noreferrer" className="underline">
@@ -294,6 +305,26 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
               onChange={(event) => set('order', event.target.value)}
             />
           </div>
+        </FormSection>
+
+        <FormSection
+          title="Imagen al inicio (opcional)"
+          help="Una imagen decorativa que sale arriba del título cuando la lectora abre el capítulo. Sirve para los tres tipos: texto, PDF o imagen."
+        >
+          <ImageField
+            label="Imagen al inicio (opcional)"
+            purpose="extra"
+            value={form.headerImage}
+            onChange={(headerImage) => set('headerImage', headerImage)}
+            accept="image/jpeg,image/png,image/webp"
+            removeLabel="Quitar imagen"
+            altRequired
+            altMaxLength={300}
+            altHint="Describe la imagen para quien no la ve."
+            altError={errors['headerImage.alt']}
+            hint="JPG, PNG o WebP. Va a Cloudinary (no al almacenamiento privado): es solo un encabezado decorativo, aparte del contenido protegido."
+          />
+          <CloudinaryUsagePanel variant="compact" />
         </FormSection>
 
         <FormSection title="Contenido" help="El texto o el archivo que verá el lector al abrirlo.">
