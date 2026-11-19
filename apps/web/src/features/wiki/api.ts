@@ -12,7 +12,12 @@ export const wikiApi = {
     apiRequest(`/wiki/sections?bookId=${bookId}`, publicWikiSectionsResponseSchema),
   entries: (bookId: string, kind: SectionKind) =>
     apiRequest(`/wiki/entries?bookId=${bookId}&kind=${kind}`, publicWikiEntriesResponseSchema),
-  entry: (entryId: string) => apiRequest(`/wiki/entries/${entryId}`, publicWikiEntryResponseSchema),
+  /** `bookId`: el libro desde el que se mira (contexto de la ficha y de sus relacionadas); opcional. */
+  entry: (entryId: string, bookId?: string) =>
+    apiRequest(
+      `/wiki/entries/${entryId}${bookId ? `?bookId=${bookId}` : ''}`,
+      publicWikiEntryResponseSchema,
+    ),
 };
 
 /**
@@ -23,5 +28,6 @@ export const wikiKeys = {
   sections: (viewer: string, bookId: string) => ['wiki', viewer, 'sections', bookId] as const,
   entries: (viewer: string, bookId: string, kind: SectionKind) =>
     ['wiki', viewer, 'entries', bookId, kind] as const,
-  entry: (viewer: string, entryId: string) => ['wiki', viewer, 'entry', entryId] as const,
+  entry: (viewer: string, entryId: string, bookId: string) =>
+    ['wiki', viewer, 'entry', entryId, bookId] as const,
 };

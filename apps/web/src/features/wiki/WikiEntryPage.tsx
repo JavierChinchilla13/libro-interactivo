@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { ApiClientError } from '../../shared/api/client';
 import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
@@ -7,7 +7,10 @@ import { FieldStage } from '../../shared/ui/FieldStage';
 import { SafeHtml } from '../../shared/ui/SafeHtml';
 import { Alert, Loading } from '../../shared/ui/layout';
 import { useSession } from '../auth/session';
+import { useSelectedBookId } from '../reader/bookSelection';
+import { useWikiBook } from '../reader/useBook';
 import { wikiApi, wikiKeys } from './api';
+import { entryPath } from './bookContext';
 import { LockedNotice } from './LockedNotice';
 import { SECTION_SLUGS, sectionOfEntry } from './sections';
 import { LockIcon } from '../../shared/ui/icons';
@@ -27,9 +30,22 @@ function BackLink({ to, label }: { to: string; label: string }) {
 export function WikiEntryPage() {
   const { entryId = '' } = useParams();
   const viewer = useSession().data?.id ?? 'visitante';
+  // El libro desde el que se mira: el de la dirección (`?libro=`), si no el elegido y, si no, el primero por orden (el
+  // mismo criterio que la wiki). La ficha y sus relacionadas se piden con él: una entrada de toda la saga se rige por la
+  // pestaña de ese libro. Un enlace viejo, sin libro, sigue funcionando con ese criterio por defecto.
+  const slug = useSearchParams()[0].get('libro');
+  const books = useWikiBook(slug);
+  // Sin libro en la dirección ni elegido antes, se pide sin contexto: el servidor usa el primer libro por orden, que es
+  // también el criterio de la web (y así se aprovecha la petición adelantada de `index.html` en un enlace compartido).
+  const chosen = useSelectedBookId();
+  const explicit = slug !== null || chosen !== null;
+  const bookId = explicit ? (books.book?.id ?? '') : '';
+  const bookSlug = books.book?.slug ?? slug;
   const query = useQuery({
-    queryKey: wikiKeys.entry(viewer, entryId),
-    queryFn: () => wikiApi.entry(entryId),
+    queryKey: wikiKeys.entry(viewer, entryId, bookId),
+    queryFn: () => wikiApi.entry(entryId, bookId || undefined),
+    // Se espera a conocer los libros para pedir ya con el contexto (y no pedir dos veces).
+    enabled: !explicit || !books.isPending,
     retry: false,
     // Al conocerse la sesión la clave cambia (de visitante a la persona): se sigue mostrando la ficha mientras se
     // vuelve a pedir, en vez de volver a «Cargando».
@@ -45,7 +61,7 @@ export function WikiEntryPage() {
     noindex: !loaded,
   });
 
-  if (query.isPending) return <Loading />;
+  if ((explicit && books.isPending) || query.isPending) return <Loading />;
   if (query.isError) {
     const error = query.error;
     if (error instanceof ApiClientError && error.code === 'NOT_UNLOCKED') {
@@ -66,7 +82,7 @@ export function WikiEntryPage() {
   }
 
   const { entry, related } = query.data;
-  const back = `/wiki/${SECTION_SLUGS[sectionOfEntry(entry.kind)]}`;
+  const back = `/wiki/${SECTION_SLUGS[sectionOfEntry(entry.kind)]}${bookSlug ? `?libro=${encodeURIComponent(bookSlug)}` : ''}`;
 
   const image = entry.image ? (
     <img
@@ -116,7 +132,7 @@ export function WikiEntryPage() {
                 </li>
               ) : (
                 <li key={item.id}>
-                  <Link to={`/wiki/entrada/${item.id}`} className="underline">
+                  <Link to={entryPath(item.id, bookSlug)} className="underline">
                     {item.name}
                   </Link>
                 </li>

@@ -5,6 +5,7 @@ import { Alert, EmptyState, Loading, PageHeader, TabPanel, Tabs } from '../../sh
 import { useSession } from '../auth/session';
 import { setSelectedBookId, useWikiBook } from '../reader/useBook';
 import { wikiApi, wikiKeys } from './api';
+import { WikiBookContext } from './bookContext';
 import { LockedNotice } from './LockedNotice';
 import { SECTION_SLUGS, sectionFromSlug } from './sections';
 import { CharactersView, GlossaryView, PlacesView, PowersView } from './SectionViews';
@@ -118,19 +119,21 @@ function WikiContent() {
               )
             }
           />
-          <TabPanel id={active.kind} active={active.kind}>
-            {active.locked ? (
-              <LockedNotice title={active.title} message={active.lockedMessage} />
-            ) : active.kind === 'character' ? (
-              <CharactersView bookId={book.id} section={active} />
-            ) : active.kind === 'power_field' ? (
-              <PowersView bookId={book.id} section={active} />
-            ) : active.kind === 'place' ? (
-              <PlacesView bookId={book.id} section={active} />
-            ) : (
-              <GlossaryView bookId={book.id} section={active} />
-            )}
-          </TabPanel>
+          <WikiBookContext.Provider value={book.slug}>
+            <TabPanel id={active.kind} active={active.kind}>
+              {active.locked ? (
+                <LockedNotice title={active.title} message={active.lockedMessage} />
+              ) : active.kind === 'character' ? (
+                <CharactersView bookId={book.id} section={active} />
+              ) : active.kind === 'power_field' ? (
+                <PowersView bookId={book.id} section={active} />
+              ) : active.kind === 'place' ? (
+                <PlacesView bookId={book.id} section={active} />
+              ) : (
+                <GlossaryView bookId={book.id} section={active} />
+              )}
+            </TabPanel>
+          </WikiBookContext.Provider>
         </>
       )}
     </div>
