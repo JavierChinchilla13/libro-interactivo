@@ -29,7 +29,5 @@ export const imageSignatureResponseSchema = z.object({
   apiKey: z.string(),
   signature: z.string(),
   params: z.record(z.string(), z.string()),
-  /** Tamaño máximo recomendado, en bytes (la validación final es de Cloudinary). */
-  maxBytes: z.number().int().positive(),
 });
 export type ImageSignatureResponse = z.infer<typeof imageSignatureResponseSchema>;

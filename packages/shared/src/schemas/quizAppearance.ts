@@ -8,9 +8,11 @@ import { imageRefSchema, objectIdSchema } from './common.js';
  * (título, preguntas, reintentos, `resultKey`…) se rechaza en lugar de descartarse en silencio.
  */
 
-/** Límites del video de fondo de un quiz (los usan el proveedor de subida, el editor y estos esquemas). */
+/**
+ * Límites del video de un quiz (los usan el proveedor de subida, el editor y estos esquemas). Sin tope de peso
+ * (19-nov-2026, dirección de la autora); se conservan el formato y la duración.
+ */
 export const QUIZ_VIDEO_LIMITS = {
-  maxBytes: 5 * 1024 * 1024,
   maxDurationSeconds: 10,
   /** Cloudinary redondea la duración: se tolera un margen sobre el tope. */
   toleranceSeconds: 2,
