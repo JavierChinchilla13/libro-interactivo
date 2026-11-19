@@ -1,6 +1,7 @@
 import {
   EXTRA_FILE_RULES,
   type ExtraFile,
+  type ImageRefInput,
   type ExtraInputPayload,
   type ExtraKind,
   type ExtraResponse,
@@ -22,6 +23,8 @@ export interface ExtraForm {
   description: string;
   bodyHtml: string;
   file: ExtraFile | undefined;
+  /** Imagen al inicio del capítulo (opcional; el texto alternativo es obligatorio si hay imagen). */
+  headerImage: ImageRefInput | undefined;
   order: string;
   status: 'draft' | 'published' | 'archived';
 }
@@ -36,6 +39,7 @@ export function emptyExtraForm(bookId = '', order = 1): ExtraForm {
     description: '',
     bodyHtml: '',
     file: undefined,
+    headerImage: undefined,
     order: String(order),
     status: 'draft',
   };
@@ -51,6 +55,7 @@ export function formFromExtra(extra: ExtraResponse): ExtraForm {
     description: extra.description ?? '',
     bodyHtml: extra.bodyHtml ?? '',
     file: extra.file,
+    headerImage: extra.headerImage,
     order: String(extra.order),
     status: extra.status,
   };
@@ -67,6 +72,7 @@ export function payloadFromForm(form: ExtraForm): ExtraInputPayload {
     order: Number(form.order),
     status: form.status,
     ...(description ? { description } : {}),
+    ...(form.headerImage ? { headerImage: form.headerImage } : {}),
     ...(form.kind === 'text' ? { bodyHtml: form.bodyHtml } : {}),
     ...(form.kind !== 'text' && form.file ? { file: form.file } : {}),
   };

@@ -218,6 +218,21 @@ export function ExtraViewPage() {
           ✕ Cerrar
         </Link>
       </p>
+      {data.headerImage ? (
+        // Encabezado decorativo ARRIBA del título (nada de texto encima, así el contraste no depende de la foto). Es lo
+        // primero de la pantalla: carga sin diferir y con sus medidas reales para que nada salte. Sin animaciones.
+        <img
+          src={data.headerImage.url}
+          alt={data.headerImage.alt}
+          width={data.headerImage.width}
+          height={data.headerImage.height}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          data-testid="extra-header-image"
+          className="mx-auto block h-auto max-h-[60dvh] w-auto max-w-full rounded-token-lg border border-line"
+        />
+      ) : null}
       <h1 className="page-title">{data.title}</h1>
 
       {data.kind === 'text' ? <SafeHtml html={data.bodyHtml} /> : null}

@@ -20,6 +20,11 @@ export function ImageField({
   hint,
   altMaxLength,
   removable = true,
+  removeLabel = 'Quitar',
+  accept = 'image/jpeg,image/png,image/webp,image/gif',
+  altRequired = false,
+  altHint,
+  altError,
 }: {
   label: string;
   value: ImageRefInput | undefined;
@@ -30,6 +35,14 @@ export function ImageField({
   altMaxLength?: number;
   /** Falso: no se ofrece «Quitar» (solo cambiar). */
   removable?: boolean;
+  /** Texto del botón de quitar. */
+  removeLabel?: string;
+  /** Formatos que ofrece el selector de archivos. */
+  accept?: string;
+  /** Verdadero: el texto alternativo lo escribe la persona (no se rellena solo con el nombre del campo) y es obligatorio. */
+  altRequired?: boolean;
+  altHint?: string;
+  altError?: string | undefined;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [alt, setAlt] = useState(value?.alt ?? '');
@@ -43,7 +56,7 @@ export function ImageField({
     setError(null);
     setNotice(null);
     try {
-      onChange(await uploadImage(file, purpose, alt || label));
+      onChange(await uploadImage(file, purpose, altRequired ? alt : alt || label));
       setNotice(heavyFileNotice(file));
     } catch (failure) {
       setError(errorMessage(failure));
@@ -69,6 +82,9 @@ export function ImageField({
         label="Texto alternativo (describe la imagen)"
         value={value ? value.alt : alt}
         {...(altMaxLength ? { maxLength: altMaxLength } : {})}
+        {...(altRequired ? { required: true } : {})}
+        {...(altHint ? { hint: altHint } : {})}
+        error={altError}
         onChange={(event) => {
           setAlt(event.target.value);
           if (value) onChange({ ...value, alt: event.target.value });
@@ -78,7 +94,7 @@ export function ImageField({
         <input
           ref={input}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept={accept}
           className="sr-only"
           aria-label={`Elegir archivo: ${label}`}
           onChange={(event) => void pick(event.target.files?.[0])}
@@ -88,7 +104,7 @@ export function ImageField({
         </Button>
         {value && removable ? (
           <Button variant="ghost" onClick={() => onChange(undefined)}>
-            Quitar
+            {removeLabel}
           </Button>
         ) : null}
       </div>
