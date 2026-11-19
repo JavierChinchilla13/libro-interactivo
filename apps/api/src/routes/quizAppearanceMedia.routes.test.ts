@@ -170,7 +170,7 @@ describe('firma de subida para fondos de quiz', () => {
     );
     expect(clip.uploadUrl).toBe('https://api.cloudinary.com/v1_1/mi-cuenta/video/upload');
     expect(clip.params['allowed_formats']).toBe('mp4,webm');
-    expect(clip.maxBytes).toBe(5 * 1024 * 1024);
+    expect(clip).not.toHaveProperty('maxBytes');
     expect((await reader.post(signature).send({ purpose: 'quiz-bg' })).status).toBe(403);
     await request(app).post(signature).send({ purpose: 'quiz-bg' }).expect(401);
   });

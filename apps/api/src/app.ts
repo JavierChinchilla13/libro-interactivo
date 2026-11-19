@@ -13,6 +13,7 @@ import { createErrorHandler, notFoundHandler } from './middleware/error.js';
 import { createRequireUnlocked } from './middleware/unlocked.js';
 import { configureCloudinaryAccount } from './lib/images.js';
 import { createImageProvider, type ImageProvider } from './providers/images/ImageProvider.js';
+import { createCloudinaryUsageService } from './services/cloudinaryUsage.service.js';
 import { S3StorageProvider, s3ConfigFromEnv } from './providers/storage/S3StorageProvider.js';
 import {
   MemoryStorageProvider,
@@ -227,6 +228,7 @@ export function createApp(
   });
   const extras = createExtraService({ storage, progress, clock, logger: deps.logger });
   const cards = createCardService({ images, clock, logger: deps.logger });
+  const cloudinaryUsage = createCloudinaryUsageService({ images, clock, logger: deps.logger });
   const welcome = createWelcomeService({ clock });
   const publicBooks = createPublicBookService();
   const publicWiki = createPublicWikiService();
@@ -330,6 +332,7 @@ export function createApp(
       books,
       wiki,
       images,
+      cloudinaryUsage,
       access,
       extras,
       cards,

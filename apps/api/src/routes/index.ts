@@ -22,6 +22,7 @@ import {
 } from '../controllers/community.controller.js';
 import {
   createAdminMetricsController,
+  createAdminCloudinaryUsageController,
   createAdminNetworkController,
   createAdminUsersController,
 } from '../controllers/adminOps.controller.js';
@@ -59,6 +60,7 @@ import {
 } from '../controllers/site.controller.js';
 import type { Clock } from '../lib/clock.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
+import type { CloudinaryUsageService } from '../services/cloudinaryUsage.service.js';
 import type { LibraryService } from '../services/library.service.js';
 import type { PublicBookService } from '../services/publicBook.service.js';
 import type { FanArtService, ReviewService } from '../services/community.service.js';
@@ -112,6 +114,7 @@ import {
   createAdminBackupRouter,
   createAdminNotificationsRouter,
   createAdminMessagesRouter,
+  createAdminCloudinaryUsageRouter,
   createAdminNetworkRouter,
   createAdminStatsRouter,
   createAdminUsersRouter,
@@ -152,6 +155,7 @@ export interface RouteDeps {
   books: BookService;
   wiki: WikiService;
   images: ImageProvider;
+  cloudinaryUsage: CloudinaryUsageService;
   access: AccessService;
   welcome: WelcomeService;
   publicBooks: PublicBookService;
@@ -244,6 +248,13 @@ export function createApiRouter(deps: RouteDeps): Router {
   router.use(
     '/admin/backups',
     createAdminBackupRouter(createAdminBackupController(deps.backups), deps.guards, deps.limits),
+  );
+  router.use(
+    '/admin/cloudinary-usage',
+    createAdminCloudinaryUsageRouter(
+      createAdminCloudinaryUsageController(deps.cloudinaryUsage),
+      deps.guards,
+    ),
   );
   router.use(
     '/admin/network-check',

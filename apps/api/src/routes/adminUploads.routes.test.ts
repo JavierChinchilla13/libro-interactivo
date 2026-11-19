@@ -63,7 +63,7 @@ describe('POST /api/admin/uploads/image-signature', () => {
     );
     expect(video.uploadUrl).toBe('https://api.cloudinary.com/v1_1/demo/video/upload');
     expect(video.params['allowed_formats']).toBe('mp4,webm');
-    expect(video.maxBytes).toBe(5 * 1024 * 1024);
+    expect(video).not.toHaveProperty('maxBytes');
 
     const notQuiz = await editor.post(url).send({ purpose: 'cover', resource: 'video' });
     expect(notQuiz.status).toBe(400);

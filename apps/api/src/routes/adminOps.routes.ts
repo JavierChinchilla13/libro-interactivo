@@ -13,6 +13,7 @@ import {
 } from '@libro/shared';
 import { Router } from 'express';
 import type {
+  createAdminCloudinaryUsageController,
   createAdminMetricsController,
   createAdminNetworkController,
   createAdminUsersController,
@@ -76,6 +77,16 @@ export function createAdminStatsRouter(
 ): Router {
   const router = adminOnly(guards);
   router.get('/', controller.stats);
+  return router;
+}
+
+/** `/admin/cloudinary-usage`: uso de la cuenta de Cloudinary (créditos y almacenamiento). Solo administradores. */
+export function createAdminCloudinaryUsageRouter(
+  controller: ReturnType<typeof createAdminCloudinaryUsageController>,
+  guards: Guards,
+): Router {
+  const router = adminOnly(guards);
+  router.get('/', controller.get);
   return router;
 }
 

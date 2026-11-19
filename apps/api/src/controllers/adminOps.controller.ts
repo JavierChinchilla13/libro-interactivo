@@ -6,6 +6,7 @@ import type {
 } from '@libro/shared';
 import type { RequestHandler } from 'express';
 import { describeNetwork } from '../lib/networkCheck.js';
+import type { CloudinaryUsageService } from '../services/cloudinaryUsage.service.js';
 import { getAuth } from '../middleware/auth.js';
 import { getInput } from '../middleware/validate.js';
 import type { AdminMetricsService } from '../services/adminMetrics.service.js';
@@ -63,6 +64,14 @@ export function createAdminMetricsController(metrics: AdminMetricsService) {
     res.set('Cache-Control', 'no-store').json(await metrics.stats());
   };
   return { listMessages, updateMessage, removeMessage, stats };
+}
+
+/** `/admin/cloudinary-usage`: el uso de la cuenta (solo ADMIN). Siempre `200`: si no se pudo consultar, `available: false`. */
+export function createAdminCloudinaryUsageController(usage: CloudinaryUsageService) {
+  const get: RequestHandler = async (_req, res) => {
+    res.set('Cache-Control', 'private, no-store').json(await usage.get());
+  };
+  return { get };
 }
 
 /**
