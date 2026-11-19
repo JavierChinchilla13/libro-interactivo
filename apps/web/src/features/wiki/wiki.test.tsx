@@ -136,7 +136,8 @@ describe('wiki: lugares', () => {
       expect.stringContaining('w_1200'),
     );
     const sala = await screen.findByRole('link', { name: /Sala/ });
-    expect(sala).toHaveAttribute('href', `/wiki/entrada/${'1'.padStart(24, '0')}`);
+    // Los enlaces a una ficha llevan el libro que se ve (`?libro=`): la ficha se pide con ese contexto.
+    expect(sala).toHaveAttribute('href', `/wiki/entrada/${'1'.padStart(24, '0')}?libro=libro-1`);
     const folders = within(screen.getByRole('list', { name: 'Carpetas de lugares' }));
     expect(folders.getByRole('button', { name: /Sala de experimentación/ })).toHaveAttribute(
       'aria-expanded',
@@ -260,7 +261,7 @@ describe('wiki: poderes y personajes', () => {
     await userEvent.click(screen.getByText(/Poderes conocidos \(2\)/));
     expect(screen.getByRole('link', { name: 'Poder Uno' })).toHaveAttribute(
       'href',
-      `/wiki/entrada/${'11'.padStart(24, '0')}`,
+      `/wiki/entrada/${'11'.padStart(24, '0')}?libro=libro-1`,
     );
     // El poder bloqueado y el campo bloqueado: dos «Bloqueado», ninguno con nombre.
     expect(screen.getAllByText('Bloqueado')).toHaveLength(2);
@@ -320,12 +321,12 @@ describe('wiki: ficha de una entrada', () => {
     expect(screen.getByText('Piso')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Alfa' })).toHaveAttribute(
       'href',
-      `/wiki/entrada/${'7'.padStart(24, '0')}`,
+      `/wiki/entrada/${'7'.padStart(24, '0')}?libro=libro-1`,
     );
     expect(screen.getByText('Bloqueado')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Volver a la wiki/ })).toHaveAttribute(
       'href',
-      '/wiki/lugares',
+      '/wiki/lugares?libro=libro-1',
     );
   });
 

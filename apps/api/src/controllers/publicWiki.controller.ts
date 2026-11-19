@@ -3,6 +3,7 @@ import type { z } from 'zod';
 import type {
   publicWikiEntriesQuerySchema,
   publicWikiEntryParamsSchema,
+  publicWikiEntryQuerySchema,
   publicWikiSectionsQuerySchema,
 } from '@libro/shared';
 import { getOptionalAuth } from '../middleware/auth.js';
@@ -27,8 +28,14 @@ export function createPublicWikiController(wiki: PublicWikiService) {
     res.set('Cache-Control', 'no-store').json(await wiki.entries(query, viewerOf(res)));
   };
   const entry: RequestHandler = async (_req, res) => {
-    const { params } = getInput<unknown, unknown, z.infer<typeof publicWikiEntryParamsSchema>>(res);
-    res.set('Cache-Control', 'no-store').json(await wiki.entry(params.entryId, viewerOf(res)));
+    const { params, query } = getInput<
+      unknown,
+      z.infer<typeof publicWikiEntryQuerySchema>,
+      z.infer<typeof publicWikiEntryParamsSchema>
+    >(res);
+    res
+      .set('Cache-Control', 'no-store')
+      .json(await wiki.entry(params.entryId, viewerOf(res), query.bookId));
   };
   return { sections, entries, entry };
 }

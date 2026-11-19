@@ -25,7 +25,7 @@ async function start(container: HTMLElement) {
         client.prefetchQuery({ queryKey: publicKeys.site, queryFn: publicApi.site, retry: false }),
         client.prefetchQuery({ queryKey: readerKeys.books, queryFn: booksApi.list }),
         client.prefetchQuery({
-          queryKey: wikiKeys.entry('visitante', id),
+          queryKey: wikiKeys.entry('visitante', id, ''),
           queryFn: () => wikiApi.entry(id),
           retry: false,
         }),

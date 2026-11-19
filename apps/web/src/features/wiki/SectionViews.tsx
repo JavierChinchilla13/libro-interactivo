@@ -11,6 +11,7 @@ import { TextField } from '../../shared/ui/controls';
 import { Alert, EmptyState, Loading } from '../../shared/ui/layout';
 import { useSession } from '../auth/session';
 import { wikiApi, wikiKeys } from './api';
+import { useEntryPath } from './bookContext';
 import { GlassFolders, type Folder } from './GlassFolders';
 import { LockedCard, LockedNotice } from './LockedNotice';
 import type { SectionKind } from './sections';
@@ -42,12 +43,10 @@ function useGate(query: ReturnType<typeof useEntries>, section: PublicWikiSectio
 }
 
 function EntryCard({ entry }: { entry: Open<PublicWikiLeaf> }) {
+  const entryPath = useEntryPath();
   return (
     <li>
-      <Link
-        to={`/wiki/entrada/${entry.id}`}
-        className="group flex h-full flex-col gap-2 rounded-token-md"
-      >
+      <Link to={entryPath(entry.id)} className="group flex h-full flex-col gap-2 rounded-token-md">
         {entry.image ? (
           <img
             src={thumbUrl(entry.image.url, 320)}
@@ -99,6 +98,7 @@ export function CharactersView({
 
 /** Campos de poder; al abrir uno se ven sus poderes conocidos. */
 export function PowersView({ bookId, section }: { bookId: string; section: PublicWikiSection }) {
+  const entryPath = useEntryPath();
   const query = useEntries(bookId, 'power_field');
   const gate = useGate(query, section);
   if (gate) return gate;
@@ -125,7 +125,7 @@ export function PowersView({ bookId, section }: { bookId: string; section: Publi
                   />
                 ) : null}
                 <div>
-                  <Link to={`/wiki/entrada/${field.id}`} className="font-semibold underline">
+                  <Link to={entryPath(field.id)} className="font-semibold underline">
                     {field.name}
                   </Link>
                   {field.summary ? <p className="text-sm text-muted">{field.summary}</p> : null}
@@ -145,7 +145,7 @@ export function PowersView({ bookId, section }: { bookId: string; section: Publi
                         </li>
                       ) : (
                         <li key={power.id}>
-                          <Link to={`/wiki/entrada/${power.id}`} className="underline">
+                          <Link to={entryPath(power.id)} className="underline">
                             {power.name}
                           </Link>
                           {power.summary ? (

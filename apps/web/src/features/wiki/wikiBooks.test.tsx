@@ -180,3 +180,89 @@ describe('mensajes vacíos', () => {
     expect(screen.queryByText('Todavía no hay una wiki disponible.')).toBeNull();
   });
 });
+
+describe('la ficha y sus relacionadas se piden con el libro que se ve', () => {
+  const ID = '7'.padStart(24, '0');
+  const RELATED = '8'.padStart(24, '0');
+  const fichaOf = (name: string) => ({
+    entry: {
+      id: ID,
+      kind: 'term',
+      slug: 'ficha',
+      name,
+      fields: [],
+    },
+    related: [term(RELATED, 'Relacionada')],
+  });
+  const two = (extra: Record<string, () => Response> = {}) => ({
+    ...books(published, upcoming),
+    ...wikiOf(BOOK_ID, []),
+    ...wikiOf(UPCOMING_ID, []),
+    ...extra,
+  });
+
+  it('con ?libro= la ficha pide con ese libro como contexto y sus enlaces conservan ?libro=', async () => {
+    const { calls } = mockApi(
+      two({
+        [`GET /api/wiki/entries/${ID}?bookId=${UPCOMING_ID}`]: () => json(fichaOf('Ficha')),
+      }),
+      NO_SESSION,
+    );
+    renderAt(`/wiki/entrada/${ID}?libro=memorias-postergadas`);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Ficha' })).toBeInTheDocument();
+    expect(calls.some((c) => c.url === `/api/wiki/entries/${ID}?bookId=${UPCOMING_ID}`)).toBe(true);
+    // Las relacionadas viajan en la misma respuesta (el servidor las filtra con ese contexto) y su enlace conserva el libro.
+    expect(screen.getByRole('link', { name: 'Relacionada' })).toHaveAttribute(
+      'href',
+      `/wiki/entrada/${RELATED}?libro=memorias-postergadas`,
+    );
+    expect(screen.getByRole('link', { name: /Volver a la wiki/ })).toHaveAttribute(
+      'href',
+      '/wiki/glosario?libro=memorias-postergadas',
+    );
+  });
+
+  it('con el libro elegido en este navegador y sin ?libro=, también pide con ese libro', async () => {
+    localStorage.setItem('libro_selected_book', UPCOMING_ID);
+    const { calls } = mockApi(
+      two({
+        [`GET /api/wiki/entries/${ID}?bookId=${UPCOMING_ID}`]: () => json(fichaOf('Ficha')),
+      }),
+      NO_SESSION,
+    );
+    renderAt(`/wiki/entrada/${ID}`);
+    await screen.findByRole('heading', { level: 1, name: 'Ficha' });
+    expect(calls.filter((c) => c.url.startsWith(`/api/wiki/entries/${ID}`))).toHaveLength(1);
+    expect(calls.some((c) => c.url.includes(`bookId=${UPCOMING_ID}`))).toBe(true);
+  });
+
+  it('un enlace compartido, sin libro y sin elección previa, sigue funcionando con el criterio por defecto (sin contexto)', async () => {
+    const { calls } = mockApi(
+      two({ [`GET /api/wiki/entries/${ID}`]: () => json(fichaOf('Ficha')) }),
+      NO_SESSION,
+    );
+    renderAt(`/wiki/entrada/${ID}`);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Ficha' })).toBeInTheDocument();
+    expect(calls.filter((c) => c.url.startsWith(`/api/wiki/entries/${ID}`))).toEqual([
+      expect.objectContaining({ url: `/api/wiki/entries/${ID}` }),
+    ]);
+  });
+
+  it('desde la lista, el enlace a una ficha lleva el libro que se está viendo', async () => {
+    mockApi(
+      {
+        ...books(published, upcoming),
+        ...wikiOf(BOOK_ID, ['Término uno']),
+        ...wikiOf(UPCOMING_ID, ['Término dos']),
+      },
+      NO_SESSION,
+    );
+    renderAt('/wiki?libro=memorias-postergadas');
+    const link = await screen.findByRole('link', { name: /Término dos/ });
+    expect(link).toHaveAttribute(
+      'href',
+      `/wiki/entrada/${'1'.padStart(24, '0')}?libro=memorias-postergadas`,
+    );
+    await waitFor(() => expect(screen.queryByText('Término uno')).toBeNull());
+  });
+});
