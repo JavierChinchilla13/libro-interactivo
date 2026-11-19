@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { errorMessage } from '../../shared/api/messages';
 import { Alert, EmptyState, Loading, PageHeader, TabPanel, Tabs } from '../../shared/ui/layout';
 import { useSession } from '../auth/session';
-import { useSelectedBook } from '../reader/useBook';
+import { setSelectedBookId, useWikiBook } from '../reader/useBook';
 import { wikiApi, wikiKeys } from './api';
 import { LockedNotice } from './LockedNotice';
 import { SECTION_SLUGS, sectionFromSlug } from './sections';
@@ -35,7 +35,11 @@ function WikiContent() {
   const { section: slug } = useParams();
   const navigate = useNavigate();
   const viewer = useSession().data?.id ?? 'visitante';
-  const { book, isPending, error } = useSelectedBook();
+  // El libro puede ir en la dirección (`/wiki?libro=<slug>`) para compartir el enlace; es lo menos invasivo: las rutas
+  // de las pestañas (`/wiki/lugares`) no cambian y sin el parámetro todo funciona como antes.
+  const [params, setParams] = useSearchParams();
+  const slugParam = params.get('libro');
+  const { books, book, isPending, error } = useWikiBook(slugParam);
   const bookId = book?.id ?? '';
   const sections = useQuery({
     queryKey: wikiKeys.sections(viewer, bookId),
@@ -70,8 +74,27 @@ function WikiContent() {
   return (
     <div className="flex flex-col">
       <PageHeader title="Wiki del universo" subtitle={book.title} />
+      {books.length > 1 ? (
+        // Solo con más de un libro. Botones (con teclado) que cambian lo mostrado y se recuerdan como en el panel.
+        <div role="group" aria-label="Libro de la wiki" className="mb-4 flex flex-wrap gap-2">
+          {books.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className="chip"
+              aria-pressed={option.id === book.id}
+              onClick={() => {
+                setSelectedBookId(option.id);
+                setParams({ libro: option.slug });
+              }}
+            >
+              {option.title}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {list.length === 0 || !active ? (
-        <EmptyState title="Este libro todavía no tiene wiki." action={homeLink} />
+        <EmptyState title="Todavía no hay entradas publicadas en la wiki." action={homeLink} />
       ) : (
         <>
           <Tabs
@@ -89,7 +112,11 @@ function WikiContent() {
                 s.title
               ),
             }))}
-            onChange={(kind) => void navigate(`/wiki/${SECTION_SLUGS[kind]}`)}
+            onChange={(kind) =>
+              void navigate(
+                `/wiki/${SECTION_SLUGS[kind]}${slugParam ? `?libro=${encodeURIComponent(slugParam)}` : ''}`,
+              )
+            }
           />
           <TabPanel id={active.kind} active={active.kind}>
             {active.locked ? (
