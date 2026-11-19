@@ -4,7 +4,7 @@ import { thumbUrl } from '../../../shared/lib/cloudinary';
 import { Button, TextField } from '../../../shared/ui/controls';
 import { Alert } from '../../../shared/ui/layout';
 import { errorMessage } from '../errors';
-import { uploadImage, uploadVideo } from '../uploads';
+import { heavyFileNotice, uploadImage, uploadVideo } from '../uploads';
 
 type Purpose = (typeof UPLOAD_PURPOSES)[number];
 
@@ -35,13 +35,16 @@ export function ImageField({
   const [alt, setAlt] = useState(value?.alt ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function pick(file: File | undefined) {
     if (!file) return;
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       onChange(await uploadImage(file, purpose, alt || label));
+      setNotice(heavyFileNotice(file));
     } catch (failure) {
       setError(errorMessage(failure));
     } finally {
@@ -90,6 +93,7 @@ export function ImageField({
         ) : null}
       </div>
       {hint ? <p className="text-xs text-muted">{hint}</p> : null}
+      {notice ? <Alert tone="warning">{notice}</Alert> : null}
       {error ? <Alert>{error}</Alert> : null}
     </fieldset>
   );
@@ -106,14 +110,17 @@ export function MediaField({
   const video = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function pickVideo(file: File | undefined) {
     if (!file) return;
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       const uploaded: VideoRef = await uploadVideo(file, 'Video del resultado');
       onChange({ kind: 'video', video: uploaded });
+      setNotice(heavyFileNotice(file));
     } catch (failure) {
       setError(errorMessage(failure));
     } finally {
@@ -133,8 +140,7 @@ export function MediaField({
       <fieldset className="flex flex-col gap-2">
         <legend className="text-sm font-medium">O un video corto</legend>
         <p className="text-xs text-muted">
-          Clip mudo de unos 5 segundos (MP4 o WebM, hasta 5 MB). Si subes un video, reemplaza a la
-          imagen.
+          Clip mudo de hasta 10 segundos (MP4 o WebM). Si subes un video, reemplaza a la imagen.
         </p>
         {value?.kind === 'video' ? (
           <>
@@ -169,6 +175,7 @@ export function MediaField({
         >
           {value?.kind === 'video' ? 'Cambiar video' : 'Subir video'}
         </Button>
+        {notice ? <Alert tone="warning">{notice}</Alert> : null}
         {error ? <Alert>{error}</Alert> : null}
       </fieldset>
     </div>

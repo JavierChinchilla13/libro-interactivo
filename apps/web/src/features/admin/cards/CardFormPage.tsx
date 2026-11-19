@@ -15,13 +15,14 @@ import { Button, SelectField, TextField } from '../../../shared/ui/controls';
 import { Alert, Badge, Card, PageHeader } from '../../../shared/ui/layout';
 import { useCardsLabel } from '../../cards/useCardsLabel';
 import { booksApi, cardsApi, keys } from '../api';
+import { CloudinaryUsagePanel } from '../components/CloudinaryUsage';
 import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { SkeletonRows } from '../components/Skeleton';
 import { useToast } from '../components/Toast';
 import { useFormGuard } from '../components/useFormGuard';
 import { errorMessage, fieldErrors } from '../errors';
-import { cardImageProblem, uploadCardImage } from '../uploads';
+import { cardImageProblem, heavyFileNotice, uploadCardImage } from '../uploads';
 
 /** Una imagen en el formulario: ya subida a Cloudinary, con su texto alternativo opcional. */
 interface FormImage {
@@ -121,6 +122,7 @@ function CardFormView({ cardId, initial }: { cardId?: string; initial: CardForm 
   /** Imágenes que se están subiendo ahora mismo (nombre de archivo) y lo que salió mal con cada una. */
   const [uploading, setUploading] = useState<string[]>([]);
   const [problems, setProblems] = useState<string[]>([]);
+  const [notices, setNotices] = useState<string[]>([]);
   const picker = useRef<HTMLInputElement>(null);
   const books = useQuery({ queryKey: keys.books, queryFn: booksApi.list });
   const siblings = useQuery({
@@ -181,6 +183,7 @@ function CardFormView({ cardId, initial }: { cardId?: string; initial: CardForm 
       );
     }
     setProblems(notes);
+    setNotices([]);
     setUploading((current) => [...current, ...accepted.map((file) => file.name)]);
     for (const file of accepted) {
       const problem = cardImageProblem(file);
@@ -189,6 +192,8 @@ function CardFormView({ cardId, initial }: { cardId?: string; initial: CardForm 
       } else {
         try {
           const uploaded = await uploadCardImage(file, form.bookId);
+          const heavy = heavyFileNotice({ size: file.size, type: file.type, name: file.name });
+          if (heavy) setNotices((current) => [...current, heavy]);
           setForm((current) => ({
             ...current,
             images: [
@@ -285,8 +290,9 @@ function CardFormView({ cardId, initial }: { cardId?: string; initial: CardForm 
 
         <FormSection
           title="Imágenes"
-          help={`De 1 a ${CARD_IMAGES.max}. Solo JPG, PNG o WebP de hasta ${CARD_IMAGE_LIMITS.maxBytes / 1024 / 1024} MB, de ${CARD_IMAGE_LIMITS.minSide} a ${CARD_IMAGE_LIMITS.maxSide} píxeles por lado. La primera es la portada de la lista.`}
+          help={`De 1 a ${CARD_IMAGES.max}. Solo JPG, PNG o WebP, de ${CARD_IMAGE_LIMITS.minSide} a ${CARD_IMAGE_LIMITS.maxSide} píxeles por lado. La primera es la portada de la lista.`}
         >
+          <CloudinaryUsagePanel variant="compact" />
           <ol aria-label="Imágenes de la carta" className="flex flex-col gap-3">
             {form.images.map((image, index) => (
               <li
@@ -360,6 +366,15 @@ function CardFormView({ cardId, initial }: { cardId?: string; initial: CardForm 
             <p role="alert" className="text-sm text-danger">
               {imagesError}
             </p>
+          ) : null}
+          {notices.length > 0 ? (
+            <Alert tone="warning" title="Imágenes pesadas">
+              <ul className="mt-1 list-disc pl-5">
+                {notices.map((notice, index) => (
+                  <li key={index}>{notice}</li>
+                ))}
+              </ul>
+            </Alert>
           ) : null}
           {problems.length > 0 ? (
             <Alert title="Algunas imágenes no se subieron">

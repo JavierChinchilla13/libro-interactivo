@@ -4,9 +4,9 @@ import { posterUrl } from '../../../shared/lib/cloudinary';
 import { Button, TextField } from '../../../shared/ui/controls';
 import { Alert } from '../../../shared/ui/layout';
 import { errorMessage } from '../errors';
-import { uploadBackgroundVideo } from '../uploads';
+import { heavyFileNotice, uploadBackgroundVideo } from '../uploads';
 
-/** Video corto de fondo: se revisa peso, formato y duración antes de subir, con mensajes claros. */
+/** Video corto de fondo: se revisa formato y duración antes de subir (el peso no se limita; se avisa si es muy pesado). */
 export function VideoField({
   value,
   onChange,
@@ -19,13 +19,16 @@ export function VideoField({
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function pick(file: File | undefined) {
     if (!file) return;
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       onChange(await uploadBackgroundVideo(file, value?.alt ?? ''));
+      setNotice(heavyFileNotice(file));
     } catch (failure) {
       setError(errorMessage(failure));
     } finally {
@@ -38,8 +41,8 @@ export function VideoField({
     <fieldset className="flex min-w-0 flex-col gap-2" disabled={disabled}>
       <legend className="text-sm font-medium">Video de fondo</legend>
       <p className="text-xs text-muted">
-        Clip mudo y en bucle: MP4 o WebM, hasta 5 MB y 10 segundos. Cloudinary le saca el póster
-        (primer fotograma), que es lo que se ve con movimiento reducido.
+        Clip mudo y en bucle: MP4 o WebM de hasta 10 segundos. Cloudinary le saca el póster (primer
+        fotograma), que es lo que se ve con movimiento reducido.
       </p>
       {value ? (
         <>
@@ -80,6 +83,7 @@ export function VideoField({
           </Button>
         ) : null}
       </div>
+      {notice ? <Alert tone="warning">{notice}</Alert> : null}
       {error ? <Alert>{error}</Alert> : null}
     </fieldset>
   );

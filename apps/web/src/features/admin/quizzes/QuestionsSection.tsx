@@ -322,7 +322,7 @@ function QuestionFields({
                 value={own.image}
                 onChange={(image) => late({ background: { kind: 'image', image } })}
                 altMaxLength={200}
-                hint="JPG, PNG, WebP o GIF, hasta 10 MB."
+                hint="JPG, PNG, WebP o GIF."
               />
             ) : null}
             {own.kind === 'video' ? (
