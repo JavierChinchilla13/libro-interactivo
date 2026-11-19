@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import { AdminIcon, type AdminIconName } from '../../shared/ui/adminIcons';
 import { Alert, EmptyState, PageHeader } from '../../shared/ui/layout';
 import { useSession } from '../auth/session';
+import { CloudinaryUsagePanel } from './components/CloudinaryUsage';
 import { Skeleton } from './components/Skeleton';
 import { useAdminOverview } from './overview';
 
@@ -383,6 +384,8 @@ export function AdminHomePage() {
             ) : null}
           </dl>
         </section>
+
+        {isAdmin ? <CloudinaryUsagePanel /> : null}
 
         {stepsFirst ? null : firstSteps}
       </div>
