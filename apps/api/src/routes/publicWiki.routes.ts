@@ -1,6 +1,7 @@
 import {
   publicWikiEntriesQuerySchema,
   publicWikiEntryParamsSchema,
+  publicWikiEntryQuerySchema,
   publicWikiSectionsQuerySchema,
 } from '@libro/shared';
 import { Router } from 'express';
@@ -22,7 +23,7 @@ export function createPublicWikiRouter(
   router.get('/entries', validate({ query: publicWikiEntriesQuerySchema }), controller.entries);
   router.get(
     '/entries/:entryId',
-    validate({ params: publicWikiEntryParamsSchema }),
+    validate({ params: publicWikiEntryParamsSchema, query: publicWikiEntryQuerySchema }),
     controller.entry,
   );
   return router;

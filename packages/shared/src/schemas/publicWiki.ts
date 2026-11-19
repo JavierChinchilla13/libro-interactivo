@@ -80,6 +80,11 @@ export const publicWikiEntriesResponseSchema = z.object({ entries: z.array(publi
 export type PublicWikiEntriesResponse = z.infer<typeof publicWikiEntriesResponseSchema>;
 
 export const publicWikiEntryParamsSchema = z.object({ entryId: objectIdSchema });
+/**
+ * Contexto OPCIONAL de la ficha: el libro desde el que se mira. Una entrada de toda la saga se rige por la pestaña de ese
+ * libro; sin él (o si no es un libro servido) rige el primer libro por orden. Nunca concede nada por sí solo.
+ */
+export const publicWikiEntryQuerySchema = z.object({ bookId: objectIdSchema.optional() });
 
 export const publicWikiEntryResponseSchema = z.object({
   entry: z.object({

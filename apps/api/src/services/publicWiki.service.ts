@@ -34,6 +34,11 @@ interface Ctx {
   completed: Set<string>;
   /** Los libros servidos (publicados y «próximamente»): la wiki de un borrador o un archivado no existe. */
   books: Map<string, BookLean>;
+  /**
+   * El libro cuya pestaña rige a las entradas de TODA LA SAGA (sin libro) en esta petición: el libro de la lista que se
+   * consulta o, en la ficha, el del contexto `bookId` (si es un libro servido) o, sin él, el primero por orden.
+   */
+  view?: BookLean;
 }
 
 const NOT_UNLOCKED = 'Aún no puedes acceder a este contenido';
@@ -46,7 +51,7 @@ const NOT_UNLOCKED = 'Aún no puedes acceder a este contenido';
 const WIKI_BOOK_STATUSES: ('published' | 'upcoming')[] = ['published', 'upcoming'];
 async function loadBooks() {
   return Book.find({ status: { $in: WIKI_BOOK_STATUSES } })
-    .select('wikiSections status')
+    .select('wikiSections status order')
     .lean();
 }
 async function loadEntries(filter: Record<string, unknown>) {
@@ -88,7 +93,7 @@ const lockedLeaf = (entry: EntryLean): PublicWikiLeaf => ({
  * oculto (`lockedDisplay: 'hide'`) es indistinguible de lo que no existe. EDITOR y ADMIN lo ven todo (vista previa).
  */
 export function createPublicWikiService() {
-  async function context(viewer: Viewer): Promise<Ctx> {
+  async function context(viewer: Viewer, view?: { bookId?: string | undefined }): Promise<Ctx> {
     const staff = viewer.role !== undefined && isStaff(viewer.role);
     const completed = new Set<string>();
     if (viewer.userId && !staff) {
@@ -101,7 +106,20 @@ export function createPublicWikiService() {
       }
     }
     const books = new Map((await loadBooks()).map((book) => [book._id.toString(), book]));
-    return { staff, completed, books };
+    return { staff, completed, books, ...pickView(books, view?.bookId) };
+  }
+
+  /**
+   * Libro de contexto para las entradas de toda la saga. Un `bookId` que no es de un libro servido (borrador, archivado,
+   * inexistente) **se ignora** y rige el criterio por defecto —el primer libro servido por orden, el mismo que usa la web
+   * (`pickWikiBook`)—, igual que sin contexto: así un enlace viejo sigue funcionando, no se revela qué libros existen y
+   * manipular `?bookId=` solo permite elegir entre libros servidos, cuyas reglas se comprueban igual.
+   */
+  function pickView(books: Map<string, BookLean>, bookId?: string): { view?: BookLean } {
+    const chosen = bookId ? books.get(bookId) : undefined;
+    const first = [...books.values()].sort((a, b) => a.order - b.order)[0];
+    const view = chosen ?? first;
+    return view ? { view } : {};
   }
 
   const ruleMet = (rule: UnlockRule | undefined, ctx: Ctx) =>
@@ -115,8 +133,18 @@ export function createPublicWikiService() {
   }
 
   /**
-   * Pestaña que gobierna a una entrada. Una de toda la saga (sin libro) es tan estricta como el libro más
-   * estricto: nunca se abre por consultarla «sin libro».
+   * Pestaña que gobierna a una entrada.
+   *
+   * - Una entrada **de un libro** la rige la pestaña de SU libro (sin cambios).
+   * - Una entrada **de toda la saga** (sin libro) la rige la pestaña **del libro que se está viendo** (`ctx.view`); la de
+   *   los demás libros no la afecta.
+   *
+   * Regla nueva (19-nov-2026) que REEMPLAZA a «tan estricta como el libro más estricto entre todos los libros servidos»
+   * (y a «nunca se abre por consultarla sin libro»). Porque los «próximamente» ahora cuentan como servidos: con la regla
+   * anterior, una pestaña bloqueada en un libro que aún no sale (que no se puede completar) habría bloqueado las
+   * entradas de toda la saga en la wiki de los libros ya publicados. Sigue siendo seguro: no se abre nada que el libro
+   * visto no abra (pestaña, `unlockAfter` propio y `lockedDisplay` se siguen comprobando), y una entrada cerrada en
+   * TODOS los libros no se abre con ningún contexto. Sin libro servido no hay contexto y la entrada queda oculta.
    */
   function entrySectionState(entry: EntryLean, ctx: Ctx): State {
     const kind = sectionKindOf(entry.kind);
@@ -124,11 +152,7 @@ export function createPublicWikiService() {
       const book = ctx.books.get(entry.bookId.toString());
       return book ? sectionState(book, kind, ctx) : 'hidden';
     }
-    const states = [...ctx.books.values()]
-      .map((book) => sectionState(book, kind, ctx))
-      .filter((state) => state !== 'hidden');
-    if (states.length === 0) return 'hidden';
-    return states.includes('locked') ? 'locked' : 'open';
+    return ctx.view ? sectionState(ctx.view, kind, ctx) : 'hidden';
   }
 
   /** `parent` es el campo de un poder (el poder no se abre si su campo no está abierto). */
@@ -198,6 +222,8 @@ export function createPublicWikiService() {
   ): Promise<PublicWikiEntriesResponse> {
     const ctx = await context(viewer);
     const book = await publishedBook(query.bookId, ctx);
+    // Las entradas de toda la saga se rigen por la pestaña de ESTE libro (no por la de otros).
+    ctx.view = book;
     const state = sectionState(book, query.kind, ctx);
     if (state === 'hidden') throw new AppError('NOT_FOUND', 'No encontramos esa sección');
     if (state === 'locked') throw new AppError('NOT_UNLOCKED', NOT_UNLOCKED);
@@ -254,8 +280,12 @@ export function createPublicWikiService() {
     return { entries: out };
   }
 
-  async function entry(entryId: string, viewer: Viewer): Promise<PublicWikiEntryResponse> {
-    const ctx = await context(viewer);
+  async function entry(
+    entryId: string,
+    viewer: Viewer,
+    bookId?: string,
+  ): Promise<PublicWikiEntryResponse> {
+    const ctx = await context(viewer, { bookId });
     const found = (await loadEntries({ _id: entryId, status: 'published' }))[0];
     if (!found) throw new AppError('NOT_FOUND', 'No encontramos esa entrada');
     const parent = found.parentId
