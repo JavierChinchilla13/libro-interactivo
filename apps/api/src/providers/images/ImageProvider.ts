@@ -1,11 +1,12 @@
 import { createHash } from 'node:crypto';
 import {
-  CARD_IMAGE_LIMITS,
   QUIZ_VIDEO_LIMITS,
+  type CloudinaryUsage,
   type ImageSignatureResponse,
   type UPLOAD_PURPOSES,
 } from '@libro/shared';
 import { AppError } from '../../lib/errors.js';
+import { normalizeCloudinaryUsage } from './usage.js';
 
 export type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
 export type UploadResource = 'image' | 'video';
@@ -49,12 +50,18 @@ export interface ImageProvider {
   list(input: { prefix: string; resource: UploadResource }): Promise<AssetInfo[]>;
   /** Borra un archivo. Solo para mantenimiento manual: el API nunca lo llama al editar contenido. */
   destroy(input: { publicId: string; resource: UploadResource }): Promise<void>;
+  /** Uso de la cuenta (créditos, almacenamiento, ancho de banda), normalizado. Responde 503 si no está configurado. */
+  usage(): Promise<CloudinaryUsage>;
 }
 
-const LIMITS: Record<UploadResource, { maxBytes: number; formats: string }> = {
-  image: { maxBytes: 10 * 1024 * 1024, formats: 'jpg,jpeg,png,webp,gif' },
-  // Clips cortos y mudos (≤ 10 s, ≤ 5 MB) para resultados de quiz y fondos de quiz.
-  video: { maxBytes: QUIZ_VIDEO_LIMITS.maxBytes, formats: QUIZ_VIDEO_LIMITS.formats.join(',') },
+/**
+ * Formatos permitidos por tipo. No hay tope de peso (19-nov-2026, dirección de la autora: ella vigila el espacio): el
+ * tope por archivo del plan lo aplica Cloudinary y el navegador muestra su mensaje. Los videos siguen siendo clips cortos
+ * y mudos (≤ 10 s, que se verifica con Cloudinary al guardar).
+ */
+const LIMITS: Record<UploadResource, { formats: string }> = {
+  image: { formats: 'jpg,jpeg,png,webp,gif' },
+  video: { formats: QUIZ_VIDEO_LIMITS.formats.join(',') },
 };
 
 /** Propósitos que admiten video: el resultado de un quiz y el fondo de un quiz. */
@@ -112,7 +119,6 @@ export class CloudinaryImageProvider implements ImageProvider {
       apiKey: this.credentials.apiKey,
       signature: this.signature(params),
       params,
-      maxBytes: CARD_IMAGE_LIMITS.maxBytes,
     };
   }
 
@@ -135,7 +141,6 @@ export class CloudinaryImageProvider implements ImageProvider {
       apiKey: this.credentials.apiKey,
       signature: this.signature(params),
       params,
-      maxBytes: limits.maxBytes,
     };
   }
 
@@ -206,6 +211,15 @@ export class CloudinaryImageProvider implements ImageProvider {
     return found;
   }
 
+  /** `GET /usage` de la API de administración (mismas credenciales que `inspect`). Nunca devuelve claves. */
+  async usage(): Promise<CloudinaryUsage> {
+    const response = await this.admin('/usage');
+    if (!response.ok) {
+      throw new AppError('UNAVAILABLE', 'No pudimos consultar el uso de Cloudinary');
+    }
+    return normalizeCloudinaryUsage(await response.json().catch(() => null), new Date());
+  }
+
   async destroy({ publicId, resource }: { publicId: string; resource: UploadResource }) {
     const query = new URLSearchParams();
     query.append('public_ids[]', publicId);
@@ -234,6 +248,9 @@ export class DisabledImageProvider implements ImageProvider {
     return Promise.reject(new AppError('UNAVAILABLE', 'Cloudinary no está configurado'));
   }
   destroy(): Promise<void> {
+    return Promise.reject(new AppError('UNAVAILABLE', 'Cloudinary no está configurado'));
+  }
+  usage(): Promise<CloudinaryUsage> {
     return Promise.reject(new AppError('UNAVAILABLE', 'Cloudinary no está configurado'));
   }
 }
