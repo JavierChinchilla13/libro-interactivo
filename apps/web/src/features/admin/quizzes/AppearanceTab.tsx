@@ -16,6 +16,7 @@ import { Button } from '../../../shared/ui/controls';
 import { Alert, Card } from '../../../shared/ui/layout';
 import { appearanceApi, keys, quizzesApi } from '../api';
 import { useConfirm } from '../components/ConfirmDialog';
+import { CloudinaryUsagePanel } from '../components/CloudinaryUsage';
 import { HelpTip } from '../components/HelpTip';
 import { SkeletonRows } from '../components/Skeleton';
 import { SaveBar } from '../components/SaveBar';
@@ -285,6 +286,7 @@ function AppearanceEditor({
             ))}
           </fieldset>
 
+          {form.kind !== 'none' ? <CloudinaryUsagePanel variant="compact" /> : null}
           {form.kind === 'image' ? (
             <ImageField
               label="Imagen de fondo"
@@ -292,7 +294,7 @@ function AppearanceEditor({
               value={form.image}
               onChange={(image) => patch({ image })}
               altMaxLength={200}
-              hint="JPG, PNG, WebP o GIF, hasta 10 MB. Mejor una imagen horizontal de al menos 1280 px de ancho."
+              hint="JPG, PNG, WebP o GIF. Mejor una imagen horizontal de al menos 1280 px de ancho."
             />
           ) : null}
           {form.kind === 'video' ? (

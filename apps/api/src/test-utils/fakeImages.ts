@@ -21,12 +21,19 @@ export function fakeImages(assets: AssetInfo[] = []) {
         public_id: publicId,
         timestamp: String(timestamp),
       },
-      maxBytes: 8 * 1024 * 1024,
     }),
     inspect: vi.fn(async ({ publicId, resource }) => store.get(`${resource}:${publicId}`) ?? null),
     list: vi.fn(async ({ prefix, resource }) =>
       [...store.values()].filter((a) => a.resource === resource && a.publicId.startsWith(prefix)),
     ),
+    // Una cuenta gratuita por créditos, como la real (las pruebas nunca llaman a Cloudinary).
+    usage: vi.fn(async () => ({
+      available: true as const,
+      plan: 'Free',
+      credits: { used: 3.2, limit: 25, percent: 12.8 },
+      storage: { bytes: 1_700_000_000, limitBytes: null },
+      checkedAt: new Date(0).toISOString(),
+    })),
     destroy: vi.fn(async ({ publicId, resource }) => {
       destroyed.push(`${resource}:${publicId}`);
       store.delete(`${resource}:${publicId}`);

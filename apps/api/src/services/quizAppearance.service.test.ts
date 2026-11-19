@@ -467,12 +467,16 @@ describe('apariencia del quiz: el video se verifica con Cloudinary', () => {
     ).resolves.toMatchObject({ rev: 1 });
   });
 
-  it('rechaza un video de más de 5 MB, de otro formato o sin duración', async () => {
+  it('el peso ya no cuenta: un video de 90 MB se guarda', async () => {
     const { appearance, quiz, editor, cloud } = await world();
-    cloud.set(videoAsset('libro/quiz-bg/vid', { bytes: 6 * 1024 * 1024 }));
+    cloud.set(videoAsset('libro/quiz-bg/vid', { bytes: 90 * 1024 * 1024 }));
     await expect(
       appearance.update(quiz.id, editor, { appearance: withVideo(), expectedRev: 0 }),
-    ).rejects.toMatchObject({ code: 'VALIDATION', message: expect.stringContaining('5 MB') });
+    ).resolves.toMatchObject({ rev: 1 });
+  });
+
+  it('el formato sí cuenta: un video que no es mp4 ni webm se rechaza', async () => {
+    const { appearance, quiz, editor, cloud } = await world();
     cloud.set(videoAsset('libro/quiz-bg/vid', { format: 'mov' }));
     await expect(
       appearance.update(quiz.id, editor, { appearance: withVideo(), expectedRev: 0 }),

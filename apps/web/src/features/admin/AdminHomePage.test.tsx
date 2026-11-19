@@ -172,6 +172,37 @@ describe('inicio de la administración · cuenta vacía', () => {
   });
 });
 
+describe('inicio de la administración · uso de Cloudinary', () => {
+  const usage = {
+    available: true,
+    plan: 'Free',
+    credits: { used: 3.2, limit: 25, percent: 12.8 },
+    storage: { bytes: 1_825_361_100, limitBytes: null },
+    checkedAt: stamp,
+  };
+
+  it('el administrador ve cuánto lleva usado, en su sección del inicio', async () => {
+    mockApi({ ...empty, 'GET /api/admin/cloudinary-usage': () => json(usage) }, { session: ADMIN });
+    renderAt('/admin');
+    const section = await screen.findByRole('region', { name: 'Espacio en Cloudinary' });
+    expect(
+      await within(section).findByText('Cloudinary: 3,2 de 25 créditos este mes (13 %)'),
+    ).toBeInTheDocument();
+    expect(within(section).getByText('Almacenamiento: 1,7 GB')).toBeInTheDocument();
+  });
+
+  it('el editor no ve la sección ni la pide', async () => {
+    const { called } = mockApi(
+      { ...empty, 'GET /api/admin/cloudinary-usage': () => json(usage) },
+      { session: EDITOR },
+    );
+    renderAt('/admin');
+    await screen.findByRole('heading', { level: 1 });
+    expect(screen.queryByRole('region', { name: 'Espacio en Cloudinary' })).toBeNull();
+    expect(called('GET /api/admin/cloudinary-usage')).toHaveLength(0);
+  });
+});
+
 describe('inicio de la administración · cuenta con datos', () => {
   it('lista lo que necesita atención con enlace directo, sin contar los archivados', async () => {
     mockApi(withData, { session: ADMIN });

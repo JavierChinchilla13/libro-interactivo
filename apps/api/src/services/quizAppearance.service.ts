@@ -255,10 +255,6 @@ export function createQuizAppearanceService(deps: QuizAppearanceDeps) {
     const info = await deps.images.inspect({ publicId: video.publicId, resource: 'video' });
     if (!info)
       throw new AppError('VALIDATION', 'No encontramos ese video en Cloudinary: súbelo de nuevo');
-    if (info.bytes > QUIZ_VIDEO_LIMITS.maxBytes) {
-      const mb = formatDecimal(info.bytes / (1024 * 1024));
-      throw new AppError('VALIDATION', `El video pesa ${mb} MB; el máximo es 5 MB`);
-    }
     if (!(QUIZ_VIDEO_LIMITS.formats as readonly string[]).includes(info.format)) {
       throw new AppError('VALIDATION', 'El video debe ser mp4 o webm');
     }

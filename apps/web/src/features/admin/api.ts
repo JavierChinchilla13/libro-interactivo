@@ -2,6 +2,7 @@ import {
   adminCardListResponseSchema,
   adminCardSchema,
   backupStatusResponseSchema,
+  cloudinaryUsageSchema,
   type CardInputPayload,
   type CardReorderRequest,
   type CreateBackupRequest,
@@ -243,6 +244,11 @@ export const backupsApi = {
     apiDownload('/admin/backups', body, 'universo-memorias-respaldo.tar.cifrado'),
 };
 
+/** Uso de la cuenta de Cloudinary (solo administradores). */
+export const cloudinaryUsageApi = {
+  get: () => apiRequest('/admin/cloudinary-usage', cloudinaryUsageSchema),
+};
+
 export const notificationsApi = {
   list: () => apiRequest('/admin/notifications', notificationListResponseSchema),
   preview: (target: NotificationPreviewQuery) =>
@@ -301,6 +307,7 @@ export const keys = {
   messages: ['admin', 'messages'] as const,
   stats: ['admin', 'stats'] as const,
   backups: ['admin', 'backups'] as const,
+  cloudinaryUsage: ['admin', 'cloudinary-usage'] as const,
   cards: (bookId: string) => ['admin', 'cards', 'list', bookId] as const,
   card: (id: string) => ['admin', 'cards', 'one', id] as const,
   notifications: ['admin', 'notifications'] as const,

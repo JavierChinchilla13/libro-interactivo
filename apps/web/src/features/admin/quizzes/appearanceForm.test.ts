@@ -116,29 +116,20 @@ describe('contraste y medida', () => {
   });
 });
 
-describe('videoProblem (límites de 5 MB y 10 s)', () => {
-  const mb = (n: number) => n * 1024 * 1024;
-  it('acepta un mp4 chico y corto', () => {
-    expect(videoProblem({ size: mb(3), type: 'video/mp4' }, 8)).toBeNull();
-    expect(videoProblem({ size: mb(5), type: 'video/webm' }, 11.9)).toBeNull();
-  });
-
-  it('rechaza por peso con el tamaño real y el máximo', () => {
-    expect(videoProblem({ size: mb(7.5), type: 'video/mp4' }, 5)).toBe(
-      'El video pesa 7,5 MB y el máximo es 5,0 MB. Comprímelo o recórtalo y vuelve a subirlo.',
-    );
+describe('videoProblem (formato y 10 s; el peso ya no se limita)', () => {
+  it('acepta un mp4 o webm corto, pese lo que pese', () => {
+    expect(videoProblem({ type: 'video/mp4' }, 8)).toBeNull();
+    expect(videoProblem({ type: 'video/webm' }, 11.9)).toBeNull();
   });
 
   it('rechaza por duración (más de 10 s con el margen de 2 s)', () => {
-    expect(videoProblem({ size: mb(2), type: 'video/mp4' }, 13.4)).toBe(
+    expect(videoProblem({ type: 'video/mp4' }, 13.4)).toBe(
       'El video dura 13,4 s y el máximo es 10 s. Recórtalo y vuelve a subirlo.',
     );
   });
 
   it('rechaza otros formatos y no se queja si no pudo leer la duración (el servidor la verifica)', () => {
-    expect(videoProblem({ size: mb(1), type: 'video/quicktime' }, 5)).toBe(
-      'El video debe ser MP4 o WebM.',
-    );
-    expect(videoProblem({ size: mb(1), type: 'video/mp4' }, undefined)).toBeNull();
+    expect(videoProblem({ type: 'video/quicktime' }, 5)).toBe('El video debe ser MP4 o WebM.');
+    expect(videoProblem({ type: 'video/mp4' }, undefined)).toBeNull();
   });
 });

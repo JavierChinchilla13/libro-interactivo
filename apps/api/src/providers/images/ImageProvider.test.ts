@@ -15,7 +15,9 @@ describe('firma de subida para fondos de quiz (quiz-bg)', () => {
     const video = provider.signUpload({ purpose: 'quiz-bg', resource: 'video', timestamp: 1 });
     expect(video.params['folder']).toBe('libro/quiz-bg');
     expect(video.params['allowed_formats']).toBe('mp4,webm');
-    expect(video.maxBytes).toBe(5 * 1024 * 1024);
+    // Sin tope de peso: la firma no lleva ni propone un máximo (lo aplica el plan de Cloudinary).
+    expect(video).not.toHaveProperty('maxBytes');
+    expect(image).not.toHaveProperty('maxBytes');
     expect(video.uploadUrl).toBe('https://api.cloudinary.com/v1_1/mi-cuenta/video/upload');
   });
 
@@ -33,14 +35,14 @@ describe('firma de subida para cartas', () => {
   const provider = new CloudinaryImageProvider(credentials);
   const publicId = 'libro/cartas/AbCdEfGhIjKlMnOpQrStUvWx';
 
-  it('firma el public_id que eligió el servidor, solo imágenes jpg, png y webp, con tope de 8 MB', () => {
+  it('firma el public_id que eligió el servidor, solo imágenes jpg, png y webp, sin tope de peso', () => {
     const signed = provider.signCardUpload({ publicId, timestamp: 1700000000 });
     expect(signed.params).toEqual({
       allowed_formats: 'jpg,jpeg,png,webp',
       public_id: publicId,
       timestamp: '1700000000',
     });
-    expect(signed.maxBytes).toBe(8 * 1024 * 1024);
+    expect(signed).not.toHaveProperty('maxBytes');
     expect(signed.uploadUrl).toBe('https://api.cloudinary.com/v1_1/mi-cuenta/image/upload');
     expect(signed.apiKey).toBe('123');
     // Firma de Cloudinary: SHA-1 de los parámetros ordenados + el secreto (el secreto nunca viaja).

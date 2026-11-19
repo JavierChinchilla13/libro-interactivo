@@ -26,9 +26,12 @@ export const CARD_FOLDER = 'libro/cartas';
 /** El `public_id` lo genera el servidor: aleatorio y no adivinable (≥ 20 caracteres aleatorios). */
 export const CARD_PUBLIC_ID_PATTERN = /^libro\/cartas\/[A-Za-z0-9_-]{20,64}$/;
 
-/** Lo que se acepta de una imagen de carta (el servidor lo comprueba con Cloudinary, no con lo que diga el navegador). */
+/**
+ * Lo que se acepta de una imagen de carta (el servidor lo comprueba con Cloudinary, no con lo que diga el navegador).
+ * No hay tope de peso (19-nov-2026, dirección de la autora: ella vigila el espacio); el tope por archivo de su plan lo
+ * aplica Cloudinary.
+ */
 export const CARD_IMAGE_LIMITS = {
-  maxBytes: 8 * 1024 * 1024,
   /** Formatos que devuelve Cloudinary (`jpeg` se informa como `jpg`). */
   formats: ['jpg', 'png', 'webp'],
   /** Lado menor y mayor, en píxeles: ni una miniatura borrosa ni una imagen descomunal. */

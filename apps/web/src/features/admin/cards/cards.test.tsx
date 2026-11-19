@@ -70,7 +70,6 @@ function uploads() {
         apiKey: 'k',
         signature: `s${signed}`,
         params: { public_id: pid(signed), timestamp: '1', allowed_formats: 'jpg,jpeg,png,webp' },
-        maxBytes: 8 * 1024 * 1024,
       });
     },
     [CLOUD]: () => {
@@ -353,21 +352,58 @@ describe('/admin/cartas/nueva (formulario con varias imágenes)', () => {
     expect(called('POST /api/admin/cards')).toHaveLength(0);
   });
 
-  it('un archivo que no es JPG, PNG o WebP, o que pesa más de 8 MB, se avisa sin subir nada', async () => {
+  it('un archivo que no es JPG, PNG o WebP se avisa sin subir nada; el peso ya no cuenta', async () => {
     const { called } = mockApi(base(), { session: ADMIN });
     renderAt(`/admin/cartas/nueva?libro=${BOOK_ID}`);
     const picker = await screen.findByLabelText('Elegir imágenes de la carta');
     const user = userEvent.setup({ applyAccept: false });
-    await user.upload(picker, [
-      new File(['x'], 'gato.gif', { type: 'image/gif' }),
-      png('enorme.png', 9 * 1024 * 1024),
-    ]);
+    await user.upload(picker, [new File(['x'], 'gato.gif', { type: 'image/gif' })]);
     const alert = await screen.findByText('Algunas imágenes no se subieron');
-    const box = alert.closest('div')!;
-    expect(box).toHaveTextContent('«gato.gif» no es JPG, PNG ni WebP.');
-    expect(box).toHaveTextContent('«enorme.png» pesa 9,0 MB y el máximo es 8 MB.');
+    expect(alert.closest('div')!).toHaveTextContent('«gato.gif» no es JPG, PNG ni WebP.');
     expect(called(SIGN)).toHaveLength(0);
     expect(called(CLOUD)).toHaveLength(0);
+    expect(screen.getByText('0 de 12')).toBeInTheDocument();
+  });
+
+  it('una imagen de 9 MB se sube sin aviso; una de 12 MB también, con un aviso que no bloquea', async () => {
+    const { called } = mockApi({ ...base(), ...uploads() }, { session: ADMIN });
+    renderAt(`/admin/cartas/nueva?libro=${BOOK_ID}`);
+    const picker = await screen.findByLabelText('Elegir imágenes de la carta');
+    await userEvent.upload(picker, [png('normal.png', 9 * 1024 * 1024)]);
+    await waitFor(() => expect(screen.getByText('1 de 12')).toBeInTheDocument());
+    expect(screen.queryByText('Imágenes pesadas')).toBeNull();
+
+    await userEvent.upload(picker, [png('pesada.png', 12 * 1024 * 1024)]);
+    await waitFor(() => expect(screen.getByText('2 de 12')).toBeInTheDocument());
+    const notice = screen.getByText('Imágenes pesadas').closest('div')!;
+    expect(notice).toHaveAttribute('role', 'status');
+    expect(notice).toHaveTextContent(
+      '«pesada.png» pesa 12,0 MB: ocupa más espacio y puede tardar en cargar en el celular.',
+    );
+    expect(called(CLOUD)).toHaveLength(2);
+  });
+
+  it('si Cloudinary rechaza el peso, el mensaje dice cuál es el máximo del plan', async () => {
+    mockApi(
+      {
+        ...base(),
+        [CLOUD]: () =>
+          json(
+            { error: { message: 'File size too large. Got 31457280. Maximum is 10485760.' } },
+            400,
+          ),
+      },
+      { session: ADMIN },
+    );
+    renderAt(`/admin/cartas/nueva?libro=${BOOK_ID}`);
+    await userEvent.upload(await screen.findByLabelText('Elegir imágenes de la carta'), [
+      png('gigante.png'),
+    ]);
+    expect(
+      await screen.findByText(
+        /«gigante\.png»: Cloudinary no acepta archivos de este peso en el plan actual \(máximo 10 MB\)\. Reduce el archivo o amplía el plan\./,
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText('0 de 12')).toBeInTheDocument();
   });
 

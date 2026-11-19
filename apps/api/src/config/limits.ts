@@ -19,7 +19,7 @@ export interface Limits {
   uploadSign: RateLimitOptions;
   /** Firmar subidas de imágenes de cartas (por usuario): una firma por imagen, hasta 12 por carta. */
   cardUploadSign: RateLimitOptions;
-  /** Firmar subidas de fondos de quiz (`quiz-bg`, videos de hasta 5 MB): tope más bajo. */
+  /** Firmar subidas de fondos de quiz (`quiz-bg`, videos): tope más bajo. */
   uploadSignQuizBg: RateLimitOptions;
   /** Descargar un respaldo desde el panel (por usuario): por hora… */
   backupHour: RateLimitOptions;

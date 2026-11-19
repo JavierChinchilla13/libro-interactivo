@@ -39,11 +39,6 @@ async function findLean(id: string) {
 
 const NOT_FOUND = 'No encontramos esa carta';
 
-/** «1,2 MB» con coma decimal, como el resto de los mensajes del sitio. */
-function megabytes(bytes: number): string {
-  return (bytes / (1024 * 1024)).toFixed(1).replace('.', ',');
-}
-
 /** Una imagen tal como se guarda (forma plana, sin los métodos de Mongoose). */
 interface StoredImage {
   publicId: string;
@@ -125,17 +120,11 @@ export function createCardService(deps: CardDeps) {
     return images.signCardUpload({ publicId, timestamp: Math.floor(clock().getTime() / 1000) });
   }
 
-  /** La imagen debe existir de verdad en Cloudinary y cumplir formato, peso y tamaño (lo medido es de Cloudinary). */
+  /** La imagen debe existir de verdad en Cloudinary y cumplir formato y medidas (lo medido es de Cloudinary). Sin tope de peso. */
   async function inspectImage(publicId: string) {
     const info = await images.inspect({ publicId, resource: 'image' });
     if (!info)
       throw new AppError('VALIDATION', 'No encontramos esa imagen en Cloudinary: súbela de nuevo');
-    if (info.bytes > CARD_IMAGE_LIMITS.maxBytes) {
-      throw new AppError(
-        'VALIDATION',
-        `La imagen pesa ${megabytes(info.bytes)} MB; el máximo es ${CARD_IMAGE_LIMITS.maxBytes / (1024 * 1024)} MB`,
-      );
-    }
     const format = info.format === 'jpeg' ? 'jpg' : info.format;
     if (!(CARD_IMAGE_LIMITS.formats as readonly string[]).includes(format)) {
       throw new AppError('VALIDATION', 'La imagen debe ser JPG, PNG o WebP');

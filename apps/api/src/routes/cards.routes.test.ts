@@ -108,7 +108,7 @@ describe('firma de subida: el identificador lo genera el servidor', () => {
       expect(publicId).toMatch(CARD_PUBLIC_ID_PATTERN);
       // Al menos 20 caracteres aleatorios después de la carpeta.
       expect(publicId.slice('libro/cartas/'.length).length).toBeGreaterThanOrEqual(20);
-      expect(signed.maxBytes).toBe(8 * 1024 * 1024);
+      expect(signed).not.toHaveProperty('maxBytes');
       ids.add(publicId);
     }
     expect(ids.size).toBe(5);
@@ -124,6 +124,15 @@ describe('firma de subida: el identificador lo genera el servidor', () => {
 });
 
 describe('crear, editar, ordenar y archivar', () => {
+  it('ya no hay tope de peso: una imagen de 60 MB se acepta (el plan de Cloudinary pone su propio límite)', async () => {
+    const { admin, input, upload } = await world();
+    const publicId = upload({ width: 1200, height: 1800, bytes: 60 * 1024 * 1024, format: 'png' });
+    await admin
+      .post('/api/admin/cards')
+      .send(input({ images: [{ publicId, alt: 'Una imagen muy pesada' }] }))
+      .expect(201);
+  });
+
   it('crea una carta: el servidor mide la imagen con Cloudinary y en la base no queda ninguna URL', async () => {
     const { admin, book, input, upload, adminUser } = await world();
     const publicId = upload({ width: 1000, height: 1500, bytes: 900_000, format: 'png' });
@@ -183,15 +192,10 @@ describe('crear, editar, ordenar y archivar', () => {
     expect(await Card.countDocuments()).toBe(0);
   });
 
-  it('verifica la imagen en Cloudinary: inexistente, pesada, de otro formato o de tamaño raro se rechazan', async () => {
+  it('verifica la imagen en Cloudinary: inexistente, de otro formato o de tamaño raro se rechazan (el peso ya no cuenta)', async () => {
     const { admin, input, upload } = await world();
     const cases: Array<[string, Record<string, unknown>, RegExp]> = [
       ['no existe', { images: [{ publicId: cardPublicId() }] }, /No encontramos esa imagen/],
-      [
-        'pesa 9 MB',
-        { images: [{ publicId: upload({ bytes: 9 * 1024 * 1024 }) }] },
-        /pesa 9,0 MB; el máximo es 8 MB/,
-      ],
       ['es un gif', { images: [{ publicId: upload({ format: 'gif' }) }] }, /JPG, PNG o WebP/],
       [
         'muy pequeña',
