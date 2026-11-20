@@ -12,7 +12,10 @@ const inside: Record<Space, string> = {
   loose: 'pt-[calc(var(--token-section-gap)*1.25)]',
 };
 
-/** El titular con una palabra de énfasis: sube de peso dentro de Cinzel (no cambia de color), si aparece en él. */
+/**
+ * El titular con una palabra de énfasis, si aparece en él. Michroma tiene un solo peso, así que `.emph` la distingue por
+ * color (el cian de acción) y no por peso; con `data-titulares="cinzel"` vuelve a subir de peso (ver `tokens.css`).
+ */
 function Emphasized({ text, word }: { text: string; word?: string | undefined }) {
   const at = word ? text.lastIndexOf(word) : -1;
   if (!word || at === -1) return <>{text}</>;

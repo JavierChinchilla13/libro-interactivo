@@ -123,7 +123,7 @@ export function BookPage() {
           ) : null}
           {hasPurchaseLinks(data.purchaseLinks) ? (
             <section aria-labelledby="libro-comprar-title" className="flex flex-col gap-4">
-              <h2 id="libro-comprar-title" className="section-title text-2xl">
+              <h2 id="libro-comprar-title" className="section-title text-title-2xl">
                 Dónde conseguirlo
               </h2>
               <PurchaseList links={data.purchaseLinks} />

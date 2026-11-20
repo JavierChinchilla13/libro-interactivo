@@ -167,10 +167,7 @@ export function LegalPage({
             aria-labelledby={`${section.id}-titulo`}
             className="scroll-mt-28 pb-10"
           >
-            <h2
-              id={`${section.id}-titulo`}
-              className="mb-4 font-display text-xl font-semibold leading-snug text-text"
-            >
+            <h2 id={`${section.id}-titulo`} className="mb-4 font-display text-title-xl text-text">
               <span className="mr-2 tabular-nums text-muted">{index + 1}.</span>
               {section.title}
             </h2>

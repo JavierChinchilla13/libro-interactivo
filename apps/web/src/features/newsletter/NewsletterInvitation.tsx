@@ -94,7 +94,7 @@ export function NewsletterInvitation() {
       ) : (
         <>
           <div className="flex flex-col gap-1">
-            <h2 id="invitacion-novedades" className="section-title text-xl">
+            <h2 id="invitacion-novedades" className="section-title text-title-xl">
               {NEWSLETTER_INVITATION_QUESTION}
             </h2>
             <p className="text-sm text-muted">

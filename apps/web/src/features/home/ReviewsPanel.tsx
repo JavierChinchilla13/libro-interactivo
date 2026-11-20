@@ -95,7 +95,7 @@ export function ReviewsPanel({ open, onClose }: { open: boolean; onClose: () => 
       {open ? (
         <>
           <div className="reviews-panel-head">
-            <h2 id="reviews-panel-title" className="section-title text-2xl">
+            <h2 id="reviews-panel-title" className="section-title text-title-2xl">
               Reseñas de lectores
             </h2>
             <button

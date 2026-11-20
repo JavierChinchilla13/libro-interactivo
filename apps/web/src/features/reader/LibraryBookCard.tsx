@@ -132,7 +132,7 @@ export function LibraryBookCard({
               : 'Próximamente'}
         </p>
         <h3
-          className={`section-title [overflow-wrap:anywhere] ${featured ? 'text-3xl md:text-4xl' : 'text-xl'}`}
+          className={`section-title [overflow-wrap:anywhere] ${featured ? 'text-title-3xl md:text-title-4xl' : 'text-title-xl'}`}
         >
           {access === 'open' ? (
             // Enlace extendido: el área del enlace cubre toda la tarjeta (un solo <a>, objetivo grande).

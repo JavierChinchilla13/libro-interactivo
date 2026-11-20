@@ -24,7 +24,7 @@ export const COVER_WIDTHS = [320, 480, 640, 720, 960] as const;
  *   natural, nunca empuja ni desborda el diseño. Una portada apaisada conserva su forma (no se le recorta el 60 %);
  *   una portada de libro (2:3) llena la placa. `className` rige las portadas altas y `landscapeClassName` las apaisadas.
  *   `priority` marca la portada que es lo primero que se ve (carga sin demora y con prioridad alta).
- * - Sin portada es una portada tipográfica 2:3: el nombre del sitio en Cinzel (una línea pequeña espaciada y el
+ * - Sin portada es una portada tipográfica 2:3: el nombre del sitio en la letra de titulares (una línea pequeña espaciada y el
  *   título grande), un doble filete fino y nada más. Es decorativa (`aria-hidden`).
  */
 export function Plate({
@@ -68,7 +68,7 @@ export function Plate({
           // Fondo sólido del tema con el título: ocupa el mismo hueco y no deja el icono de imagen rota.
           <div className="absolute inset-0 grid place-items-center bg-surface-alt p-4 text-center">
             {title ? (
-              <p className="font-display text-lg leading-snug [overflow-wrap:anywhere]">{title}</p>
+              <p className="font-display text-title-lg [overflow-wrap:anywhere]">{title}</p>
             ) : null}
           </div>
         ) : (
@@ -106,7 +106,7 @@ function initialOf(name: string): string {
 
 /**
  * Retrato en proporción 4:5. Con foto de la autora la muestra (recorte centrado); sin ella, la inicial de su nombre en
- * Cinzel dentro del mismo doble filete de la portada tipográfica.
+ * la letra de titulares dentro del mismo doble filete de la portada tipográfica.
  */
 export function PortraitPlate({
   photo,

@@ -182,7 +182,7 @@ export function BookPanelPage() {
           {progress.data ? (
             <>
               <section aria-labelledby="hilo" className="flex flex-col gap-4">
-                <h2 id="hilo" className="section-title text-2xl">
+                <h2 id="hilo" className="section-title text-title-2xl">
                   Tu hilo
                 </h2>
                 {nothingOpen ? (
@@ -216,7 +216,7 @@ export function BookPanelPage() {
               </section>
 
               <section aria-labelledby="resultados-libro" className="flex flex-col gap-4">
-                <h2 id="resultados-libro" className="section-title text-2xl">
+                <h2 id="resultados-libro" className="section-title text-title-2xl">
                   Tus resultados
                 </h2>
                 {results.data && results.data.results.length > 0 ? (
@@ -253,7 +253,7 @@ export function BookPanelPage() {
               </section>
 
               <section aria-labelledby="extras-libro" className="flex flex-col gap-4">
-                <h2 id="extras-libro" className="section-title text-2xl">
+                <h2 id="extras-libro" className="section-title text-title-2xl">
                   Capítulos extra
                 </h2>
                 {progress.data.bookCompleted ? (
