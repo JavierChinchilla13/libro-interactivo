@@ -260,7 +260,8 @@ export function createProgressService(deps: ProgressDeps) {
         status,
         ...(lockedBy ? { lockedBy } : {}),
         inProgress: inProgress.has(id),
-        allowRetake: retake.get(id) ?? true,
+        // El equipo repite cualquier quiz (aunque sea «de una sola vez»): es una prueba y no cuenta.
+        allowRetake: test || (retake.get(id) ?? true),
       };
     });
     // El juego, si el libro tiene historia publicada, va siempre al final.

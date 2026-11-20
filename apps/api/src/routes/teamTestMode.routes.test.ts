@@ -207,6 +207,9 @@ describe('quizzes y juego en modo prueba', () => {
     expect(await QuizAttempt.countDocuments({ quizId, isTest: true, status: 'completed' })).toBe(4);
     // Los intentos de prueba nunca cuentan contra la regla de un solo intento del lector.
     expect(await QuizAttempt.countDocuments({ quizId, isTest: false })).toBe(0);
+    // El hilo del libro le ofrece «Repetir» al equipo aunque el quiz sea de una sola vez.
+    const thread = await w.admin.get(`/api/me/progress?bookId=${w.upcoming.id}`).expect(200);
+    expect(thread.body.experiences[0]).toMatchObject({ status: 'completed', allowRetake: true });
 
     // Un lector con el QR canjeado juega una vez y la segunda da 409 (la regla del lector no cambia).
     const first = w.published.quizzes[0]!;
@@ -224,6 +227,9 @@ describe('quizzes y juego en modo prueba', () => {
     const again = await w.reader.post(`/api/quizzes/${first}/attempts`);
     expect(again.status).toBe(409);
     expect(code(again)).toBe('CONFLICT');
+    // Y al lector el hilo no le ofrece repetirlo.
+    const readerThread = await w.reader.get(`/api/me/progress?bookId=${w.published.id}`).expect(200);
+    expect(readerThread.body.experiences[0]).toMatchObject({ allowRetake: false });
   });
 
   it('el equipo juega el juego de un libro próximo con una partida de prueba; archivado 404; lector 404', async () => {
