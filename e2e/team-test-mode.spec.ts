@@ -36,11 +36,14 @@ const quizDraft = (results: { a: string; b: string }) => ({
   ],
 });
 
-/** Otra prueba puede encender el mensaje de bienvenida mientras corre ésta: su ventana taparía los botones. */
-async function dismissWelcome(page: Page) {
-  await page.waitForLoadState('networkidle');
-  const button = page.getByRole('button', { name: '¡A la aventura!' });
-  if (await button.isVisible()) await button.click();
+/**
+ * Otra prueba puede encender el mensaje de bienvenida (un ajuste global de la base) en cualquier momento y su ventana
+ * taparía los botones: se cierra sola cuando aparezca, en esta pestaña y en las que se abran después.
+ */
+async function autoDismissWelcome(page: Page) {
+  await page.addLocatorHandler(page.getByRole('button', { name: '¡A la aventura!' }), (button) =>
+    button.click(),
+  );
 }
 
 async function play(page: Page, answer: string, result: string) {
@@ -116,16 +119,17 @@ test.describe('modo prueba del equipo (celular y escritorio)', () => {
     const before = await realState();
     expect(before.versions).toBe(1);
 
+    await autoDismissWelcome(page);
+
     // --- «Ver el libro como lector» desde la lista de libros ---
     await page.goto('/admin/libros');
     // El buscador solo aparece con más de 8 libros (la base de pruebas acumula los de otras pruebas): se usa si está.
     const search = page.getByLabel('Buscar por título');
     const tryBook = page.getByRole('link', { name: `Ver el libro como lector ${bookTitle}` });
-    await expect(search.or(tryBook)).toBeVisible();
+    await expect(search.or(tryBook).first()).toBeVisible();
     if (await search.isVisible()) await search.fill(bookTitle);
     await tryBook.click();
     await expect(page).toHaveURL(new RegExp(`/panel/libros/${slug}$`));
-    await dismissWelcome(page);
     const banner = page.getByTestId('test-mode-banner');
     await expect(banner).toHaveAttribute('role', 'status');
     await expect(banner).toContainText('Modo prueba');
@@ -159,6 +163,7 @@ test.describe('modo prueba del equipo (celular y escritorio)', () => {
       page.context().waitForEvent('page'),
       draftButton.click(),
     ]);
+    await autoDismissWelcome(draftTab);
     await expect(draftTab).toHaveURL(new RegExp(`/panel/quiz/${quiz.id}\\?fuente=borrador$`));
     await expect(draftTab.getByTestId('test-mode-banner')).toContainText(
       'Probando el BORRADOR (no publicado).',
