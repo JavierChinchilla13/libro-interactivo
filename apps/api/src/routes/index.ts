@@ -61,6 +61,9 @@ import {
 import type { Clock } from '../lib/clock.js';
 import type { ImageProvider } from '../providers/images/ImageProvider.js';
 import type { CloudinaryUsageService } from '../services/cloudinaryUsage.service.js';
+import type { TestProgressService } from '../services/testProgress.service.js';
+import { createTestProgressController } from '../controllers/testProgress.controller.js';
+import { createTestProgressRouter } from './testProgress.routes.js';
 import type { LibraryService } from '../services/library.service.js';
 import type { PublicBookService } from '../services/publicBook.service.js';
 import type { FanArtService, ReviewService } from '../services/community.service.js';
@@ -156,6 +159,7 @@ export interface RouteDeps {
   wiki: WikiService;
   images: ImageProvider;
   cloudinaryUsage: CloudinaryUsageService;
+  testProgress: TestProgressService;
   access: AccessService;
   welcome: WelcomeService;
   publicBooks: PublicBookService;
@@ -216,6 +220,10 @@ export function createApiRouter(deps: RouteDeps): Router {
   );
   router.use('/me', createAccountRouter(accountController, deps.guards, deps.limits));
   router.use('/me', createLearningRouter(quizController, deps.guards));
+  router.use(
+    '/me/test-progress',
+    createTestProgressRouter(createTestProgressController(deps.testProgress), deps.guards),
+  );
   router.use('/me', createWelcomeRouter(createWelcomeController(deps.welcome), deps.guards));
   router.use('/site', createPublicSiteRouter(createPublicSiteController(deps.siteSettings)));
   router.use(

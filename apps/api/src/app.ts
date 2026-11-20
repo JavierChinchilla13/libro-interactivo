@@ -14,6 +14,7 @@ import { createRequireUnlocked } from './middleware/unlocked.js';
 import { configureCloudinaryAccount } from './lib/images.js';
 import { createImageProvider, type ImageProvider } from './providers/images/ImageProvider.js';
 import { createCloudinaryUsageService } from './services/cloudinaryUsage.service.js';
+import { createTestProgressService } from './services/testProgress.service.js';
 import { S3StorageProvider, s3ConfigFromEnv } from './providers/storage/S3StorageProvider.js';
 import {
   MemoryStorageProvider,
@@ -229,6 +230,7 @@ export function createApp(
   const extras = createExtraService({ storage, images, progress, clock, logger: deps.logger });
   const cards = createCardService({ images, clock, logger: deps.logger });
   const cloudinaryUsage = createCloudinaryUsageService({ images, clock, logger: deps.logger });
+  const testProgress = createTestProgressService({ logger: deps.logger });
   const welcome = createWelcomeService({ clock });
   const publicBooks = createPublicBookService();
   const publicWiki = createPublicWikiService();
@@ -333,6 +335,7 @@ export function createApp(
       wiki,
       images,
       cloudinaryUsage,
+      testProgress,
       access,
       extras,
       cards,

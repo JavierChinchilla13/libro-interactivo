@@ -6,6 +6,7 @@ import { AppError } from '../lib/errors.js';
 import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { GameSession, type GameSessionDoc } from '../models/GameSession.js';
 import { GameStory } from '../models/GameStory.js';
+import { TEST_DATA_TTL_DAYS } from '../config/testMode.js';
 import { isStaff, type Actor, type ProgressService } from './progress.service.js';
 
 export interface GameDeps {
@@ -174,9 +175,13 @@ export function createGameService(deps: GameDeps) {
             currentSceneId: result.scene.id,
             status,
             ...(result.ending ? { endingKey: result.ending.key, endedAt: now } : {}),
+            // Una partida de PRUEBA que termina vence sola a los 30 días; una real conserva su historial.
+            ...(result.ending && session.isTest
+              ? { expireAt: addDays(now, TEST_DATA_TTL_DAYS) }
+              : {}),
           },
           $push: { path: { sceneId: session.currentSceneId, choiceId, at: now } },
-          ...(result.ending ? { $unset: { expireAt: 1 } } : {}),
+          ...(result.ending && !session.isTest ? { $unset: { expireAt: 1 } } : {}),
         },
         { returnDocument: 'after' },
       );

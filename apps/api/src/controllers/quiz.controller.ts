@@ -48,12 +48,12 @@ export function createQuizController(
 
   const listResults: RequestHandler = async (_req, res) => {
     const { query } = getInput<unknown, BookQuery>(res);
-    res.json(await quizzes.listResults(getAuth(res).userId, query.bookId));
+    res.json(await quizzes.listResults(getAuth(res), query.bookId));
   };
 
   const getQuizResults: RequestHandler = async (_req, res) => {
     const { params } = getInput<unknown, unknown, QuizParams>(res);
-    res.json(await quizzes.getQuizResults(getAuth(res).userId, params.quizId));
+    res.json(await quizzes.getQuizResults(getAuth(res), params.quizId));
   };
 
   const getProgress: RequestHandler = async (_req, res) => {

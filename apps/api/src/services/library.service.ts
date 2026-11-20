@@ -28,7 +28,7 @@ export function createLibraryService(deps: { progress: ProgressService; quizzes:
       actor,
       published.map((book) => book._id.toString()),
     );
-    const fields = await quizzes.latestFields(actor.userId, [...opened]);
+    const fields = await quizzes.latestFields(actor, [...opened]);
 
     const entries = await Promise.all(
       books.map(async (doc): Promise<ReaderLibraryResponse['books'][number]> => {

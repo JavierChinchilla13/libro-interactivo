@@ -10,6 +10,7 @@ import {
   type SubmitAnswersRequest,
 } from '@libro/shared';
 import type { QueryFilter, Types } from 'mongoose';
+import { TEST_DATA_TTL_DAYS } from '../config/testMode.js';
 import { addDays, type Clock } from '../lib/clock.js';
 import { AppError } from '../lib/errors.js';
 import { isDuplicateKey } from '../lib/mongoErrors.js';
@@ -256,16 +257,17 @@ export function createQuizService(deps: QuizServiceDeps) {
    * fondo. Solo clave visual y nombre; nunca el `fieldSlug` ni la `resultKey`.
    */
   async function latestFields(
-    userId: string,
+    actor: Actor,
     bookIds: string[],
   ): Promise<Map<string, NonNullable<ResultPayload['visual']>>> {
     const found = new Map<string, NonNullable<ResultPayload['visual']>>();
     if (bookIds.length === 0) return found;
+    // Criterio simétrico: el equipo lee SUS pruebas (`isTest: true`) y los lectores su avance real (`isTest: false`).
     const attempts = await QuizAttempt.find({
-      userId,
+      userId: actor.userId,
       bookId: { $in: bookIds },
       status: 'completed',
-      isTest: false,
+      isTest: isStaff(actor.role),
     })
       .sort({ completedAt: -1 })
       .lean();
@@ -354,8 +356,10 @@ export function createQuizService(deps: QuizServiceDeps) {
             finalResultKey: winner.resultKey,
             distribution,
             completedAt: now,
+            ...(attempt.isTest ? { expireAt: addDays(now, TEST_DATA_TTL_DAYS) } : {}),
           },
-          $unset: { expireAt: 1 },
+          // Un intento real se conserva (es el historial del lector); uno de PRUEBA vence solo a los 30 días.
+          ...(attempt.isTest ? {} : { $unset: { expireAt: 1 } }),
         },
         { returnDocument: 'after' },
       ).lean();
@@ -417,8 +421,14 @@ export function createQuizService(deps: QuizServiceDeps) {
   }
 
   /** Último intento completado de cada quiz del libro (los de prueba no cuentan). */
-  async function listResults(userId: string, bookId: string): Promise<ResultsListResponse> {
-    const attempts = await QuizAttempt.find({ userId, bookId, status: 'completed', isTest: false })
+  async function listResults(actor: Actor, bookId: string): Promise<ResultsListResponse> {
+    // Criterio simétrico: el equipo ve SUS pruebas (`isTest: true`); los lectores, su avance real (`isTest: false`).
+    const attempts = await QuizAttempt.find({
+      userId: actor.userId,
+      bookId,
+      status: 'completed',
+      isTest: isStaff(actor.role),
+    })
       .sort({ completedAt: -1 })
       .lean();
     const latest = new Map<string, (typeof attempts)[number]>();
@@ -469,8 +479,13 @@ export function createQuizService(deps: QuizServiceDeps) {
   }
 
   /** Resultado vigente (el del último intento completado) y el historial completo de un quiz. */
-  async function getQuizResults(userId: string, quizId: string): Promise<QuizResultsResponse> {
-    const attempts = await QuizAttempt.find({ userId, quizId, status: 'completed', isTest: false })
+  async function getQuizResults(actor: Actor, quizId: string): Promise<QuizResultsResponse> {
+    const attempts = await QuizAttempt.find({
+      userId: actor.userId,
+      quizId,
+      status: 'completed',
+      isTest: isStaff(actor.role),
+    })
       .sort({ attemptNumber: -1 })
       .lean();
     const current = attempts[0];
