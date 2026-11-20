@@ -27,7 +27,13 @@ async function measureHeader(page: Page) {
       const range = document.createRange();
       range.selectNodeContents(element);
       const rects = [...range.getClientRects()].filter((rect) => rect.width > 0);
-      const lines = new Set(rects.map((rect) => Math.round(rect.top / 4))).size;
+      // Líneas = saltos verticales reales (más de 4 px entre una y otra). Redondear `top / 4` daba «2 líneas» a un texto
+      // de una sola línea cuando su posición caía justo en el borde del redondeo (p. ej. 117 y 118 px, con la franja de
+      // «Modo prueba» arriba).
+      const tops = rects.map((rect) => rect.top).sort((x, y) => x - y);
+      const lines = tops.filter(
+        (top, index) => index === 0 || top - (tops[index - 1] ?? top) > 4,
+      ).length;
       if (lines > 1) problems.push(`«${text.slice(0, 24)}» se parte en ${lines} líneas`);
       if (element.scrollWidth > element.clientWidth + 1) {
         problems.push(`«${text.slice(0, 24)}» mide menos que su texto`);
