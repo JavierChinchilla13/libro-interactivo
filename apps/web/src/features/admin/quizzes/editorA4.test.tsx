@@ -296,7 +296,8 @@ describe('editor de quizzes · retoques de celular y de la revisión', { timeout
       within(menu)
         .getAllByRole('button')
         .map((item) => item.textContent),
-    ).toEqual(['Revisar', 'Vista previa', 'Guardar borrador']);
+      // CAMBIO (modo prueba): el menú ganó «Probar como lector» (abre el quiz en las pantallas reales del lector).
+    ).toEqual(['Revisar', 'Vista previa', 'Probar como lector', 'Guardar borrador']);
     expect(within(menu).getByRole('button', { name: 'Guardar borrador' })).toBeDisabled();
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('group', { name: 'Más acciones' })).toBeNull();

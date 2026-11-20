@@ -10,6 +10,7 @@ import { Button, SelectField, TextAreaField, TextField } from '../../../shared/u
 import { Alert, Card, PageHeader } from '../../../shared/ui/layout';
 import { CloudinaryUsagePanel } from '../components/CloudinaryUsage';
 import { FormSection } from '../components/FormSection';
+import { TryAsReader, readerPaths } from '../components/TryAsReader';
 import { ImageField } from '../components/MediaFields';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
@@ -191,13 +192,22 @@ function ExtraFormView({ extraId, initial }: { extraId?: string; initial: ExtraF
         title={editing ? form.title || 'Extra' : 'Nuevo extra'}
         actions={
           editing ? (
-            <Button
-              variant="secondary"
-              loading={previewing.isPending}
-              onClick={() => previewing.mutate()}
-            >
-              Vista previa
-            </Button>
+            <>
+              <Button
+                variant="secondary"
+                loading={previewing.isPending}
+                onClick={() => previewing.mutate()}
+              >
+                Vista previa
+              </Button>
+              {initial.status !== 'archived' ? (
+                <TryAsReader
+                  to={readerPaths.extra(extraId ?? '')}
+                  newTab
+                  title="Ábrelo en la pantalla real del lector (con su imagen al inicio); en borrador también se puede probar"
+                />
+              ) : null}
+            </>
           ) : undefined
         }
       />

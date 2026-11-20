@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { booksApi, keys } from '../api';
 import { DataList, type Column } from '../components/DataList';
+import { TryAsReader, readerPaths } from '../components/TryAsReader';
 import { ListPage, useRowSearch } from '../components/ListPage';
 import { StatusBadge, type AdminStatus } from '../components/StatusBadge';
 
@@ -77,6 +78,17 @@ export function BookListPage() {
       }}
     >
       <DataList
+        // El panel del lector de ese libro, con todo disponible (publicado, próximamente o borrador; nunca archivado).
+        rowActions={(book) =>
+          book.status !== 'archived' ? (
+            <TryAsReader
+              to={readerPaths.book(book.slug)}
+              label="Ver el libro como lector"
+              name={book.title}
+              compact
+            />
+          ) : null
+        }
         label="Libros"
         rows={search.visible ?? []}
         rowKey={(book) => book.id}

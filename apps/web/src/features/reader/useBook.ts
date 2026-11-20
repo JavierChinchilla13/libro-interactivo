@@ -82,16 +82,31 @@ export function pickBook(
   return list.find((book) => book.id === chosen) ?? ordered[0];
 }
 
-/** Libros de la wiki (ordenados) y el que se está viendo. Solo lo usa la wiki. */
+/**
+ * Libros de la wiki (ordenados) y el que se está viendo. Solo lo usa la wiki. Para el EQUIPO la fuente es la biblioteca
+ * (que el servidor arma por su rol y trae también los libros en borrador); para los demás, la lista pública. `draft`
+ * dice que el libro visto es un borrador: eso lo ve solo el equipo.
+ */
 export function useWikiBook(slug: string | null) {
-  const books = useQuery({ queryKey: readerKeys.books, queryFn: booksApi.list, staleTime: 60_000 });
+  const session = useSession();
+  const staff = session.data?.role === 'EDITOR' || session.data?.role === 'ADMIN';
+  const books = useQuery({
+    queryKey: readerKeys.books,
+    queryFn: booksApi.list,
+    staleTime: 60_000,
+    enabled: !staff,
+  });
+  const library = useLibrary(staff);
   const chosen = useSelectedBookId();
-  const all = books.data?.books ?? [];
+  const entries = library.data?.books ?? [];
+  const all = staff ? teamBooks(entries) : (books.data?.books ?? []);
+  const book = pickWikiBook(all, chosen, slug);
   return {
     books: wikiBooks(all).sort((a, b) => a.order - b.order),
-    book: pickWikiBook(all, chosen, slug),
-    isPending: books.isPending,
-    error: books.error,
+    book,
+    draft: staff && entries.find((entry) => entry.book.id === book?.id)?.unpublished === 'draft',
+    isPending: session.isPending || (staff ? library.isPending : books.isPending),
+    error: staff ? library.error : books.error,
   };
 }
 

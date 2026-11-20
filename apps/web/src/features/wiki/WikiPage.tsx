@@ -40,7 +40,7 @@ function WikiContent() {
   // de las pestañas (`/wiki/lugares`) no cambian y sin el parámetro todo funciona como antes.
   const [params, setParams] = useSearchParams();
   const slugParam = params.get('libro');
-  const { books, book, isPending, error } = useWikiBook(slugParam);
+  const { books, book, draft, isPending, error } = useWikiBook(slugParam);
   const bookId = book?.id ?? '';
   const sections = useQuery({
     queryKey: wikiKeys.sections(viewer, bookId),
@@ -75,6 +75,14 @@ function WikiContent() {
   return (
     <div className="flex flex-col">
       <PageHeader title="Wiki del universo" subtitle={book.title} />
+      {draft ? (
+        // Solo el equipo ve la wiki de un libro en borrador (los «próximamente» ya son públicos y no llevan aviso).
+        <div className="mb-4">
+          <Alert tone="warning">
+            <p>Este libro está en borrador: los lectores no ven esta wiki.</p>
+          </Alert>
+        </div>
+      ) : null}
       {books.length > 1 ? (
         // Solo con más de un libro. Botones (con teclado) que cambian lo mostrado y se recuerdan como en el panel.
         <div role="group" aria-label="Libro de la wiki" className="mb-4 flex flex-wrap gap-2">

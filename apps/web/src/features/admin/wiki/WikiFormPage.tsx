@@ -19,6 +19,7 @@ import {
   TextField,
 } from '../../../shared/ui/controls';
 import { Alert, PageHeader } from '../../../shared/ui/layout';
+import { TryAsReader, readerPaths } from '../components/TryAsReader';
 import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
@@ -141,7 +142,22 @@ function WikiFormView({ entryId, initial }: { entryId?: string; initial: WikiFor
           ← Wiki
         </Link>
       </p>
-      <PageHeader title={`${editing ? '' : 'Nuevo: '}${KIND_LABEL[kind]}`} />
+      <PageHeader
+        title={`${editing ? '' : 'Nuevo: '}${KIND_LABEL[kind]}`}
+        actions={
+          editing && entryId && initial.status !== 'archived' ? (
+            <TryAsReader
+              to={readerPaths.wikiEntry(
+                entryId,
+                books.data?.books.find((book) => book.id === initial.bookId)?.slug,
+              )}
+              label="Ver en la wiki"
+              newTab
+              title="Abre la ficha como la ve un lector; una entrada en borrador solo la ve el equipo"
+            />
+          ) : undefined
+        }
+      />
 
       <div className="flex flex-col gap-5">
         <FormSection title="Datos de la ficha" help="El nombre y lo que identifica a la entrada.">

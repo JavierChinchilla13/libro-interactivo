@@ -21,6 +21,7 @@ import { errorMessage } from '../errors';
 import type { Draft } from './draft';
 import { AppearanceTab } from './AppearanceTab';
 import { GeneralTab } from './GeneralTab';
+import { TryAsReader, readerPaths } from '../components/TryAsReader';
 import { PreviewPanel } from './PreviewPanel';
 import { revealTarget, type QuizTarget } from './quizTarget';
 import { ResultsTab } from './ResultsTab';
@@ -230,6 +231,8 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
   }
 
   const archived = quiz.status === 'archived';
+  // Se prueba en el lector real lo que ya está publicado (el servidor lo vuelve a comprobar en cada petición).
+  const testable = quiz.status === 'published' && quiz.currentVersion >= 1;
   const busy = save.isPending || check.isPending || publish.isPending;
   const error = save.error ?? check.error ?? publish.error;
   // Tras revisar, si hay cosas por arreglar y nada cambió desde entonces, Publicar se apaga y dice por qué.
@@ -257,6 +260,10 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
             </li>
             <li>
               <strong>Vista previa</strong>: pruébalo como lector; no cuenta en estadísticas.
+            </li>
+            <li>
+              <strong>Probar como lector</strong>: abre el quiz en las pantallas reales del lector
+              (con su fondo, resultado y celebración), en otra pestaña. Prueba la versión publicada.
             </li>
             <li>
               <strong>Publicar</strong>: crea una versión nueva y los lectores la ven.
@@ -373,6 +380,12 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
               onClick: () => void onPreview(),
             },
             {
+              label: 'Probar como lector',
+              disabled: !testable,
+              title: TEST_TITLE,
+              onClick: () => window.open(readerPaths.quiz(quizId), '_blank', 'noopener,noreferrer'),
+            },
+            {
               label: save.isPending ? 'Guardando…' : 'Guardar borrador',
               disabled: !dirty || busy || archived,
               onClick: () => void onSave(),
@@ -410,11 +423,17 @@ function QuizEditor({ quizId, quiz }: { quizId: string; quiz: QuizDetailResponse
           >
             Vista previa
           </Button>
+          {testable ? (
+            <TryAsReader to={readerPaths.quiz(quizId)} newTab title={TEST_TITLE} />
+          ) : null}
         </SaveBar>
       )}
     </>
   );
 }
+
+const TEST_TITLE =
+  'Abre el quiz en las pantallas reales del lector (versión publicada); no cuenta en estadísticas';
 
 /** Un problema de la revisión: si sabe dónde está, es un enlace que lleva hasta ahí. */
 function IssueItem({ issue, onGo }: { issue: QuizIssue; onGo: (where: QuizIssueWhere) => void }) {

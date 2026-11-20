@@ -15,6 +15,7 @@ import {
   TextField,
 } from '../../../shared/ui/controls';
 import { Alert, PageHeader, TabPanel, Tabs } from '../../../shared/ui/layout';
+import { TryAsReader, readerPaths } from '../components/TryAsReader';
 import { FormSection } from '../components/FormSection';
 import { SaveBar } from '../components/SaveBar';
 import { useToast } from '../components/Toast';
@@ -131,7 +132,19 @@ function BookFormView({ bookId, initial }: { bookId?: string; initial: BookForm 
 
   return (
     <form onSubmit={submit} noValidate>
-      <PageHeader title={editing ? form.title || 'Libro' : 'Nuevo libro'} />
+      <PageHeader
+        title={editing ? form.title || 'Libro' : 'Nuevo libro'}
+        actions={
+          editing && initial.slug && initial.status !== 'archived' ? (
+            <TryAsReader
+              to={readerPaths.book(initial.slug)}
+              label="Ver el libro como lector"
+              newTab
+              title="Abre el panel del lector de este libro, con todo disponible; nada de lo que pruebes cuenta"
+            />
+          ) : undefined
+        }
+      />
       {Object.keys(errors).length > 0 ? (
         <div className="mb-4">
           <Alert title="Revisa estos campos">
