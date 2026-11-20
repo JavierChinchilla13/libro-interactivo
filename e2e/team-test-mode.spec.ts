@@ -67,12 +67,35 @@ test.describe('modo prueba del equipo (celular y escritorio)', () => {
     const slug = `libro-en-borrador-${stamp}`;
 
     // --- Sesión de administración y datos: un libro en BORRADOR con el Quiz 1 publicado y cambios sin publicar ---
+    // Una cuenta de administración PROPIA de esta prueba: «Reiniciar» borra todas las pruebas de la cuenta, y la
+    // administradora compartida de las E2E la usan otras pruebas en paralelo (cambiarían el conteo y se borrarían entre sí).
+    const owner = await playwright.request.newContext({ baseURL });
     expect(
       (
-        await page.request.post('/api/auth/login', {
+        await owner.post('/api/auth/login', {
           data: { email: E2E_ADMIN.email, password: E2E_ADMIN.password },
         })
       ).status(),
+    ).toBe(200);
+    const email = `equipo-${stamp}@ejemplo.com`;
+    const password = 'Nube-Azul-Cuatro-87';
+    const register = await playwright.request.newContext({ baseURL });
+    const created = await register.post('/api/auth/register', {
+      data: { ...ADULT_CONSENT, name: 'Administradora de prueba', email, password },
+    });
+    expect(created.status(), await created.text()).toBe(201);
+    await register.dispose();
+    const found = (await (
+      await owner.get(`/api/admin/users?q=${encodeURIComponent(email)}`)
+    ).json()) as { users: { id: string }[] };
+    const promoted = await owner.patch(`/api/admin/users/${found.users[0]?.id}`, {
+      data: { role: 'ADMIN' },
+    });
+    expect(promoted.status(), await promoted.text()).toBe(200);
+    await owner.dispose();
+    // El rol viaja en la sesión: se ingresa de nuevo ya como administración.
+    expect(
+      (await page.request.post('/api/auth/login', { data: { email, password } })).status(),
     ).toBe(200);
     await page.request.post('/api/me/welcome-seen');
     const bookResponse = await page.request.post('/api/admin/books', {
