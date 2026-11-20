@@ -84,8 +84,11 @@ test.describe('modo prueba del equipo (celular y escritorio)', () => {
     const quiz = (await quizResponse.json()) as { id: string };
     const saveDraft = async (results: { a: string; b: string }) =>
       expect(
-        (await page.request.put(`/api/admin/quizzes/${quiz.id}/draft`, { data: quizDraft(results) }))
-          .status(),
+        (
+          await page.request.put(`/api/admin/quizzes/${quiz.id}/draft`, {
+            data: quizDraft(results),
+          })
+        ).status(),
       ).toBe(200);
     await saveDraft({ a: 'Resultado A', b: 'Resultado B' });
     expect((await page.request.post(`/api/admin/quizzes/${quiz.id}/publish`)).status()).toBe(201);

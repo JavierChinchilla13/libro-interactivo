@@ -228,7 +228,9 @@ describe('quizzes y juego en modo prueba', () => {
     expect(again.status).toBe(409);
     expect(code(again)).toBe('CONFLICT');
     // Y al lector el hilo no le ofrece repetirlo.
-    const readerThread = await w.reader.get(`/api/me/progress?bookId=${w.published.id}`).expect(200);
+    const readerThread = await w.reader
+      .get(`/api/me/progress?bookId=${w.published.id}`)
+      .expect(200);
     expect(readerThread.body.experiences[0]).toMatchObject({ allowRetake: false });
   });
 
