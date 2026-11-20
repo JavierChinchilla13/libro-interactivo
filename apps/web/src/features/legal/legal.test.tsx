@@ -283,6 +283,9 @@ describe('titular de los textos legales', () => {
     'Render y Cloudflare',
     'República de Costa Rica',
     'Universo Memorias',
+    // Crédito de la tipografía de los titulares (SIL Open Font License): el diseñador y el aviso de copyright del paquete.
+    'The Michroma Project Authors',
+    'Vernon Adams',
   ]);
 
   it.each(['/privacidad', '/terminos', '/cookies'])(
@@ -390,7 +393,7 @@ describe('contenido acordado de los textos', () => {
     expect(text).toContain('El sitio se ofrece tal como está.');
     expect(text).toContain('en particular la Ley N.º 7472 de Costa Rica');
     expect(text).toContain(
-      'Las tipografías Cinzel, Jost y Newsreader se usan bajo la licencia SIL Open Font License.',
+      'Las tipografías Michroma (diseño de Vernon Adams; Copyright 2011 The Michroma Project Authors), Jost y Newsreader se usan bajo la licencia SIL Open Font License, versión 1.1.',
     );
     expect(text).not.toContain('[PLACEHOLDER: cláusula');
     expect(text).not.toContain('[PLACEHOLDER: créditos');

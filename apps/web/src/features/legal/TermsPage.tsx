@@ -101,7 +101,8 @@ const SECTIONS: LegalSectionDef[] = [
       <p>
         Las imágenes, ilustraciones y textos del sitio son obra de la autora o se usan con su
         autorización. No usamos imágenes con derechos de terceros sin permiso. Las tipografías
-        Cinzel, Jost y Newsreader se usan bajo la licencia SIL Open Font License.
+        Michroma (diseño de Vernon Adams; Copyright 2011 The Michroma Project Authors), Jost y
+        Newsreader se usan bajo la licencia SIL Open Font License, versión 1.1.
       </p>
     ),
   },
