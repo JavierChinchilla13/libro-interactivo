@@ -14,7 +14,7 @@ import { sha256Hex } from '../lib/crypto.js';
 import { isDuplicateKey } from '../lib/mongoErrors.js';
 import { Quiz } from '../models/Quiz.js';
 import { QuizVersion } from '../models/QuizVersion.js';
-import type { Actor } from './progress.service.js';
+import { isStaff, type Actor } from './progress.service.js';
 import type { QuizService } from './quiz.service.js';
 import { validateQuizContent } from './quiz-engine.js';
 import { createQuizLocator, issue, translateSchemaIssues } from './quizIssues.js';
@@ -97,6 +97,13 @@ export interface QuizPublishDeps {
  * snapshot inmutable (`quizVersions`); desde ese momento los lectores ven esa versión y los intentos nuevos
  * apuntan a ella. Los intentos anteriores siguen apuntando a la suya.
  */
+/** El error que bloquea publicar y también probar el borrador: los mismos mensajes que «Revisar». */
+function invalid(errors: readonly QuizIssue[]): AppError {
+  const first = errors.slice(0, 3).map((issue) => issue.message);
+  const more = errors.length > 3 ? ` (y ${errors.length - 3} más)` : '';
+  return new AppError('VALIDATION', `El quiz tiene errores: ${first.join('; ')}${more}`);
+}
+
 export function createQuizPublishService(deps: QuizPublishDeps) {
   /**
    * Avisos (no errores) sobre el campo de poder de cada resultado: si no existe, no está publicado o no es de este
@@ -168,11 +175,7 @@ export function createQuizPublishService(deps: QuizPublishDeps) {
     if (quiz.status === 'archived') {
       throw new AppError('CONFLICT', 'Un quiz archivado no se puede publicar');
     }
-    if (!checked.ok) {
-      const first = checked.errors.slice(0, 3).map((issue) => issue.message);
-      const more = checked.errors.length > 3 ? ` (y ${checked.errors.length - 3} más)` : '';
-      throw new AppError('VALIDATION', `El quiz tiene errores: ${first.join('; ')}${more}`);
-    }
+    if (!checked.ok) throw invalid(checked.errors);
 
     const contentHash = hashQuizContent(checked.content);
     const publishedAt = deps.clock();
@@ -262,7 +265,33 @@ export function createQuizPublishService(deps: QuizPublishDeps) {
     return deps.quizzes.startAttempt(actor, quizId);
   }
 
-  return { validate, publish, preview };
+  /**
+   * El borrador listo para PROBARLO (solo equipo). Se valida con el mismo `check()` de publicar: los errores bloquean
+   * (con los mismos mensajes que «Revisar») y las advertencias no. No crea ninguna `QuizVersion` ni cambia el quiz.
+   */
+  async function draftForTest(actor: Actor, quizId: string) {
+    if (!isStaff(actor.role)) throw new AppError('FORBIDDEN', 'No tienes permiso para esto');
+    const { quiz, checked } = await check(quizId);
+    if (quiz.status === 'archived') {
+      throw new AppError('CONFLICT', 'Un quiz archivado no se puede probar');
+    }
+    if (!checked.ok) throw invalid(checked.errors);
+    return { quiz, content: checked.content };
+  }
+
+  /** Introducción de la prueba del borrador (lo que ve el lector, con el contenido del borrador). */
+  async function testIntro(actor: Actor, quizId: string) {
+    const { quiz, content } = await draftForTest(actor, quizId);
+    return deps.quizzes.draftIntro(actor, quiz, content);
+  }
+
+  /** Empieza una prueba del borrador: un intento de prueba con una copia congelada de lo que hay ahora en el borrador. */
+  async function startTestAttempt(actor: Actor, quizId: string) {
+    const { quiz, content } = await draftForTest(actor, quizId);
+    return deps.quizzes.startDraftAttempt(actor, quiz, content);
+  }
+
+  return { validate, publish, preview, testIntro, startTestAttempt };
 }
 
 export type QuizPublishService = ReturnType<typeof createQuizPublishService>;

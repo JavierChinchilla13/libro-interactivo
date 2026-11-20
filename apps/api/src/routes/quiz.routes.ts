@@ -70,6 +70,9 @@ export function createAdminQuizRouter(
   router.post('/:quizId/validate', params, controller.validateQuiz);
   router.post('/:quizId/publish', params, controller.publish);
   router.post('/:quizId/preview', params, controller.preview);
+  // Prueba del BORRADOR con las pantallas reales del lector (solo EDITOR o ADMIN, por el guard de este router).
+  router.get('/:quizId/test-intro', params, controller.testIntro);
+  router.post('/:quizId/test-attempts', params, controller.startTestAttempt);
   mountQuizEditorRoutes(router, editor, limits);
   return router;
 }
