@@ -1,6 +1,6 @@
 /*
  * Tema de la administración: solo existe dentro de `.admin-shell` (el sitio y el lector no cambian). Misma casa que
- * el sitio —azules, Cinzel en títulos, Jost en la interfaz— pero más sobria: sin vidrio, sin brillo, sin fondos
+ * el sitio —azules, Jost (semibold en los títulos) en toda la interfaz— pero más sobria: sin vidrio, sin brillo, sin fondos
  * animados. El cian queda para la acción principal, el elemento activo y el foco; los estados llevan su propio color.
  * Se carga con el layout de /admin (ruta perezosa): el resto del sitio no descarga este archivo.
  */
@@ -21,6 +21,28 @@
   /* Pulsado un poco más marcado que el del sitio (0.96) en los botones de la administración. */
   .admin-shell .btn:active:not(:disabled) {
     transform: scale(0.96);
+  }
+  /*
+   * La administración NO usa la letra de titulares del sitio (Michroma): sus títulos son Jost semibold, sobrios. Se
+   * redefine lo que depende de esa letra para que cualquier clase de titular compartida se vea en Jost a tamaño completo.
+   */
+  .admin-shell {
+    --token-font-display: var(--token-font-sans);
+    --token-display-scale: 1;
+    --token-display-tracking: 0;
+    --token-weight-display: 600;
+    --token-weight-emphasis: 600;
+    --token-emph-color: currentColor;
+    --token-leading-display: 1.15;
+    --token-leading-heading: 1.2;
+    --token-text-display: clamp(2.25rem, 1rem + 5.6vw, 5rem);
+    --token-text-h1: clamp(1.875rem, 1.2rem + 3.2vw, 3.5rem);
+    --token-text-h2: clamp(1.875rem, 1.1rem + 2.8vw, 3rem);
+    --text-title-lg: 1.125rem;
+    --text-title-xl: 1.25rem;
+    --text-title-2xl: 1.5rem;
+    --text-title-3xl: 1.875rem;
+    --text-title-4xl: 2.25rem;
   }
   .admin-shell {
     --admin-sidebar-w: 17rem;
@@ -467,8 +489,9 @@
   .admin-stat dd {
     margin: 0.125rem 0;
     font-family: var(--token-font-display);
+    font-synthesis: none;
     font-size: 2rem;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.2;
     font-variant-numeric: tabular-nums;
   }

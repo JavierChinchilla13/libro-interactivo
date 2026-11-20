@@ -111,7 +111,7 @@ export function DashboardPage() {
         {noneOpen && entries.length > 0 ? <HowItWorks /> : null}
 
         <section aria-labelledby="tus-libros" className="flex flex-col gap-4">
-          <h2 id="tus-libros" className="section-title text-2xl">
+          <h2 id="tus-libros" className="section-title text-title-2xl">
             Tus libros
           </h2>
           {library.isPending ? <GridSkeleton /> : null}
@@ -204,7 +204,7 @@ export function DashboardPage() {
         >
           <div className="flex flex-col gap-3">
             <p className="label">El universo</p>
-            <h2 id="que-es" className="section-title text-2xl">
+            <h2 id="que-es" className="section-title text-title-2xl">
               {universe.headline ?? 'Universo Memorias'}
             </h2>
             {universe.introHtml ? <SafeHtml html={universe.introHtml} /> : null}

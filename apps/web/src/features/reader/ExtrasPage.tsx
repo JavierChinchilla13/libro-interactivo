@@ -23,7 +23,7 @@ const KIND: Record<ExtraKind, string> = { pdf: 'PDF', text: 'Texto', image: 'Ima
 function ExtrasExplainer() {
   return (
     <section aria-labelledby="que-son-los-extras" className="flex flex-col gap-4">
-      <h2 id="que-son-los-extras" className="section-title text-xl">
+      <h2 id="que-son-los-extras" className="section-title text-title-xl">
         Qué son los capítulos extra
       </h2>
       <ol className="how-steps" data-cols="3">

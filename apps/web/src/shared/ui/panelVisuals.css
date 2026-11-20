@@ -44,7 +44,7 @@
 
   /* Entrada del panel: saludo más contenido que el libro, imagen de la autora como ambiente y tarjeta abierta con color. */
   .greeting-title {
-    font-size: clamp(2rem, 1.1rem + 3.2vw, 3.25rem);
+    font-size: calc(clamp(2rem, 1.1rem + 3.2vw, 3.25rem) * var(--token-display-scale));
   }
   .greeting-block {
     padding-block: 1rem 2rem;

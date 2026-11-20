@@ -49,7 +49,7 @@ export function GlassFolders({
                 aria-controls={expanded ? `${base}-panel` : undefined}
                 onClick={() => setOpen(expanded ? null : folder.id)}
               >
-                <span className="font-display text-xl font-medium [overflow-wrap:anywhere]">
+                <span className="font-display text-title-xl [overflow-wrap:anywhere]">
                   {folder.label}
                 </span>
                 <span className="text-sm text-muted">{folder.summary}</span>

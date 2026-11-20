@@ -12,7 +12,7 @@ function Figure({ label, value, hint }: { label: string; value: ReactNode; hint?
   return (
     <div className="admin-stat">
       <p className="text-sm text-muted">{label}</p>
-      <p className="font-display text-3xl font-bold tabular-nums">{value}</p>
+      <p className="font-display text-3xl font-semibold tabular-nums">{value}</p>
       {hint ? <p className="text-xs text-muted">{hint}</p> : null}
     </div>
   );

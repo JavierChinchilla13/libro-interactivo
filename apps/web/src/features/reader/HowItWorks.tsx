@@ -28,7 +28,7 @@ const STEPS = [
 export function HowItWorks({ className = '' }: { className?: string }) {
   return (
     <section aria-labelledby="como-funciona" className={`flex flex-col gap-5 ${className}`}>
-      <h2 id="como-funciona" className="section-title text-2xl">
+      <h2 id="como-funciona" className="section-title text-title-2xl">
         Cómo funciona
       </h2>
       <ol aria-labelledby="como-funciona" className="how-steps reveal-children">

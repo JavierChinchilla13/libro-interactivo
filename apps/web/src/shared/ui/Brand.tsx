@@ -6,7 +6,7 @@ export function Brand({ to = '/', label = 'Universo Memorias' }: { to?: string; 
     <Link
       viewTransition
       to={to}
-      className="flex min-h-11 shrink-0 items-center gap-2.5 whitespace-nowrap font-display text-lg font-bold tracking-wide text-text"
+      className="flex min-h-11 shrink-0 items-center gap-2.5 whitespace-nowrap font-display text-title-xl tracking-(--token-display-tracking) text-text"
     >
       <span>{label}</span>
     </Link>

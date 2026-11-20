@@ -6,20 +6,31 @@ import { defineConfig } from 'vitest/config';
 import { indexingControl, resolveIndexing } from './vite/indexing.ts';
 import { siteMeta } from './vite/siteMeta.ts';
 
+/** Archivo de la letra de titulares de cada valor de `data-titulares` (el atributo de `<html>` en `index.html`). */
+const DISPLAY_FONT_FILES: Record<string, RegExp> = {
+  michroma: /michroma-latin-400-normal[^/]*\.woff2$/,
+  cinzel: /cinzel-latin-wght-normal[^/]*\.woff2$/,
+};
+
 /**
- * Precarga las letras que se ven en el primer pintado: Cinzel (el titular, que es el LCP) y Jost (la presentación y los
- * botones), ambas en su subconjunto latino. Sin esto se descubren cuando el CSS ya se descargó y se analizó, y el texto
- * se pinta con la letra de reserva y salta al llegar la real. Toma los nombres con hash del build.
+ * Precarga las letras que se ven en el primer pintado: la de los titulares (el LCP; la que diga `data-titulares`, hoy
+ * Michroma) y Jost (la presentación y los botones), ambas en su subconjunto latino. Sin esto se descubren cuando el CSS
+ * ya se descargó y se analizó, y el texto se pinta con la letra de reserva y salta al llegar la real. Toma los nombres
+ * con hash del build. Una sola descarga por letra: no se precarga la que no se usa.
  */
 function preloadFirstPaintFonts(): Plugin {
-  const wanted = [/cinzel-latin-wght-normal[^/]*\.woff2$/, /jost-latin-wght-normal[^/]*\.woff2$/];
   return {
     name: 'preload-first-paint-fonts',
     apply: 'build',
     transformIndexHtml: {
       order: 'post',
-      handler(_html, ctx) {
+      handler(html, ctx) {
         const names = Object.keys(ctx.bundle ?? {});
+        const display = /data-titulares="([a-z]+)"/.exec(html)?.[1] ?? 'michroma';
+        const wanted = [
+          DISPLAY_FONT_FILES[display] ?? DISPLAY_FONT_FILES['michroma']!,
+          /jost-latin-wght-normal[^/]*\.woff2$/,
+        ];
         return wanted.flatMap((pattern) => {
           const file = names.find((name) => pattern.test(name));
           if (!file) return [];

@@ -64,7 +64,7 @@ export function RevealSequence({
       </div>
       <div aria-live="polite" className="relative flex flex-col gap-4">
         {lines.slice(0, shown).map((line, index) => (
-          <p key={index} className="reveal-line font-display text-xl sm:text-2xl">
+          <p key={index} className="reveal-line font-display text-title-xl sm:text-title-2xl">
             {line}
           </p>
         ))}

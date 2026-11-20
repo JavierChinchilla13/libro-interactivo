@@ -477,7 +477,7 @@ export function FeaturedPosts({ posts }: { posts: readonly PostCard[] }) {
               />
             ) : null}
             <PostMeta post={lead} />
-            <span className="font-display text-3xl font-medium leading-tight group-hover:underline sm:text-4xl">
+            <span className="font-display text-title-3xl group-hover:underline sm:text-title-4xl">
               {lead.title}
             </span>
             {lead.excerpt ? (
@@ -590,7 +590,7 @@ export function ReviewsSection({ reviews }: { reviews: readonly PublicReview[] }
 
 /**
  * «Conoce a la autora»: el retrato (su foto o, sin ella, una placa con su inicial) a la izquierda y, a su derecha, el
- * nombre en Cinzel, la biografía, sus enlaces y la invitación a escribirle (el formulario vive en `/contacto`). Sin
+ * nombre en la letra de titulares, la biografía, sus enlaces y la invitación a escribirle (el formulario vive en `/contacto`). Sin
  * ningún dato de la autora, en producción la sección no se pinta (en desarrollo, con marcadores).
  */
 export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }) {
@@ -611,7 +611,7 @@ export function AuthorSection({ site }: { site: PublicSiteResponse | undefined }
       }
     >
       <div className="flex flex-col gap-5">
-        <h3 className="font-display text-3xl font-medium sm:text-4xl">{name}</h3>
+        <h3 className="font-display text-title-3xl sm:text-title-4xl">{name}</h3>
         {author?.bioHtml ? (
           <SafeHtml html={author.bioHtml} />
         ) : import.meta.env.DEV ? (
