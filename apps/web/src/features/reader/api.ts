@@ -6,6 +6,7 @@ import {
   readerLibraryResponseSchema,
   quizIntroResponseSchema,
   quizResultsResponseSchema,
+  testProgressResetResponseSchema,
   readerExtraResponseSchema,
   readerExtrasResponseSchema,
   resultsListResponseSchema,
@@ -24,6 +25,9 @@ export const booksApi = {
 export const readerApi = {
   /** «Tus libros»: estado de cada libro (abierto, bloqueado o próximamente) y avance de los abiertos. */
   library: () => apiRequest('/me/library', readerLibraryResponseSchema),
+  /** «Reiniciar mi progreso de prueba» (solo equipo): borra las pruebas de la cuenta de la sesión. */
+  resetTestProgress: () =>
+    apiRequest('/me/test-progress', testProgressResetResponseSchema, { method: 'DELETE' }),
   progress: (bookId: string) => apiRequest(`/me/progress?bookId=${bookId}`, progressResponseSchema),
   results: (bookId: string) =>
     apiRequest(`/me/results?bookId=${bookId}`, resultsListResponseSchema),

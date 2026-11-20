@@ -11,6 +11,18 @@ import { experiencesCount } from './progressText';
 
 export type LibraryEntry = ReaderLibraryResponse['books'][number];
 
+/**
+ * Etiqueta de un libro abierto. El equipo ve además los libros sin publicar (`unpublished`, que decide el servidor):
+ * se rotulan para no confundirlos con uno que ya leen los lectores. Los lectores nunca reciben la marca.
+ */
+export function openLabel(entry: LibraryEntry): string {
+  return entry.unpublished === 'draft'
+    ? 'Borrador · modo prueba'
+    : entry.unpublished === 'upcoming'
+      ? 'Próximamente · modo prueba'
+      : 'Tu libro';
+}
+
 /** Texto de un libro que aún no se abrió: dice qué hacer, sin revelar nada del contenido. */
 export const LOCKED_BOOK_TEXT = 'Escanea el QR del primer quiz para abrirlo';
 
@@ -113,7 +125,11 @@ export function LibraryBookCard({
       {cover}
       <div className="flex min-w-0 flex-col gap-3">
         <p className="label">
-          {access === 'open' ? 'Tu libro' : access === 'locked' ? 'Sin abrir' : 'Próximamente'}
+          {access === 'open'
+            ? openLabel(entry)
+            : access === 'locked'
+              ? 'Sin abrir'
+              : 'Próximamente'}
         </p>
         <h3
           className={`section-title [overflow-wrap:anywhere] ${featured ? 'text-3xl md:text-4xl' : 'text-xl'}`}
