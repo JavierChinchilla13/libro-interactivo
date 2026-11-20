@@ -21,7 +21,7 @@ export function createAccessController(access: AccessService) {
 
   const redeem: RequestHandler = async (_req, res) => {
     const { body } = getInput<{ token: string }>(res);
-    const redeemed = await access.redeem(getAuth(res).userId, body.token);
+    const redeemed = await access.redeem(getAuth(res), body.token);
     if (!redeemed) throw new AppError('TOKEN_INVALID', INVALID_CODE);
     res.set('Cache-Control', 'no-store').json(redeemed);
   };
@@ -121,13 +121,11 @@ export function createReaderExtraController(extras: ExtraService) {
     const { query } = getInput<unknown, { bookId: string }>(res);
     res
       .set('Cache-Control', 'no-store')
-      .json(await extras.listForReader(getAuth(res).userId, query.bookId));
+      .json(await extras.listForReader(getAuth(res), query.bookId));
   };
   const open: RequestHandler = async (_req, res) => {
     const { params } = getInput<unknown, unknown, ExtraParams>(res);
-    res
-      .set('Cache-Control', 'no-store')
-      .json(await extras.open(getAuth(res).userId, params.extraId));
+    res.set('Cache-Control', 'no-store').json(await extras.open(getAuth(res), params.extraId));
   };
   return { list, open };
 }

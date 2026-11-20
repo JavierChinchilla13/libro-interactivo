@@ -1,7 +1,7 @@
 import type { ResultPayload, StagePayload } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiClientError } from '../../shared/api/client';
 import { errorMessage } from '../../shared/api/messages';
 import { thumbUrl } from '../../shared/lib/cloudinary';
@@ -92,12 +92,15 @@ function LeaveButton({ unsaved }: { unsaved: boolean }) {
 /** Quiz de punta a punta: introducción → preguntas → secuencia de revelado → resultado. */
 export function QuizPage() {
   const { quizId = '' } = useParams();
+  // `?fuente=borrador` (solo equipo): se prueba el BORRADOR del quiz con estas mismas pantallas. El servidor decide por el
+  // rol de la sesión y rechaza a quien no sea del equipo; este parámetro solo elige qué contenido se prueba.
+  const draft = useSearchParams()[0].get('fuente') === 'borrador';
   const client = useQueryClient();
   const [view, setView] = useState<View>({ phase: 'intro' });
 
   const intro = useQuery({
-    queryKey: readerKeys.intro(quizId),
-    queryFn: () => readerApi.intro(quizId),
+    queryKey: readerKeys.intro(quizId, draft),
+    queryFn: () => (draft ? readerApi.testIntro(quizId) : readerApi.intro(quizId)),
     retry: false,
     staleTime: 0,
   });
@@ -145,12 +148,12 @@ export function QuizPage() {
       client.invalidateQueries({ queryKey: ['reader', 'results'] }),
       client.invalidateQueries({ queryKey: ['reader', 'quiz-results'] }),
       client.invalidateQueries({ queryKey: ['reader', 'extras'] }),
-      client.invalidateQueries({ queryKey: readerKeys.intro(quizId) }),
+      client.invalidateQueries({ queryKey: readerKeys.intro(quizId, draft) }),
     ]);
-  }, [client, quizId]);
+  }, [client, quizId, draft]);
 
   const start = useMutation({
-    mutationFn: () => readerApi.start(quizId),
+    mutationFn: () => (draft ? readerApi.startTest(quizId) : readerApi.start(quizId)),
     onSuccess: (response) => {
       if (response.status === 'in_progress') {
         setView({
@@ -405,12 +408,14 @@ export function QuizPage() {
   // Resultado: el CTA principal es el siguiente paso real de la progresión.
   const next = position >= 0 ? experiences[position + 1] : undefined;
   const nextOpen = next?.status === 'available' ? next : undefined;
-  const primary = nextOpen
-    ? { to: `/panel/quiz/${nextOpen.id}`, label: `Siguiente: Quiz ${nextOpen.order}` }
-    : !next && progress.data?.bookCompleted
-      ? { to: '/panel/extras', label: 'Ver los extras' }
-      : { to: '/panel', label: 'Volver a mi panel' };
-  const secondaryPanel = primary.to !== '/panel';
+  const primary = draft
+    ? { to: `/admin/quizzes/${quizId}`, label: 'Volver al editor del quiz' }
+    : nextOpen
+      ? { to: `/panel/quiz/${nextOpen.id}`, label: `Siguiente: Quiz ${nextOpen.order}` }
+      : !next && progress.data?.bookCompleted
+        ? { to: '/panel/extras', label: 'Ver los extras' }
+        : { to: '/panel', label: 'Volver a mi panel' };
+  const secondaryPanel = !draft && primary.to !== '/panel';
 
   return shell(
     <div className="mx-auto flex max-w-xl flex-col gap-6" style={accentStyle}>
@@ -420,16 +425,18 @@ export function QuizPage() {
         <Link to={primary.to} className="btn btn-primary btn-lg w-full sm:w-auto sm:self-start">
           {primary.label}
         </Link>
-        {next && next.status === 'locked' ? (
+        {!draft && next && next.status === 'locked' ? (
           <p className="text-sm text-muted">Tu siguiente paso: {lockedMessage(next)}</p>
         ) : null}
         <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm">
-          <Link
-            to={`/panel/resultados/${quiz.id}`}
-            className="inline-flex min-h-11 items-center rounded-lg px-2 underline underline-offset-4"
-          >
-            Mis resultados
-          </Link>
+          {draft ? null : (
+            <Link
+              to={`/panel/resultados/${quiz.id}`}
+              className="inline-flex min-h-11 items-center rounded-lg px-2 underline underline-offset-4"
+            >
+              Mis resultados
+            </Link>
+          )}
           {secondaryPanel ? (
             <Link
               to="/panel"
@@ -438,7 +445,7 @@ export function QuizPage() {
               Volver a mi panel
             </Link>
           ) : null}
-          {quiz.allowRetake ? (
+          {quiz.allowRetake || draft ? (
             <Button
               variant="ghost"
               className="px-2 text-sm underline underline-offset-4"

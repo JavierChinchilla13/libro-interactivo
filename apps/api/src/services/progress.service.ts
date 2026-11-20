@@ -31,6 +31,14 @@ export interface ProgressDeps {
 const NOT_UNLOCKED_MESSAGE = 'Aún no puedes acceder a este contenido';
 
 /**
+ * Libros que el EQUIPO puede recorrer en modo prueba: publicados, «próximamente» y borradores. Nunca los archivados
+ * (archivar = retirar). Los lectores y visitantes no cambian: solo los publicados.
+ */
+export function testBookVisible(status: string | undefined): boolean {
+  return status === 'published' || status === 'upcoming' || status === 'draft';
+}
+
+/**
  * Progresión y acceso: quizzes publicados del libro en orden, el juego
  * siempre al final. Una experiencia se abre cuando todas las anteriores están completadas (y, desde la
  * fase 8, cuando su QR se canjeó). Es la única autoridad: el cliente nunca decide.
@@ -57,9 +65,13 @@ export function createProgressService(deps: ProgressDeps) {
     if (!quiz || quiz.status !== 'published' || quiz.currentVersion < 1) {
       throw new AppError('NOT_FOUND', 'No encontramos ese quiz');
     }
-    if (isStaff(actor.role)) return;
-
     const book = await Book.findById(quiz.bookId).select('status').lean();
+    if (isStaff(actor.role)) {
+      // Modo prueba: sin orden ni QR, y también en libros sin publicar (nunca archivados).
+      if (!testBookVisible(book?.status))
+        throw new AppError('NOT_FOUND', 'No encontramos ese quiz');
+      return;
+    }
     if (book?.status !== 'published') throw new AppError('NOT_FOUND', 'No encontramos ese quiz');
 
     const progress = await UserProgress.findOne({ userId: actor.userId, bookId: quiz.bookId })
@@ -80,6 +92,19 @@ export function createProgressService(deps: ProgressDeps) {
   }
 
   /**
+   * Acceso a una prueba del BORRADOR de un quiz (solo equipo): el quiz existe y no está archivado y su libro no es un
+   * libro archivado. No exige que el quiz esté publicado (puede no tener ninguna versión) ni orden ni QR.
+   */
+  async function assertDraftTestAccess(actor: Actor, quizId: string): Promise<void> {
+    if (!isStaff(actor.role)) throw new AppError('NOT_FOUND', 'No encontramos ese quiz');
+    const quiz = await Quiz.findById(quizId).select('bookId status').lean();
+    if (!quiz || quiz.status === 'archived')
+      throw new AppError('NOT_FOUND', 'No encontramos ese quiz');
+    const book = await Book.findById(quiz.bookId).select('status').lean();
+    if (!testBookVisible(book?.status)) throw new AppError('NOT_FOUND', 'No encontramos ese quiz');
+  }
+
+  /**
    * Comprueba que `actor` puede jugar la historia publicada del libro: se abre cuando todos los quizzes publicados están
    * completados y, con QR, cuando el código del juego se canjeó. El personal del sitio siempre (partida de prueba).
    * 404 si no hay historia publicada; 403 `NOT_UNLOCKED` sin contenido si falta algo.
@@ -87,8 +112,12 @@ export function createProgressService(deps: ProgressDeps) {
   async function assertGameAccess(actor: Actor, bookId: string) {
     const story = await GameStory.findOne({ bookId, status: 'published' }).lean();
     if (!story) throw new AppError('NOT_FOUND', 'No encontramos ese juego');
-    if (isStaff(actor.role)) return story;
     const book = await Book.findById(bookId).select('status').lean();
+    if (isStaff(actor.role)) {
+      if (!testBookVisible(book?.status))
+        throw new AppError('NOT_FOUND', 'No encontramos ese juego');
+      return story;
+    }
     if (book?.status !== 'published') throw new AppError('NOT_FOUND', 'No encontramos ese juego');
 
     const [progress, published] = await Promise.all([
@@ -118,6 +147,7 @@ export function createProgressService(deps: ProgressDeps) {
    * Solo ids: ningún contenido.
    */
   async function openedBooks(actor: Actor, bookIds: string[]): Promise<Set<string>> {
+    // El equipo (modo prueba) los tiene todos abiertos, publicados o no.
     if (isStaff(actor.role) || !deps.requireQrUnlock) return new Set(bookIds);
     if (bookIds.length === 0) return new Set();
     const progress = await UserProgress.find({ userId: actor.userId, bookId: { $in: bookIds } })
@@ -136,9 +166,15 @@ export function createProgressService(deps: ProgressDeps) {
   }
 
   /** Estado de cada quiz del libro para el dashboard (solo nombres y orden: nada de contenido). */
-  async function getProgress(userId: string, bookId: string): Promise<ProgressResponse> {
+  async function getProgress(actor: Actor, bookId: string): Promise<ProgressResponse> {
+    const { userId } = actor;
+    // Para el equipo (modo prueba) todo se lee de SUS intentos de prueba (`isTest`) y nada de `UserProgress`; para los
+    // lectores, de su avance real (`isTest: false`). Nadie ve los datos del otro.
+    const test = isStaff(actor.role);
     const book = await Book.findById(bookId).select('status').lean();
-    if (book?.status !== 'published') throw new AppError('NOT_FOUND', 'No encontramos ese libro');
+    if (test ? !testBookVisible(book?.status) : book?.status !== 'published') {
+      throw new AppError('NOT_FOUND', 'No encontramos ese libro');
+    }
 
     const [quizzes, progress, open] = await Promise.all([
       Quiz.find({ bookId, status: 'published', currentVersion: { $gte: 1 } })
@@ -146,10 +182,31 @@ export function createProgressService(deps: ProgressDeps) {
         .select('title order currentVersion')
         .lean(),
       UserProgress.findOne({ userId, bookId }).lean(),
-      QuizAttempt.find({ userId, bookId, status: 'in_progress', isTest: false })
+      QuizAttempt.find({
+        userId,
+        bookId,
+        status: 'in_progress',
+        isTest: test,
+        // Una prueba del borrador no es el avance del hilo (que es de lo publicado).
+        draftSnapshot: { $exists: false },
+      })
         .select('quizId')
         .lean(),
     ]);
+    // Equipo: los quizzes con una prueba terminada cuentan como «completados» (para que el hilo avance al probarlo).
+    const testDone = test
+      ? new Set(
+          (
+            await QuizAttempt.distinct('quizId', {
+              userId,
+              bookId,
+              status: 'completed',
+              isTest: true,
+              draftSnapshot: { $exists: false },
+            })
+          ).map(String),
+        )
+      : null;
     const versions =
       quizzes.length === 0
         ? []
@@ -164,9 +221,11 @@ export function createProgressService(deps: ProgressDeps) {
         (v.settings as { allowRetake?: boolean }).allowRetake !== false,
       ]),
     );
-    const completed = new Set(
-      (progress?.completed ?? []).filter((c) => c.kind === 'quiz').map((c) => c.refId.toString()),
-    );
+    const completed =
+      testDone ??
+      new Set(
+        (progress?.completed ?? []).filter((c) => c.kind === 'quiz').map((c) => c.refId.toString()),
+      );
     const unlocked = new Set(
       (progress?.unlocked ?? []).filter((u) => u.kind === 'quiz').map((u) => u.refId.toString()),
     );
@@ -177,7 +236,8 @@ export function createProgressService(deps: ProgressDeps) {
     const experiences = quizzes.map((quiz) => {
       const id = quiz._id.toString();
       const done = completed.has(id);
-      const reachable = previousDone && (!deps.requireQrUnlock || unlocked.has(id));
+      // Equipo: todo disponible, sin orden ni QR.
+      const reachable = test || (previousDone && (!deps.requireQrUnlock || unlocked.has(id)));
       const status = done
         ? ('completed' as const)
         : reachable
@@ -200,25 +260,29 @@ export function createProgressService(deps: ProgressDeps) {
         status,
         ...(lockedBy ? { lockedBy } : {}),
         inProgress: inProgress.has(id),
-        allowRetake: retake.get(id) ?? true,
+        // El equipo repite cualquier quiz (aunque sea «de una sola vez»): es una prueba y no cuenta.
+        allowRetake: test || (retake.get(id) ?? true),
       };
     });
     // El juego, si el libro tiene historia publicada, va siempre al final.
     const story = await GameStory.findOne({ bookId, status: 'published' }).select('title').lean();
     if (story) {
       const id = story._id.toString();
-      const done = (progress?.completed ?? []).some(
-        (c) => c.kind === 'game' && c.refId.toString() === id,
-      );
+      const done = test
+        ? Boolean(await GameSession.exists({ userId, bookId, status: 'completed', isTest: true }))
+        : (progress?.completed ?? []).some((c) => c.kind === 'game' && c.refId.toString() === id);
       const reachable =
-        previousDone &&
-        (!deps.requireQrUnlock ||
-          (progress?.unlocked ?? []).some((u) => u.kind === 'game' && u.refId.toString() === id));
+        test ||
+        (previousDone &&
+          (!deps.requireQrUnlock ||
+            (progress?.unlocked ?? []).some(
+              (u) => u.kind === 'game' && u.refId.toString() === id,
+            )));
       const open = await GameSession.exists({
         userId,
         bookId,
         status: 'in_progress',
-        isTest: false,
+        isTest: test,
       });
       const lockedBy =
         done || reachable
@@ -240,7 +304,9 @@ export function createProgressService(deps: ProgressDeps) {
     return {
       bookId,
       experiences,
-      bookCompleted: Boolean(progress?.bookCompletedAt),
+      bookCompleted: test
+        ? experiences.length > 0 && experiences.every((e) => e.status === 'completed')
+        : Boolean(progress?.bookCompletedAt),
     };
   }
 
@@ -428,6 +494,7 @@ export function createProgressService(deps: ProgressDeps) {
   }
 
   return {
+    assertDraftTestAccess,
     assertQuizAccess,
     assertGameAccess,
     getProgress,

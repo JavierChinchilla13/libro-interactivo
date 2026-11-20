@@ -53,15 +53,23 @@ describe('GET /api/me/library', () => {
     expect((await library(agent)).books).toEqual([]);
   });
 
-  it.each(['USER', 'ADMIN'] as const)(
-    'borrador y archivado nunca aparecen (%s, aunque el interruptor esté encendido)',
-    async (role) => {
-      const { agent } = await world(QR, role);
-      await addBook('libro-borrador', 1, 'draft', { showInReaderPanel: true });
-      await addBook('libro-archivado', 2, 'archived', { showInReaderPanel: true });
-      expect((await library(agent)).books).toEqual([]);
-    },
-  );
+  // CAMBIO (modo prueba del equipo): antes el borrador tampoco salía para ADMIN. Ahora el equipo recorre los libros
+  // en borrador (marcados `unpublished: 'draft'`); el archivado no sale para nadie y el lector sigue sin ver ninguno.
+  it('borrador y archivado nunca aparecen para un lector, aunque el interruptor esté encendido', async () => {
+    const { agent } = await world(QR, 'USER');
+    await addBook('libro-borrador', 1, 'draft', { showInReaderPanel: true });
+    await addBook('libro-archivado', 2, 'archived', { showInReaderPanel: true });
+    expect((await library(agent)).books).toEqual([]);
+  });
+
+  it('el equipo ve el borrador (marcado) pero nunca el archivado', async () => {
+    const { agent } = await world(QR, 'ADMIN');
+    await addBook('libro-borrador', 1, 'draft', { showInReaderPanel: true });
+    await addBook('libro-archivado', 2, 'archived', { showInReaderPanel: true });
+    expect((await library(agent)).books.map((b) => [b.book.slug, b.access, b.unpublished])).toEqual(
+      [['libro-borrador', 'open', 'draft']],
+    );
+  });
 
   it('publicado sin abrir sale bloqueado y solo con datos públicos; el canje del primer quiz lo abre', async () => {
     const { agent, admin, user } = await world();

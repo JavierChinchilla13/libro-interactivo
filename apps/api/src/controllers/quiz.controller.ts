@@ -48,17 +48,17 @@ export function createQuizController(
 
   const listResults: RequestHandler = async (_req, res) => {
     const { query } = getInput<unknown, BookQuery>(res);
-    res.json(await quizzes.listResults(getAuth(res).userId, query.bookId));
+    res.json(await quizzes.listResults(getAuth(res), query.bookId));
   };
 
   const getQuizResults: RequestHandler = async (_req, res) => {
     const { params } = getInput<unknown, unknown, QuizParams>(res);
-    res.json(await quizzes.getQuizResults(getAuth(res).userId, params.quizId));
+    res.json(await quizzes.getQuizResults(getAuth(res), params.quizId));
   };
 
   const getProgress: RequestHandler = async (_req, res) => {
     const { query } = getInput<unknown, BookQuery>(res);
-    res.json(await progress.getProgress(getAuth(res).userId, query.bookId));
+    res.json(await progress.getProgress(getAuth(res), query.bookId));
   };
 
   const getLibrary: RequestHandler = async (_req, res) => {
@@ -92,5 +92,18 @@ export function createAdminQuizController(publisher: QuizPublishService) {
     res.json(await publisher.preview(getAuth(res), params.quizId));
   };
 
-  return { validateQuiz, publish, preview };
+  // Prueba del BORRADOR (solo equipo): lo mismo que el lector, sin caché y sin dejar nada en lo real.
+  const testIntro: RequestHandler = async (_req, res) => {
+    const { params } = getInput<unknown, unknown, QuizParams>(res);
+    res.set('Cache-Control', 'private, no-store');
+    res.json(await publisher.testIntro(getAuth(res), params.quizId));
+  };
+
+  const startTestAttempt: RequestHandler = async (_req, res) => {
+    const { params } = getInput<unknown, unknown, QuizParams>(res);
+    res.set('Cache-Control', 'private, no-store');
+    res.json(await publisher.startTestAttempt(getAuth(res), params.quizId));
+  };
+
+  return { validateQuiz, publish, preview, testIntro, startTestAttempt };
 }

@@ -6,6 +6,7 @@ import { booksApi, keys, quizzesApi } from '../api';
 import { DataList, type Column } from '../components/DataList';
 import { ListPage, useRowSearch, type ListState } from '../components/ListPage';
 import { StatusBadge } from '../components/StatusBadge';
+import { TryAsReader, readerPaths } from '../components/TryAsReader';
 
 const useQuizzes = (bookId: string, status: string) =>
   useQuery({
@@ -151,6 +152,29 @@ export function QuizListPage() {
       }
     >
       <DataList
+        // Solo lo publicado se puede probar en el lector real (un borrador se prueba desde su editor); nunca en un libro archivado.
+        rowActions={(quiz) => {
+          if (books.data?.books.find((book) => book.id === bookId)?.status === 'archived')
+            return null;
+          const published = quiz.status === 'published' && quiz.currentVersion > 0;
+          // El borrador se prueba si hay algo sin publicar o el quiz nunca se publicó.
+          const draft = quiz.status !== 'archived' && (!published || quiz.hasUnpublishedChanges);
+          return (
+            <>
+              {published ? (
+                <TryAsReader to={readerPaths.quiz(quiz.id)} name={quiz.title} compact />
+              ) : null}
+              {draft ? (
+                <TryAsReader
+                  to={readerPaths.quizDraft(quiz.id)}
+                  label="Probar el borrador"
+                  name={quiz.title}
+                  compact
+                />
+              ) : null}
+            </>
+          );
+        }}
         label="Quizzes"
         rows={search.visible ?? []}
         rowKey={(quiz) => quiz.id}

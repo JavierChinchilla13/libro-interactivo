@@ -550,8 +550,11 @@ describe('versiones inmutables', () => {
 });
 
 describe('modo prueba (EDITOR y ADMIN)', () => {
-  it('el administrador juega cualquier quiz en modo prueba y no deja rastro en progreso ni resultados', async () => {
-    const { app, make, book, admin } = await world();
+  // CAMBIO (modo prueba del equipo, criterio simétrico): antes los resultados del equipo salían siempre vacíos. Ahora el
+  // equipo ve SUS pruebas en «Resultados» (para poder probar esa pantalla); sigue sin dejar rastro en el progreso y un
+  // lector nunca ve ni cuenta las pruebas del equipo.
+  it('el administrador juega cualquier quiz en modo prueba: ve sus pruebas en resultados y no deja rastro en el progreso', async () => {
+    const { app, agent, make, book, admin } = await world();
     await make(1);
     const second = await make(2);
     const adminAgent = await loginAgent(app, 'admin@ejemplo.com');
@@ -566,8 +569,16 @@ describe('modo prueba (EDITOR y ADMIN)', () => {
       (await adminAgent.get('/api/me/results').query({ bookId: book._id.toString() }).expect(200))
         .body,
     );
-    expect(list.results).toEqual([]);
-    await adminAgent.get(`/api/me/results/${second._id.toString()}`).expect(404);
+    expect(list.results.map((r) => [r.quizId, r.attemptsCompleted])).toEqual([
+      [second._id.toString(), 1],
+    ]);
+    await adminAgent.get(`/api/me/results/${second._id.toString()}`).expect(200);
+    // El lector no ve nada de eso.
+    const readerList = resultsListResponseSchema.parse(
+      (await agent.get('/api/me/results').query({ bookId: book._id.toString() }).expect(200)).body,
+    );
+    expect(readerList.results).toEqual([]);
+    await agent.get(`/api/me/results/${second._id.toString()}`).expect(404);
   });
 
   it('un quiz de una sola vez se puede probar las veces que haga falta', async () => {

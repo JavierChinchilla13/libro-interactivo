@@ -485,7 +485,10 @@ describe('GET /api/wiki/entries/:entryId', () => {
     expect(publicWikiEntryResponseSchema.parse(res.body).related).toEqual([]);
   });
 
-  it('los editores ven también lo bloqueado y lo oculto (vista previa), pero no un borrador', async () => {
+  // CAMBIO (modo prueba del equipo): antes un editor recibía 404 con una entrada en borrador. Ahora el equipo la abre
+  // por id (para probarla antes de publicar); no sale en listas, nunca una archivada, y lectores y visitantes siguen
+  // con 404 (cubierto en `teamTestMode.routes.test.ts`).
+  it('los editores ven también lo bloqueado y lo oculto (vista previa) y abren un borrador por id', async () => {
     const { editor, q1, add } = await world();
     const hidden = await add({
       kind: 'character',
@@ -495,7 +498,7 @@ describe('GET /api/wiki/entries/:entryId', () => {
     });
     const draft = await add({ kind: 'term', name: 'Borrador', status: 'draft' });
     await editor.get(`/api/wiki/entries/${hidden._id}`).expect(200);
-    await editor.get(`/api/wiki/entries/${draft._id}`).expect(404);
+    await editor.get(`/api/wiki/entries/${draft._id}`).expect(200);
   });
 });
 

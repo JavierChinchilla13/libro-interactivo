@@ -18,6 +18,9 @@ export const ANONYMIZED_USER_ID = new Types.ObjectId('000000000000000000000000')
  */
 export async function eraseUserData(userId: string | Types.ObjectId): Promise<void> {
   const id = typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
+  // Lo de PRUEBA del equipo (intentos y partidas, incluida la copia del borrador de una prueba) no se conserva ni anonimizado.
+  await QuizAttempt.deleteMany({ userId: id, isTest: true });
+  await GameSession.deleteMany({ userId: id, isTest: true });
   await QuizAttempt.deleteMany({ userId: id, status: 'in_progress' });
   await QuizAttempt.updateMany({ userId: id }, { $set: { userId: ANONYMIZED_USER_ID } });
   // Las partidas del juego siguen la misma regla: la que está en curso se elimina y las terminadas quedan sin nombre.

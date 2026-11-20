@@ -14,6 +14,7 @@ import { Button, SelectField, TextField } from '../../../shared/ui/controls';
 import { Alert, Tabs } from '../../../shared/ui/layout';
 import { booksApi, keys, wikiApi } from '../api';
 import { DataList, type Column } from '../components/DataList';
+import { TryAsReader, readerPaths } from '../components/TryAsReader';
 import { ListPage } from '../components/ListPage';
 import { StatusBadge } from '../components/StatusBadge';
 import { errorMessage } from '../errors';
@@ -295,11 +296,24 @@ export function WikiListPage() {
       ) : null}
       <DataList
         rowActions={(row) => (
-          <LifecycleButtons
-            item={{ id: row.id, title: row.name, status: row.status }}
-            lifecycle={lifecycle}
-            compact
-          />
+          <>
+            {row.status !== 'archived' ? (
+              <TryAsReader
+                to={readerPaths.wikiEntry(
+                  row.id,
+                  books.data?.books.find((book) => book.id === (row.bookId ?? bookId))?.slug,
+                )}
+                label="Ver en la wiki"
+                name={row.name}
+                compact
+              />
+            ) : null}
+            <LifecycleButtons
+              item={{ id: row.id, title: row.name, status: row.status }}
+              lifecycle={lifecycle}
+              compact
+            />
+          </>
         )}
         label="Entradas de la wiki"
         rows={ordered}

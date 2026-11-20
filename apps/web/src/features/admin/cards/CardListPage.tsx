@@ -7,6 +7,7 @@ import { Link, useSearchParams } from 'react-router';
 import { AdminIcon } from '../../../shared/ui/adminIcons';
 import { Button, SelectField, TextField } from '../../../shared/ui/controls';
 import { Alert, Card, EmptyState, PageHeader } from '../../../shared/ui/layout';
+import { TryAsReader, readerPaths } from '../components/TryAsReader';
 import { publicKeys } from '../../home/api';
 import { useCardsLabel } from '../../cards/useCardsLabel';
 import { booksApi, cardsApi, keys, siteApi } from '../api';
@@ -228,6 +229,14 @@ export function CardListPage() {
                           <Link to={`/admin/cartas/${card.id}`} className="btn btn-secondary">
                             Editar<span className="sr-only"> «{card.title}»</span>
                           </Link>
+                          {card.status === 'published' ? (
+                            <TryAsReader
+                              to={readerPaths.card(card.id)}
+                              label="Ver como lector"
+                              name={`«${card.title}»`}
+                              title="La abre como la vería un lector, sin abrirla de verdad en ninguna cuenta"
+                            />
+                          ) : null}
                           <LifecycleButtons
                             item={{ id: card.id, title: card.title, status: card.status }}
                             lifecycle={lifecycle}

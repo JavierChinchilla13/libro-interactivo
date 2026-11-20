@@ -6,6 +6,7 @@ import {
   readerLibraryResponseSchema,
   quizIntroResponseSchema,
   quizResultsResponseSchema,
+  testProgressResetResponseSchema,
   readerExtraResponseSchema,
   readerExtrasResponseSchema,
   resultsListResponseSchema,
@@ -24,11 +25,20 @@ export const booksApi = {
 export const readerApi = {
   /** «Tus libros»: estado de cada libro (abierto, bloqueado o próximamente) y avance de los abiertos. */
   library: () => apiRequest('/me/library', readerLibraryResponseSchema),
+  /** «Reiniciar mi progreso de prueba» (solo equipo): borra las pruebas de la cuenta de la sesión. */
+  resetTestProgress: () =>
+    apiRequest('/me/test-progress', testProgressResetResponseSchema, { method: 'DELETE' }),
   progress: (bookId: string) => apiRequest(`/me/progress?bookId=${bookId}`, progressResponseSchema),
   results: (bookId: string) =>
     apiRequest(`/me/results?bookId=${bookId}`, resultsListResponseSchema),
   quizResults: (quizId: string) => apiRequest(`/me/results/${quizId}`, quizResultsResponseSchema),
   intro: (quizId: string) => apiRequest(`/quizzes/${quizId}`, quizIntroResponseSchema),
+  /** Introducción de la prueba del BORRADOR (solo equipo; el servidor lo comprueba en cada petición). */
+  testIntro: (quizId: string) =>
+    apiRequest(`/admin/quizzes/${quizId}/test-intro`, quizIntroResponseSchema),
+  /** Empieza una prueba del BORRADOR: un intento de prueba con una copia congelada de lo que hay en el borrador. */
+  startTest: (quizId: string) =>
+    apiRequest(`/admin/quizzes/${quizId}/test-attempts`, attemptResponseSchema, { method: 'POST' }),
   start: (quizId: string) =>
     apiRequest(`/quizzes/${quizId}/attempts`, attemptResponseSchema, { method: 'POST' }),
   /** Envía TODAS las respuestas de la etapa (una por pregunta). */
@@ -54,7 +64,10 @@ export const readerKeys = {
   progress: (bookId: string) => ['reader', 'progress', bookId] as const,
   results: (bookId: string) => ['reader', 'results', bookId] as const,
   quizResults: (quizId: string) => ['reader', 'quiz-results', quizId] as const,
-  intro: (quizId: string) => ['reader', 'intro', quizId] as const,
+  intro: (quizId: string, draft = false) =>
+    (draft
+      ? ['reader', 'intro', quizId, 'borrador']
+      : ['reader', 'intro', quizId]) as readonly string[],
   extras: (bookId: string) => ['reader', 'extras', bookId] as const,
   welcome: ['reader', 'welcome'] as const,
 };

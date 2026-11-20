@@ -160,13 +160,39 @@ describe('un libro «próximamente» tiene wiki pública', () => {
         (await agent.get(`/api/wiki/entries/${visible._id.toString()}`).expect(200)).body,
       );
       expect(detail.entry.name).toBe('Término dos');
-      // El borrador sigue oculto, como si no existiera.
-      expect((await agent.get(`/api/wiki/entries/${draft._id.toString()}`)).status).toBe(404);
+      // El borrador sigue oculto para el público; el equipo lo abre por id (modo prueba) pero no sale en la lista.
+      const staff = agent === w.editor || agent === w.admin;
+      expect((await agent.get(`/api/wiki/entries/${draft._id.toString()}`)).status).toBe(
+        staff ? 200 : 404,
+      );
     }
   });
 
-  for (const status of ['draft', 'archived'] as const) {
-    it(`un libro ${status === 'draft' ? 'en borrador' : 'archivado'} sigue sin wiki para todos, equipo incluido`, async () => {
+  // CAMBIO (modo prueba del equipo): un libro en borrador ya tiene wiki para el EQUIPO (se prueba antes de publicar);
+  // para lectores y visitantes sigue sin existir. El archivado no existe para nadie.
+  it('un libro en borrador tiene wiki para el equipo y no para lectores ni visitantes', async () => {
+    const w = await world();
+    const draft = await w.book('draft');
+    const term = await w.add({ bookId: draft.id, kind: 'term', name: 'Término del borrador' });
+    for (const agent of [w.editor, w.admin]) {
+      await agent.get(sectionsUrl(draft.id)).expect(200);
+      expect(names(await listOf(agent, entriesUrl(draft.id, 'term')))).toEqual([
+        'Término del borrador',
+      ]);
+      await agent.get(`/api/wiki/entries/${term._id.toString()}`).expect(200);
+    }
+    for (const agent of [w.visitor, w.reader]) {
+      for (const url of [sectionsUrl(draft.id), entriesUrl(draft.id, 'term')]) {
+        const res = await agent.get(url);
+        expect(res.status, url).toBe(404);
+        expect(apiErrorSchema.parse(res.body).error.message).toBe(NOT_FOUND);
+      }
+      expect((await agent.get(`/api/wiki/entries/${term._id.toString()}`)).status).toBe(404);
+    }
+  });
+
+  for (const status of ['archived'] as const) {
+    it(`un libro archivado sigue sin wiki para todos, equipo incluido`, async () => {
       const w = await world();
       const hidden = await w.book(status);
       const term = await w.add({ bookId: hidden.id, kind: 'term', name: 'Término oculto' });

@@ -13,7 +13,7 @@ import { ThreadList } from '../../shared/ui/ThreadList';
 import { Countdown } from '../home/Countdown';
 import { readerApi, readerKeys } from './api';
 import { ExperienceStep } from './ExperienceStep';
-import { LOCKED_BOOK_TEXT, type LibraryEntry } from './LibraryBookCard';
+import { LOCKED_BOOK_TEXT, openLabel, type LibraryEntry } from './LibraryBookCard';
 import { nextHref } from './nextStep';
 import { setSelectedBookId } from './useBook';
 import { useLibrary } from './useLibrary';
@@ -62,7 +62,11 @@ function BookHeader({ entry }: { entry: LibraryEntry }) {
         </div>
         <div className="flex min-w-0 flex-col gap-3">
           <p className="label">
-            {access === 'open' ? 'Tu libro' : access === 'locked' ? 'Sin abrir' : 'Próximamente'}
+            {access === 'open'
+              ? openLabel(entry)
+              : access === 'locked'
+                ? 'Sin abrir'
+                : 'Próximamente'}
           </p>
           <h1 className="page-title [overflow-wrap:anywhere]">{book.title}</h1>
           {book.tagline ? (

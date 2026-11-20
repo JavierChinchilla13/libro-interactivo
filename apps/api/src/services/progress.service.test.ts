@@ -104,7 +104,7 @@ describe('progreso: el juego en el avance del libro', () => {
     const service = createProgressService({ requireQrUnlock: false });
     const { userId, bookId, story } = await world({ game: true });
 
-    const progress = await service.getProgress(userId, bookId);
+    const progress = await service.getProgress({ userId, role: 'USER' }, bookId);
     expect(progress.experiences).toEqual([
       expect.objectContaining({ kind: 'game', id: story!.id, status: 'available', order: 1 }),
     ]);
@@ -126,7 +126,7 @@ describe('progreso: el juego en el avance del libro', () => {
     });
     await completeQuiz(service, { userId, bookId, quizId });
 
-    const before = await service.getProgress(userId, bookId);
+    const before = await service.getProgress({ userId, role: 'USER' }, bookId);
     expect(before.experiences.map((e) => e.status)).toEqual(['completed', 'locked']);
     expect(before.experiences[1]).toMatchObject({ kind: 'game', lockedBy: { reason: 'qr' } });
 
@@ -138,7 +138,7 @@ describe('progreso: el juego en el avance del libro', () => {
       accessTokenId: new Types.ObjectId().toString(),
       at: AT,
     });
-    const after = await service.getProgress(userId, bookId);
+    const after = await service.getProgress({ userId, role: 'USER' }, bookId);
     expect(after.experiences[1]).toMatchObject({ kind: 'game', status: 'available' });
     expect(after.experiences[1]).not.toHaveProperty('lockedBy');
   });

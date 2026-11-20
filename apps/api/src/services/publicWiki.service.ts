@@ -49,8 +49,14 @@ const NOT_UNLOCKED = 'Aún no puedes acceder a este contenido';
  * quizzes, así que lo que dependa de uno queda bloqueado con su mensaje, y una entrada en borrador sigue oculta.
  */
 const WIKI_BOOK_STATUSES: ('published' | 'upcoming')[] = ['published', 'upcoming'];
-async function loadBooks() {
-  return Book.find({ status: { $in: WIKI_BOOK_STATUSES } })
+/** El equipo (modo prueba) ve además los libros en borrador; los archivados no los ve nadie. */
+const WIKI_TEAM_BOOK_STATUSES: ('published' | 'upcoming' | 'draft')[] = [
+  'published',
+  'upcoming',
+  'draft',
+];
+async function loadBooks(staff = false) {
+  return Book.find({ status: { $in: staff ? WIKI_TEAM_BOOK_STATUSES : WIKI_BOOK_STATUSES } })
     .select('wikiSections status order')
     .lean();
 }
@@ -105,7 +111,7 @@ export function createPublicWikiService() {
           completed.add(`${item.kind}:${item.refId.toString()}`);
       }
     }
-    const books = new Map((await loadBooks()).map((book) => [book._id.toString(), book]));
+    const books = new Map((await loadBooks(staff)).map((book) => [book._id.toString(), book]));
     return { staff, completed, books, ...pickView(books, view?.bookId) };
   }
 
@@ -163,7 +169,8 @@ export function createPublicWikiService() {
     if (section !== 'open') return section;
     if (unmet) return 'locked';
     if (entry.kind === 'power') {
-      if (!parent || parent.status !== 'published') return 'hidden';
+      if (!parent || (parent.status !== 'published' && !(ctx.staff && parent.status === 'draft')))
+        return 'hidden';
       return visibility(parent, ctx);
     }
     return 'open';
@@ -286,7 +293,13 @@ export function createPublicWikiService() {
     bookId?: string,
   ): Promise<PublicWikiEntryResponse> {
     const ctx = await context(viewer, { bookId });
-    const found = (await loadEntries({ _id: entryId, status: 'published' }))[0];
+    // El equipo puede abrir por id una entrada en BORRADOR para probarla (no sale en listas); nunca una archivada.
+    const found = (
+      await loadEntries({
+        _id: entryId,
+        status: ctx.staff ? { $in: ['published', 'draft'] } : 'published',
+      })
+    )[0];
     if (!found) throw new AppError('NOT_FOUND', 'No encontramos esa entrada');
     const parent = found.parentId
       ? (await parentsOf([found])).get(String(found.parentId))

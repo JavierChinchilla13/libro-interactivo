@@ -4,6 +4,7 @@ import type {
   CreateAccessTokenRequest,
   RedeemAccessResponse,
   ResolveAccessResponse,
+  Role,
 } from '@libro/shared';
 import { Types } from 'mongoose';
 import { buildAccessToken, hashAccessToken, parseAccessToken } from '../lib/accessToken.js';
@@ -16,7 +17,7 @@ import { Book } from '../models/Book.js';
 import { Card } from '../models/Card.js';
 import { GameStory } from '../models/GameStory.js';
 import { Quiz } from '../models/Quiz.js';
-import type { Actor, ProgressService } from './progress.service.js';
+import { isStaff, type Actor, type ProgressService } from './progress.service.js';
 
 export interface AccessDeps {
   /** `ACCESS_TOKEN_SECRET`: firma los tokens. Respaldarlo; si se pierde, los QR impresos dejan de servir. */
@@ -273,10 +274,29 @@ export function createAccessService(deps: AccessDeps) {
     };
   }
 
-  /** Canje idempotente: desbloquea la experiencia en la cuenta (ligado a la persona, no al dispositivo). */
-  async function redeem(userId: string, token: string): Promise<RedeemAccessResponse | null> {
+  /**
+   * Canje idempotente: desbloquea la experiencia en la cuenta (ligado a la persona, no al dispositivo).
+   *
+   * El equipo (modo prueba) **no escribe nada**: ni el desbloqueo (que bloquearía eliminar una carta «ya abierta por
+   * lectores») ni el contador del código (`redeemCount`/`lastRedeemedAt`, que son estadísticas reales). Responde igual
+   * para que la pantalla funcione, y el servidor deja pasar al equipo sin desbloqueo en cada petición.
+   */
+  async function redeem(
+    actor: { userId: string; role: Role },
+    token: string,
+  ): Promise<RedeemAccessResponse | null> {
     const found = await lookup(token);
     if (!found) return null;
+    if (isStaff(actor.role)) {
+      return {
+        kind: targetOf(found.doc).kind,
+        refId: found.experience.refId.toString(),
+        bookId: found.experience.bookId.toString(),
+        title: found.experience.title,
+        alreadyUnlocked: false,
+      };
+    }
+    const userId = actor.userId;
     const now = clock();
     const first = await progress.unlock({
       userId,

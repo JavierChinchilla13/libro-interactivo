@@ -1,4 +1,6 @@
+import { lazy, Suspense } from 'react';
 import { Link, Outlet, useLocation, useMatch } from 'react-router';
+import { useSession } from '../../features/auth/session';
 import { useCardsLabel } from '../../features/cards/useCardsLabel';
 import { BOOK_SECTIONS, bookSectionOf } from '../../features/reader/bookSections';
 import { useLibrary } from '../../features/reader/useLibrary';
@@ -7,6 +9,13 @@ import { Brand } from '../../shared/ui/Brand';
 import { PageBackground } from '../../shared/ui/PageBackground';
 import { bottomTab, MAIN_ID, navTab, SkipLink } from '../../shared/ui/nav';
 import { UserMenu } from '../../shared/ui/UserMenu';
+
+/** La franja de «Modo prueba» solo la necesita el equipo: se carga aparte para no pesar en el panel de los lectores. */
+const TestModeBanner = lazy(() =>
+  import('../../features/reader/TestModeBanner').then((module) => ({
+    default: module.TestModeBanner,
+  })),
+);
 
 const ITEMS = [
   { to: '/panel', label: 'Tus libros', section: 'panel' },
@@ -46,6 +55,9 @@ export function bookSlugOf(pathname: string): string | null {
  */
 export function PanelLayout() {
   const { pathname } = useLocation();
+  const session = useSession();
+  // El rol es del servidor; aquí solo decide si se dibuja la franja (un lector no la ve y no hay nada que mostrarle).
+  const staff = session.data?.role === 'EDITOR' || session.data?.role === 'ADMIN';
   const current = sectionOf(pathname);
   const cardsLabel = useCardsLabel();
   const items = ITEMS.map((item) =>
@@ -68,6 +80,11 @@ export function PanelLayout() {
       className={`flex min-h-dvh flex-col ${immersive ? '' : 'pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-0'}`}
     >
       <SkipLink />
+      {staff ? (
+        <Suspense fallback={null}>
+          <TestModeBanner />
+        </Suspense>
+      ) : null}
       <PageBackground fallback="first" />
       <header className="site-header sticky top-3 z-40 px-3">
         <div className="nav-pill mx-auto flex w-full max-w-[var(--token-page-max)] items-center justify-between gap-4 py-1.5 pl-5 pr-2 max-lg:gap-2">

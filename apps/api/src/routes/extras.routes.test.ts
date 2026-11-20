@@ -615,16 +615,21 @@ describe('extras para el lector', () => {
     ).toBe(404);
   });
 
-  it('los editores NO ven los extras por la ruta del lector sin completar el libro (para eso está la vista previa)', async () => {
+  // CAMBIO (modo prueba del equipo): antes los editores recibían 403 y «bloqueado» por la ruta del lector sin completar
+  // el libro. Ahora el equipo recorre el aspecto REAL de los extras sin completar nada (se salta el candado SOLO para el
+  // equipo y sin dejar registro de «visto»); los lectores siguen con 403 (cubierto en la prueba anterior y en
+  // `teamTestMode.routes.test.ts`).
+  it('el equipo abre los extras por la ruta del lector sin completar el libro (modo prueba) y no deja registro', async () => {
     const { editor, text, bookId } = await world();
     const extra = extraResponseSchema.parse(
       (await editor.post('/api/admin/extras').send(text()).expect(201)).body,
     );
-    expect((await editor.get(`/api/extras/${extra.id}`)).status).toBe(403);
+    expect((await editor.get(`/api/extras/${extra.id}`)).status).toBe(200);
     expect(
       readerExtrasResponseSchema.parse(
         (await editor.get('/api/extras').query({ bookId }).expect(200)).body,
       ),
-    ).toEqual({ locked: true, hasExtras: true });
+    ).toMatchObject({ locked: false });
+    expect(await ExtraAccess.countDocuments()).toBe(0);
   });
 });

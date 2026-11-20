@@ -1,6 +1,9 @@
 import type { PublicBookSummary } from '@libro/shared';
 import { useQuery } from '@tanstack/react-query';
+import { useSession } from '../auth/session';
 import { booksApi, readerKeys } from './api';
+import type { LibraryEntry } from './LibraryBookCard';
+import { useLibrary } from './useLibrary';
 import { setSelectedBookId, useSelectedBookId } from './bookSelection';
 
 export { setSelectedBookId };
@@ -8,6 +11,29 @@ export { setSelectedBookId };
 /** Libros con contenido para jugar: los publicados (los «próximamente» todavía no tienen nada). */
 export function playable(books: readonly PublicBookSummary[]): PublicBookSummary[] {
   return books.filter((book) => book.status === 'published');
+}
+
+/**
+ * Libros que recorre el EQUIPO en modo prueba: los que la biblioteca le entrega abiertos (publicados, «próximamente» y
+ * borradores; el servidor decide por su rol y nunca incluye los archivados). Es una función aparte: `playable()` no se
+ * toca y sigue siendo lo que usan los lectores.
+ */
+export function teamBooks(entries: readonly LibraryEntry[]): PublicBookSummary[] {
+  return entries.filter((entry) => entry.access === 'open').map((entry) => entry.book);
+}
+
+/** Libro por defecto del equipo: el elegido en este navegador y, si no, un publicado antes que uno sin publicar. */
+export function pickTeamBook(
+  entries: readonly LibraryEntry[],
+  chosen: string | null,
+): PublicBookSummary | undefined {
+  const open = entries.filter((entry) => entry.access === 'open');
+  const ordered = [...open].sort(
+    (a, b) =>
+      Number(Boolean(a.unpublished)) - Number(Boolean(b.unpublished)) ||
+      a.book.order - b.book.order,
+  );
+  return (open.find((entry) => entry.book.id === chosen) ?? ordered[0])?.book;
 }
 
 /**
@@ -56,16 +82,31 @@ export function pickBook(
   return list.find((book) => book.id === chosen) ?? ordered[0];
 }
 
-/** Libros de la wiki (ordenados) y el que se está viendo. Solo lo usa la wiki. */
+/**
+ * Libros de la wiki (ordenados) y el que se está viendo. Solo lo usa la wiki. Para el EQUIPO la fuente es la biblioteca
+ * (que el servidor arma por su rol y trae también los libros en borrador); para los demás, la lista pública. `draft`
+ * dice que el libro visto es un borrador: eso lo ve solo el equipo.
+ */
 export function useWikiBook(slug: string | null) {
-  const books = useQuery({ queryKey: readerKeys.books, queryFn: booksApi.list, staleTime: 60_000 });
+  const session = useSession();
+  const staff = session.data?.role === 'EDITOR' || session.data?.role === 'ADMIN';
+  const books = useQuery({
+    queryKey: readerKeys.books,
+    queryFn: booksApi.list,
+    staleTime: 60_000,
+    enabled: !staff,
+  });
+  const library = useLibrary(staff);
   const chosen = useSelectedBookId();
-  const all = books.data?.books ?? [];
+  const entries = library.data?.books ?? [];
+  const all = staff ? teamBooks(entries) : (books.data?.books ?? []);
+  const book = pickWikiBook(all, chosen, slug);
   return {
     books: wikiBooks(all).sort((a, b) => a.order - b.order),
-    book: pickWikiBook(all, chosen, slug),
-    isPending: books.isPending,
-    error: books.error,
+    book,
+    draft: staff && entries.find((entry) => entry.book.id === book?.id)?.unpublished === 'draft',
+    isPending: session.isPending || (staff ? library.isPending : books.isPending),
+    error: staff ? library.error : books.error,
   };
 }
 
@@ -74,19 +115,32 @@ export function useWikiBook(slug: string | null) {
  * navegador (solo una comodidad: no es dato de la cuenta).
  */
 export function useSelectedBook(slug?: string) {
-  const books = useQuery({ queryKey: readerKeys.books, queryFn: booksApi.list, staleTime: 60_000 });
+  const session = useSession();
+  // Modo prueba: la fuente del EQUIPO es la biblioteca (la decide el servidor por el rol de la sesión) y así recorre
+  // también libros sin publicar. Los lectores siguen con la lista pública y `playable()`, sin cambios.
+  const staff = session.data?.role === 'EDITOR' || session.data?.role === 'ADMIN';
+  const books = useQuery({
+    queryKey: readerKeys.books,
+    queryFn: booksApi.list,
+    staleTime: 60_000,
+    enabled: !staff,
+  });
+  const library = useLibrary(staff);
   const chosen = useSelectedBookId();
-  const list = playable(books.data?.books ?? []);
+  const entries = library.data?.books ?? [];
+  const list = staff ? teamBooks(entries) : playable(books.data?.books ?? []);
   // En una dirección de un libro (`/panel/libros/:slug/…`) manda el de la dirección, no el recordado.
   const book =
     slug === undefined
-      ? pickBook(list, chosen, 'first')
+      ? staff
+        ? pickTeamBook(entries, chosen)
+        : pickBook(list, chosen, 'first')
       : list.find((candidate) => candidate.slug === slug);
   return {
     books: list,
     book,
     select: setSelectedBookId,
-    isPending: books.isPending,
-    error: books.error,
+    isPending: session.isPending || (staff ? library.isPending : books.isPending),
+    error: staff ? library.error : books.error,
   };
 }

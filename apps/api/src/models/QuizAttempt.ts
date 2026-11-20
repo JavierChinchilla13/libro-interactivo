@@ -59,8 +59,25 @@ const quizAttemptSchema = new Schema(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     bookId: { type: Schema.Types.ObjectId, ref: 'Book', required: true },
     quizId: { type: Schema.Types.ObjectId, ref: 'Quiz', required: true },
-    quizVersionId: { type: Schema.Types.ObjectId, ref: 'QuizVersion', required: true },
-    version: { type: Number, required: true, min: 1 },
+    /**
+     * La versión PUBLICADA con la que se jugó. Obligatoria salvo en una prueba del BORRADOR del equipo, que no tiene
+     * versión (nunca se crea una `QuizVersion` para probar): ahí va `draftSnapshot` y `version` es 0.
+     */
+    quizVersionId: {
+      type: Schema.Types.ObjectId,
+      ref: 'QuizVersion',
+      required(this: { draftSnapshot?: unknown }) {
+        return this.draftSnapshot === undefined || this.draftSnapshot === null;
+      },
+    },
+    version: { type: Number, required: true, min: 0 },
+    /**
+     * Copia CONGELADA del borrador del quiz (contenido ya validado y saneado como al publicar) con la que se juega una
+     * prueba del equipo. Solo la lleva un intento `isTest` de EDITOR o ADMIN. Nunca sale del servidor: `select: false`
+     * hace que ninguna consulta la cargue salvo que se pida con `+draftSnapshot` (solo al enviar las respuestas de ese
+     * intento), y las respuestas se arman con los mismos constructores de payload, que nunca llevan `resultKey`.
+     */
+    draftSnapshot: { type: Schema.Types.Mixed, select: false },
     attemptNumber: { type: Number, required: true, min: 1 },
     status: { type: String, enum: [...ATTEMPT_STATUSES], required: true, default: 'in_progress' },
     stages: { type: [stageEntrySchema], default: [] },

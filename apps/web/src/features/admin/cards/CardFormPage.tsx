@@ -13,6 +13,7 @@ import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Button, SelectField, TextField } from '../../../shared/ui/controls';
 import { Alert, Badge, Card, PageHeader } from '../../../shared/ui/layout';
+import { TryAsReader, readerPaths } from '../components/TryAsReader';
 import { useCardsLabel } from '../../cards/useCardsLabel';
 import { booksApi, cardsApi, keys } from '../api';
 import { CloudinaryUsagePanel } from '../components/CloudinaryUsage';
@@ -240,9 +241,19 @@ function CardFormView({ cardId, initial }: { cardId?: string; initial: CardForm 
             : 'Un título y de 1 a 12 imágenes. Se abre al escanear su código QR.'
         }
         actions={
-          <Link to={`/admin/cartas?libro=${form.bookId}`} className="btn btn-secondary">
-            Volver a la lista
-          </Link>
+          <>
+            {editing && initial.status === 'published' ? (
+              <TryAsReader
+                to={readerPaths.card(cardId ?? '')}
+                label="Ver como lector"
+                newTab
+                title="La abre como la vería un lector, sin abrirla de verdad en ninguna cuenta"
+              />
+            ) : null}
+            <Link to={`/admin/cartas?libro=${form.bookId}`} className="btn btn-secondary">
+              Volver a la lista
+            </Link>
+          </>
         }
       />
       {Object.keys(errors).length > 0 ? (

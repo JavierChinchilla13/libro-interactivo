@@ -6,6 +6,7 @@ import { Link } from 'react-router';
 import { SelectField } from '../../../shared/ui/controls';
 import { booksApi, extrasApi, keys } from '../api';
 import { DataList, type Column } from '../components/DataList';
+import { TryAsReader, readerPaths } from '../components/TryAsReader';
 import { ListPage, useRowSearch, type ListState } from '../components/ListPage';
 import { HelpTip } from '../components/HelpTip';
 import { StatusBadge } from '../components/StatusBadge';
@@ -128,11 +129,17 @@ export function ExtraListPage() {
     >
       <DataList
         rowActions={(row) => (
-          <LifecycleButtons
-            item={{ id: row.id, title: row.title, status: row.status }}
-            lifecycle={lifecycle}
-            compact
-          />
+          <>
+            {row.status !== 'archived' &&
+            books.data?.books.find((book) => book.id === bookId)?.status !== 'archived' ? (
+              <TryAsReader to={readerPaths.extra(row.id)} name={row.title} compact />
+            ) : null}
+            <LifecycleButtons
+              item={{ id: row.id, title: row.title, status: row.status }}
+              lifecycle={lifecycle}
+              compact
+            />
+          </>
         )}
         label="Capítulos extra"
         rows={search.visible ?? []}
