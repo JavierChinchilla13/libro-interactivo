@@ -2,7 +2,7 @@
  * Design tokens. Todo color, radio, sombra y tiempo del sitio sale de aquí.
  *
  * Paleta confirmada por la autora (fase 12): azules profundos con un cian luminoso como acción, acentos lavanda
- * y títulos en serifa clásica (Cinzel). Es un tema oscuro único: define la identidad, no sigue el modo del sistema.
+ * y titulares en Michroma (la letra de la portada del libro). Es un tema oscuro único: define la identidad, no sigue el modo del sistema.
  *
  * El tema por libro solo sobrescribe estas variables (`--token-primary`, `--token-bg`…) y debe hacerlo en `:root`
  * (`document.documentElement`): las sombras y resplandores de abajo se derivan del color en `:root`.
@@ -66,17 +66,31 @@
   /* Lectura larga: Newsreader (variable, autohospedada): wiki, publicaciones, reseñas, biografía, sinopsis. */
   --token-font-read:
     'Newsreader Variable', 'Newsreader Fallback', Georgia, 'Times New Roman', serif;
-  /* Títulos: Cinzel (serifa clásica); si no carga, una serifa del sistema. */
-  --token-font-display: 'Cinzel Variable', 'Cinzel', Georgia, 'Times New Roman', serif;
+  /*
+   * TITULARES. Michroma (la letra de la portada del libro, autohospedada): un solo peso, muy ancha. Solo para titulares
+   * del sitio público y del panel del lector; la interfaz sigue en Jost y la lectura larga en Newsreader. La
+   * administración no la usa (ver `adminTheme.css`: Jost semibold).
+   *
+   * Todo lo que depende de la letra de los titulares vive aquí y se cambia de una vez con UN solo valor, el atributo
+   * `data-titulares` de `<html>` en `index.html` (`michroma` por defecto; `cinzel` vuelve a la serifa anterior). Los
+   * valores de abajo son los de Michroma; el bloque `[data-titulares='cinzel']` del final de este archivo trae los de
+   * Cinzel.
+   */
+  --token-font-display: 'Michroma', 'Michroma Fallback', Arial, 'Helvetica Neue', sans-serif;
+  /* Michroma es muy ancha: sus titulares miden ~70 % del tamaño que tenía Cinzel (los pasos de abajo y `text-title-*`). */
+  --token-display-scale: 0.7;
+  /* Sin tracking añadido: ya es una letra ancha y abierta. */
+  --token-display-tracking: 0;
+  /* Un solo peso (400): el navegador no simula negrita (`font-synthesis: none`) y el énfasis es de color. */
+  --token-weight-display: 400;
+  --token-weight-emphasis: 400;
+  --token-emph-color: var(--token-primary);
   /* Escala fluida (móvil → escritorio). Un solo tamaño de h1 para todo el sitio. */
-  --token-text-display: clamp(2.25rem, 1rem + 5.6vw, 5rem);
-  --token-text-h1: clamp(1.875rem, 1.2rem + 3.2vw, 3.5rem);
-  --token-text-h2: clamp(1.875rem, 1.1rem + 2.8vw, 3rem);
-  --token-leading-display: 1.05;
-  --token-leading-heading: 1.15;
-  /* Titulares: peso base y peso de énfasis (la palabra que se destaca sube de peso, no de color). */
-  --token-weight-display: 500;
-  --token-weight-emphasis: 800;
+  --token-text-display: calc(clamp(2.25rem, 1rem + 5.6vw, 5rem) * var(--token-display-scale));
+  --token-text-h1: calc(clamp(1.875rem, 1.2rem + 3.2vw, 3.5rem) * var(--token-display-scale));
+  --token-text-h2: calc(clamp(1.875rem, 1.1rem + 2.8vw, 3rem) * var(--token-display-scale));
+  --token-leading-display: 1.2;
+  --token-leading-heading: 1.25;
   /* Medida de lectura: ninguna línea de texto largo pasa de 65 caracteres. */
   --token-measure: 65ch;
 
@@ -97,4 +111,20 @@
   --token-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
   --token-page-max: 72rem;
+}
+
+/*
+ * Titulares en Cinzel: lo que ve el sitio con `<html data-titulares="cinzel">` (el de antes de Michroma). Solo cambian
+ * los valores que dependen de la letra. Cinzel sigue instalada (`@fontsource-variable/cinzel`) por este camino de vuelta;
+ * no se descarga mientras ningún texto la use.
+ */
+:root[data-titulares='cinzel'] {
+  --token-font-display: 'Cinzel Variable', 'Cinzel', Georgia, 'Times New Roman', serif;
+  --token-display-scale: 1;
+  --token-display-tracking: 0.01em;
+  --token-weight-display: 500;
+  --token-weight-emphasis: 800;
+  --token-emph-color: currentColor;
+  --token-leading-display: 1.05;
+  --token-leading-heading: 1.15;
 }

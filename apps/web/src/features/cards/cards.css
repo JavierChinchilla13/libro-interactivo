@@ -131,8 +131,9 @@
 .card-dialog-title {
   margin: 0;
   font-family: var(--token-font-display);
-  font-size: 1.25rem;
-  line-height: 1.25;
+  font-synthesis: none;
+  font-size: max(0.9375rem, calc(1.25rem * var(--token-display-scale)));
+  line-height: var(--token-leading-heading);
   text-wrap: balance;
   overflow-wrap: anywhere;
 }

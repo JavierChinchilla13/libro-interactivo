@@ -3,6 +3,35 @@
 @import './tokens.css';
 
 /*
+ * Michroma (titulares): Copyright 2011 The Michroma Project Authors (https://github.com/googlefonts/Michroma-font),
+ * bajo la SIL Open Font License 1.1 (la licencia completa viaja con el paquete `@fontsource/michroma`). Un solo peso
+ * (400), solo el subconjunto latino (cubre el español: acentos, ñ, ¿ ¡ « » y comillas curvas) y autohospedada.
+ * `font-display: swap` con una letra de reserva de métricas ajustadas (abajo) para que el cambio no mueva el diseño.
+ */
+@font-face {
+  font-family: 'Michroma';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('@fontsource/michroma/files/michroma-latin-400-normal.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/*
+ * Reserva de Michroma: Arial ajustada para ocupar lo mismo (ancho medio de Michroma / ancho medio de Arial = 1,401;
+ * ascendente 115,6 % y descendente 26,6 % de Michroma entre ese factor), así el titular casi no salta al llegar la real.
+ */
+@font-face {
+  font-family: 'Michroma Fallback';
+  src: local('Arial'), local('Helvetica'), local('Liberation Sans');
+  size-adjust: 140.1%;
+  ascent-override: 82.5%;
+  descent-override: 19%;
+  line-gap-override: 0%;
+}
+
+/*
  * Letras de texto: solo el subconjunto latino (cubre el español) y el eje de peso, sin cursivas. Se declaran aquí en
  * lugar de importar el CSS completo de cada paquete para que el navegador no conozca ni descargue los demás alfabetos.
  */
@@ -75,6 +104,17 @@
   --shadow-lit: var(--token-lit-ring);
   --font-sans: var(--token-font-sans);
   --font-display: var(--token-font-display);
+  /* Tamaños de titular de la misma escala que `font-display` (Michroma es muy ancha: ~70 % de lo que pedía Cinzel). */
+  --text-title-lg: max(0.9375rem, calc(1.125rem * var(--token-display-scale)));
+  --text-title-lg--line-height: var(--token-leading-heading);
+  --text-title-xl: max(0.9375rem, calc(1.25rem * var(--token-display-scale)));
+  --text-title-xl--line-height: var(--token-leading-heading);
+  --text-title-2xl: calc(1.5rem * var(--token-display-scale));
+  --text-title-2xl--line-height: var(--token-leading-heading);
+  --text-title-3xl: calc(1.875rem * var(--token-display-scale));
+  --text-title-3xl--line-height: var(--token-leading-heading);
+  --text-title-4xl: calc(2.25rem * var(--token-display-scale));
+  --text-title-4xl--line-height: var(--token-leading-heading);
   --font-read: var(--token-font-read);
   --color-sunken: var(--token-sunken);
   --color-lit: var(--token-lit);
@@ -207,10 +247,11 @@
   margin: 0;
   max-width: 22ch;
   font-family: var(--token-font-display);
-  font-size: clamp(2.25rem, 1rem + 5vw, 5rem);
+  font-synthesis: none;
+  font-size: calc(clamp(2.25rem, 1rem + 5vw, 5rem) * var(--token-display-scale));
   font-weight: 600;
-  line-height: 1.12;
-  letter-spacing: 0.01em;
+  line-height: calc(var(--token-leading-display) + 0.07);
+  letter-spacing: var(--token-display-tracking);
   text-wrap: balance;
 }
 @supports (animation-timeline: view()) {
@@ -1229,7 +1270,8 @@
     min-width: 2ch;
     text-align: center;
     font-family: var(--token-font-display);
-    font-size: clamp(2rem, 9vw, 3.5rem);
+    font-synthesis: none;
+    font-size: calc(clamp(2rem, 9vw, 3.5rem) * var(--token-display-scale));
     font-variant-numeric: tabular-nums;
     line-height: 1.15;
   }
@@ -1294,13 +1336,13 @@
   /* En el celular el titular corto es grande a propósito: su área supera a la de cualquier baldosa y el LCP sigue
      siendo el texto (no una imagen). */
   .hero-title[data-size='short'] {
-    font-size: clamp(3.25rem, 0.8rem + 7.2vw, 5.75rem);
+    font-size: calc(clamp(3.25rem, 0.8rem + 7.2vw, 5.75rem) * var(--token-display-scale));
   }
   .hero-title[data-size='medium'] {
-    font-size: clamp(2.25rem, 0.9rem + 5vw, 4.25rem);
+    font-size: calc(clamp(2.25rem, 0.9rem + 5vw, 4.25rem) * var(--token-display-scale));
   }
   .hero-title[data-size='long'] {
-    font-size: clamp(2rem, 0.9rem + 3.6vw, 3.25rem);
+    font-size: calc(clamp(2rem, 0.9rem + 3.6vw, 3.25rem) * var(--token-display-scale));
   }
   /* La presentación es breve (hasta ~20 palabras): si la autora escribe más, se recorta a 4 líneas para que la rejilla
      siga a la vista en la primera pantalla. */
@@ -1737,7 +1779,8 @@
   }
   .manifesto-verb {
     font-family: var(--token-font-display);
-    font-size: clamp(1.5rem, 1rem + 1.6vw, 2.25rem);
+    font-synthesis: none;
+    font-size: calc(clamp(1.5rem, 1rem + 1.6vw, 2.25rem) * var(--token-display-scale));
     font-weight: 500;
   }
   .manifesto-what {
@@ -1803,7 +1846,8 @@
   .purchase-title {
     margin: 0 0 0.75rem;
     font-family: var(--token-font-display);
-    font-size: 1.25rem;
+    font-synthesis: none;
+    font-size: max(0.9375rem, calc(1.25rem * var(--token-display-scale)));
     font-weight: 500;
   }
   .purchase-links {
@@ -1857,9 +1901,10 @@
   .exp-title {
     margin: 0;
     font-family: var(--token-font-display);
-    font-size: 1.5rem;
+    font-synthesis: none;
+    font-size: calc(1.5rem * var(--token-display-scale));
     font-weight: 500;
-    line-height: 1.2;
+    line-height: var(--token-leading-heading);
   }
   @media (min-width: 48rem) {
     .exp-grid {
@@ -1887,7 +1932,7 @@
       grid-column: span 12;
     }
     .exp-card:first-child .exp-title {
-      font-size: clamp(1.75rem, 1rem + 2vw, 2.75rem);
+      font-size: calc(clamp(1.75rem, 1rem + 2vw, 2.75rem) * var(--token-display-scale));
     }
   }
 
@@ -1920,9 +1965,10 @@
   /* Más chico que el título de la sección (3 rem): el índice se lee como entradas de la wiki, no como otro título. */
   .wiki-index-name {
     font-family: var(--token-font-display);
-    font-size: clamp(1.5rem, 1rem + 2vw, 2.25rem);
+    font-synthesis: none;
+    font-size: calc(clamp(1.5rem, 1rem + 2vw, 2.25rem) * var(--token-display-scale));
     font-weight: 500;
-    line-height: 1.1;
+    line-height: var(--token-leading-heading);
   }
 
   /* Reseñas: una destacada y dos a su lado; en el celular, una lista vertical. */
@@ -2121,12 +2167,18 @@
     }
   }
 
-  /* Titulares: serifa Cinzel en color sólido. Display = héroe; page-title = h1 de toda página; section-title = h2. */
+  /* Titulares: la letra de titulares (Michroma) en color sólido. Display = héroe; page-title = h1 de toda página; section-title = h2. */
   .display-title,
   .page-title,
   .section-title {
     font-family: var(--token-font-display);
-    letter-spacing: 0.01em;
+    /* Un solo peso: ni negrita ni cursiva simuladas por el navegador. */
+    font-synthesis: none;
+    letter-spacing: var(--token-display-tracking);
+    text-wrap: balance;
+  }
+  .font-display {
+    font-synthesis: none;
   }
   .display-title {
     font-size: var(--token-text-display);
@@ -2143,9 +2195,11 @@
     font-weight: var(--token-weight-display);
     line-height: var(--token-leading-heading);
   }
-  /* Énfasis de un titular: la palabra destacada sube de peso dentro de la misma familia (no cambia de color). */
+  /* Énfasis de un titular: Michroma tiene un solo peso, así que la palabra destacada se distingue por color (el cian de
+     acción); con Cinzel (`data-titulares="cinzel"`) vuelve a subir de peso y sin cambiar de color. */
   .emph {
     font-weight: var(--token-weight-emphasis);
+    color: var(--token-emph-color);
   }
   /* Etiquetas pequeñas en MAYÚSCULAS con mucho tracking: solo donde dan información (a qué quiz, qué pregunta). */
   .label {
@@ -2162,7 +2216,7 @@
     text-transform: uppercase;
     color: var(--token-primary);
   }
-  /* Placa: el objeto-libro de la página. Sin portada real es una portada tipográfica: el nombre del sitio en Cinzel
+  /* Placa: el objeto-libro de la página. Sin portada real es una portada tipográfica: el nombre del sitio en la letra de titulares
      dentro de un doble filete fino. Con portada, la imagen ocupa su lugar con la misma proporción. */
   .plate {
     position: relative;
@@ -2199,24 +2253,25 @@
   .plate-initial {
     margin: 0;
     font-family: var(--token-font-display);
+    font-synthesis: none;
     text-transform: uppercase;
   }
   .plate-kicker {
     margin-bottom: 4cqw;
     padding-left: 0.42em;
-    font-size: 5.2cqw;
+    font-size: calc(5.2cqw * var(--token-display-scale));
     font-weight: 500;
     letter-spacing: 0.42em;
   }
   .plate-name {
     padding-left: 0.1em;
-    font-size: 10.5cqw;
+    font-size: calc(10.5cqw * var(--token-display-scale));
     font-weight: 700;
     line-height: 1.1;
     letter-spacing: 0.1em;
   }
   .plate-initial {
-    font-size: 38cqw;
+    font-size: calc(38cqw * var(--token-display-scale));
     font-weight: 500;
     line-height: 1;
   }

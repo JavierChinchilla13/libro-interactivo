@@ -30,7 +30,8 @@
   }
   .how-step-number {
     font-family: var(--token-font-display);
-    font-size: 1.75rem;
+    font-synthesis: none;
+    font-size: calc(1.75rem * var(--token-display-scale));
     line-height: 1;
     color: var(--token-primary);
   }
