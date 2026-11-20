@@ -343,3 +343,50 @@ describe('la wiki del equipo: libros en borrador', () => {
     expect(screen.queryByText(/está en borrador/)).toBeNull();
   });
 });
+
+describe('«Probar el borrador»: lista de quizzes', () => {
+  const quiz = (n: number, over: Record<string, unknown> = {}) => ({
+    id: hex(200 + n),
+    bookId: BOOK_ID,
+    slug: `quiz-${n}`,
+    order: n,
+    title: `[PLACEHOLDER] Quiz ${n}`,
+    status: 'published',
+    currentVersion: 1,
+    allowRetake: true,
+    showBreakdown: false,
+    updatedAt: STAMP,
+    hasUnpublishedChanges: false,
+    ...over,
+  });
+
+  it('cada fila ofrece lo que corresponde: lo publicado, el borrador si hay cambios o nunca se publicó, nada si está archivado', async () => {
+    mockApi(
+      {
+        ...books(adminBook()),
+        [`GET /api/admin/quizzes?bookId=${BOOK_ID}`]: () =>
+          json({
+            quizzes: [
+              quiz(1),
+              quiz(2, { hasUnpublishedChanges: true }),
+              quiz(3, { status: 'draft', currentVersion: 0 }),
+              quiz(4, { status: 'archived' }),
+            ],
+          }),
+      },
+      { session: ADMIN },
+    );
+    renderAt('/admin/quizzes');
+    await screen.findAllByText('[PLACEHOLDER] Quiz 1');
+    const hrefs = (name: RegExp) =>
+      screen.getAllByRole('link', { name }).map((a) => a.getAttribute('href'));
+    expect(hrefs(/Probar como lector/)).toEqual([
+      `/panel/quiz/${hex(201)}`,
+      `/panel/quiz/${hex(202)}`,
+    ]);
+    expect(hrefs(/Probar el borrador/)).toEqual([
+      `/panel/quiz/${hex(202)}?fuente=borrador`,
+      `/panel/quiz/${hex(203)}?fuente=borrador`,
+    ]);
+  });
+});

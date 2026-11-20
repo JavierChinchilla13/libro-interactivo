@@ -33,6 +33,12 @@ export const readerApi = {
     apiRequest(`/me/results?bookId=${bookId}`, resultsListResponseSchema),
   quizResults: (quizId: string) => apiRequest(`/me/results/${quizId}`, quizResultsResponseSchema),
   intro: (quizId: string) => apiRequest(`/quizzes/${quizId}`, quizIntroResponseSchema),
+  /** Introducción de la prueba del BORRADOR (solo equipo; el servidor lo comprueba en cada petición). */
+  testIntro: (quizId: string) =>
+    apiRequest(`/admin/quizzes/${quizId}/test-intro`, quizIntroResponseSchema),
+  /** Empieza una prueba del BORRADOR: un intento de prueba con una copia congelada de lo que hay en el borrador. */
+  startTest: (quizId: string) =>
+    apiRequest(`/admin/quizzes/${quizId}/test-attempts`, attemptResponseSchema, { method: 'POST' }),
   start: (quizId: string) =>
     apiRequest(`/quizzes/${quizId}/attempts`, attemptResponseSchema, { method: 'POST' }),
   /** Envía TODAS las respuestas de la etapa (una por pregunta). */
@@ -58,7 +64,10 @@ export const readerKeys = {
   progress: (bookId: string) => ['reader', 'progress', bookId] as const,
   results: (bookId: string) => ['reader', 'results', bookId] as const,
   quizResults: (quizId: string) => ['reader', 'quiz-results', quizId] as const,
-  intro: (quizId: string) => ['reader', 'intro', quizId] as const,
+  intro: (quizId: string, draft = false) =>
+    (draft
+      ? ['reader', 'intro', quizId, 'borrador']
+      : ['reader', 'intro', quizId]) as readonly string[],
   extras: (bookId: string) => ['reader', 'extras', bookId] as const,
   welcome: ['reader', 'welcome'] as const,
 };

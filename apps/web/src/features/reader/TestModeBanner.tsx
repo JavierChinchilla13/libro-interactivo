@@ -1,7 +1,7 @@
 import { plural, type TestProgressResetResponse } from '@libro/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation, useSearchParams } from 'react-router';
 import { errorMessage } from '../../shared/api/messages';
 import { readerApi, readerKeys } from './api';
 import type { LibraryEntry } from './LibraryBookCard';
@@ -31,13 +31,14 @@ export function resetMessage(counts: TestProgressResetResponse): string {
  */
 function useViewedEntry(entries: readonly LibraryEntry[]): LibraryEntry | undefined {
   const { pathname } = useLocation();
+  const draft = useSearchParams()[0].get('fuente') === 'borrador';
   const slug = /^\/panel\/libros\/([^/]+)/.exec(pathname)?.[1];
   const gameBookId = /^\/panel\/juego\/([^/]+)/.exec(pathname)?.[1];
   const quizId = /^\/panel\/quiz\/([^/]+)/.exec(pathname)?.[1];
   const extraId = /^\/panel\/extras\/([^/]+)/.exec(pathname)?.[1];
   // Solo escucha la caché: la introducción la pide la pantalla del quiz; aquí no se hace ninguna petición.
   const intro = useQuery({
-    queryKey: readerKeys.intro(quizId && ID.test(quizId) ? quizId : ''),
+    queryKey: readerKeys.intro(quizId && ID.test(quizId) ? quizId : '', draft),
     queryFn: () => readerApi.intro(quizId ?? ''),
     enabled: false,
   });
@@ -69,6 +70,7 @@ function useViewedEntry(entries: readonly LibraryEntry[]): LibraryEntry | undefi
  */
 export function TestModeBanner() {
   const client = useQueryClient();
+  const draft = useSearchParams()[0].get('fuente') === 'borrador';
   const library = useLibrary();
   const entry = useViewedEntry(library.data?.books ?? []);
   const unpublished = entry?.unpublished !== undefined;
@@ -112,6 +114,10 @@ export function TestModeBanner() {
           <span className="font-medium">
             Modo prueba: nada de esto cuenta para las estadísticas ni para los lectores.
           </span>
+          {draft ? (
+            // Una prueba del BORRADOR: lo que se ve es el borrador del quiz, no lo que ven los lectores.
+            <span className="ml-1 font-semibold">Probando el BORRADOR (no publicado).</span>
+          ) : null}
           {unpublished ? (
             <span className="ml-1">Este libro aún no está publicado: los lectores no lo ven.</span>
           ) : null}

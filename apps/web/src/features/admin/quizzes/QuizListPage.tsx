@@ -153,13 +153,28 @@ export function QuizListPage() {
     >
       <DataList
         // Solo lo publicado se puede probar en el lector real (un borrador se prueba desde su editor); nunca en un libro archivado.
-        rowActions={(quiz) =>
-          quiz.status === 'published' &&
-          quiz.currentVersion > 0 &&
-          books.data?.books.find((book) => book.id === bookId)?.status !== 'archived' ? (
-            <TryAsReader to={readerPaths.quiz(quiz.id)} name={quiz.title} compact />
-          ) : null
-        }
+        rowActions={(quiz) => {
+          if (books.data?.books.find((book) => book.id === bookId)?.status === 'archived')
+            return null;
+          const published = quiz.status === 'published' && quiz.currentVersion > 0;
+          // El borrador se prueba si hay algo sin publicar o el quiz nunca se publicó.
+          const draft = quiz.status !== 'archived' && (!published || quiz.hasUnpublishedChanges);
+          return (
+            <>
+              {published ? (
+                <TryAsReader to={readerPaths.quiz(quiz.id)} name={quiz.title} compact />
+              ) : null}
+              {draft ? (
+                <TryAsReader
+                  to={readerPaths.quizDraft(quiz.id)}
+                  label="Probar el borrador"
+                  name={quiz.title}
+                  compact
+                />
+              ) : null}
+            </>
+          );
+        }}
         label="Quizzes"
         rows={search.visible ?? []}
         rowKey={(quiz) => quiz.id}

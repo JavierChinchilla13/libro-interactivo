@@ -7,6 +7,8 @@ import { Link } from 'react-router';
  */
 export const readerPaths = {
   quiz: (quizId: string) => `/panel/quiz/${quizId}`,
+  /** El BORRADOR del quiz (solo equipo): las mismas pantallas, con una copia congelada de lo que hay en el borrador. */
+  quizDraft: (quizId: string) => `/panel/quiz/${quizId}?fuente=borrador`,
   book: (slug: string) => `/panel/libros/${encodeURIComponent(slug)}`,
   extra: (extraId: string) => `/panel/extras/${extraId}`,
   card: (cardId: string) => `/panel/cartas/${cardId}`,
@@ -26,6 +28,7 @@ export function TryAsReader({
   compact = false,
   newTab = false,
   title,
+  disabledReason,
 }: {
   to: string;
   label?: string;
@@ -33,7 +36,23 @@ export function TryAsReader({
   compact?: boolean;
   newTab?: boolean;
   title?: string;
+  /** Si viene, el botón queda apagado y esto dice por qué (por ejemplo, hay cambios sin guardar). */
+  disabledReason?: string;
 }) {
+  if (disabledReason) {
+    return (
+      <button
+        type="button"
+        disabled
+        title={disabledReason}
+        className={`btn btn-secondary ${compact ? 'btn-compact' : ''}`}
+      >
+        {label}
+        {name ? <span className="sr-only"> {name}</span> : null}
+        <span className="sr-only">. {disabledReason}</span>
+      </button>
+    );
+  }
   return (
     <Link
       to={to}

@@ -296,8 +296,14 @@ describe('editor de quizzes · retoques de celular y de la revisión', { timeout
       within(menu)
         .getAllByRole('button')
         .map((item) => item.textContent),
-      // CAMBIO (modo prueba): el menú ganó «Probar como lector» (abre el quiz en las pantallas reales del lector).
-    ).toEqual(['Revisar', 'Vista previa', 'Probar como lector', 'Guardar borrador']);
+      // CAMBIO (modo prueba): el menú ganó «Probar el borrador» y «Probar como lector» (abren el quiz en las pantallas reales del lector).
+    ).toEqual([
+      'Revisar',
+      'Vista previa',
+      'Probar el borrador',
+      'Probar como lector',
+      'Guardar borrador',
+    ]);
     expect(within(menu).getByRole('button', { name: 'Guardar borrador' })).toBeDisabled();
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('group', { name: 'Más acciones' })).toBeNull();
@@ -346,5 +352,61 @@ describe('editor de quizzes · retoques de celular y de la revisión', { timeout
     await waitFor(() => expect(tabs).toHaveAttribute('data-edge', 'end'));
     width.mockRestore();
     client.mockRestore();
+  });
+});
+
+describe('editor de quizzes · «Probar el borrador»', { timeout: 30_000 }, () => {
+  const links = () => ({
+    draft: screen.queryByRole('link', { name: /Probar el borrador/ }),
+    published: screen.queryByRole('link', { name: /Probar como lector/ }),
+  });
+
+  it('con cambios sin publicar ofrece las dos pruebas, cada una con su destino, en otra pestaña', async () => {
+    open(big(1, { hasUnpublishedChanges: true }));
+    renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    await screen.findByRole('heading', { name: 'Quiz grande' });
+    const { draft, published } = links();
+    expect(published).toHaveAttribute('href', `/panel/quiz/${QUIZ_ID}`);
+    expect(draft).toHaveAttribute('href', `/panel/quiz/${QUIZ_ID}?fuente=borrador`);
+    expect(draft).toHaveAttribute('target', '_blank');
+    expect(draft).toHaveAttribute('rel', 'noopener noreferrer');
+    // «Publicar» sigue siendo el único camino a los lectores y no cambia.
+    expect(screen.getByRole('button', { name: 'Publicar' })).toBeEnabled();
+  });
+
+  it('un quiz publicado sin cambios no ofrece el borrador; uno nunca publicado ofrece solo el borrador', async () => {
+    open(big(1));
+    const first = renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    await screen.findByRole('heading', { name: 'Quiz grande' });
+    expect(links().draft).toBeNull();
+    expect(links().published).not.toBeNull();
+    first.unmount();
+    vi.unstubAllGlobals();
+
+    open(big(1, { status: 'draft', currentVersion: 0, hasUnpublishedChanges: true }));
+    renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    await screen.findByRole('heading', { name: 'Quiz grande' });
+    expect(links().draft).toHaveAttribute('href', `/panel/quiz/${QUIZ_ID}?fuente=borrador`);
+    expect(links().published).toBeNull();
+    expect(screen.getByRole('button', { name: 'Publicar' })).toBeInTheDocument();
+  });
+
+  it('con cambios sin guardar el botón del borrador se apaga y dice que hay que guardar primero', async () => {
+    open(big(1, { hasUnpublishedChanges: true }));
+    renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    await screen.findByRole('heading', { name: 'Quiz grande' });
+    await userEvent.type(screen.getByRole('textbox', { name: /^Título/ }), ' 2');
+    const button = await screen.findByRole('button', { name: /Probar el borrador/ });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('title', 'Guarda el borrador para probar los últimos cambios');
+    expect(links().draft).toBeNull();
+  });
+
+  it('un quiz archivado no se prueba', async () => {
+    open(big(1, { status: 'archived' }));
+    renderAt(`/admin/quizzes/${QUIZ_ID}`);
+    await screen.findByRole('heading', { name: 'Quiz grande' });
+    expect(links().draft).toBeNull();
+    expect(links().published).toBeNull();
   });
 });
