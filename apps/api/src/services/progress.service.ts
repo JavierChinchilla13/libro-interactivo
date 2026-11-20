@@ -92,6 +92,19 @@ export function createProgressService(deps: ProgressDeps) {
   }
 
   /**
+   * Acceso a una prueba del BORRADOR de un quiz (solo equipo): el quiz existe y no está archivado y su libro no es un
+   * libro archivado. No exige que el quiz esté publicado (puede no tener ninguna versión) ni orden ni QR.
+   */
+  async function assertDraftTestAccess(actor: Actor, quizId: string): Promise<void> {
+    if (!isStaff(actor.role)) throw new AppError('NOT_FOUND', 'No encontramos ese quiz');
+    const quiz = await Quiz.findById(quizId).select('bookId status').lean();
+    if (!quiz || quiz.status === 'archived')
+      throw new AppError('NOT_FOUND', 'No encontramos ese quiz');
+    const book = await Book.findById(quiz.bookId).select('status').lean();
+    if (!testBookVisible(book?.status)) throw new AppError('NOT_FOUND', 'No encontramos ese quiz');
+  }
+
+  /**
    * Comprueba que `actor` puede jugar la historia publicada del libro: se abre cuando todos los quizzes publicados están
    * completados y, con QR, cuando el código del juego se canjeó. El personal del sitio siempre (partida de prueba).
    * 404 si no hay historia publicada; 403 `NOT_UNLOCKED` sin contenido si falta algo.
@@ -169,7 +182,14 @@ export function createProgressService(deps: ProgressDeps) {
         .select('title order currentVersion')
         .lean(),
       UserProgress.findOne({ userId, bookId }).lean(),
-      QuizAttempt.find({ userId, bookId, status: 'in_progress', isTest: test })
+      QuizAttempt.find({
+        userId,
+        bookId,
+        status: 'in_progress',
+        isTest: test,
+        // Una prueba del borrador no es el avance del hilo (que es de lo publicado).
+        draftSnapshot: { $exists: false },
+      })
         .select('quizId')
         .lean(),
     ]);
@@ -182,6 +202,7 @@ export function createProgressService(deps: ProgressDeps) {
               bookId,
               status: 'completed',
               isTest: true,
+              draftSnapshot: { $exists: false },
             })
           ).map(String),
         )
@@ -472,6 +493,7 @@ export function createProgressService(deps: ProgressDeps) {
   }
 
   return {
+    assertDraftTestAccess,
     assertQuizAccess,
     assertGameAccess,
     getProgress,

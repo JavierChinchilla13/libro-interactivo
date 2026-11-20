@@ -39,6 +39,22 @@ import { findPublishedFields } from './wikiField.js';
 /** Los intentos sin terminar caducan (TTL) a los 7 días de su última actividad. */
 export const IN_PROGRESS_TTL_DAYS = 7;
 
+/**
+ * Filtro de los intentos que NO son una prueba del borrador (los que no llevan `draftSnapshot`). Todo lo que cuenta como
+ * «haber jugado» un quiz publicado (resultados, avance, introducción) lo usa: una prueba del borrador no tiene versión
+ * publicada y nunca aparece ahí.
+ */
+const NOT_DRAFT = { draftSnapshot: { $exists: false } } as const;
+
+/** El id de la versión de un intento normal; un intento sin versión es una prueba del borrador y no debe llegar aquí. */
+function versionIdOf(attempt: {
+  quizVersionId?: Types.ObjectId | null | undefined;
+}): Types.ObjectId {
+  if (!attempt.quizVersionId)
+    throw new AppError('INTERNAL', 'El intento no tiene versión del quiz');
+  return attempt.quizVersionId;
+}
+
 export interface QuizServiceDeps {
   progress: ProgressService;
   clock: Clock;
@@ -122,15 +138,15 @@ export function createQuizService(deps: QuizServiceDeps) {
     };
   }
 
-  async function getIntro(actor: Actor, quizId: string): Promise<QuizIntroResponse> {
-    const { quiz, content } = await loadPublished(quizId);
-    const isTest = isStaff(actor.role);
-    const [completedCount, open] = await Promise.all([
-      QuizAttempt.countDocuments({ userId: actor.userId, quizId, status: 'completed', isTest }),
-      QuizAttempt.findOne({ userId: actor.userId, quizId, status: 'in_progress', isTest })
-        .select('_id')
-        .lean(),
-    ]);
+  /**
+   * Introducción de un quiz con lo que el lector (o el equipo) ya hizo. La apariencia es la misma para el quiz publicado y
+   * para la prueba del borrador (vive fuera de las versiones).
+   */
+  function introOf(
+    quiz: { _id: Types.ObjectId; bookId: Types.ObjectId; appearance?: unknown },
+    content: QuizContent,
+    state: { completedCount: number; inProgressAttemptId?: string; canStart: boolean },
+  ): QuizIntroResponse {
     const allowRetake = content.settings.allowRetake;
     // La apariencia (fuera de las versiones) manda solo en lo que define: lo que no trae, lo toma del snapshot.
     // `introHtml: ''` es «quitar a propósito» y sale vacío. Solo viajan fondo, velo y acento: nunca historial,
@@ -154,11 +170,53 @@ export function createQuizService(deps: QuizServiceDeps) {
           }
         : {}),
       allowRetake,
-      status: completedCount > 0 ? 'completed' : 'available',
+      status: state.completedCount > 0 ? 'completed' : 'available',
+      completedCount: state.completedCount,
+      ...(state.inProgressAttemptId ? { inProgressAttemptId: state.inProgressAttemptId } : {}),
+      canStart: state.canStart,
+    };
+  }
+
+  async function getIntro(actor: Actor, quizId: string): Promise<QuizIntroResponse> {
+    const { quiz, content } = await loadPublished(quizId);
+    const isTest = isStaff(actor.role);
+    // Las pruebas del borrador (con copia) no cuentan como haber jugado el quiz publicado.
+    const [completedCount, open] = await Promise.all([
+      QuizAttempt.countDocuments({
+        userId: actor.userId,
+        quizId,
+        status: 'completed',
+        isTest,
+        ...NOT_DRAFT,
+      }),
+      QuizAttempt.findOne({
+        userId: actor.userId,
+        quizId,
+        status: 'in_progress',
+        isTest,
+        ...NOT_DRAFT,
+      })
+        .select('_id')
+        .lean(),
+    ]);
+    return introOf(quiz, content, {
       completedCount,
       ...(open ? { inProgressAttemptId: open._id.toString() } : {}),
-      canStart: isTest || allowRetake || completedCount === 0,
-    };
+      canStart: isTest || content.settings.allowRetake || completedCount === 0,
+    });
+  }
+
+  /**
+   * Introducción de la PRUEBA DEL BORRADOR (solo equipo): lo mismo que ve el lector, con el contenido del borrador ya
+   * validado. Una prueba del borrador siempre empieza de cero y siempre se puede repetir.
+   */
+  async function draftIntro(
+    actor: Actor,
+    quiz: { _id: Types.ObjectId; bookId: Types.ObjectId; appearance?: unknown },
+    content: QuizContent,
+  ): Promise<QuizIntroResponse> {
+    await progress.assertDraftTestAccess(actor, quiz._id.toString());
+    return introOf(quiz, content, { completedCount: 0, canStart: true });
   }
 
   /**
@@ -171,12 +229,22 @@ export function createQuizService(deps: QuizServiceDeps) {
     const isTest = isStaff(actor.role);
     const mine = { userId: actor.userId, quizId, isTest };
 
-    const open = await QuizAttempt.findOne({ ...mine, status: 'in_progress' }).lean();
+    const open = await QuizAttempt.findOne({ ...mine, ...NOT_DRAFT, status: 'in_progress' }).lean();
     if (open) {
-      const openContent = open.quizVersionId.equals(version._id)
+      const openVersionId = versionIdOf(open);
+      const openContent = openVersionId.equals(version._id)
         ? content
-        : (await loadVersionById(open.quizVersionId)).content;
+        : (await loadVersionById(openVersionId)).content;
       return currentStagePayload(open, openContent, questionAppearancesOf(quiz.appearance));
+    }
+    // Solo hay un intento abierto por persona y quiz: si el equipo tenía una prueba del borrador abierta, se descarta
+    // (es suya y de prueba) para empezar la del quiz publicado.
+    if (isTest) {
+      await QuizAttempt.deleteOne({
+        ...mine,
+        status: 'in_progress',
+        draftSnapshot: { $exists: true },
+      });
     }
 
     if (!isTest && !content.settings.allowRetake) {
@@ -218,10 +286,60 @@ export function createQuizService(deps: QuizServiceDeps) {
     } catch (error) {
       if (!isDuplicateKey(error)) throw error;
       // Dos "iniciar" a la vez: gana uno; el otro reanuda el intento que quedó abierto.
-      const winner = await QuizAttempt.findOne({ ...mine, status: 'in_progress' }).lean();
+      const winner = await QuizAttempt.findOne({
+        ...mine,
+        ...NOT_DRAFT,
+        status: 'in_progress',
+      }).lean();
       if (!winner) throw error;
       return currentStagePayload(winner, content, questionAppearancesOf(quiz.appearance));
     }
+  }
+
+  /**
+   * Inicia una prueba del BORRADOR (solo equipo). `content` ya viene validado y saneado con el mismo `check()` de
+   * publicar. El intento lleva una copia CONGELADA (`draftSnapshot`): lo que se edite después no la cambia, no se crea
+   * ninguna `QuizVersion` ni se toca `currentVersion`, y el intento es de prueba (`isTest`) y vence solo. Siempre empieza
+   * de cero: si había una prueba abierta de este quiz (del borrador o de lo publicado) se descarta.
+   */
+  async function startDraftAttempt(
+    actor: Actor,
+    quiz: { _id: Types.ObjectId; bookId: Types.ObjectId; appearance?: unknown },
+    content: QuizContent,
+  ): Promise<AttemptResponse> {
+    if (!isStaff(actor.role)) throw new AppError('FORBIDDEN', 'No tienes permiso para esto');
+    await progress.assertDraftTestAccess(actor, quiz._id.toString());
+    const first = firstStage(content);
+    if (!first) throw new AppError('INTERNAL', 'El quiz no tiene etapa inicial');
+    const mine = { userId: actor.userId, quizId: quiz._id, isTest: true };
+    await QuizAttempt.deleteOne({ ...mine, status: 'in_progress' });
+    const last = await QuizAttempt.findOne(mine)
+      .sort({ attemptNumber: -1 })
+      .select('attemptNumber')
+      .lean();
+    const now = clock();
+    const order = questionOrderFor(first, random);
+    const answerOrder = answerOrderFor(first, random);
+    const attempt = await QuizAttempt.create({
+      userId: actor.userId,
+      bookId: quiz.bookId,
+      quizId: quiz._id,
+      version: 0,
+      attemptNumber: (last?.attemptNumber ?? 0) + 1,
+      status: 'in_progress',
+      stages: [
+        { stageId: first.id, questionOrder: order, ...(answerOrder ? { answerOrder } : {}) },
+      ],
+      isTest: true,
+      draftSnapshot: content,
+      startedAt: now,
+      expireAt: addDays(now, IN_PROGRESS_TTL_DAYS),
+    });
+    return currentStagePayload(
+      { _id: attempt._id, stages: attempt.stages },
+      content,
+      questionAppearancesOf(quiz.appearance),
+    );
   }
 
   /**
@@ -268,11 +386,12 @@ export function createQuizService(deps: QuizServiceDeps) {
       bookId: { $in: bookIds },
       status: 'completed',
       isTest: isStaff(actor.role),
+      ...NOT_DRAFT,
     })
       .sort({ completedAt: -1 })
       .lean();
     const versions = new Map<string, QuizContent>();
-    const wanted = [...new Set(attempts.map((a) => a.quizVersionId.toString()))];
+    const wanted = [...new Set(attempts.map((a) => versionIdOf(a).toString()))];
     if (wanted.length > 0) {
       for (const version of await QuizVersion.find({ _id: { $in: wanted } }).lean()) {
         versions.set(version._id.toString(), contentOf(version));
@@ -281,7 +400,7 @@ export function createQuizService(deps: QuizServiceDeps) {
     for (const attempt of attempts) {
       const bookId = attempt.bookId.toString();
       if (found.has(bookId) || !attempt.finalResultKey) continue;
-      const content = versions.get(attempt.quizVersionId.toString());
+      const content = versions.get(versionIdOf(attempt).toString());
       const visual = content
         ? await visualOfResult(content, attempt.finalResultKey, bookId)
         : undefined;
@@ -300,12 +419,25 @@ export function createQuizService(deps: QuizServiceDeps) {
     stageId: string,
     request: SubmitAnswersRequest,
   ): Promise<AttemptResponse> {
-    const attempt = await QuizAttempt.findOne({ _id: attemptId, userId: actor.userId }).lean();
+    // `+draftSnapshot`: la copia del borrador solo se carga aquí, para contestar un intento de prueba que la tenga.
+    const attempt = await QuizAttempt.findOne({ _id: attemptId, userId: actor.userId })
+      .select('+draftSnapshot')
+      .lean();
     if (!attempt) throw new AppError('NOT_FOUND', 'No encontramos ese intento');
     if (attempt.status !== 'in_progress') throw new AppError('CONFLICT', 'Este intento ya terminó');
-    await progress.assertQuizAccess(actor, attempt.quizId.toString());
-
-    const { content } = await loadVersionById(attempt.quizVersionId);
+    let content: QuizContent;
+    if (attempt.draftSnapshot) {
+      // Prueba del borrador: solo si es un intento de PRUEBA de una cuenta del EQUIPO (se comprueba en cada envío). Para
+      // cualquier otra cuenta, o si el intento no es de prueba, es como si no existiera.
+      if (!attempt.isTest || !isStaff(actor.role)) {
+        throw new AppError('NOT_FOUND', 'No encontramos ese intento');
+      }
+      await progress.assertDraftTestAccess(actor, attempt.quizId.toString());
+      content = quizContentSchema.parse(attempt.draftSnapshot);
+    } else {
+      await progress.assertQuizAccess(actor, attempt.quizId.toString());
+      content = (await loadVersionById(versionIdOf(attempt))).content;
+    }
     const index = attempt.stages.length - 1;
     const entry = attempt.stages[index];
     if (!entry || entry.stageId !== stageId || entry.completedAt) {
@@ -428,6 +560,7 @@ export function createQuizService(deps: QuizServiceDeps) {
       bookId,
       status: 'completed',
       isTest: isStaff(actor.role),
+      ...NOT_DRAFT,
     })
       .sort({ completedAt: -1 })
       .lean();
@@ -444,7 +577,7 @@ export function createQuizService(deps: QuizServiceDeps) {
       Quiz.find({ _id: { $in: [...latest.values()].map((a) => a.quizId) } })
         .select('order')
         .lean(),
-      QuizVersion.find({ _id: { $in: [...latest.values()].map((a) => a.quizVersionId) } }).lean(),
+      QuizVersion.find({ _id: { $in: [...latest.values()].map((a) => versionIdOf(a)) } }).lean(),
     ]);
     const orderOf = new Map(quizzes.map((quiz) => [quiz._id.toString(), quiz.order]));
     const contentOfVersion = new Map(versions.map((v) => [v._id.toString(), contentOf(v)]));
@@ -452,7 +585,7 @@ export function createQuizService(deps: QuizServiceDeps) {
     const results = (
       await Promise.all(
         [...latest.values()].map(async (attempt) => {
-          const content = contentOfVersion.get(attempt.quizVersionId.toString());
+          const content = contentOfVersion.get(versionIdOf(attempt).toString());
           const result =
             content && attempt.finalResultKey
               ? findResult(content, attempt.finalResultKey)
@@ -485,6 +618,7 @@ export function createQuizService(deps: QuizServiceDeps) {
       quizId,
       status: 'completed',
       isTest: isStaff(actor.role),
+      ...NOT_DRAFT,
     })
       .sort({ attemptNumber: -1 })
       .lean();
@@ -493,10 +627,10 @@ export function createQuizService(deps: QuizServiceDeps) {
       throw new AppError('NOT_FOUND', 'Todavía no tienes un resultado de este quiz');
     }
     const versions = await QuizVersion.find({
-      _id: { $in: [...new Set(attempts.map((a) => a.quizVersionId.toString()))] },
+      _id: { $in: [...new Set(attempts.map((a) => versionIdOf(a).toString()))] },
     }).lean();
     const contents = new Map(versions.map((v) => [v._id.toString(), contentOf(v)]));
-    const currentContent = contents.get(current.quizVersionId.toString());
+    const currentContent = contents.get(versionIdOf(current).toString());
     if (!currentContent) throw new AppError('INTERNAL', 'No se encontró la versión del quiz');
 
     const quiz = await Quiz.findById(quizId).select('currentVersion').lean();
@@ -525,7 +659,7 @@ export function createQuizService(deps: QuizServiceDeps) {
         ),
       },
       history: attempts.flatMap((attempt) => {
-        const content = contents.get(attempt.quizVersionId.toString());
+        const content = contents.get(versionIdOf(attempt).toString());
         const result =
           content && attempt.finalResultKey
             ? findResult(content, attempt.finalResultKey)
@@ -544,7 +678,16 @@ export function createQuizService(deps: QuizServiceDeps) {
     };
   }
 
-  return { getIntro, startAttempt, submitAnswers, listResults, getQuizResults, latestFields };
+  return {
+    getIntro,
+    draftIntro,
+    startAttempt,
+    startDraftAttempt,
+    submitAnswers,
+    listResults,
+    getQuizResults,
+    latestFields,
+  };
 }
 
 export type QuizService = ReturnType<typeof createQuizService>;
