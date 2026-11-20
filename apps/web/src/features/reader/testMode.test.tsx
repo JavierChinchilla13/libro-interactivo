@@ -171,6 +171,30 @@ describe('«este libro aún no está publicado» sale de `unpublished`, no del s
   });
 });
 
+describe('la franja en un capítulo extra', () => {
+  it('abierto un extra de un libro en borrador, dice que el libro aún no está publicado', async () => {
+    const EXTRA = '670000000000000000000050';
+    mockApi(
+      {
+        ...library(entry('libro-sin-publicar', DRAFT_ID, 3, 'draft', 'upcoming')),
+        [`GET /api/extras/${EXTRA}`]: () =>
+          json({
+            kind: 'text',
+            bookId: DRAFT_ID,
+            title: '[PLACEHOLDER] Extra',
+            bodyHtml: '<p>x</p>',
+          }),
+      },
+      { session: ADMIN },
+    );
+    renderAt(`/panel/extras/${EXTRA}`);
+    await screen.findByRole('heading', { level: 1, name: '[PLACEHOLDER] Extra' });
+    await waitFor(() =>
+      expect(screen.getByTestId('test-mode-banner')).toHaveTextContent(UNPUBLISHED),
+    );
+  });
+});
+
 describe('«Reiniciar mi progreso de prueba»', () => {
   const setup = (handler: () => Response) =>
     mockApi(

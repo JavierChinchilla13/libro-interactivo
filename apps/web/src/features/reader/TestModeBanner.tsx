@@ -9,6 +9,13 @@ import { useLibrary } from './useLibrary';
 
 const ID = /([0-9a-f]{24})/i;
 
+/**
+ * Botón de la franja: 44 px de alto en todo momento y, en el celular, la etiqueta completa en dos líneas si hace falta
+ * (así los dos caben lado a lado sin acortar el nombre que lee el lector de pantalla).
+ */
+const BUTTON =
+  'btn btn-compact min-h-11 px-2 text-center text-[13px] leading-tight whitespace-normal sm:px-4 sm:text-sm';
+
 /** Mensaje de éxito de «Reiniciar mi progreso de prueba», con lo que se borró. */
 export function resetMessage(counts: TestProgressResetResponse): string {
   if (counts.quizAttempts === 0 && counts.gameSessions === 0) {
@@ -18,8 +25,8 @@ export function resetMessage(counts: TestProgressResetResponse): string {
 }
 
 /**
- * Qué libro se está viendo según la dirección: `/panel/libros/:slug…`, `/panel/juego/:bookId` o `/panel/quiz/:quizId`
- * (el libro de un quiz se sabe cuando la pantalla del quiz ya cargó su introducción). Solo sirve para saber si ese libro
+ * Qué libro se está viendo según la dirección: `/panel/libros/:slug…`, `/panel/juego/:bookId`, `/panel/quiz/:quizId` o `/panel/extras/:extraId`
+ * (el libro de un quiz o de un capítulo extra se sabe cuando su pantalla ya cargó). Solo sirve para saber si ese libro
  * está sin publicar: eso lo dice la biblioteca (`unpublished`), nunca el `status` del libro.
  */
 function useViewedEntry(entries: readonly LibraryEntry[]): LibraryEntry | undefined {
@@ -27,10 +34,17 @@ function useViewedEntry(entries: readonly LibraryEntry[]): LibraryEntry | undefi
   const slug = /^\/panel\/libros\/([^/]+)/.exec(pathname)?.[1];
   const gameBookId = /^\/panel\/juego\/([^/]+)/.exec(pathname)?.[1];
   const quizId = /^\/panel\/quiz\/([^/]+)/.exec(pathname)?.[1];
+  const extraId = /^\/panel\/extras\/([^/]+)/.exec(pathname)?.[1];
   // Solo escucha la caché: la introducción la pide la pantalla del quiz; aquí no se hace ninguna petición.
   const intro = useQuery({
     queryKey: readerKeys.intro(quizId && ID.test(quizId) ? quizId : ''),
     queryFn: () => readerApi.intro(quizId ?? ''),
+    enabled: false,
+  });
+  // Igual con un capítulo extra abierto: su libro se sabe cuando la pantalla ya lo cargó (misma clave que `ExtraViewPage`).
+  const extra = useQuery({
+    queryKey: ['reader', 'extra', extraId && ID.test(extraId) ? extraId : ''],
+    queryFn: () => readerApi.extra(extraId ?? ''),
     enabled: false,
   });
   if (slug) {
@@ -43,6 +57,7 @@ function useViewedEntry(entries: readonly LibraryEntry[]): LibraryEntry | undefi
   }
   if (gameBookId) return entries.find((entry) => entry.book.id === gameBookId);
   if (quizId && intro.data) return entries.find((entry) => entry.book.id === intro.data?.bookId);
+  if (extraId && extra.data) return entries.find((entry) => entry.book.id === extra.data?.bookId);
   return undefined;
 }
 
@@ -80,16 +95,17 @@ export function TestModeBanner() {
     <div
       role="status"
       data-testid="test-mode-banner"
-      className="border-b-2 border-warning bg-surface-alt px-4 py-3 text-sm"
+      // Compacta en el celular (texto de 13 px y botones lado a lado); el área de toque de los botones sigue en 44 px.
+      className="border-b-2 border-warning bg-surface-alt px-4 py-1.5 text-[13px] leading-4 sm:py-3 sm:text-sm sm:leading-normal"
       onKeyDown={(event) => {
         if (event.key === 'Escape' && confirming) setConfirming(false);
       }}
     >
-      <div className="mx-auto flex w-full max-w-[var(--token-page-max)] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mx-auto flex w-full max-w-[var(--token-page-max)] flex-col gap-2 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
         <p className="min-w-0 [overflow-wrap:anywhere]">
           <span
             aria-hidden="true"
-            className="mr-2 inline-block rounded-token-xs border border-warning px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide"
+            className="mr-1.5 inline-block rounded-token-xs border border-warning px-1 py-px align-middle text-[11px] font-semibold uppercase leading-4 tracking-wide sm:mr-2 sm:px-1.5 sm:py-0.5 sm:text-xs"
           >
             Prueba
           </span>
@@ -100,31 +116,28 @@ export function TestModeBanner() {
             <span className="ml-1">Este libro aún no está publicado: los lectores no lo ven.</span>
           ) : null}
         </p>
-        <div className="flex flex-wrap items-center gap-2 lg:shrink-0 lg:flex-nowrap">
-          <Link to="/admin" className="btn btn-secondary btn-compact">
-            Volver a administración
-          </Link>
+        <div className="grid grid-cols-2 gap-2 lg:flex lg:shrink-0 lg:flex-nowrap lg:items-center">
           {confirming ? (
             <div
               role="group"
               aria-label="Confirmar el reinicio"
-              className="flex flex-wrap items-center gap-2"
+              className="col-span-2 grid grid-cols-2 items-center gap-2 lg:flex"
             >
-              <span className="max-w-sm">
+              <span className="col-span-2 lg:max-w-sm">
                 Se borrarán tus intentos y partidas de prueba. No afecta a ningún lector ni a tu
                 cuenta.
               </span>
               <button
                 ref={cancel}
                 type="button"
-                className="btn btn-secondary btn-compact"
+                className={`${BUTTON} btn-secondary`}
                 onClick={() => setConfirming(false)}
               >
                 Cancelar
               </button>
               <button
                 type="button"
-                className="btn btn-primary btn-compact"
+                className={`${BUTTON} btn-primary`}
                 disabled={reset.isPending}
                 onClick={() => reset.mutate()}
               >
@@ -132,17 +145,22 @@ export function TestModeBanner() {
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              className="btn btn-secondary btn-compact"
-              onClick={() => {
-                setMessage(null);
-                reset.reset();
-                setConfirming(true);
-              }}
-            >
-              Reiniciar mi progreso de prueba
-            </button>
+            <>
+              <Link to="/admin" className={`${BUTTON} btn-secondary`}>
+                Volver a administración
+              </Link>
+              <button
+                type="button"
+                className={`${BUTTON} btn-secondary`}
+                onClick={() => {
+                  setMessage(null);
+                  reset.reset();
+                  setConfirming(true);
+                }}
+              >
+                Reiniciar mi progreso de prueba
+              </button>
+            </>
           )}
         </div>
       </div>
